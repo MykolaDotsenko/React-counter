@@ -1,9 +1,5 @@
-import {
-  addTransitionType,
-  startTransition,
-  useLayoutEffect,
-  useReducer,
-} from "react";
+import { useLayoutEffect, useReducer } from "react";
+import { flushSync } from "react-dom";
 import { counterReducer } from "./counter-model.js";
 import { readCounterState, writeCounterState } from "./counter-storage.js";
 
@@ -41,16 +37,35 @@ export function useCounter() {
     writeCounterState(resolveStorage(), { value, step });
   }, [value, step]);
 
+  const commitAction = (action) => {
+    flushSync(() => {
+      dispatch(action);
+    });
+  };
+
   const runAction = (action, transitionType, { animate = true } = {}) => {
     if (!animate || !canUseViewTransitions()) {
       dispatch(action);
       return;
     }
 
-    startTransition(() => {
-      addTransitionType(transitionType);
-      dispatch(action);
-    });
+    let committed = false;
+
+    const update = () => {
+      committed = true;
+      commitAction(action);
+    };
+
+    try {
+      document.startViewTransition({
+        update,
+        types: [transitionType],
+      });
+    } catch {
+      if (!committed) {
+        dispatch(action);
+      }
+    }
   };
 
   const handleKeyboardAction = (event) => {
@@ -61,6 +76,8 @@ export function useCounter() {
     if (!command) return;
 
     event.preventDefault();
+
+    // Keyboard commands prioritize immediate response and predictable focus behavior.
     runAction(command.action, command.transition, { animate: false });
   };
 
