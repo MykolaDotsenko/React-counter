@@ -29,7 +29,7 @@ Pulse Counter is deliberately built with modern browser and React platform capab
 - `backdrop-filter`, masks, conic gradients and GPU-friendly transforms
 - high-contrast and reduced-motion adaptations
 
-The effects are bounded: there is no continuous JavaScript animation loop and no third-party UI or animation runtime.
+The effects are bounded: there is no continuous JavaScript animation loop and no third-party UI or animation runtime. Native View Transitions are progressive enhancement: reduced-motion, keyboard-driven updates, unsupported engines, and the currently unstable WebKit interop path fall back to immediate state commits without losing functionality.
 
 ## Stack
 
