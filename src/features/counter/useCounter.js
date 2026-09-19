@@ -18,11 +18,22 @@ const resolveStorage = () => {
   }
 };
 
+const isWebKitEngine = () => {
+  const userAgent = navigator.userAgent;
+  return /AppleWebKit/i.test(userAgent) && !/(Chrome|Chromium|CriOS|Edg|OPR)/i.test(userAgent);
+};
+
 const canUseViewTransitions = () => {
   if (typeof document === "undefined") return false;
   if (typeof document.startViewTransition !== "function") return false;
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
 
-  return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  // WebKit 26.6 exposes the View Transition API but currently fails to
+  // complete React 19.3 state transitions reliably in this interaction.
+  // Keep the feature progressive: WebKit gets the same UI with instant
+  // state commits, while the native transition is used where our matrix
+  // verifies it end-to-end.
+  return !isWebKitEngine();
 };
 
 export function useCounter() {
