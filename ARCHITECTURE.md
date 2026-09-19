@@ -37,8 +37,8 @@ Acts as the application adapter:
 
 - connects the pure reducer to React
 - persists stable state
-- maps global keyboard shortcuts to domain actions
-- ignores editable controls so shortcuts do not interfere with text input if the UI grows later
+- maps arrow-key shortcuts to domain actions only while the dedicated counter region itself has focus
+- preserves native browser shortcuts and avoids single-character global shortcuts
 
 ### `CounterExperience.jsx`
 
@@ -53,6 +53,7 @@ Owns one bounded visual effect. Particle positions are deterministic; there is n
 The visual layer favors CSS over JavaScript:
 
 - pointer coordinates are written to CSS custom properties instead of React state, avoiding render churn
+- pointer updates are coalesced with `requestAnimationFrame` to cap layout work to the display frame rate
 - CSS `@property` animates the orbit gradient
 - particles are finite DOM nodes that disappear after one CSS animation
 - `prefers-reduced-motion` collapses motion globally

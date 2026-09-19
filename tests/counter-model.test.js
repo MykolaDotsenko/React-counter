@@ -1,52 +1,82 @@
-import assert from "node:assert/strict";
-import test from "node:test";
+import { describe, expect, it } from "vitest";
 import {
   MAX_COUNT,
   MIN_COUNT,
   counterReducer,
   createCounterState,
+  normalizeStep,
+  normalizeValue,
 } from "../src/features/counter/counter-model.js";
 
-test("creates a safe default state", () => {
-  assert.deepEqual(createCounterState(), {
-    value: 0,
-    step: 1,
-    lastDelta: 0,
-    motion: "idle",
-    revision: 0,
+describe("counter model", () => {
+  it("creates a safe default state", () => {
+    expect(createCounterState()).toEqual({
+      value: 0,
+      step: 1,
+      lastDelta: 0,
+      motion: "idle",
+      revision: 0,
+    });
   });
-});
 
-test("increments and decrements by the selected step", () => {
-  let state = createCounterState({ value: 10, step: 5 });
-  state = counterReducer(state, { type: "increment" });
-  assert.equal(state.value, 15);
-  assert.equal(state.lastDelta, 5);
-  assert.equal(state.motion, "up");
+  it("increments and decrements by the selected step", () => {
+    let state = createCounterState({ value: 10, step: 5 });
 
-  state = counterReducer(state, { type: "decrement" });
-  assert.equal(state.value, 10);
-  assert.equal(state.lastDelta, -5);
-  assert.equal(state.motion, "down");
-});
+    state = counterReducer(state, { type: "increment" });
+    expect(state).toMatchObject({ value: 15, lastDelta: 5, motion: "up" });
 
-test("clamps values to the supported range", () => {
-  const atMin = counterReducer(createCounterState({ value: MIN_COUNT }), { type: "decrement" });
-  assert.equal(atMin.value, MIN_COUNT);
-  assert.equal(atMin.motion, "blocked");
+    state = counterReducer(state, { type: "decrement" });
+    expect(state).toMatchObject({ value: 10, lastDelta: -5, motion: "down" });
+  });
 
-  const atMax = counterReducer(createCounterState({ value: MAX_COUNT, step: 25 }), { type: "increment" });
-  assert.equal(atMax.value, MAX_COUNT);
-  assert.equal(atMax.motion, "blocked");
-});
+  it("clamps values and transitions at both boundaries", () => {
+    const atMin = counterReducer(
+      createCounterState({ value: MIN_COUNT }),
+      { type: "decrement" },
+    );
+    expect(atMin).toMatchObject({ value: MIN_COUNT, lastDelta: 0, motion: "blocked" });
 
-test("normalizes unsupported steps and resets deterministically", () => {
-  let state = createCounterState({ value: 42, step: 5 });
-  state = counterReducer(state, { type: "set-step", step: 7 });
-  assert.equal(state.step, 1);
+    const atMax = counterReducer(
+      createCounterState({ value: MAX_COUNT, step: 25 }),
+      { type: "increment" },
+    );
+    expect(atMax).toMatchObject({ value: MAX_COUNT, lastDelta: 0, motion: "blocked" });
+  });
 
-  state = counterReducer(state, { type: "reset" });
-  assert.equal(state.value, 0);
-  assert.equal(state.lastDelta, -42);
-  assert.equal(state.motion, "reset");
+  it("clamps overshooting transitions to the exact supported boundary", () => {
+    const high = counterReducer(
+      createCounterState({ value: MAX_COUNT - 4, step: 25 }),
+      { type: "increment" },
+    );
+    expect(high.value).toBe(MAX_COUNT);
+    expect(high.lastDelta).toBe(4);
+
+    const low = counterReducer(
+      createCounterState({ value: 4, step: 25 }),
+      { type: "decrement" },
+    );
+    expect(low.value).toBe(MIN_COUNT);
+    expect(low.lastDelta).toBe(-4);
+  });
+
+  it("normalizes invalid persisted values and steps", () => {
+    expect(normalizeValue(-99)).toBe(MIN_COUNT);
+    expect(normalizeValue(MAX_COUNT + 100)).toBe(MAX_COUNT);
+    expect(normalizeValue("not-a-number")).toBe(MIN_COUNT);
+    expect(normalizeStep(10)).toBe(10);
+    expect(normalizeStep(7)).toBe(1);
+  });
+
+  it("resets deterministically and leaves unknown actions unchanged", () => {
+    const state = createCounterState({ value: 42, step: 5 });
+    const reset = counterReducer(state, { type: "reset" });
+
+    expect(reset).toMatchObject({
+      value: 0,
+      step: 5,
+      lastDelta: -42,
+      motion: "reset",
+    });
+    expect(counterReducer(reset, { type: "unknown" })).toBe(reset);
+  });
 });
