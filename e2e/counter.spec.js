@@ -9,13 +9,13 @@ test("completes the primary interaction flow", async ({ page }) => {
   await page.getByRole("button", { name: "Increase by 1" }).click();
   await expect(page.getByLabel("Current count 1")).toBeVisible();
 
-  await page.getByRole("button", { name: "10" }).click();
+  await page.getByRole("button", { name: "Set step to 10" }).click();
   await page.getByRole("button", { name: "Increase by 10" }).click();
   await expect(page.getByLabel("Current count 11")).toBeVisible();
 
   await page.reload();
   await expect(page.getByLabel("Current count 11")).toBeVisible();
-  await expect(page.getByRole("button", { name: "10" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Set step to 10" })).toHaveAttribute("aria-pressed", "true");
 
   await page.getByRole("button", { name: "Reset to zero" }).click();
   await expect(page.getByLabel("Current count 0")).toBeVisible();
