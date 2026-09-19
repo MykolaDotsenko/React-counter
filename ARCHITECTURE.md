@@ -38,8 +38,9 @@ Acts as the application adapter:
 - connects the pure reducer to React
 - persists stable state
 - scopes arrow-key shortcuts to the focused counter region
-- uses React 19.3 transitions to annotate increment/decrement/reset/step updates when the browser exposes the View Transition API
-- falls back to immediate reducer dispatch when View Transitions are unavailable or reduced motion is requested
+- uses React 19.3 transitions to annotate pointer-driven increment/decrement/reset/step updates when the native integration is verified reliable
+- keeps keyboard updates immediate, so input semantics never depend on animation
+- falls back to immediate reducer dispatch when View Transitions are unavailable, reduced motion is requested, or the current WebKit interop path is detected
 - synchronizes the tiny local snapshot in a layout effect so the visible value is persistence-safe before paint
 - keeps motion orchestration out of the domain model
 
@@ -81,7 +82,7 @@ The visual layer favors native platform primitives:
 - GPU-friendly transforms instead of layout animation
 - `prefers-reduced-motion` and `prefers-contrast` fallbacks
 
-Modern features are progressive enhancement. View Transitions are feature-detected at the application adapter boundary, and reduced-motion users bypass them entirely. Counter behavior, persistence and accessible controls never depend on the decorative layer.
+Modern features are progressive enhancement. View Transitions are capability-gated at the application adapter boundary; reduced-motion and keyboard interactions bypass them entirely. WebKit 26.6 currently exposes the API but does not complete the React 19.3 transition reliably in this interaction, so that engine uses the same UI with immediate commits behind one isolated compatibility guard. Counter behavior, persistence and accessible controls never depend on the decorative layer.
 
 ## State model
 
@@ -99,17 +100,15 @@ idle
 ## Transition flow
 
 ```text
-pointer / keyboard
-      ↓
-useCounter.runAction
-      ↓
-startTransition + addTransitionType
-      ↓
-pure reducer
-      ↓
-React ViewTransition boundary
-      ↓
-CSS view-transition class
+pointer action ── verified native VT ─→ startTransition + addTransitionType
+      │                                      ↓
+      │                                  pure reducer
+      │                                      ↓
+      │                              React ViewTransition
+      │                                      ↓
+      │                              CSS transition class
+      │
+      └─ fallback / keyboard / reduced motion ─→ pure reducer
 ```
 
 Directional motion is therefore derived from the user action rather than inferred from DOM measurements.
