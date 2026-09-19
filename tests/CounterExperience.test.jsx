@@ -16,8 +16,8 @@ describe("CounterExperience", () => {
     await user.click(screen.getByRole("button", { name: "Increase by 1" }));
     expect(screen.getByLabelText("Current count 1")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "10" }));
-    expect(screen.getByRole("button", { name: "10" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: "Set step to 10" }));
+    expect(screen.getByRole("button", { name: "Set step to 10" })).toHaveAttribute("aria-pressed", "true");
 
     await user.click(screen.getByRole("button", { name: "Increase by 10" }));
     expect(screen.getByLabelText("Current count 11")).toBeInTheDocument();
@@ -41,7 +41,7 @@ describe("CounterExperience", () => {
 
     expect(screen.getByLabelText("Current count 125")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Increase by 25" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "25" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Set step to 25" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("scopes arrow shortcuts to the focused counter region", async () => {
