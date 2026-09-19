@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ViewTransition, useState } from "react";
 import "../../App.css";
 import { MAX_COUNT, MIN_COUNT, STEP_OPTIONS } from "./counter-model.js";
 import { ParticleBurst } from "./ParticleBurst.jsx";
@@ -25,11 +25,15 @@ export function CounterExperience() {
   const { surfaceRef, handlePointerMove, handlePointerLeave } = usePointerSurface();
 
   const sessionDelta = state.value - sessionStart;
+  const stepIndex = STEP_OPTIONS.indexOf(state.step);
+  const energy = Math.min(state.value / 25, 1);
 
   return (
     <main className="experience-shell">
+      <div className="spectral-field" aria-hidden="true" />
       <div className="aurora aurora--one" aria-hidden="true" />
       <div className="aurora aurora--two" aria-hidden="true" />
+      <div className="aurora aurora--three" aria-hidden="true" />
       <div className="grid-glow" aria-hidden="true" />
 
       <section
@@ -38,15 +42,25 @@ export function CounterExperience() {
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
         aria-labelledby="counter-title"
+        style={{ "--energy": energy }}
       >
         <div className="surface-light" aria-hidden="true" />
+        <div className="surface-spectrum" aria-hidden="true" />
 
         <header className="surface-header">
-          <div>
-            <p className="eyebrow"><span className="status-dot" /> Interaction lab</p>
+          <div className="title-cluster">
+            <div className="eyebrow-row">
+              <p className="eyebrow">
+                <span className="status-dot" />
+                Interaction lab
+              </p>
+              <span className="tech-pill">React 19.3 · Native VT</span>
+            </div>
+
             <h1 id="counter-title">Pulse Counter</h1>
             <p className="lede">
-              A deliberately small interface refined around motion, feedback, accessibility and restraint.
+              A tactile counter shaped with native view transitions, spectral
+              color, spatial depth and motion that respects the user.
             </p>
           </div>
 
@@ -56,7 +70,8 @@ export function CounterExperience() {
             target="_blank"
             rel="noreferrer"
           >
-            Source <span aria-hidden="true">↗</span>
+            <span>Source</span>
+            <span className="source-link__icon" aria-hidden="true">↗</span>
           </a>
         </header>
 
@@ -69,22 +84,44 @@ export function CounterExperience() {
             tabIndex={0}
             onKeyDown={handleKeyboardAction}
           >
+            <div className="stage-chrome" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+
             <div className="counter-orbit">
-              <div className="orbit-track" aria-hidden="true" />
+              <div className="orbit-aura" aria-hidden="true" />
+              <div className="orbit-track orbit-track--outer" aria-hidden="true" />
+              <div className="orbit-track orbit-track--inner" aria-hidden="true" />
+              <span className="orbit-node orbit-node--one" aria-hidden="true" />
+              <span className="orbit-node orbit-node--two" aria-hidden="true" />
+              <span className="orbit-node orbit-node--three" aria-hidden="true" />
               <ParticleBurst revision={state.revision} motion={state.motion} />
 
               <div className="counter-core">
+                <div className="core-sheen" aria-hidden="true" />
                 <span className="counter-label">Current value</span>
-                <output
-                  className="counter-value"
-                  aria-live="polite"
-                  aria-atomic="true"
-                  aria-label={`Current count ${state.value}`}
+
+                <ViewTransition
+                  default="none"
+                  update={{
+                    increment: "count-up",
+                    decrement: "count-down",
+                    reset: "count-reset",
+                    default: "count-change",
+                  }}
                 >
-                  <span key={`${state.value}-${state.revision}`}>
+                  <output
+                    className="counter-value"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    aria-label={`Current count ${state.value}`}
+                  >
                     {numberFormatter.format(state.value)}
-                  </span>
-                </output>
+                  </output>
+                </ViewTransition>
+
                 <span
                   className="delta-chip"
                   data-tone={
@@ -95,6 +132,7 @@ export function CounterExperience() {
                         : "neutral"
                   }
                 >
+                  <span className="delta-chip__spark" aria-hidden="true" />
                   {formatSigned(state.lastDelta)}
                 </span>
               </div>
@@ -108,6 +146,7 @@ export function CounterExperience() {
                 disabled={state.value <= MIN_COUNT}
                 aria-label={`Decrease by ${state.step}`}
               >
+                <span className="control-glow" aria-hidden="true" />
                 <span className="control-symbol" aria-hidden="true">−</span>
                 <span className="control-copy">
                   <strong>Decrease</strong>
@@ -123,6 +162,7 @@ export function CounterExperience() {
                 disabled={state.value >= MAX_COUNT}
                 aria-label={`Increase by ${state.step}`}
               >
+                <span className="control-glow" aria-hidden="true" />
                 <span className="control-symbol" aria-hidden="true">+</span>
                 <span className="control-copy">
                   <strong>Increase</strong>
@@ -137,16 +177,29 @@ export function CounterExperience() {
             className="control-panel"
             aria-label="Counter settings and session information"
           >
-            <div className="panel-block">
+            <div className="panel-block panel-block--pace">
               <div className="panel-heading">
                 <div>
                   <span className="panel-kicker">Step size</span>
                   <h2>Choose your pace</h2>
                 </div>
-                <span className="step-readout" aria-hidden="true">×{state.step}</span>
+
+                <ViewTransition
+                  default="none"
+                  update={{ step: "step-shift", default: "none" }}
+                >
+                  <span className="step-readout" aria-hidden="true">
+                    ×{state.step}
+                  </span>
+                </ViewTransition>
               </div>
 
-              <div className="step-selector" aria-label="Choose counter step">
+              <div
+                className="step-selector"
+                aria-label="Choose counter step"
+                style={{ "--step-index": stepIndex }}
+              >
+                <span className="step-selector__active" aria-hidden="true" />
                 {STEP_OPTIONS.map((stepOption) => (
                   <button
                     key={stepOption}
@@ -183,21 +236,22 @@ export function CounterExperience() {
               onClick={reset}
               disabled={state.value === MIN_COUNT}
             >
-              <span aria-hidden="true">↺</span>
-              Reset to zero
+              <span className="reset-button__icon" aria-hidden="true">↺</span>
+              <span>Reset to zero</span>
+              <span className="reset-button__hint" aria-hidden="true">Fresh start</span>
             </button>
 
             <p className="keyboard-note" id="keyboard-instructions">
-              <span aria-hidden="true">⌨</span>
+              <span className="keyboard-note__icon" aria-hidden="true">⌨</span>
               Focus the counter panel, then use the arrow keys to change the value.
             </p>
           </aside>
         </div>
 
         <footer className="surface-footer">
+          <span><i aria-hidden="true" /> React View Transitions</span>
+          <span><i aria-hidden="true" /> OKLCH spectral color</span>
           <span><i aria-hidden="true" /> Reduced-motion aware</span>
-          <span><i aria-hidden="true" /> Keyboard complete</span>
-          <span><i aria-hidden="true" /> Zero runtime UI dependencies</span>
         </footer>
       </section>
     </main>
