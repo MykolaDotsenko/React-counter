@@ -29,7 +29,7 @@ Pulse Counter is deliberately built with modern browser and React platform capab
 - `backdrop-filter`, masks, conic gradients and GPU-friendly transforms
 - high-contrast and reduced-motion adaptations
 
-The effects are bounded: there is no continuous JavaScript animation loop and no third-party UI or animation runtime. Typed View Transitions are progressive enhancement: capability detection and `prefers-reduced-motion` decide whether the visual transition runs; keyboard commands stay immediate, and unsupported paths fall back to the same reducer action without changing behavior.
+The effects are bounded: there is no continuous JavaScript animation loop and no third-party UI or animation runtime. Typed View Transitions are progressive enhancement: capability detection and `prefers-reduced-motion` decide whether the visual transition runs; keyboard commands stay immediate, and a short behavior watchdog guarantees the reducer commit even if an engine advertises the API but stalls its transition callback.
 
 ## Stack
 
