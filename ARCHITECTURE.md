@@ -38,7 +38,9 @@ Acts as the application adapter:
 - connects the pure reducer to React
 - persists stable state
 - scopes arrow-key shortcuts to the focused counter region
-- uses React 19.3 transitions to annotate increment/decrement/reset/step updates
+- uses React 19.3 transitions to annotate increment/decrement/reset/step updates when the browser exposes the View Transition API
+- falls back to immediate reducer dispatch when View Transitions are unavailable or reduced motion is requested
+- synchronizes the tiny local snapshot in a layout effect so the visible value is persistence-safe before paint
 - keeps motion orchestration out of the domain model
 
 `addTransitionType` gives the presentation layer the cause of a state transition without teaching the reducer about React View Transitions.
@@ -79,7 +81,7 @@ The visual layer favors native platform primitives:
 - GPU-friendly transforms instead of layout animation
 - `prefers-reduced-motion` and `prefers-contrast` fallbacks
 
-Modern features are progressive enhancement. Counter behavior and accessible controls do not depend on the decorative layer.
+Modern features are progressive enhancement. View Transitions are feature-detected at the application adapter boundary, and reduced-motion users bypass them entirely. Counter behavior, persistence and accessible controls never depend on the decorative layer.
 
 ## State model
 
