@@ -152,6 +152,7 @@ export function CounterExperience() {
                     key={stepOption}
                     type="button"
                     className="step-option"
+                    aria-label={`Set step to ${stepOption}`}
                     aria-pressed={state.step === stepOption}
                     onClick={() => setStep(stepOption)}
                   >
