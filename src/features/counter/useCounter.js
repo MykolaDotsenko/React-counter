@@ -1,7 +1,7 @@
 import {
   addTransitionType,
   startTransition,
-  useEffect,
+  useLayoutEffect,
   useReducer,
 } from "react";
 import { counterReducer } from "./counter-model.js";
@@ -30,7 +30,7 @@ export function useCounter() {
   );
   const { value, step } = state;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     writeCounterState(resolveStorage(), { value, step });
   }, [value, step]);
 
