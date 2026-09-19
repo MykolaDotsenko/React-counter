@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useState } from "react";
 import "../../App.css";
 import { MAX_COUNT, MIN_COUNT, STEP_OPTIONS } from "./counter-model.js";
 import { ParticleBurst } from "./ParticleBurst.jsx";
@@ -21,10 +21,10 @@ export function CounterExperience() {
     setStep,
     handleKeyboardAction,
   } = useCounter();
-  const sessionStartRef = useRef(state.value);
+  const [sessionStart] = useState(() => state.value);
   const { surfaceRef, handlePointerMove, handlePointerLeave } = usePointerSurface();
 
-  const sessionDelta = state.value - sessionStartRef.current;
+  const sessionDelta = state.value - sessionStart;
 
   return (
     <main className="experience-shell">
