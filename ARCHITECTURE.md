@@ -42,12 +42,13 @@ Acts as the application adapter:
 - starts pointer-driven transitions with `document.startViewTransition({ update, types })`
 - commits the reducer synchronously inside the native snapshot callback with React DOM `flushSync`
 - skips an in-flight visual transition before starting a newer one, keeping rapid interaction responsive
+- uses a short commit watchdog: if an engine starts a transition but does not invoke its update callback promptly, the visual transition is skipped and the reducer commits exactly once
 - keeps keyboard updates immediate, so input semantics never depend on animation
 - bypasses visual transitions when `prefers-reduced-motion` is enabled
 - synchronizes the tiny local snapshot in a layout effect so the visible value is persistence-safe before paint
 - keeps motion orchestration out of the domain model
 
-A failed, skipped, or unsupported visual transition never changes the domain path: reducer state remains authoritative.
+A failed, skipped, stalled, or unsupported visual transition never changes the domain path: `commitOnce` guarantees one reducer commit and reducer state remains authoritative.
 
 ### `usePointerSurface.js`
 
