@@ -38,13 +38,17 @@ Acts as the application adapter:
 - connects the pure reducer to React
 - persists stable state
 - scopes arrow-key shortcuts to the focused counter region
-- uses React 19.3 transitions to annotate pointer-driven increment/decrement/reset/step updates when the native integration is verified reliable
+- capability-detects the native typed View Transition API instead of branching on browser identity
+- starts pointer-driven transitions with `document.startViewTransition({ update, types })`
+- commits the reducer synchronously inside the native snapshot callback with React DOM `flushSync`
+- skips an in-flight visual transition before starting a newer one, keeping rapid interaction responsive
+- uses a short commit watchdog: if an engine starts a transition but does not invoke its update callback promptly, the visual transition is skipped and the reducer commits exactly once
 - keeps keyboard updates immediate, so input semantics never depend on animation
-- falls back to immediate reducer dispatch when View Transitions are unavailable, reduced motion is requested, or the current WebKit interop path is detected
+- bypasses visual transitions when `prefers-reduced-motion` is enabled
 - synchronizes the tiny local snapshot in a layout effect so the visible value is persistence-safe before paint
 - keeps motion orchestration out of the domain model
 
-`addTransitionType` gives the presentation layer the cause of a state transition without teaching the reducer about React View Transitions.
+A failed, skipped, stalled, or unsupported visual transition never changes the domain path: `commitOnce` guarantees one reducer commit and reducer state remains authoritative.
 
 ### `usePointerSurface.js`
 
@@ -62,7 +66,7 @@ This is an imperative rendering adapter around a declarative React UI.
 
 Owns composition and accessible interaction semantics.
 
-The component maps state to presentation but does not implement counter rules or persistence. React `<ViewTransition>` boundaries are intentionally narrow: the numeric value and step readout animate without snapshotting the entire interface.
+The component maps state to presentation but does not implement counter rules or persistence. The numeric value and step readout opt into narrowly scoped native snapshots through CSS `view-transition-name`, so the browser never needs to snapshot the entire interface.
 
 ### `ParticleBurst.jsx`
 
@@ -72,7 +76,7 @@ Owns one bounded visual effect. Particle positions are deterministic; there is n
 
 The visual layer favors native platform primitives:
 
-- React 19.3 View Transitions for directional numeric state changes
+- native typed View Transitions for directional numeric state changes
 - CSS `@property` for typed, animatable custom properties
 - OKLCH tokens for perceptually consistent spectral color
 - container queries for component-level responsiveness
@@ -82,7 +86,7 @@ The visual layer favors native platform primitives:
 - GPU-friendly transforms instead of layout animation
 - `prefers-reduced-motion` and `prefers-contrast` fallbacks
 
-Modern features are progressive enhancement. View Transitions are capability-gated at the application adapter boundary; reduced-motion and keyboard interactions bypass them entirely. WebKit 26.6 currently exposes the API but does not complete the React 19.3 transition reliably in this interaction, so that engine uses the same UI with immediate commits behind one isolated compatibility guard. Counter behavior, persistence and accessible controls never depend on the decorative layer.
+Modern features are progressive enhancement. Typed View Transitions are capability-gated at the application adapter boundary with feature detection, not user-agent sniffing. Reduced-motion and keyboard interactions bypass animation entirely. Counter behavior, persistence and accessible controls never depend on the decorative layer.
 
 ## State model
 
@@ -100,18 +104,23 @@ idle
 ## Transition flow
 
 ```text
-pointer action ── verified native VT ─→ startTransition + addTransitionType
-      │                                      ↓
-      │                                  pure reducer
-      │                                      ↓
-      │                              React ViewTransition
-      │                                      ↓
-      │                              CSS transition class
+pointer action
+      ↓
+capability + reduced-motion gate
+      ├─ fallback → reducer
       │
-      └─ fallback / keyboard / reduced motion ─→ pure reducer
+      └─ document.startViewTransition({ types })
+                    ↓
+                 flushSync
+                    ↓
+                 reducer
+                    ↓
+          named CSS snapshots
+                    ↓
+      :active-view-transition-type(...)
 ```
 
-Directional motion is therefore derived from the user action rather than inferred from DOM measurements.
+Directional motion comes from the action type, while state correctness remains independent from animation.
 
 ## Trade-offs
 
@@ -121,7 +130,7 @@ The original repository is a JavaScript/Vite project. The domain is tiny, the bo
 
 ### Why no animation library?
 
-React 19.3 and modern CSS now cover the exact interaction requirements. A general animation runtime would add bundle weight and an additional abstraction layer without product value.
+The native View Transition API and modern CSS cover the exact interaction requirements. A general animation runtime would add bundle weight and an additional abstraction layer without product value.
 
 ### Why not WebGL or Three.js?
 

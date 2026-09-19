@@ -1,4 +1,4 @@
-import { ViewTransition, useState } from "react";
+import { useState } from "react";
 import "../../App.css";
 import { MAX_COUNT, MIN_COUNT, STEP_OPTIONS } from "./counter-model.js";
 import { ParticleBurst } from "./ParticleBurst.jsx";
@@ -103,24 +103,14 @@ export function CounterExperience() {
                 <div className="core-sheen" aria-hidden="true" />
                 <span className="counter-label">Current value</span>
 
-                <ViewTransition
-                  default="none"
-                  update={{
-                    increment: "count-up",
-                    decrement: "count-down",
-                    reset: "count-reset",
-                    default: "count-change",
-                  }}
+                <output
+                  className="counter-value"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  aria-label={`Current count ${state.value}`}
                 >
-                  <output
-                    className="counter-value"
-                    aria-live="polite"
-                    aria-atomic="true"
-                    aria-label={`Current count ${state.value}`}
-                  >
-                    {numberFormatter.format(state.value)}
-                  </output>
-                </ViewTransition>
+                  {numberFormatter.format(state.value)}
+                </output>
 
                 <span
                   className="delta-chip"
@@ -184,14 +174,9 @@ export function CounterExperience() {
                   <h2>Choose your pace</h2>
                 </div>
 
-                <ViewTransition
-                  default="none"
-                  update={{ step: "step-shift", default: "none" }}
-                >
-                  <span className="step-readout" aria-hidden="true">
-                    ×{state.step}
-                  </span>
-                </ViewTransition>
+                <span className="step-readout" aria-hidden="true">
+                  ×{state.step}
+                </span>
               </div>
 
               <div
@@ -249,7 +234,7 @@ export function CounterExperience() {
         </div>
 
         <footer className="surface-footer">
-          <span><i aria-hidden="true" /> React View Transitions</span>
+          <span><i aria-hidden="true" /> Native typed View Transitions</span>
           <span><i aria-hidden="true" /> OKLCH spectral color</span>
           <span><i aria-hidden="true" /> Reduced-motion aware</span>
         </footer>

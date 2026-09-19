@@ -1,11 +1,9 @@
-import {
-  addTransitionType,
-  startTransition,
-  useLayoutEffect,
-  useReducer,
-} from "react";
+import { useLayoutEffect, useReducer } from "react";
+import { flushSync } from "react-dom";
 import { counterReducer } from "./counter-model.js";
 import { readCounterState, writeCounterState } from "./counter-storage.js";
+
+const TRANSITION_COMMIT_WATCHDOG_MS = 120;
 
 const KEYBOARD_ACTIONS = Object.freeze({
   ArrowUp: { action: { type: "increment" }, transition: "increment" },
@@ -22,20 +20,17 @@ const resolveStorage = () => {
   }
 };
 
-const isWebKitEngine = () => {
-  const userAgent = navigator.userAgent;
-  return /AppleWebKit/i.test(userAgent) && !/(Chrome|Chromium|CriOS|Edg|OPR)/i.test(userAgent);
-};
+const supportsTypedViewTransitions = () => {
+  try {
+    if (typeof document === "undefined") return false;
+    if (typeof document.startViewTransition !== "function") return false;
+    if (typeof CSS === "undefined" || typeof CSS.supports !== "function") return false;
+    if (!CSS.supports("selector(:active-view-transition-type(increment))")) return false;
 
-const canUseViewTransitions = () => {
-  if (typeof document === "undefined") return false;
-  if (typeof document.startViewTransition !== "function") return false;
-  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
-
-  // WebKit 26.6 exposes the API but currently fails this React 19.3
-  // transition path in our browser matrix. Keep the effect progressive:
-  // behavior remains identical, only the native transition is skipped.
-  return !isWebKitEngine();
+    return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
 };
 
 export function useCounter() {
@@ -50,16 +45,62 @@ export function useCounter() {
     writeCounterState(resolveStorage(), { value, step });
   }, [value, step]);
 
+  const commitAction = (action) => {
+    flushSync(() => {
+      dispatch(action);
+    });
+  };
+
   const runAction = (action, transitionType, { animate = true } = {}) => {
-    if (!animate || !canUseViewTransitions()) {
+    if (!animate || !supportsTypedViewTransitions()) {
       dispatch(action);
       return;
     }
 
-    startTransition(() => {
-      addTransitionType(transitionType);
-      dispatch(action);
-    });
+    let committed = false;
+    let watchdogId = null;
+
+    const commitOnce = () => {
+      if (committed) return;
+      committed = true;
+      commitAction(action);
+    };
+
+    try {
+      document.activeViewTransition?.skipTransition();
+
+      const transition = document.startViewTransition({
+        update: commitOnce,
+        types: [transitionType],
+      });
+
+      watchdogId = window.setTimeout(() => {
+        if (committed) return;
+
+        transition.skipTransition();
+        commitOnce();
+      }, TRANSITION_COMMIT_WATCHDOG_MS);
+
+      transition.updateCallbackDone
+        .catch(() => {
+          commitOnce();
+        })
+        .finally(() => {
+          if (watchdogId !== null) {
+            window.clearTimeout(watchdogId);
+          }
+        });
+
+      transition.finished.catch(() => {
+        // A skipped or interrupted visual transition is non-fatal.
+        // The reducer commit remains the source of truth.
+      });
+    } catch {
+      if (watchdogId !== null) {
+        window.clearTimeout(watchdogId);
+      }
+      commitOnce();
+    }
   };
 
   const handleKeyboardAction = (event) => {
@@ -70,6 +111,8 @@ export function useCounter() {
     if (!command) return;
 
     event.preventDefault();
+
+    // Keyboard commands prioritize immediate response and predictable focus.
     runAction(command.action, command.transition, { animate: false });
   };
 
