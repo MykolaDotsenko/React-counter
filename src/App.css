@@ -626,6 +626,7 @@
   text-shadow:
     0 0 25px rgba(111, 247, 255, 0.13),
     0 0 78px rgba(163, 134, 255, 0.14);
+  view-transition-name: pulse-count;
 }
 
 .delta-chip {
@@ -880,6 +881,7 @@ kbd {
   font-size: 0.77rem;
   font-weight: 780;
   box-shadow: 0 8px 24px rgba(95, 221, 255, 0.05);
+  view-transition-name: pulse-step;
 }
 
 .step-selector {
@@ -1059,61 +1061,48 @@ kbd {
   box-shadow: 0 0 8px rgba(111, 247, 255, 0.35);
 }
 
-::view-transition-old(.count-up),
-::view-transition-old(.count-down),
-::view-transition-old(.count-reset),
-::view-transition-old(.count-change),
-::view-transition-new(.count-up),
-::view-transition-new(.count-down),
-::view-transition-new(.count-reset),
-::view-transition-new(.count-change) {
-  mix-blend-mode: normal;
+::view-transition-group(pulse-count),
+::view-transition-group(pulse-step) {
   animation-duration: 360ms;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-::view-transition-old(.count-up) {
-  animation-name: vt-count-out-up;
+::view-transition-old(pulse-count),
+::view-transition-new(pulse-count),
+::view-transition-old(pulse-step),
+::view-transition-new(pulse-step) {
+  mix-blend-mode: normal;
 }
 
-::view-transition-new(.count-up) {
-  animation-name: vt-count-in-up;
+:root:active-view-transition-type(increment)::view-transition-old(pulse-count) {
+  animation: vt-count-out-up 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-::view-transition-old(.count-down) {
-  animation-name: vt-count-out-down;
+:root:active-view-transition-type(increment)::view-transition-new(pulse-count) {
+  animation: vt-count-in-up 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-::view-transition-new(.count-down) {
-  animation-name: vt-count-in-down;
+:root:active-view-transition-type(decrement)::view-transition-old(pulse-count) {
+  animation: vt-count-out-down 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-::view-transition-old(.count-reset) {
-  animation-name: vt-count-reset-out;
+:root:active-view-transition-type(decrement)::view-transition-new(pulse-count) {
+  animation: vt-count-in-down 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-::view-transition-new(.count-reset) {
-  animation-name: vt-count-reset-in;
+:root:active-view-transition-type(reset)::view-transition-old(pulse-count) {
+  animation: vt-count-reset-out 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-::view-transition-old(.count-change) {
-  animation-name: vt-count-fade-out;
+:root:active-view-transition-type(reset)::view-transition-new(pulse-count) {
+  animation: vt-count-reset-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-::view-transition-new(.count-change) {
-  animation-name: vt-count-fade-in;
-}
-
-::view-transition-group(.step-shift) {
-  animation-duration: 300ms;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-::view-transition-old(.step-shift) {
+:root:active-view-transition-type(step)::view-transition-old(pulse-step) {
   animation: vt-step-out 180ms ease both;
 }
 
-::view-transition-new(.step-shift) {
+:root:active-view-transition-type(step)::view-transition-new(pulse-step) {
   animation: vt-step-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -1381,17 +1370,12 @@ kbd {
     transform: none !important;
   }
 
-  ::view-transition-old(.count-up),
-  ::view-transition-new(.count-up),
-  ::view-transition-old(.count-down),
-  ::view-transition-new(.count-down),
-  ::view-transition-old(.count-reset),
-  ::view-transition-new(.count-reset),
-  ::view-transition-old(.count-change),
-  ::view-transition-new(.count-change),
-  ::view-transition-old(.step-shift),
-  ::view-transition-new(.step-shift),
-  ::view-transition-group(.step-shift) {
+  ::view-transition-group(pulse-count),
+  ::view-transition-group(pulse-step),
+  ::view-transition-old(pulse-count),
+  ::view-transition-new(pulse-count),
+  ::view-transition-old(pulse-step),
+  ::view-transition-new(pulse-step) {
     animation-duration: 0.001ms !important;
   }
 }
