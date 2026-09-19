@@ -14,11 +14,21 @@ const KEYBOARD_ACTIONS = Object.freeze({
   ArrowLeft: { action: { type: "decrement" }, transition: "decrement" },
 });
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
 const resolveStorage = () => {
   try {
     return window.localStorage;
   } catch {
     return null;
+  }
+};
+
+const prefersReducedMotion = () => {
+  try {
+    return window.matchMedia?.(REDUCED_MOTION_QUERY).matches ?? false;
+  } catch {
+    return false;
   }
 };
 
@@ -34,7 +44,12 @@ export function useCounter() {
     writeCounterState(resolveStorage(), { value, step });
   }, [value, step]);
 
-  const runAction = (action, transitionType) => {
+  const runAction = (action, transitionType, { animate = true } = {}) => {
+    if (!animate || prefersReducedMotion()) {
+      dispatch(action);
+      return;
+    }
+
     startTransition(() => {
       addTransitionType(transitionType);
       dispatch(action);
@@ -49,7 +64,7 @@ export function useCounter() {
     if (!command) return;
 
     event.preventDefault();
-    runAction(command.action, command.transition);
+    runAction(command.action, command.transition, { animate: false });
   };
 
   return {
