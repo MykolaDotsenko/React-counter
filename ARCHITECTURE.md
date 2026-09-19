@@ -4,7 +4,7 @@
 
 Pulse Counter treats a tiny UI as an exercise in proportional software design.
 
-The main constraint is deliberate: preserve the simplicity of a counter while making behavior testable, persistence resilient, and presentation replaceable.
+The constraint is deliberate: preserve the simplicity of a counter while making behavior testable, persistence resilient, rendering replaceable, and visual polish substantial enough to demonstrate interaction engineering.
 
 ## Boundaries
 
@@ -18,7 +18,7 @@ Owns the domain rules:
 - clamping
 - transition metadata used by presentation feedback
 
-It is a pure module with no React or browser dependencies, which makes it cheap to test and reuse.
+It is a pure module with no React or browser dependencies.
 
 ### `counter-storage.js`
 
@@ -37,29 +37,49 @@ Acts as the application adapter:
 
 - connects the pure reducer to React
 - persists stable state
-- maps arrow-key shortcuts to domain actions only while the dedicated counter region itself has focus
-- preserves native browser shortcuts and avoids single-character global shortcuts
+- scopes arrow-key shortcuts to the focused counter region
+- uses React 19.3 transitions to annotate increment/decrement/reset/step updates
+- keeps motion orchestration out of the domain model
+
+`addTransitionType` gives the presentation layer the cause of a state transition without teaching the reducer about React View Transitions.
+
+### `usePointerSurface.js`
+
+Owns high-frequency pointer rendering:
+
+- keeps pointer coordinates out of React state
+- coalesces updates through `requestAnimationFrame`
+- writes only CSS custom properties
+- cancels pending animation frames during cleanup
+- resets surface transforms on pointer leave
+
+This is an imperative rendering adapter around a declarative React UI.
 
 ### `CounterExperience.jsx`
 
-Owns composition and accessible interaction semantics. It does not implement counter rules directly.
+Owns composition and accessible interaction semantics.
+
+The component maps state to presentation but does not implement counter rules or persistence. React `<ViewTransition>` boundaries are intentionally narrow: the numeric value and step readout animate without snapshotting the entire interface.
 
 ### `ParticleBurst.jsx`
 
-Owns one bounded visual effect. Particle positions are deterministic; there is no random render output and no continuous animation loop.
+Owns one bounded visual effect. Particle positions are deterministic; there is no random render output and no permanent JavaScript animation loop.
 
 ## Visual engineering
 
-The visual layer favors CSS over JavaScript:
+The visual layer favors native platform primitives:
 
-- pointer coordinates are written to CSS custom properties instead of React state, avoiding render churn
-- pointer updates are coalesced with `requestAnimationFrame` to cap layout work to the display frame rate
-- CSS `@property` animates the orbit gradient
-- particles are finite DOM nodes that disappear after one CSS animation
-- `prefers-reduced-motion` collapses motion globally
-- touch devices disable the pointer-tilt transform
+- React 19.3 View Transitions for directional numeric state changes
+- CSS `@property` for typed, animatable custom properties
+- OKLCH tokens for perceptually consistent spectral color
+- container queries for component-level responsiveness
+- CSS masks and conic/radial gradients for the orbital visual system
+- `backdrop-filter` for the glass surface
+- CSS custom properties for pointer-reactive lighting
+- GPU-friendly transforms instead of layout animation
+- `prefers-reduced-motion` and `prefers-contrast` fallbacks
 
-This keeps the effect budget predictable and avoids an animation dependency for a component that does not need one.
+Modern features are progressive enhancement. Counter behavior and accessible controls do not depend on the decorative layer.
 
 ## State model
 
@@ -72,17 +92,39 @@ idle
   └─ invalid boundary transition → blocked
 ```
 
-`revision` is presentation metadata used to restart bounded feedback effects. The count remains the single source of truth.
+`revision` is presentation metadata used to restart bounded particle feedback. The count remains the single source of truth.
+
+## Transition flow
+
+```text
+pointer / keyboard
+      ↓
+useCounter.runAction
+      ↓
+startTransition + addTransitionType
+      ↓
+pure reducer
+      ↓
+React ViewTransition boundary
+      ↓
+CSS view-transition class
+```
+
+Directional motion is therefore derived from the user action rather than inferred from DOM measurements.
 
 ## Trade-offs
 
 ### Why no TypeScript migration?
 
-The original repository is a JavaScript/Vite project. The domain is deliberately tiny, and adding a TypeScript migration only to make the stack look larger would create churn without meaningful risk reduction. The pure model and automated tests provide the higher-value safety here.
+The original repository is a JavaScript/Vite project. The domain is tiny, the boundaries are narrow, and runtime behavior is heavily covered. A TypeScript migration would add churn without enough additional risk reduction for this codebase.
 
 ### Why no animation library?
 
-The interface needs a few deterministic micro-interactions, not a general animation runtime. Native CSS is smaller, easier to audit, and sufficient.
+React 19.3 and modern CSS now cover the exact interaction requirements. A general animation runtime would add bundle weight and an additional abstraction layer without product value.
+
+### Why not WebGL or Three.js?
+
+The interface needs depth and spectacle, but not a 3D scene graph. CSS gradients, masks, filters and transforms can deliver the visual language while keeping startup cost, bundle size and maintenance low.
 
 ### Why local storage instead of a backend?
 

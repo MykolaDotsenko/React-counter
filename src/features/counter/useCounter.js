@@ -1,12 +1,17 @@
-import { useEffect, useReducer } from "react";
+import {
+  addTransitionType,
+  startTransition,
+  useEffect,
+  useReducer,
+} from "react";
 import { counterReducer } from "./counter-model.js";
 import { readCounterState, writeCounterState } from "./counter-storage.js";
 
 const KEYBOARD_ACTIONS = Object.freeze({
-  ArrowUp: { type: "increment" },
-  ArrowRight: { type: "increment" },
-  ArrowDown: { type: "decrement" },
-  ArrowLeft: { type: "decrement" },
+  ArrowUp: { action: { type: "increment" }, transition: "increment" },
+  ArrowRight: { action: { type: "increment" }, transition: "increment" },
+  ArrowDown: { action: { type: "decrement" }, transition: "decrement" },
+  ArrowLeft: { action: { type: "decrement" }, transition: "decrement" },
 });
 
 const resolveStorage = () => {
@@ -29,23 +34,31 @@ export function useCounter() {
     writeCounterState(resolveStorage(), { value, step });
   }, [value, step]);
 
+  const runAction = (action, transitionType) => {
+    startTransition(() => {
+      addTransitionType(transitionType);
+      dispatch(action);
+    });
+  };
+
   const handleKeyboardAction = (event) => {
     if (event.currentTarget !== event.target) return;
     if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
 
-    const action = KEYBOARD_ACTIONS[event.key];
-    if (!action) return;
+    const command = KEYBOARD_ACTIONS[event.key];
+    if (!command) return;
 
     event.preventDefault();
-    dispatch(action);
+    runAction(command.action, command.transition);
   };
 
   return {
     state,
-    increment: () => dispatch({ type: "increment" }),
-    decrement: () => dispatch({ type: "decrement" }),
-    reset: () => dispatch({ type: "reset" }),
-    setStep: (stepOption) => dispatch({ type: "set-step", step: stepOption }),
+    increment: () => runAction({ type: "increment" }, "increment"),
+    decrement: () => runAction({ type: "decrement" }, "decrement"),
+    reset: () => runAction({ type: "reset" }, "reset"),
+    setStep: (stepOption) =>
+      runAction({ type: "set-step", step: stepOption }, "step"),
     handleKeyboardAction,
   };
 }
