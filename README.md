@@ -16,23 +16,27 @@ The product is intentionally simple. The engineering work is not about inventing
 
 ## Visual system
 
-Pulse Counter uses native browser capabilities instead of a runtime animation library:
+Pulse Counter is deliberately built with modern browser and React platform capabilities instead of a runtime animation library:
 
-- animated conic-gradient orbit with CSS `@property`
-- aurora-style background lighting
-- pointer-reactive glass surface using CSS custom properties
-- deterministic particle bursts with CSS transforms
-- responsive glassmorphism with `backdrop-filter`
-- tabular numeric typography and animated value transitions
-- contrast and reduced-motion media queries
+- native same-document View Transition API with typed transitions (`document.startViewTransition({ types })`) for directional value changes
+- animated spectral orbit using typed CSS custom properties with `@property`
+- OKLCH color tokens and `color-mix()` progressive enhancement
+- pointer-reactive 3D glass surface without React render churn
+- `requestAnimationFrame` coalescing for pointer lighting
+- component-level container queries for layout adaptation
+- sliding segmented step control driven by a CSS custom property
+- layered aurora, spectral field, holographic rings and deterministic particle bursts
+- `backdrop-filter`, masks, conic gradients and GPU-friendly transforms
+- high-contrast and reduced-motion adaptations
 
-The effects are deliberately bounded: there is no permanent JavaScript animation loop and no third-party UI dependency.
+The effects are bounded: there is no continuous JavaScript animation loop and no third-party UI or animation runtime. Typed View Transitions are progressive enhancement: capability detection and `prefers-reduced-motion` decide whether the visual transition runs; keyboard commands stay immediate, and a short behavior watchdog guarantees the reducer commit even if an engine advertises the API but stalls its transition callback.
 
 ## Stack
 
 - React 19.3
 - Vite 8
 - modern CSS
+- Native View Transition API
 - native ES modules
 - Web Storage API
 - Pointer Events
@@ -54,21 +58,28 @@ src/
         ├── ParticleBurst.jsx       # bounded visual feedback
         ├── counter-model.js        # pure domain state machine
         ├── counter-storage.js      # persistence + legacy migration
-        └── useCounter.js           # React/browser adapter
+        ├── useCounter.js           # React/application adapter
+        └── usePointerSurface.js    # pointer/rendering adapter
 
 tests/
+├── CounterExperience.test.jsx
 ├── counter-model.test.js
 └── counter-storage.test.js
+
+e2e/
+├── accessibility.spec.js
+└── counter.spec.js
 ```
 
 The dependency direction is intentional:
 
 ```text
 UI → React adapter → pure model
-              ↘ persistence adapter
+ │            ↘ persistence adapter
+ └→ pointer/rendering adapter
 ```
 
-The model does not know about React, DOM APIs, CSS, or local storage.
+The model does not know about React, DOM APIs, CSS, local storage, or motion.
 
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for trade-offs and design rationale.
 
@@ -77,6 +88,7 @@ See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for trade-offs and design rationale.
 ```bash
 npm ci
 npm run check
+npm run test:e2e
 ```
 
 `npm run check` runs:
@@ -85,20 +97,19 @@ npm run check
 2. Vitest unit and component tests
 3. Vite production build
 
-GitHub Actions then runs Playwright separately in Chromium, Firefox, and WebKit. Chromium also runs an axe WCAG A/AA scan.
+GitHub Actions then runs Playwright separately in Chromium, Firefox, and WebKit. Chromium also runs an axe WCAG A/AA scan. Browser scenarios cover persistence, keyboard scoping, boundaries, compact mobile layout and reduced motion.
 
 ## Interaction map
 
 | Action | Pointer | Keyboard |
 | --- | --- | --- |
-| Increase | Increase button | `↑` / `→` |
-| Decrease | Decrease button | `↓` / `←` |
+| Increase | Increase button | `↑` / `→` while counter region is focused |
+| Decrease | Decrease button | `↓` / `←` while counter region is focused |
 | Reset | Reset button | native button keyboard activation |
 | Step size | Step selector | focus + Enter/Space |
-| Scoped counter | focus counter region | `↑` / `→` / `↓` / `←` |
 
 ## Why this project exists
 
-A counter is too small to justify routing, a global state library, a design-system package, a server, or an animation framework. Adding those would make the repository look more complicated without making it better.
+A counter is too small to justify routing, a global state library, a design-system package, a server, WebGL, or a general animation framework. Adding those only to look sophisticated would make the repository more expensive without making the product better.
 
-The goal is the opposite: **senior-level proportionality**. Use architecture where it protects behavior, native platform features where they are sufficient, and visual polish where it materially improves the interaction.
+The goal is **senior-level proportionality**: use architecture where it protects behavior, use the newest stable platform capability where it removes custom machinery, and spend complexity only where it creates visible interaction value.
