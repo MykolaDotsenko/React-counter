@@ -41,8 +41,8 @@ export function useCounter() {
     writeCounterState(resolveStorage(), { value, step });
   }, [value, step]);
 
-  const runAction = (action, transitionType) => {
-    if (!canUseViewTransitions()) {
+  const runAction = (action, transitionType, { animate = true } = {}) => {
+    if (!animate || !canUseViewTransitions()) {
       dispatch(action);
       return;
     }
@@ -61,7 +61,7 @@ export function useCounter() {
     if (!command) return;
 
     event.preventDefault();
-    runAction(command.action, command.transition);
+    runAction(command.action, command.transition, { animate: false });
   };
 
   return {
