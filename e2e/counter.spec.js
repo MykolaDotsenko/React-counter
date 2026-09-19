@@ -4,18 +4,20 @@ test("completes the primary interaction flow", async ({ page }) => {
   await page.goto("/");
 
   const value = page.getByLabel(/Current count/);
+  const tenStep = page.getByRole("button", { name: "10", exact: true });
+
   await expect(value).toHaveAttribute("aria-label", "Current count 0");
 
   await page.getByRole("button", { name: "Increase by 1" }).click();
   await expect(page.getByLabel("Current count 1")).toBeVisible();
 
-  await page.getByRole("button", { name: "10" }).click();
+  await tenStep.click();
   await page.getByRole("button", { name: "Increase by 10" }).click();
   await expect(page.getByLabel("Current count 11")).toBeVisible();
 
   await page.reload();
   await expect(page.getByLabel("Current count 11")).toBeVisible();
-  await expect(page.getByRole("button", { name: "10" })).toHaveAttribute("aria-pressed", "true");
+  await expect(tenStep).toHaveAttribute("aria-pressed", "true");
 
   await page.getByRole("button", { name: "Reset to zero" }).click();
   await expect(page.getByLabel("Current count 0")).toBeVisible();
