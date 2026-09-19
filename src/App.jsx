@@ -1,11 +1,5 @@
-import "./App.css";
-import React from "react";
-import { CounterApp } from "./assets/components/CounterApp";
+import { CounterExperience } from "./features/counter/CounterExperience.jsx";
 
-export const App = () => {
-  return (
-    <div>
-      <CounterApp />
-    </div>
-  );
-};
+export function App() {
+  return <CounterExperience />;
+}
