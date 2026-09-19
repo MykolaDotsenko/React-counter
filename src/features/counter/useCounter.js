@@ -14,8 +14,6 @@ const KEYBOARD_ACTIONS = Object.freeze({
   ArrowLeft: { action: { type: "decrement" }, transition: "decrement" },
 });
 
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
 const resolveStorage = () => {
   try {
     return window.localStorage;
@@ -24,12 +22,11 @@ const resolveStorage = () => {
   }
 };
 
-const prefersReducedMotion = () => {
-  try {
-    return window.matchMedia?.(REDUCED_MOTION_QUERY).matches ?? false;
-  } catch {
-    return false;
-  }
+const canUseViewTransitions = () => {
+  if (typeof document === "undefined") return false;
+  if (typeof document.startViewTransition !== "function") return false;
+
+  return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 };
 
 export function useCounter() {
@@ -44,8 +41,8 @@ export function useCounter() {
     writeCounterState(resolveStorage(), { value, step });
   }, [value, step]);
 
-  const runAction = (action, transitionType, { animate = true } = {}) => {
-    if (!animate || prefersReducedMotion()) {
+  const runAction = (action, transitionType) => {
+    if (!canUseViewTransitions()) {
       dispatch(action);
       return;
     }
@@ -64,7 +61,7 @@ export function useCounter() {
     if (!command) return;
 
     event.preventDefault();
-    runAction(command.action, command.transition, { animate: false });
+    runAction(command.action, command.transition);
   };
 
   return {
