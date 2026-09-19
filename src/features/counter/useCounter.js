@@ -3,6 +3,8 @@ import { flushSync } from "react-dom";
 import { counterReducer } from "./counter-model.js";
 import { readCounterState, writeCounterState } from "./counter-storage.js";
 
+const TRANSITION_COMMIT_WATCHDOG_MS = 120;
+
 const KEYBOARD_ACTIONS = Object.freeze({
   ArrowUp: { action: { type: "increment" }, transition: "increment" },
   ArrowRight: { action: { type: "increment" }, transition: "increment" },
@@ -56,8 +58,10 @@ export function useCounter() {
     }
 
     let committed = false;
+    let watchdogId = null;
 
-    const update = () => {
+    const commitOnce = () => {
+      if (committed) return;
       committed = true;
       commitAction(action);
     };
@@ -66,18 +70,36 @@ export function useCounter() {
       document.activeViewTransition?.skipTransition();
 
       const transition = document.startViewTransition({
-        update,
+        update: commitOnce,
         types: [transitionType],
       });
+
+      watchdogId = window.setTimeout(() => {
+        if (committed) return;
+
+        transition.skipTransition();
+        commitOnce();
+      }, TRANSITION_COMMIT_WATCHDOG_MS);
+
+      transition.updateCallbackDone
+        .catch(() => {
+          commitOnce();
+        })
+        .finally(() => {
+          if (watchdogId !== null) {
+            window.clearTimeout(watchdogId);
+          }
+        });
 
       transition.finished.catch(() => {
         // A skipped or interrupted visual transition is non-fatal.
         // The reducer commit remains the source of truth.
       });
     } catch {
-      if (!committed) {
-        dispatch(action);
+      if (watchdogId !== null) {
+        window.clearTimeout(watchdogId);
       }
+      commitOnce();
     }
   };
 
