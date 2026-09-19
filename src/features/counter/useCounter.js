@@ -1,9 +1,5 @@
-import {
-  addTransitionType,
-  startTransition,
-  useLayoutEffect,
-  useReducer,
-} from "react";
+import { useLayoutEffect, useReducer } from "react";
+import { flushSync } from "react-dom";
 import { counterReducer } from "./counter-model.js";
 import { readCounterState, writeCounterState } from "./counter-storage.js";
 
@@ -22,11 +18,17 @@ const resolveStorage = () => {
   }
 };
 
-const canUseViewTransitions = () => {
-  if (typeof document === "undefined") return false;
-  if (typeof document.startViewTransition !== "function") return false;
+const supportsTypedViewTransitions = () => {
+  try {
+    if (typeof document === "undefined") return false;
+    if (typeof document.startViewTransition !== "function") return false;
+    if (typeof CSS === "undefined" || typeof CSS.supports !== "function") return false;
+    if (!CSS.supports("selector(:active-view-transition-type(increment))")) return false;
 
-  return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
 };
 
 export function useCounter() {
@@ -41,16 +43,42 @@ export function useCounter() {
     writeCounterState(resolveStorage(), { value, step });
   }, [value, step]);
 
+  const commitAction = (action) => {
+    flushSync(() => {
+      dispatch(action);
+    });
+  };
+
   const runAction = (action, transitionType, { animate = true } = {}) => {
-    if (!animate || !canUseViewTransitions()) {
+    if (!animate || !supportsTypedViewTransitions()) {
       dispatch(action);
       return;
     }
 
-    startTransition(() => {
-      addTransitionType(transitionType);
-      dispatch(action);
-    });
+    let committed = false;
+
+    const update = () => {
+      committed = true;
+      commitAction(action);
+    };
+
+    try {
+      document.activeViewTransition?.skipTransition();
+
+      const transition = document.startViewTransition({
+        update,
+        types: [transitionType],
+      });
+
+      transition.finished.catch(() => {
+        // A skipped or interrupted visual transition is non-fatal.
+        // The reducer commit remains the source of truth.
+      });
+    } catch {
+      if (!committed) {
+        dispatch(action);
+      }
+    }
   };
 
   const handleKeyboardAction = (event) => {
@@ -61,6 +89,8 @@ export function useCounter() {
     if (!command) return;
 
     event.preventDefault();
+
+    // Keyboard commands prioritize immediate response and predictable focus.
     runAction(command.action, command.transition, { animate: false });
   };
 

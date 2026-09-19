@@ -18,7 +18,7 @@ The product is intentionally simple. The engineering work is not about inventing
 
 Pulse Counter is deliberately built with modern browser and React platform capabilities instead of a runtime animation library:
 
-- React 19.3 `<ViewTransition>` + `addTransitionType` for directional value changes
+- native same-document View Transition API with typed transitions (`document.startViewTransition({ types })`) for directional value changes
 - animated spectral orbit using typed CSS custom properties with `@property`
 - OKLCH color tokens and `color-mix()` progressive enhancement
 - pointer-reactive 3D glass surface without React render churn
@@ -29,14 +29,14 @@ Pulse Counter is deliberately built with modern browser and React platform capab
 - `backdrop-filter`, masks, conic gradients and GPU-friendly transforms
 - high-contrast and reduced-motion adaptations
 
-The effects are bounded: there is no continuous JavaScript animation loop and no third-party UI or animation runtime.
+The effects are bounded: there is no continuous JavaScript animation loop and no third-party UI or animation runtime. Typed View Transitions are progressive enhancement: capability detection and `prefers-reduced-motion` decide whether the visual transition runs; keyboard commands stay immediate, and unsupported paths fall back to the same reducer action without changing behavior.
 
 ## Stack
 
 - React 19.3
 - Vite 8
 - modern CSS
-- React View Transitions
+- Native View Transition API
 - native ES modules
 - Web Storage API
 - Pointer Events
