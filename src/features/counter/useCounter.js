@@ -21,10 +21,11 @@ export const useCounter = () => {
     undefined,
     () => readCounterState(resolveStorage()),
   );
+  const { value, step } = state;
 
   useEffect(() => {
-    writeCounterState(resolveStorage(), state);
-  }, [state.value, state.step]);
+    writeCounterState(resolveStorage(), { value, step });
+  }, [value, step]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
