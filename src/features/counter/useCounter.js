@@ -2,6 +2,13 @@ import { useEffect, useReducer } from "react";
 import { counterReducer } from "./counter-model.js";
 import { readCounterState, writeCounterState } from "./counter-storage.js";
 
+const KEYBOARD_ACTIONS = Object.freeze({
+  ArrowUp: { type: "increment" },
+  ArrowRight: { type: "increment" },
+  ArrowDown: { type: "decrement" },
+  ArrowLeft: { type: "decrement" },
+});
+
 const resolveStorage = () => {
   try {
     return window.localStorage;
@@ -10,12 +17,7 @@ const resolveStorage = () => {
   }
 };
 
-const isEditableTarget = (target) => {
-  if (!(target instanceof HTMLElement)) return false;
-  return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
-};
-
-export const useCounter = () => {
+export function useCounter() {
   const [state, dispatch] = useReducer(
     counterReducer,
     undefined,
@@ -27,37 +29,23 @@ export const useCounter = () => {
     writeCounterState(resolveStorage(), { value, step });
   }, [value, step]);
 
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
-      if (isEditableTarget(event.target)) return;
+  const handleKeyboardAction = (event) => {
+    if (event.currentTarget !== event.target) return;
+    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
 
-      const actionByKey = {
-        ArrowUp: { type: "increment" },
-        ArrowRight: { type: "increment" },
-        ArrowDown: { type: "decrement" },
-        ArrowLeft: { type: "decrement" },
-        Home: { type: "reset" },
-        r: { type: "reset" },
-        R: { type: "reset" },
-      };
+    const action = KEYBOARD_ACTIONS[event.key];
+    if (!action) return;
 
-      const action = actionByKey[event.key];
-      if (!action) return;
-
-      event.preventDefault();
-      dispatch(action);
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+    event.preventDefault();
+    dispatch(action);
+  };
 
   return {
     state,
     increment: () => dispatch({ type: "increment" }),
     decrement: () => dispatch({ type: "decrement" }),
     reset: () => dispatch({ type: "reset" }),
-    setStep: (step) => dispatch({ type: "set-step", step }),
+    setStep: (stepOption) => dispatch({ type: "set-step", step: stepOption }),
+    handleKeyboardAction,
   };
-};
+}

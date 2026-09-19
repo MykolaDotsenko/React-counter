@@ -9,7 +9,7 @@ The product is intentionally simple. The engineering work is not about inventing
 - increments and decrements a counter with configurable steps: `1`, `5`, `10`, `25`
 - preserves the value and selected step in versioned local storage
 - migrates the original project's legacy `counter` value automatically
-- supports keyboard control with arrow keys and reset shortcuts
+- supports scoped keyboard control with arrow keys while preserving native page shortcuts
 - adapts motion for `prefers-reduced-motion`
 - exposes explicit disabled states at the supported boundaries
 - keeps the domain logic independent from React and browser storage
@@ -30,14 +30,15 @@ The effects are deliberately bounded: there is no permanent JavaScript animation
 
 ## Stack
 
-- React 18
-- Vite 5
+- React 19.3
+- Vite 8
 - modern CSS
 - native ES modules
 - Web Storage API
 - Pointer Events
-- Node.js built-in test runner
-- ESLint
+- Vitest + React Testing Library
+- Playwright browser matrix + axe accessibility checks
+- ESLint 10 flat config
 - GitHub Actions
 
 ## Architecture
@@ -81,10 +82,10 @@ npm run check
 `npm run check` runs:
 
 1. ESLint
-2. Node unit tests
+2. Vitest unit and component tests
 3. Vite production build
 
-The same sequence runs in GitHub Actions for pushes and pull requests.
+GitHub Actions then runs Playwright separately in Chromium, Firefox, and WebKit. Chromium also runs an axe WCAG A/AA scan.
 
 ## Interaction map
 
@@ -92,8 +93,9 @@ The same sequence runs in GitHub Actions for pushes and pull requests.
 | --- | --- | --- |
 | Increase | Increase button | `↑` / `→` |
 | Decrease | Decrease button | `↓` / `←` |
-| Reset | Reset button | `R` / `Home` |
+| Reset | Reset button | native button keyboard activation |
 | Step size | Step selector | focus + Enter/Space |
+| Scoped counter | focus counter region | `↑` / `→` / `↓` / `←` |
 
 ## Why this project exists
 

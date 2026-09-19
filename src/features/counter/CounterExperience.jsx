@@ -1,8 +1,9 @@
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import "../../App.css";
 import { MAX_COUNT, MIN_COUNT, STEP_OPTIONS } from "./counter-model.js";
 import { ParticleBurst } from "./ParticleBurst.jsx";
 import { useCounter } from "./useCounter.js";
+import { usePointerSurface } from "./usePointerSurface.js";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 
@@ -12,38 +13,18 @@ const formatSigned = (value) => {
 };
 
 export function CounterExperience() {
-  const { state, increment, decrement, reset, setStep } = useCounter();
-  const surfaceRef = useRef(null);
+  const {
+    state,
+    increment,
+    decrement,
+    reset,
+    setStep,
+    handleKeyboardAction,
+  } = useCounter();
   const sessionStartRef = useRef(state.value);
+  const { surfaceRef, handlePointerMove, handlePointerLeave } = usePointerSurface();
 
   const sessionDelta = state.value - sessionStartRef.current;
-  const progress = useMemo(() => Math.min((state.value / 100) * 100, 100), [state.value]);
-
-  const handlePointerMove = (event) => {
-    const surface = surfaceRef.current;
-    if (!surface) return;
-
-    const bounds = surface.getBoundingClientRect();
-    const x = ((event.clientX - bounds.left) / bounds.width) * 100;
-    const y = ((event.clientY - bounds.top) / bounds.height) * 100;
-    const rotateY = ((x - 50) / 50) * 2.6;
-    const rotateX = ((50 - y) / 50) * 2.2;
-
-    surface.style.setProperty("--pointer-x", `${x}%`);
-    surface.style.setProperty("--pointer-y", `${y}%`);
-    surface.style.setProperty("--rotate-x", `${rotateX}deg`);
-    surface.style.setProperty("--rotate-y", `${rotateY}deg`);
-  };
-
-  const handlePointerLeave = () => {
-    const surface = surfaceRef.current;
-    if (!surface) return;
-
-    surface.style.setProperty("--pointer-x", "50%");
-    surface.style.setProperty("--pointer-y", "35%");
-    surface.style.setProperty("--rotate-x", "0deg");
-    surface.style.setProperty("--rotate-y", "0deg");
-  };
 
   return (
     <main className="experience-shell">
@@ -54,7 +35,6 @@ export function CounterExperience() {
       <section
         ref={surfaceRef}
         className="counter-surface"
-        data-motion={state.motion}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
         aria-labelledby="counter-title"
@@ -81,8 +61,15 @@ export function CounterExperience() {
         </header>
 
         <div className="counter-layout">
-          <section className="counter-stage" aria-label="Counter controls">
-            <div className="counter-orbit" style={{ "--progress": `${progress}%` }}>
+          <section
+            className="counter-stage"
+            aria-label="Counter controls"
+            aria-describedby="keyboard-instructions"
+            aria-keyshortcuts="ArrowUp ArrowRight ArrowDown ArrowLeft"
+            tabIndex={0}
+            onKeyDown={handleKeyboardAction}
+          >
+            <div className="counter-orbit">
               <div className="orbit-track" aria-hidden="true" />
               <ParticleBurst revision={state.revision} motion={state.motion} />
 
@@ -94,9 +81,20 @@ export function CounterExperience() {
                   aria-atomic="true"
                   aria-label={`Current count ${state.value}`}
                 >
-                  <span key={`${state.value}-${state.revision}`}>{numberFormatter.format(state.value)}</span>
+                  <span key={`${state.value}-${state.revision}`}>
+                    {numberFormatter.format(state.value)}
+                  </span>
                 </output>
-                <span className="delta-chip" data-tone={state.lastDelta > 0 ? "up" : state.lastDelta < 0 ? "down" : "neutral"}>
+                <span
+                  className="delta-chip"
+                  data-tone={
+                    state.lastDelta > 0
+                      ? "up"
+                      : state.lastDelta < 0
+                        ? "down"
+                        : "neutral"
+                  }
+                >
                   {formatSigned(state.lastDelta)}
                 </span>
               </div>
@@ -135,26 +133,29 @@ export function CounterExperience() {
             </div>
           </section>
 
-          <aside className="control-panel" aria-label="Counter settings and session information">
+          <aside
+            className="control-panel"
+            aria-label="Counter settings and session information"
+          >
             <div className="panel-block">
               <div className="panel-heading">
                 <div>
                   <span className="panel-kicker">Step size</span>
                   <h2>Choose your pace</h2>
                 </div>
-                <span className="step-readout">×{state.step}</span>
+                <span className="step-readout" aria-hidden="true">×{state.step}</span>
               </div>
 
               <div className="step-selector" aria-label="Choose counter step">
-                {STEP_OPTIONS.map((step) => (
+                {STEP_OPTIONS.map((stepOption) => (
                   <button
-                    key={step}
+                    key={stepOption}
                     type="button"
                     className="step-option"
-                    aria-pressed={state.step === step}
-                    onClick={() => setStep(step)}
+                    aria-pressed={state.step === stepOption}
+                    onClick={() => setStep(stepOption)}
                   >
-                    {step}
+                    {stepOption}
                   </button>
                 ))}
               </div>
@@ -183,12 +184,11 @@ export function CounterExperience() {
             >
               <span aria-hidden="true">↺</span>
               Reset to zero
-              <kbd aria-hidden="true">R</kbd>
             </button>
 
-            <p className="keyboard-note">
+            <p className="keyboard-note" id="keyboard-instructions">
               <span aria-hidden="true">⌨</span>
-              Arrow keys change the value. Home or R resets it.
+              Focus the counter panel, then use the arrow keys to change the value.
             </p>
           </aside>
         </div>
