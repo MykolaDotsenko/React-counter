@@ -18,22 +18,17 @@ const resolveStorage = () => {
   }
 };
 
-const isWebKitEngine = () => {
-  const userAgent = navigator.userAgent;
-  return /AppleWebKit/i.test(userAgent) && !/(Chrome|Chromium|CriOS|Edg|OPR)/i.test(userAgent);
-};
+const supportsTypedViewTransitions = () => {
+  try {
+    if (typeof document === "undefined") return false;
+    if (typeof document.startViewTransition !== "function") return false;
+    if (typeof CSS === "undefined" || typeof CSS.supports !== "function") return false;
+    if (!CSS.supports("selector(:active-view-transition-type(increment))")) return false;
 
-const canUseViewTransitions = () => {
-  if (typeof document === "undefined") return false;
-  if (typeof document.startViewTransition !== "function") return false;
-  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
-
-  // WebKit 26.6 exposes the View Transition API but currently fails to
-  // complete React 19.3 state transitions reliably in this interaction.
-  // Keep the feature progressive: WebKit gets the same UI with instant
-  // state commits, while the native transition is used where our matrix
-  // verifies it end-to-end.
-  return !isWebKitEngine();
+    return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
 };
 
 export function useCounter() {
@@ -55,7 +50,7 @@ export function useCounter() {
   };
 
   const runAction = (action, transitionType, { animate = true } = {}) => {
-    if (!animate || !canUseViewTransitions()) {
+    if (!animate || !supportsTypedViewTransitions()) {
       dispatch(action);
       return;
     }
@@ -68,9 +63,16 @@ export function useCounter() {
     };
 
     try {
-      document.startViewTransition({
+      document.activeViewTransition?.skipTransition();
+
+      const transition = document.startViewTransition({
         update,
         types: [transitionType],
+      });
+
+      transition.finished.catch(() => {
+        // A skipped or interrupted visual transition is non-fatal.
+        // The reducer commit remains the source of truth.
       });
     } catch {
       if (!committed) {
@@ -88,7 +90,7 @@ export function useCounter() {
 
     event.preventDefault();
 
-    // Keyboard commands prioritize immediate response and predictable focus behavior.
+    // Keyboard commands prioritize immediate response and predictable focus.
     runAction(command.action, command.transition, { animate: false });
   };
 
