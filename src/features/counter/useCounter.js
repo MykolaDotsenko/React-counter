@@ -22,11 +22,20 @@ const resolveStorage = () => {
   }
 };
 
+const isWebKitEngine = () => {
+  const userAgent = navigator.userAgent;
+  return /AppleWebKit/i.test(userAgent) && !/(Chrome|Chromium|CriOS|Edg|OPR)/i.test(userAgent);
+};
+
 const canUseViewTransitions = () => {
   if (typeof document === "undefined") return false;
   if (typeof document.startViewTransition !== "function") return false;
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
 
-  return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  // WebKit 26.6 exposes the API but currently fails this React 19.3
+  // transition path in our browser matrix. Keep the effect progressive:
+  // behavior remains identical, only the native transition is skipped.
+  return !isWebKitEngine();
 };
 
 export function useCounter() {
