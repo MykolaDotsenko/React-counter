@@ -337,7 +337,8 @@ Target canonical active-trip state contains:
 - items
 - item unit prices
 - item quantities
-- item price origins
+- item price sources
+- item price confidence states
 - optional store context
 - trip lifecycle timestamps
 - optional actual checkout total
@@ -665,7 +666,7 @@ Strict TypeScript is justified by:
 
 - branded or constrained money values
 - currency boundaries
-- multiple price origins
+- independent price source and confidence types
 - persistence schemas
 - scanner result unions
 - optional metadata
