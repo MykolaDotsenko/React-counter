@@ -113,6 +113,8 @@ It exists primarily to improve price-memory relevance and must never be required
 
 ## Money representation
 
+MVP money behaviour is fully specified in docs/specs/MONEY-SPEC.md.
+
 ### Rule: never use binary floating point as canonical money
 
 Represent money in integer minor units.
@@ -140,9 +142,19 @@ The exact shape can be decided during implementation, but raw unvalidated number
 
 A trip has exactly one currency.
 
-MVP does not require multi-currency arithmetic inside a trip.
+MVP supports EUR only.
 
-Changing currency on a non-empty trip requires an explicit destructive or restart decision because existing item amounts cannot be safely reinterpreted.
+Therefore:
+
+- SupportedCurrency is EUR
+- canonical EUR values use integer cents
+- no currency switcher is shown in MVP
+- no FX conversion exists
+- persisted unsupported currency codes are rejected
+
+The domain remains structured so additional currencies can be added deliberately later, but generic ISO-code acceptance is not part of MVP.
+
+All parsing, formatting, limits, and arithmetic details are governed by docs/specs/MONEY-SPEC.md.
 
 ## Quantity
 
