@@ -23,6 +23,49 @@ test("completes the primary interaction flow", async ({ page }) => {
   await expect(page.getByLabel("Current count 0")).toBeVisible();
 });
 
+test("keeps controls stationary while pointer-reactive depth is active", async ({ page }) => {
+  await page.goto("/");
+
+  const surface = page.locator(".counter-surface");
+  const stage = page.getByRole("region", { name: "Counter controls" });
+  const stageBox = await stage.boundingBox();
+
+  expect(stageBox).not.toBeNull();
+
+  await page.mouse.move(stageBox.x + 24, stageBox.y + 24);
+
+  await expect
+    .poll(() =>
+      surface.evaluate((element) => [
+        element.style.getPropertyValue("--rotate-x"),
+        element.style.getPropertyValue("--rotate-y"),
+      ]),
+    )
+    .not.toEqual(["0deg", "0deg"]);
+
+  const stepButton = page.getByRole("button", { name: "Set step to 10" });
+  const buttonBox = await stepButton.boundingBox();
+
+  expect(buttonBox).not.toBeNull();
+
+  await page.mouse.move(
+    buttonBox.x + buttonBox.width / 2,
+    buttonBox.y + buttonBox.height / 2,
+  );
+
+  await expect
+    .poll(() =>
+      surface.evaluate((element) => [
+        element.style.getPropertyValue("--rotate-x"),
+        element.style.getPropertyValue("--rotate-y"),
+      ]),
+    )
+    .toEqual(["0deg", "0deg"]);
+
+  await stepButton.click();
+  await expect(stepButton).toHaveAttribute("aria-pressed", "true");
+});
+
 test("keeps keyboard shortcuts scoped to the counter region", async ({ page }) => {
   await page.goto("/");
 
