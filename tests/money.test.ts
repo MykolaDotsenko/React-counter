@@ -12,7 +12,6 @@ import {
   parseEurDraft,
   signedMinorUnits,
   subtractMoney,
-  type MinorUnits,
   type Result,
 } from "../src/domain/money";
 
