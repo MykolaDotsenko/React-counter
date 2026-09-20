@@ -263,6 +263,7 @@ The detailed technical contracts are split by concern:
 - `docs/specs/CONTRACTS.md` — TypeScript/domain/application/adapter contracts
 - `docs/specs/STATE-MACHINES.md` — lifecycle and ephemeral state transitions
 - `docs/specs/STORAGE-SCHEMA.md` — exact local persistence schema and completion recovery
+- `docs/specs/MONEY-SPEC.md` — EUR-only parsing, formatting, arithmetic, limits, and money tests
 
 When this architecture document and a detailed spec differ, stop implementation and reconcile the documentation rather than choosing one silently.
 
@@ -752,9 +753,9 @@ Strengths:
 
 Remaining design decisions before 100:
 
-- final MVP supported-currency set
 - final immediate Continue shopping semantics after completion
 - exact PWA update/reload policy during an active trip
+- implementation evidence for the specified money/persistence contracts
 
 None block Phase 1 money/domain implementation.
 
