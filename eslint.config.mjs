@@ -1,4 +1,4 @@
-import js from "eslint/configs/recommended";
+import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
@@ -14,7 +14,7 @@ export default [
     ignores: ["dist", "coverage", "playwright-report", "test-results"],
   },
   {
-    ...js,
+    ...js.configs.recommended,
     files: ["**/*.{js,jsx,mjs}"],
   },
   ...typescriptRecommended,
