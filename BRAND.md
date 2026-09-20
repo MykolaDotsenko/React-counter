@@ -290,9 +290,9 @@ Current status:
 - “cart” is heavily used across shopping apps
 - exact web search did not surface a major shopping-budget app called CartRoom at research time, but this is not trademark clearance
 
-### Current brand score
+### Current name score
 
-**84/100**
+**81/100**
 
 Breakdown:
 
@@ -300,14 +300,14 @@ Breakdown:
 - pronunciation/spelling: 14/15
 - product meaning: 15/20
 - distinctiveness: 11/15
-- ASO/search: 7/10
+- ASO/search compatibility: 7/10
 - international readability: 9/10
 - future-proofing: 5/5
-- obvious conflict risk: 6/5 not applicable; normalize to 6? 
+- obvious conflict/search risk: 3/5
 
-Because the weighted table totals 100, use the practical overall judgement instead:
+Interpretation:
 
-> **84/100 — good working brand, not yet strong enough to lock without name research**
+> **81/100 — good working codename, not strong enough to lock without trademark/domain/App Store research and user recall testing.**
 
 ## Naming research warnings
 
@@ -668,7 +668,7 @@ Current strategy:
 | Differentiation | 94 |
 | Visual metaphor | 97 |
 | Voice system | 98 |
-| Naming readiness | 84 |
+| Naming readiness | 81 |
 | International readiness | 91 |
 | Monetization alignment | 96 |
 
