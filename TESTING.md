@@ -15,6 +15,19 @@ The target shopping budget companion handles money under real-time, distracted u
 
 The current repository already has Vitest, React Testing Library, Playwright, axe, and a multi-browser CI matrix. Preserve that foundation while replacing counter-specific scenarios with shopping-domain coverage.
 
+## Scenario-driven quality gates
+
+SCENARIOS.md is the authoritative scenario matrix.
+
+Before a release or significant feature merge:
+
+- Tier 0 scenarios must have explicit test coverage or a documented manual verification path when automation is not yet practical
+- any implemented scenario with proposed UX below 90/100 must be treated as unresolved product risk
+- bugs discovered in a scenario must add regression coverage at the lowest useful layer
+- optional smart features must be tested against the manual baseline they are supposed to improve
+
+The flagship MVP E2E should exercise the Tier 0 shopping journey end to end, not merely isolated controls.
+
 ## Definition of done
 
 A feature is not complete until:
@@ -205,6 +218,8 @@ Tests must prove:
 A useful portfolio proof point is a large deterministic cart with zero rounding drift.
 
 ## Critical E2E journey
+
+This journey operationalises the highest-priority scenarios from SCENARIOS.md.
 
 The minimum flagship browser scenario:
 
@@ -479,4 +494,5 @@ Before a significant release:
 - reduced-motion flow works
 - no known silent data-loss path
 - docs match shipped behaviour
+- SCENARIOS.md Tier 0 coverage reviewed
 - README does not advertise target-only features as completed
