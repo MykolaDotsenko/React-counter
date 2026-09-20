@@ -219,7 +219,7 @@ Required:
 - id non-empty
 - status === active
 - supported currency
-- budgetMinor safe integer > 0
+- budgetMinor safe integer > 0 and <= 99_999_999
 - buffer safe integer >= 0 and <= budget
 - startedAt valid timestamp
 - items is array
@@ -227,8 +227,8 @@ Required:
 Each item:
 
 - unique id
-- unitPriceMinor safe integer >= 0
-- quantity safe integer >= 1
+- unitPriceMinor safe integer > 0 and <= 99_999_999
+- quantity safe integer from 1 through 999
 - valid priceSource
 - valid priceConfidence
 - valid createdAt/updatedAt
@@ -456,8 +456,12 @@ Required fixture classes:
 - missing data field
 - unsupported future version
 - invalid budget
+- budget above product maximum
 - buffer > budget
+- zero item price
+- item price above product maximum
 - zero quantity
+- quantity above 999
 - duplicate item ids
 - malformed price provenance
 - legacy Pulse state only
