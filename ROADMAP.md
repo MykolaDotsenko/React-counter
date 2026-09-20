@@ -33,6 +33,11 @@ Goal: make future AI-assisted development consistent.
 - docs/specs/STATE-MACHINES.md
 - docs/specs/STORAGE-SCHEMA.md
 - docs/specs/MONEY-SPEC.md
+- BRAND.md
+- MARKETING.md
+- docs/marketing/RESEARCH.md
+- docs/marketing/STORE-LISTING-SPEC.md
+- docs/marketing/LAUNCH-CHECKLIST.md
 - UX.md
 - DESIGN.md
 - DOMAIN.md
@@ -55,6 +60,7 @@ Goal: make future AI-assisted development consistent.
 - visual design direction and prototype evaluation criteria are explicit
 - Tier 0 scenario coverage and unresolved scenario risks are explicit
 - exact MVP requirements, contracts, state machines, and storage schema are explicit
+- brand positioning, naming constraints, store assets, growth strategy, and launch gates are explicit
 
 ## Technical specification gate — before Phase 1
 
@@ -171,6 +177,18 @@ At minimum, walkthrough/prototype:
 - one-hand use
 
 No Tier 0 scenario may fall below the documented target quality without an explicit decision and updated documentation.
+
+## Brand validation gate — before public naming and store assets
+
+Before a final product name, icon, public landing page, or app-store metadata is locked:
+
+- review BRAND.md
+- complete the naming checks required by D-021
+- validate that a new person understands the pre-checkout job
+- ensure the visual mark communicates remaining capacity without looking like generic fintech
+- keep CartRoom as working codename until this gate passes
+
+Marketing must not delay Phase 1–3 engineering work.
 
 ## Design validation gate — before Phase 4
 
@@ -378,7 +396,21 @@ Possible separate PRs:
 
 Each must have a demonstrated use case and explicit domain rules before implementation.
 
-## Phase 13 — polish and recruiter-grade evidence
+## Phase 13 — polish, launch evidence and recruiter-grade proof
+
+Before broad consumer acquisition, run docs/marketing/LAUNCH-CHECKLIST.md.
+
+Store work must follow docs/marketing/STORE-LISTING-SPEC.md.
+
+Marketing order:
+
+1. real-user beta
+2. polished landing/store assets
+3. organic short-form/build-in-public
+4. store-listing experiments once traffic exists
+5. meaningful paid acquisition only after retention evidence
+
+Suggested PR group:
 
 Suggested PR group:
 
@@ -481,12 +513,14 @@ Before implementing a roadmap item, an AI agent should read:
 7. relevant docs/specs/STATE-MACHINES.md transitions
 8. docs/specs/STORAGE-SCHEMA.md when persistence is touched
 9. docs/specs/MONEY-SPEC.md for any price/budget/quantity/checkout work
-10. relevant UX.md section
-11. DESIGN.md for visual/user-facing work
-12. relevant DOMAIN.md section
-13. ARCHITECTURE.md
-14. TESTING.md
-15. this roadmap item
+10. BRAND.md for naming/copy/identity work
+11. MARKETING.md and relevant docs/marketing/* for acquisition/store/launch work
+12. relevant UX.md section
+13. DESIGN.md for visual/user-facing work
+14. relevant DOMAIN.md section
+15. ARCHITECTURE.md
+16. TESTING.md
+17. this roadmap item
 
 The agent should implement only the current roadmap slice plus fixes required to keep main healthy.
 
