@@ -33,6 +33,8 @@ Goal: make future AI-assisted development consistent.
 - docs/specs/STATE-MACHINES.md
 - docs/specs/STORAGE-SCHEMA.md
 - docs/specs/MONEY-SPEC.md
+- TECH-STACK.md
+- docs/tech/TECHNOLOGY-RESEARCH.md
 - BRAND.md
 - MARKETING.md
 - docs/marketing/RESEARCH.md
@@ -60,6 +62,7 @@ Goal: make future AI-assisted development consistent.
 - visual design direction and prototype evaluation criteria are explicit
 - Tier 0 scenario coverage and unresolved scenario risks are explicit
 - exact MVP requirements, contracts, state machines, and storage schema are explicit
+- technology stack, dependency budget, and rejected alternatives are explicit
 - brand positioning, naming constraints, store assets, growth strategy, and launch gates are explicit
 
 ## Technical specification gate — before Phase 1
@@ -77,6 +80,20 @@ Current technical spec readiness: **98–99/100** depending on the concern.
 
 The previous currency-scope blocker is resolved by D-018 and docs/specs/MONEY-SPEC.md.
 
+## Technology gate — before Phase 1
+
+Confirm before adding dependencies:
+
+- React 19.3 + Vite 8 remain the UI/build foundation
+- TypeScript migration starts on strict TypeScript 6.0.x
+- no router/global-state/form/UI/animation framework is added
+- Phase 1 adds only TypeScript/tooling and fast-check
+- Zod waits until persistence runtime validation is implemented
+- PWA/scanner/OCR dependencies remain phase-gated
+- TECH-STACK.md and docs/tech/TECHNOLOGY-RESEARCH.md have no unresolved contradiction
+
+Current stack fit: **98/100**.
+
 ## Phase 1 — exact money foundation
 
 Suggested PR:
@@ -85,7 +102,9 @@ Suggested PR:
 
 ### Scope
 
-- add TypeScript configuration
+- add TypeScript 6.0.x configuration with strict compiler options
+- add compatible typescript-eslint tooling
+- add fast-check for property-style invariants
 - introduce integer-cent money helpers/types
 - implement EUR-only parser/formatter from MONEY-SPEC.md
 - introduce explicit SupportedCurrency = 'EUR' boundary
@@ -142,6 +161,7 @@ Suggested PR:
 
 ### Scope
 
+- add Zod 4 runtime validation at infrastructure boundaries
 - new storage schema
 - active-trip persistence
 - legacy Pulse storage retirement
@@ -305,6 +325,7 @@ Suggested PR:
 
 ### Scope
 
+- add vite-plugin-pwa + Workbox generateSW
 - web manifest
 - installability
 - application shell caching
@@ -349,6 +370,9 @@ Suggested PR:
 ### Scope
 
 - scanner adapter boundary
+- native BarcodeDetector capability detection
+- lazy ZXing-C++ WASM BarcodeDetector-compatible fallback
+- self-host scanner WASM for offline use
 - capability detection/fallback
 - product identity lookup
 - connection to price memory
@@ -370,6 +394,8 @@ Suggested PR:
 ### Scope
 
 - camera/OCR adapter
+- benchmark Tesseract.js Web Worker as first local provider candidate
+- do not lock provider unless real mobile fixtures meet usability/accuracy criteria
 - price candidate extraction
 - multiple-candidate state
 - confirmation preview
@@ -409,8 +435,6 @@ Marketing order:
 3. organic short-form/build-in-public
 4. store-listing experiments once traffic exists
 5. meaningful paid acquisition only after retention evidence
-
-Suggested PR group:
 
 Suggested PR group:
 
@@ -513,14 +537,15 @@ Before implementing a roadmap item, an AI agent should read:
 7. relevant docs/specs/STATE-MACHINES.md transitions
 8. docs/specs/STORAGE-SCHEMA.md when persistence is touched
 9. docs/specs/MONEY-SPEC.md for any price/budget/quantity/checkout work
-10. BRAND.md for naming/copy/identity work
-11. MARKETING.md and relevant docs/marketing/* for acquisition/store/launch work
-12. relevant UX.md section
-13. DESIGN.md for visual/user-facing work
-14. relevant DOMAIN.md section
-15. ARCHITECTURE.md
-16. TESTING.md
-17. this roadmap item
+10. TECH-STACK.md and docs/tech/TECHNOLOGY-RESEARCH.md for dependency/framework/platform work
+11. BRAND.md for naming/copy/identity work
+12. MARKETING.md and relevant docs/marketing/* for acquisition/store/launch work
+13. relevant UX.md section
+14. DESIGN.md for visual/user-facing work
+15. relevant DOMAIN.md section
+16. ARCHITECTURE.md
+17. TESTING.md
+18. this roadmap item
 
 The agent should implement only the current roadmap slice plus fixes required to keep main healthy.
 
