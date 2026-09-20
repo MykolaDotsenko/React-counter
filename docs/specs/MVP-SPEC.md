@@ -21,8 +21,8 @@ Those features may follow only after the core loop meets the acceptance criteria
 ### Required
 
 - start one active shopping trip
-- one currency per trip
-- exact money arithmetic in integer minor units
+- EUR as the only supported MVP currency
+- exact money arithmetic in integer cents
 - spending budget
 - optional safety buffer
 - manual price entry
@@ -68,7 +68,8 @@ A deferred feature may be prototyped independently, but it must not become a dep
 Given no active trip, the user can create one by supplying:
 
 - budget
-- currency
+
+Currency is fixed to EUR in MVP.
 
 Optional:
 
@@ -87,7 +88,7 @@ Acceptance:
 
 Budget must:
 
-- be representable in the selected currency's supported minor-unit precision
+- be representable exactly in EUR cents
 - be greater than zero
 - remain within JavaScript safe-integer bounds after conversion to minor units
 
@@ -368,13 +369,20 @@ The complete MVP core flow must be achievable without:
 - network
 - precise pointer input
 
-### FR-028 — Locale-aware display/input boundary
+### FR-028 — Locale-aware EUR display/input boundary
 
-The UI formats currency according to locale/currency metadata.
+The MVP supports EUR only.
 
-Money domain receives validated minor units, not locale-formatted strings.
+The UI:
 
-The initial implementation may restrict supported currencies, but the restriction must be explicit and must not be hidden behind a generic CurrencyCode type that accepts unsupported values.
+- accepts the explicitly defined EUR input grammar from docs/specs/MONEY-SPEC.md
+- formats EUR according to an explicit locale
+- may accept both comma and period as unambiguous decimal separators
+- never sends locale-formatted strings into canonical domain arithmetic
+
+The money domain receives validated integer cents.
+
+Unsupported currencies are rejected rather than accepted through a generic currency string.
 
 ## MVP state requirements
 
@@ -420,6 +428,22 @@ Each item contains:
 - updatedAt
 
 Derived totals are never authoritative persisted fields.
+
+## Money contract
+
+All MVP money behaviour is governed by:
+
+- docs/specs/MONEY-SPEC.md
+
+Key requirements:
+
+- EUR only
+- integer cents
+- no parseFloat-based canonical conversion
+- no silent rounding of extra decimal digits
+- explicit product maximum
+- exact arithmetic tests
+- locale formatting outside the domain
 
 ## Price provenance model
 
@@ -529,9 +553,8 @@ Architecture/spec readiness before coding: **96/100**
 
 Remaining gaps before 100:
 
-- exact supported-currency set for MVP
-- final choice of one-step undo representation
 - final completed-trip immediate-reopen semantics
 - exact PWA update strategy
+- implementation evidence for the money parser and persistence transaction
 
 These gaps are intentionally explicit rather than hidden in implementation.
