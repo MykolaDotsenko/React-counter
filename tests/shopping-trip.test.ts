@@ -228,15 +228,31 @@ describe("shopping trip construction", () => {
     );
   });
 
-  it("rejects invalid timestamps", () => {
-    expectDomainError(
+  it("accepts only canonical UTC ISO timestamps", () => {
+    for (const startedAt of [
+      "not-a-date",
+      "09/21/2026 09:00",
+      "2026-09-21T12:00:00+03:00",
+      "2026-09-21T09:00:00Z",
+      "2026-02-31T09:00:00.000Z",
+    ]) {
+      expectDomainError(
+        createActiveTrip({
+          id: "trip",
+          budgetMinor: money(5_000),
+          startedAt,
+        }),
+        "invalid-timestamp",
+      );
+    }
+
+    expect(
       createActiveTrip({
         id: "trip",
         budgetMinor: money(5_000),
-        startedAt: "not-a-date",
-      }),
-      "invalid-timestamp",
-    );
+        startedAt: START,
+      }).ok,
+    ).toBe(true);
   });
 });
 
