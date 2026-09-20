@@ -24,7 +24,7 @@ Recommended shape:
 type Brand<T, B extends string> = T & { readonly __brand: B }
 
 type MinorUnits = Brand<number, 'MinorUnits'>
-type CurrencyCode = Brand<string, 'CurrencyCode'>
+type SupportedCurrency = 'EUR'
 type TripId = Brand<string, 'TripId'>
 type ItemId = Brand<string, 'ItemId'>
 type StoreId = Brand<string, 'StoreId'>
@@ -45,20 +45,20 @@ Do not accept arbitrary ISO-looking strings unless the application actually know
 Recommended:
 
 ~~~ts
-type SupportedCurrency =
-  | 'EUR'
-  // add explicitly supported currencies here
+type SupportedCurrency = 'EUR'
 
 interface CurrencySpec {
-  code: SupportedCurrency
-  fractionDigits: 0 | 2 | 3
+  code: 'EUR'
+  fractionDigits: 2
   localeFallback: string
 }
 ~~~
 
-MVP may support EUR only.
+MVP supports EUR only.
 
-The architecture must be extensible, but implementation should prefer explicit support over pretending all currencies are already correct.
+The architecture remains extensible, but implementation must prefer explicit support over pretending all currencies are already correct.
+
+Exact parsing/formatting rules are defined in docs/specs/MONEY-SPEC.md.
 
 ## Minor-unit construction
 
@@ -92,18 +92,16 @@ interface MoneyDraft {
 Parsing:
 
 ~~~ts
-function parseMoneyDraft(
+function parseEurDraft(
   draft: MoneyDraft,
-  currency: SupportedCurrency,
-  locale: string,
 ): Result<MinorUnits, MoneyInputError>
 ~~~
 
 Rules:
 
 - no parseFloat-based canonical conversion
-- locale decimal separator supported where configured
-- grouping separators are either explicitly supported or explicitly rejected
+- comma and period decimal separators follow MONEY-SPEC.md
+- grouping/mixed separators are rejected in MVP
 - excess fraction digits produce a validation error, not silent rounding
 - overflow produces an error
 - empty draft is invalid for commit
@@ -170,7 +168,7 @@ Use a discriminated union.
 ~~~ts
 interface TripBase {
   id: TripId
-  currency: SupportedCurrency
+  currency: 'EUR'
   budgetMinor: MinorUnits
   safetyBufferMinor: MinorUnits
   items: CartItem[]
@@ -592,6 +590,21 @@ React must not own:
 - storage schema parsing
 - scanner result trust decisions
 - currency precision rules
+
+## Money contract reference
+
+All code touching:
+
+- budgets
+- item prices
+- quantity multiplication
+- remaining values
+- checkout totals
+- currency formatting/input
+
+must comply with docs/specs/MONEY-SPEC.md.
+
+Do not widen SupportedCurrency beyond EUR without a new documented decision and tests.
 
 ## Spec review checklist
 
