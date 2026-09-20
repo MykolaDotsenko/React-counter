@@ -20,13 +20,14 @@ Before changing code, read:
 
 1. AGENTS.md
 2. PRODUCT.md
-3. UX.md for user-facing behaviour
-4. DESIGN.md for visual hierarchy, styling, product storytelling, and interaction presentation
-5. DOMAIN.md for business/data rules
-6. ARCHITECTURE.md for boundaries and migration state
-7. TESTING.md for the quality contract
-8. ROADMAP.md for current phase and sequencing
-9. relevant files in docs/ when the task touches those concerns
+3. FUNCTIONALITY.md for feature behaviour, user-state transitions, fallbacks, and feature priority
+4. UX.md for interaction principles
+5. DESIGN.md for visual hierarchy, styling, product storytelling, and interaction presentation
+6. DOMAIN.md for business/data rules
+7. ARCHITECTURE.md for boundaries and migration state
+8. TESTING.md for the quality contract
+9. ROADMAP.md for current phase and sequencing
+10. relevant files in docs/ when the task touches those concerns
 
 For a narrow change, do not reread unrelated long sections once the relevant contract is known, but never skip PRODUCT.md and the relevant domain/architecture rules.
 
@@ -255,7 +256,8 @@ When behaviour changes:
 Authoritative roles:
 
 - PRODUCT.md — what and why
-- UX.md — interaction behaviour and user flows
+- FUNCTIONALITY.md — what the product does, user-state flows, fallbacks, and P0/P1/P2 behaviour
+- UX.md — interaction principles and usability rules
 - DESIGN.md — visual system, hierarchy, branding restraint, and product storytelling
 - DOMAIN.md — business rules
 - ARCHITECTURE.md — software boundaries and trade-offs
@@ -325,6 +327,13 @@ Before presenting work as complete verify:
 - canonical/derived state remains clear
 - money remains exact
 - uncertainty remains explicit
+
+### Functionality
+
+- feature behaviour matches FUNCTIONALITY.md
+- optional services have a manual fallback
+- no new metadata is required without clear value
+- P0/P1/P2 scope is respected
 
 ### UX
 
