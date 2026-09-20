@@ -20,17 +20,19 @@ Before changing code, read:
 
 1. AGENTS.md
 2. PRODUCT.md
-3. FUNCTIONALITY.md for feature behaviour, user-state transitions, fallbacks, and feature priority
-4. SCENARIOS.md for scenario coverage, edge cases, and 100-point priority/UX scores
-5. UX.md for interaction principles
-6. DESIGN.md for visual hierarchy, styling, product storytelling, and interaction presentation
-7. DOMAIN.md for business/data rules
-8. ARCHITECTURE.md for boundaries and migration state
-9. TESTING.md for the quality contract
-10. ROADMAP.md for current phase and sequencing
-11. relevant files in docs/ when the task touches those concerns
+3. FUNCTIONALITY.md and relevant SCENARIOS.md entries
+4. DOMAIN.md
+5. ARCHITECTURE.md
+6. TECH-STACK.md
+7. relevant docs/specs/* contracts
+8. TESTING.md
+9. UX.md / DESIGN.md for user-facing work
+10. BRAND.md / MARKETING.md / docs/marketing/* for naming, copy, store, or launch work
+11. docs/tech/TECHNOLOGY-RESEARCH.md when changing dependencies, frameworks, scanner/OCR, storage, PWA, hosting, or platform architecture
+12. ROADMAP.md for the current implementation phase
+13. other relevant docs/* for the concern being changed
 
-For a narrow change, do not reread unrelated long sections once the relevant contract is known, but never skip PRODUCT.md and the relevant domain/architecture rules.
+For a narrow change, do not reread every long document once the relevant contract is known. Never skip PRODUCT.md, the relevant domain/spec contract, ARCHITECTURE.md, TECH-STACK.md, and the current roadmap phase.
 
 ## Product in one sentence
 
@@ -273,6 +275,8 @@ Authoritative roles:
 - docs/specs/STATE-MACHINES.md — valid transitions and forbidden states
 - docs/specs/STORAGE-SCHEMA.md — exact persisted schema and completion recovery
 - docs/specs/MONEY-SPEC.md — EUR-only parsing, formatting, arithmetic, limits, and money tests
+- TECH-STACK.md — authoritative selected technologies, dependency budget, and phase admission
+- docs/tech/TECHNOLOGY-RESEARCH.md — scored alternatives and current platform evidence
 - BRAND.md — positioning, naming rules, voice, identity, and trust system
 - MARKETING.md — acquisition, ASO, content, launch, pricing, and experimentation strategy
 - docs/marketing/RESEARCH.md — platform guidance, competitor cases, and evidence quality
@@ -319,15 +323,42 @@ Do not add, unless PRODUCT.md is intentionally revised with evidence:
 
 ## Dependency policy
 
+TECH-STACK.md is authoritative.
+
 Prefer native platform capabilities and existing dependencies when they satisfy requirements cleanly.
 
-Before adding a dependency:
+Before adding any dependency, answer:
 
-- identify the user or engineering problem it solves
-- verify existing code/platform cannot solve it proportionately
-- consider bundle cost
-- consider maintenance/security cost
-- isolate optional heavy scanner/OCR dependencies from the initial critical path
+1. Which documented requirement does it protect?
+2. Can a platform API solve the problem cleanly?
+3. Is the dependency allowed in the current roadmap phase?
+4. What does it add to the initial bundle?
+5. Does it work offline?
+6. Does it add network/privacy/runtime requirements?
+7. Can it be lazy-loaded?
+8. What is its maintenance/security surface?
+9. What is the removal/migration cost?
+10. Does its benefit exceed its architectural surface?
+
+Do not add these in MVP without a new documented decision:
+
+- Redux Toolkit
+- Zustand
+- XState runtime
+- React Router
+- Tailwind
+- CSS-in-JS runtime
+- React Hook Form
+- Motion/Framer Motion
+- GSAP
+- Axios
+- TanStack Query
+- Dexie
+- date-fns/dayjs
+- UUID packages
+- backend/auth/database
+
+Scanner/OCR dependencies are phase-gated and must stay out of the initial critical bundle.
 
 ## Code review checklist for AI
 
@@ -354,6 +385,14 @@ Before presenting work as complete verify:
 - money changes comply with docs/specs/MONEY-SPEC.md
 - no parseFloat-based canonical money path is introduced
 - EUR-only scope is preserved unless deliberately revised
+
+### Technology
+
+- change matches TECH-STACK.md
+- new dependency has a documented requirement and current-phase justification
+- native/platform alternative was considered
+- scanner/OCR code is lazy and optional
+- no backend/state/router/UI framework is added opportunistically
 
 ### Functionality
 
