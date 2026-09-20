@@ -207,15 +207,24 @@ Randomised/property-style tests are encouraged for money and selector logic beca
 
 ## Money correctness rules
 
+All MVP money tests must comply with docs/specs/MONEY-SPEC.md.
+
+MVP currency scope is EUR only.
+
 Tests must prove:
 
 - canonical money never depends on binary decimal addition
+- canonical parsing never uses parseFloat + multiplication
+- comma and period EUR decimal input follow MONEY-SPEC.md
+- extra fraction digits are rejected rather than silently rounded
 - values such as 0.1 + 0.2 cannot introduce user-visible drift
 - formatting does not mutate canonical values
 - quantity multiplication remains a safe integer
 - rounding policy is explicit for every future percentage calculation
 
 A useful portfolio proof point is a large deterministic cart with zero rounding drift.
+
+The parser test matrix in MONEY-SPEC.md is mandatory Phase 1 coverage, including valid, invalid, auto-cents, product-limit, and floating-point regression cases.
 
 ## Critical E2E journey
 
@@ -455,6 +464,18 @@ Over:
 Use obviously synthetic products and stores in automated tests.
 
 Avoid personal financial data and real user shopping history in fixtures.
+
+## Phase 1 money acceptance
+
+Before the exact-money foundation is considered complete:
+
+- every MONEY-SPEC parser fixture passes
+- arithmetic/property invariants pass
+- unsupported currencies are rejected
+- product maximum is enforced
+- quantity multiplication is exact
+- no epsilon-based assertions are used for canonical money
+- formatter tests use explicit locale values
 
 ## CI target
 
