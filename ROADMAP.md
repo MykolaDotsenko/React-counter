@@ -148,6 +148,32 @@ Suggested PR:
 
 ## Phase 2 — shopping trip domain
 
+**Status: complete — merged via PR #13 on 2026-09-21.**
+
+Implementation evidence:
+
+- pure strict-TypeScript ShoppingTrip / CartItem domain
+- ActiveTrip / CompletedTrip discriminated union
+- separate PriceSource and PriceConfidence dimensions
+- branded trip/item/store/timestamp boundaries
+- exact EUR budget, safety-buffer, unit-price and quantity validation
+- exact line/cart totals and nominal/safe remaining selectors
+- nominal and safe overage represented without rejecting over-budget state
+- pure add-item projection with no canonical mutation
+- pure add/edit/remove/budget/buffer/complete/checkout command reducer
+- completed trips reject active-cart mutations
+- item IDs unique inside a trip
+- item labels normalized and bounded to 120 Unicode code points
+- canonical UTC timestamps use exact Date.toISOString() form
+- edit/completion timestamp ordering enforced
+- derived totals remain non-canonical
+- no React, DOM, storage, network or animation dependency
+- 36 dedicated shopping-domain tests
+- 4 property tests × 1,500 generated cases = 6,000 generated invariant cases per test run
+- 95 tests green across the full repository at merge
+- production dependency audit clean at merge
+- PR quality matrix green in Chromium, Firefox, and WebKit
+
 Suggested PR:
 
 > feat: add shopping trip and cart domain
@@ -585,25 +611,25 @@ Do not revise simply to accommodate an attractive technology.
 
 ## Current next implementation step
 
-Phase 1 is complete.
+Phases 1 and 2 are complete.
 
 The next implementation slice is:
 
-> **Phase 2 — shopping trip and cart domain**
+> **Phase 3 — versioned shopping-trip persistence**
 
-Implement only the pure domain foundation:
+Implement the persistence boundary only:
 
-- ShoppingTrip
-- CartItem
-- budget and safety buffer invariants
-- quantity
-- price source
-- price confidence
-- exact line/cart totals
-- nominal and safe remaining selectors
-- over-budget representation
-- pure transition/command layer
+- add Zod 4 runtime validation at infrastructure boundaries
+- implement the documented v1 storage DTO/schema
+- map validated DTOs into the Phase 2 domain constructors
+- persist and restore the active trip
+- retire the legacy Pulse Counter storage key explicitly
+- never reinterpret the old counter value as money
+- handle malformed, unsupported-version and future-version data safely
+- expose persistence health as healthy/degraded instead of silently falling back
+- preserve valid in-memory shopping state when a write fails
+- add deterministic migration and storage-failure tests
 
-Do not start the shopping UI, persistence migration, PWA, barcode, OCR, or price memory inside Phase 2.
+Do not start the shopping UI, PWA, barcode, OCR, price memory, cloud sync, or scanner adapters inside Phase 3.
 
-The goal is to make the complete shopping arithmetic/state model independently testable before any user-facing migration.
+The goal is to make every committed shopping mutation durably recoverable before the user-facing product migration begins.
