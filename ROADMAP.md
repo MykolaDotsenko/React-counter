@@ -32,6 +32,7 @@ Goal: make future AI-assisted development consistent.
 - docs/specs/CONTRACTS.md
 - docs/specs/STATE-MACHINES.md
 - docs/specs/STORAGE-SCHEMA.md
+- docs/specs/MONEY-SPEC.md
 - UX.md
 - DESIGN.md
 - DOMAIN.md
@@ -59,16 +60,16 @@ Goal: make future AI-assisted development consistent.
 
 Before code migration begins, confirm:
 
-- MVP supported currency set is explicit
-- exact money parser/formatter contract is agreed
+- MVP currency scope is locked to EUR
+- exact EUR parser/formatter contract is agreed
 - application/domain/infrastructure boundaries match ARCHITECTURE.md
 - state-machine forbidden states remain impossible
 - v1 storage schema is internally consistent
 - no unresolved spec contradiction exists
 
-Current technical spec readiness: **96–98/100** depending on the concern.
+Current technical spec readiness: **98–99/100** depending on the concern.
 
-The main remaining pre-code decision is the exact MVP currency scope.
+The previous currency-scope blocker is resolved by D-018 and docs/specs/MONEY-SPEC.md.
 
 ## Phase 1 — exact money foundation
 
@@ -79,9 +80,10 @@ Suggested PR:
 ### Scope
 
 - add TypeScript configuration
-- introduce integer minor-unit money helpers/types
-- introduce currency boundary
-- add exact parsing/formatting tests
+- introduce integer-cent money helpers/types
+- implement EUR-only parser/formatter from MONEY-SPEC.md
+- introduce explicit SupportedCurrency = 'EUR' boundary
+- add exact parsing/formatting/property-style tests
 - keep existing Pulse UI working during the migration where practical
 
 ### Must not include
@@ -95,6 +97,8 @@ Suggested PR:
 ### Acceptance criteria
 
 - no canonical floating-point money
+- no parseFloat-based canonical conversion
+- EUR-only product limits and fraction rules enforced
 - typecheck in CI
 - domain tests cover representative and boundary values
 - existing quality gates remain green
@@ -476,12 +480,13 @@ Before implementing a roadmap item, an AI agent should read:
 6. relevant docs/specs/CONTRACTS.md interfaces
 7. relevant docs/specs/STATE-MACHINES.md transitions
 8. docs/specs/STORAGE-SCHEMA.md when persistence is touched
-9. relevant UX.md section
-10. DESIGN.md for visual/user-facing work
-11. relevant DOMAIN.md section
-12. ARCHITECTURE.md
-13. TESTING.md
-14. this roadmap item
+9. docs/specs/MONEY-SPEC.md for any price/budget/quantity/checkout work
+10. relevant UX.md section
+11. DESIGN.md for visual/user-facing work
+12. relevant DOMAIN.md section
+13. ARCHITECTURE.md
+14. TESTING.md
+15. this roadmap item
 
 The agent should implement only the current roadmap slice plus fixes required to keep main healthy.
 
