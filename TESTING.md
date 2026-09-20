@@ -64,7 +64,8 @@ Primary areas:
 - over-budget boundaries
 - discount rounding once implemented
 - reconciliation difference
-- price-origin transitions
+- price-source transitions
+- price-confidence transitions
 
 ### 2. Persistence tests
 
@@ -203,7 +204,9 @@ For valid trip states:
 - add then undo restores the previous canonical total
 - serialise then restore preserves canonical state
 
-Randomised/property-style tests are encouraged for money and selector logic because arithmetic invariants are more valuable than many hand-picked examples alone.
+Use fast-check for property-style coverage of money and selector invariants once Phase 1 TypeScript work begins.
+
+Randomised/property-style tests are more valuable here than many hand-picked examples alone because the domain exposes algebraic invariants.
 
 ## Money correctness rules
 
@@ -303,9 +306,44 @@ Estimated status survives:
 - persistence round trip
 - cart summary derivation
 
+## Technology-specific test policy
+
+### Application controller
+
+The selected custom ShoppingAppController + useSyncExternalStore architecture requires tests that prove:
+
+- immutable/cached snapshot identity between changes
+- one notification per committed application-state change
+- no notification for rejected/no-op command
+- persistence failure still publishes degraded in-memory state
+- React adapter observes the same canonical snapshot as controller.getSnapshot()
+
+### Zod boundaries
+
+When Zod lands in Phase 3:
+
+- valid storage DTO maps to domain state
+- invalid DTO never becomes branded domain data
+- unsupported versions fail before domain reconstruction
+- schema validation and domain invariant validation remain separate test concerns
+
+### PWA
+
+When vite-plugin-pwa lands:
+
+- production base/scope works under the GitHub Pages subpath
+- offline shell opens after first successful load
+- update prompt does not force active-trip reload
+- Cache Storage never becomes business-state authority
+
 ## Barcode adapter tests
 
 Do not make camera hardware the only way to test barcode behaviour.
+
+Native BarcodeDetector support is incomplete, so tests must exercise both:
+
+- native-capability adapter branch
+- lazy WASM fallback branch
 
 Use deterministic adapter fixtures for:
 
@@ -319,6 +357,10 @@ Use deterministic adapter fixtures for:
 All failures must preserve manual price entry.
 
 ## OCR/price-scan tests
+
+Tesseract.js is only the first benchmark candidate, not a locked provider.
+
+Before retaining it as a production dependency, benchmark on representative mobile hardware and shelf-label fixtures against the manual-entry baseline.
 
 Use static fixtures before camera E2E.
 
