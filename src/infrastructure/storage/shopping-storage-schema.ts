@@ -30,6 +30,7 @@ const optionalCanonicalIdentifierSchema = canonicalIdentifierSchema.optional();
 
 const canonicalLabelSchema = z
   .string()
+  .min(1)
   .refine((value) => value.trim() === value)
   .refine((value) => [...value].length <= MAX_ITEM_LABEL_CODE_POINTS);
 
