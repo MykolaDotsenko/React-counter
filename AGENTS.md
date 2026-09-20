@@ -51,7 +51,7 @@ MUST:
 - keep the core workflow usable offline
 - persist committed shopping changes promptly
 - represent canonical money in integer minor units
-- make remembered/scanned/estimated price origin explicit
+- keep price source and price confidence explicit and separate
 - keep optional smart features recoverable to manual entry
 - surface persistence failure
 - keep tone non-judgmental
