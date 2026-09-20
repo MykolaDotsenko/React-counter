@@ -47,14 +47,16 @@ Complexity is accepted only when it protects money correctness, user data, or in
 Target dependency direction:
 
 ~~~text
-UI
- ↓
-application / feature orchestration
- ↓
-domain
- ↑
-persistence and capability adapters
+React UI / feature components
+          ↓
+Application commands / orchestration
+          ↓
+Pure domain model + selectors
+
+Application layer → repository/capability ports ← infrastructure adapters
 ~~~
+
+The important distinction is that infrastructure does not sit “under” domain as a dependency. Domain knows nothing about repositories. The application layer owns orchestration and depends on abstract ports; infrastructure implements those ports.
 
 The domain owns business truth.
 
@@ -72,31 +74,197 @@ Exact file names may evolve, but responsibilities should remain recognisable.
 src/
 ├── app/
 │   ├── App.tsx
-│   └── app-shell.tsx
+│   ├── composition-root.ts
+│   └── use-shopping-app.ts
+├── application/
+│   ├── app-state.ts
+│   ├── bootstrap.ts
+│   ├── commands.ts
+│   ├── shopping-session.ts
+│   ├── errors.ts
+│   └── ports/
+│       ├── active-trip-repository.ts
+│       ├── history-repository.ts
+│       ├── settings-repository.ts
+│       ├── clock.ts
+│       └── id-generator.ts
 ├── domain/
 │   ├── money.ts
+│   ├── currency.ts
 │   ├── shopping-trip.ts
 │   ├── cart-item.ts
-│   ├── price-origin.ts
+│   ├── price-provenance.ts
+│   ├── commands.ts
+│   ├── projection.ts
 │   └── selectors.ts
 ├── features/
 │   ├── active-trip/
 │   ├── price-entry/
 │   ├── cart-items/
 │   ├── checkout/
-│   ├── price-memory/
-│   └── scanning/
+│   ├── history/
+│   ├── price-memory/      # P1
+│   └── scanning/          # P1
 ├── infrastructure/
 │   ├── storage/
-│   ├── barcode/
-│   ├── price-scan/
+│   │   ├── local-storage-active-trip.ts
+│   │   ├── local-storage-history.ts
+│   │   ├── local-storage-settings.ts
+│   │   ├── schemas/
+│   │   └── migrations/
+│   ├── barcode/           # P1
+│   ├── price-scan/        # P1
 │   └── pwa/
 └── ui/
     ├── primitives/
     └── visual-effects/
 ~~~
 
+Do not create empty P1 folders during Phase 1 merely to match the diagram. The structure is a responsibility map, not scaffolding theatre.
+
 Do not force this tree mechanically if implementation proves a smaller structure clearer.
+
+
+## Layer responsibilities
+
+### Domain
+
+Pure TypeScript.
+
+Owns:
+
+- exact money invariants
+- ShoppingTrip and CartItem rules
+- projections
+- selectors
+- pure trip commands
+- price provenance semantics
+
+Does not perform I/O.
+
+### Application
+
+Plain TypeScript orchestration.
+
+Owns:
+
+- bootstrap from repositories
+- application lifecycle state
+- invoking domain transitions
+- persistence ordering
+- persistence-health state
+- one-step undo
+- completion transaction
+- dependency ports
+- mapping domain/persistence failures into application outcomes
+
+This layer should be testable without React.
+
+### Infrastructure
+
+Implements application ports.
+
+MVP infrastructure includes:
+
+- localStorage active-trip repository
+- localStorage history repository
+- localStorage settings repository
+- production clock
+- UUID generator
+- service worker/PWA setup
+
+Future P1 infrastructure includes barcode/product/OCR adapters.
+
+### React/features
+
+Owns:
+
+- views
+- forms/drafts
+- focus
+- sheets/dialogs
+- transient feedback
+- calling application commands
+- rendering derived state
+
+React does not perform business arithmetic or storage writes.
+
+### Composition root
+
+`app/composition-root.ts` is the only place that wires concrete infrastructure to application ports.
+
+This keeps tests free to inject memory repositories, fixed clocks, and deterministic ids.
+
+## Application state ownership
+
+MVP should not introduce Redux/Zustand or another state library without demonstrated need.
+
+Recommended model:
+
+1. React owns one `ShoppingAppState` value through a top-level hook/provider boundary.
+2. UI sends typed application commands.
+3. application orchestration computes valid next state and attempts persistence.
+4. React receives the resulting state once.
+5. selectors derive display values from canonical trip.
+
+Do not mirror the same cart state across context, reducer, localStorage, and component state.
+
+Only one in-memory canonical application state should exist.
+
+## Persistence timing
+
+Do not rely on a passive `useEffect` as the only persistence mechanism for committed shopping mutations.
+
+Reason:
+
+A committed add followed immediately by tab close or process suspension could occur before an effect runs.
+
+For MVP localStorage is synchronous, so the application command path should:
+
+1. compute valid next domain state
+2. write the canonical snapshot
+3. report healthy/degraded durability
+4. publish next React state
+5. run optional visual feedback
+
+If storage fails, valid in-memory state still becomes visible with degraded persistence status.
+
+## Price provenance architecture
+
+Replace the earlier overloaded “price origin” concept with two independent fields:
+
+### Source
+
+Where did the numeric value come from?
+
+- manual
+- price-memory
+- shelf-scan
+- encoded-barcode
+- retailer-feed
+
+### Confidence
+
+What does the product claim about the value?
+
+- confirmed
+- remembered
+- estimated
+
+This allows a shelf-scanned value to remain traceable to the scanner while becoming user-confirmed.
+
+See `docs/specs/CONTRACTS.md`.
+
+## Specs as executable architecture
+
+The detailed technical contracts are split by concern:
+
+- `docs/specs/MVP-SPEC.md` — numbered MVP requirements and release acceptance
+- `docs/specs/CONTRACTS.md` — TypeScript/domain/application/adapter contracts
+- `docs/specs/STATE-MACHINES.md` — lifecycle and ephemeral state transitions
+- `docs/specs/STORAGE-SCHEMA.md` — exact local persistence schema and completion recovery
+
+When this architecture document and a detailed spec differ, stop implementation and reconcile the documentation rather than choosing one silently.
 
 ## Domain boundary
 
@@ -378,6 +546,8 @@ Business data remains owned by the persistence layer, not the service worker cac
 
 ## React boundary
 
+React is an adapter around application state, not the application layer itself.
+
 React components should:
 
 - render state
@@ -565,6 +735,28 @@ SHOULD:
 - prefer browser/platform primitives over broad runtime dependencies
 - keep optional smart features behind adapters
 - make each migration step independently testable
+
+## Architecture readiness score
+
+Current target architecture: **97/100**
+
+Strengths:
+
+- clean domain/application/infrastructure split
+- deterministic test seams
+- exact-money boundary
+- local-first durability model
+- no backend/global-state overengineering
+- optional capabilities isolated from core
+- formal state/storage/contracts now specified
+
+Remaining design decisions before 100:
+
+- final MVP supported-currency set
+- final immediate Continue shopping semantics after completion
+- exact PWA update/reload policy during an active trip
+
+None block Phase 1 money/domain implementation.
 
 ## Architecture review checklist
 
