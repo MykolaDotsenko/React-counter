@@ -401,6 +401,41 @@ Feature proposals require a friction, confidence, or reliability rationale.
 
 Real user evidence shows a missing feature is repeatedly blocking the core job.
 
+
+## D-017 — Price source and confidence are separate dimensions
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Represent price provenance with two independent concepts:
+
+- source — where the numeric value came from
+- confidence — what the product currently claims about its reliability/currentness
+
+### Rationale
+
+A single “price origin” enum creates contradictory states.
+
+For example, a shelf-scanned value should remain traceable to the scanner after the user confirms it. If “scanned” and “confirmed” are mutually exclusive enum values, one piece of information is lost.
+
+Separating the dimensions allows:
+
+- source = shelf-scan, confidence = confirmed
+- source = price-memory, confidence = remembered
+- source = manual, confidence = estimated
+
+### Consequence
+
+CartItem, persistence schema, selectors, and future scanner/price-memory code must preserve both fields.
+
+### Revisit when
+
+Only if a simpler representation can preserve the same provenance and trust information without ambiguity.
+
+
 ## How to add a decision
 
 Add a new numbered entry when a decision:
