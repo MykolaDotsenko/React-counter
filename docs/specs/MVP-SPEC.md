@@ -159,7 +159,7 @@ A valid item can be committed with:
 - generated item id
 - unit price in minor units
 - quantity
-- optional label
+- optional label, trimmed to at most 120 Unicode code points
 - price provenance
 - created timestamp
 
@@ -260,6 +260,8 @@ If new budget < cartTotal:
 - resulting over-budget state is shown
 
 Changing budget never mutates item prices.
+
+If the requested budget is below the current safety buffer, reject the budget change rather than silently changing the buffer. The buffer must be adjusted explicitly.
 
 ### FR-017 — Persistence durability
 
@@ -429,6 +431,8 @@ Each item contains:
 - price confidence
 - createdAt
 - updatedAt
+
+Blank/whitespace-only labels normalize to absent. `itemCount` means the sum of standard-item quantities, while cart-line count remains `items.length` when needed.
 
 Derived totals are never authoritative persisted fields.
 

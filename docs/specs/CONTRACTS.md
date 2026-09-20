@@ -38,6 +38,8 @@ type Result<T, E> =
 
 Branding is intended to prevent accidental mixing, not to replace runtime validation.
 
+`IsoTimestamp` canonical values use the exact UTC form produced by `Date.prototype.toISOString()` (`YYYY-MM-DDTHH:mm:ss.sssZ`). Domain constructors reject ambiguous/local date strings and non-canonical offsets.
+
 ## Currency contract
 
 Do not accept arbitrary ISO-looking strings unless the application actually knows how to parse/format their minor-unit precision.
@@ -157,8 +159,10 @@ Invariants:
 
 - quantity is safe integer >= 1
 - unitPriceMinor is valid
-- label, if present, is trimmed and length-bounded
-- updatedAt >= createdAt by application convention
+- label, if present, is trimmed and contains at most 120 Unicode code points
+- blank/whitespace-only labels normalize to absent
+- updatedAt >= createdAt
+- later edit commands must not move updatedAt backwards
 - canonical item never contains an unresolved OCR/barcode candidate
 
 ## Trip contract
@@ -194,6 +198,7 @@ Invariants:
 - buffer <= budget
 - item ids unique
 - completedAt only exists on completed trip
+- completedAt must not predate startedAt or any canonical item update
 - actual checkout only exists on completed trip
 - one trip has one currency
 
@@ -211,6 +216,8 @@ function nominalOverage(trip: ShoppingTrip): SignedMinorUnits
 function safeOverage(trip: ShoppingTrip): SignedMinorUnits
 function itemCount(trip: ShoppingTrip): number
 ~~~
+
+`itemCount` means total standard-item quantity across cart lines, not the number of cart lines.
 
 Derived values are recomputed after restore.
 
@@ -480,12 +487,18 @@ type DomainErrorCode =
   | 'invalid-quantity'
   | 'unsafe-integer'
   | 'item-not-found'
+  | 'duplicate-item-id'
+  | 'invalid-id'
+  | 'invalid-label'
+  | 'invalid-timestamp'
   | 'trip-not-active'
   | 'trip-not-completed'
   | 'unsupported-currency'
 ~~~
 
 Expected invalid input returns Result failure.
+
+For an active trip, lowering the budget below the current cart total is valid. Lowering it below the current safety buffer is rejected rather than silently changing the user's buffer; the caller must explicitly adjust the buffer.
 
 Programming invariant violations may throw/assert in development if they indicate impossible internal state.
 
