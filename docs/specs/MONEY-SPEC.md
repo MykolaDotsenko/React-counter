@@ -465,7 +465,7 @@ Derived cart totals may exceed the single-input maximum but must remain safe int
 
 ## Quantity bound
 
-Recommended MVP:
+MVP quantity bound:
 
 ~~~text
 1 through 999
