@@ -289,7 +289,9 @@ Suggested PR:
 - edit price
 - edit quantity
 - remove item
-- confirmed / remembered / scanned / estimated states in model and UI
+- price source remains explicit (manual / price-memory / shelf-scan / encoded-barcode as implemented by phase)
+- price confidence remains explicit (confirmed / remembered / estimated)
+- source and confidence are never collapsed into one enum
 - estimated cart cues where appropriate
 
 ### Acceptance criteria
