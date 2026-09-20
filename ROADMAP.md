@@ -28,6 +28,10 @@ Goal: make future AI-assisted development consistent.
 - PRODUCT.md
 - FUNCTIONALITY.md
 - SCENARIOS.md
+- docs/specs/MVP-SPEC.md
+- docs/specs/CONTRACTS.md
+- docs/specs/STATE-MACHINES.md
+- docs/specs/STORAGE-SCHEMA.md
 - UX.md
 - DESIGN.md
 - DOMAIN.md
@@ -49,6 +53,22 @@ Goal: make future AI-assisted development consistent.
 - AI agent instructions point to authoritative docs
 - visual design direction and prototype evaluation criteria are explicit
 - Tier 0 scenario coverage and unresolved scenario risks are explicit
+- exact MVP requirements, contracts, state machines, and storage schema are explicit
+
+## Technical specification gate — before Phase 1
+
+Before code migration begins, confirm:
+
+- MVP supported currency set is explicit
+- exact money parser/formatter contract is agreed
+- application/domain/infrastructure boundaries match ARCHITECTURE.md
+- state-machine forbidden states remain impossible
+- v1 storage schema is internally consistent
+- no unresolved spec contradiction exists
+
+Current technical spec readiness: **96–98/100** depending on the concern.
+
+The main remaining pre-code decision is the exact MVP currency scope.
 
 ## Phase 1 — exact money foundation
 
@@ -452,12 +472,16 @@ Before implementing a roadmap item, an AI agent should read:
 2. PRODUCT.md
 3. relevant FUNCTIONALITY.md section
 4. relevant SCENARIOS.md entries
-5. relevant UX.md section
-6. DESIGN.md for visual/user-facing work
-7. relevant DOMAIN.md section
-8. ARCHITECTURE.md
-9. TESTING.md
-10. this roadmap item
+5. relevant docs/specs/MVP-SPEC.md requirements
+6. relevant docs/specs/CONTRACTS.md interfaces
+7. relevant docs/specs/STATE-MACHINES.md transitions
+8. docs/specs/STORAGE-SCHEMA.md when persistence is touched
+9. relevant UX.md section
+10. DESIGN.md for visual/user-facing work
+11. relevant DOMAIN.md section
+12. ARCHITECTURE.md
+13. TESTING.md
+14. this roadmap item
 
 The agent should implement only the current roadmap slice plus fixes required to keep main healthy.
 
