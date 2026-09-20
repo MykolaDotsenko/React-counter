@@ -38,6 +38,8 @@ type Result<T, E> =
 
 Branding is intended to prevent accidental mixing, not to replace runtime validation.
 
+`IsoTimestamp` canonical values use the exact UTC form produced by `Date.prototype.toISOString()` (`YYYY-MM-DDTHH:mm:ss.sssZ`). Domain constructors reject ambiguous/local date strings and non-canonical offsets.
+
 ## Currency contract
 
 Do not accept arbitrary ISO-looking strings unless the application actually knows how to parse/format their minor-unit precision.
@@ -160,6 +162,7 @@ Invariants:
 - label, if present, is trimmed and contains at most 120 Unicode code points
 - blank/whitespace-only labels normalize to absent
 - updatedAt >= createdAt
+- later edit commands must not move updatedAt backwards
 - canonical item never contains an unresolved OCR/barcode candidate
 
 ## Trip contract
@@ -195,6 +198,7 @@ Invariants:
 - buffer <= budget
 - item ids unique
 - completedAt only exists on completed trip
+- completedAt must not predate startedAt or any canonical item update
 - actual checkout only exists on completed trip
 - one trip has one currency
 
