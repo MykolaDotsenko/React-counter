@@ -37,7 +37,10 @@ Only one active trip is required for MVP.
 
 The maximum nominal amount the user intends to spend during the trip.
 
-Budget must be positive.
+MVP rules:
+
+- budget must be greater than EUR 0
+- budget must not exceed EUR 999,999.99
 
 ### SafetyBuffer
 
@@ -158,9 +161,11 @@ All parsing, formatting, limits, and arithmetic details are governed by docs/spe
 
 ## Quantity
 
-Quantity must be positive.
+MVP quantity is an integer from 1 through 999.
 
-MVP may use integer quantity for ordinary items.
+MVP item unit price is greater than EUR 0 and no more than EUR 999,999.99.
+
+Weighted goods should not overload ordinary integer quantity.
 
 Weighted goods should not overload ordinary integer quantity. They need explicit weight or unit semantics, or an estimated direct line price.
 
@@ -445,10 +450,12 @@ Requirements:
 
 At all times:
 
-- budgetMinor is a safe integer greater than zero
+- budgetMinor is a safe integer greater than zero and within the MVP product maximum
 - safetyBufferMinor is a safe integer from zero through budgetMinor
+- item unit prices are safe integers greater than zero and within the MVP product maximum
+- actual checkout total is a safe integer from zero through the MVP product maximum
 - every canonical money amount is a safe integer
-- quantity is valid for its item type
+- standard item quantity is an integer from 1 through 999
 - trip currency is consistent
 - item IDs are unique inside a trip
 - cart total equals the sum of canonical item line totals
