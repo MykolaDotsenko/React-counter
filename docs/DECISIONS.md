@@ -480,6 +480,39 @@ For MVP:
 A validated user need requires another currency. Each new currency must add an explicit CurrencySpec, parsing/formatting tests, accessibility checks, and relevant fixtures before it becomes user-selectable.
 
 
+
+## D-019 — MVP money input guardrails are explicit
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+For MVP:
+
+- budget must be greater than EUR 0
+- item unit price must be greater than EUR 0
+- safety buffer may be EUR 0 but cannot exceed budget
+- actual checkout total may be EUR 0
+- any single user-entered money amount may not exceed EUR 999,999.99
+- standard item quantity is an integer from 1 through 999
+
+### Rationale
+
+Technical safe-integer limits are far above realistic shopping values. Product-level bounds prevent obvious accidental input and make validation/test behaviour deterministic.
+
+Zero-price cart items are more likely to represent incomplete entry than a useful grocery-budget case. Free/promotional items can be supported later if real usage justifies them.
+
+### Consequence
+
+MONEY-SPEC.md, domain validation, UI validation, fixtures, and persistence validation must enforce the same bounds.
+
+### Revisit when
+
+Real usage requires free items, unusually large quantities, or higher-value purchases outside the intended shopping context.
+
+
 ## How to add a decision
 
 Add a new numbered entry when a decision:
