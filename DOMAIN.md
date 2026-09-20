@@ -58,7 +58,8 @@ Required:
 - id
 - unit price
 - quantity
-- price origin
+- price source
+- price confidence
 - created time
 
 Optional:
@@ -68,20 +69,41 @@ Optional:
 - note
 - unit or weight metadata
 
-### Price origin
+### Price provenance
 
-Every item price declares how it entered the cart.
+Price metadata is split into two independent dimensions.
+
+#### Price source
+
+Where the numeric value came from.
+
+Target values:
+
+- manual
+- price-memory
+- shelf-scan
+- encoded-barcode
+- retailer-feed
+
+MVP only requires manual.
+
+#### Price confidence
+
+What the product claims about the value.
 
 Target values:
 
 - confirmed
 - remembered
-- scanned
 - estimated
 
-A scanned value becomes confirmed only after the user explicitly accepts it as the current price.
+Examples:
 
-A remembered value remains remembered unless the user explicitly confirms it as current.
+- a shelf-scanned value accepted by the user: source = shelf-scan, confidence = confirmed
+- a reused old price: source = price-memory, confidence = remembered
+- an approximate fruit price entered manually: source = manual, confidence = estimated
+
+Do not collapse source and confidence into one enum.
 
 ### Store
 
@@ -177,7 +199,8 @@ Canonical:
 - items
 - item prices
 - quantities
-- price origins
+- price sources
+- price confidence states
 - optional actual checkout total
 - trip status
 - timestamps
@@ -281,9 +304,9 @@ Editable fields may include:
 - unit price
 - quantity
 - label
-- price-origin metadata when appropriate
+- price source/confidence metadata when appropriate
 
-Editing a remembered or estimated value into a user-confirmed current price should update origin intentionally.
+Editing a remembered or estimated value into a user-confirmed current price should update confidence intentionally while preserving the true source where useful.
 
 ## Over-budget rules
 
@@ -313,6 +336,7 @@ A remembered-price record may contain:
 - currency
 - observed or confirmed date
 - source
+- confidence
 
 ### Freshness
 
@@ -502,12 +526,23 @@ Do not:
 - use floating-point totals as source of truth
 - persist cartTotal as authoritative alongside items
 - let React components calculate business totals independently
-- treat remembered price as current price
+- treat remembered confidence as confirmed current price
 - treat barcode as price
 - let OCR results mutate cart before confirmation
 - add event sourcing without a user or reliability need
 - create a generic financial ledger
 - introduce backend entities before cloud collaboration is required
+
+## Detailed technical contract
+
+Exact target TypeScript shapes and adapter contracts are specified in:
+
+- `docs/specs/CONTRACTS.md`
+- `docs/specs/MVP-SPEC.md`
+- `docs/specs/STATE-MACHINES.md`
+- `docs/specs/STORAGE-SCHEMA.md`
+
+If this domain document and those executable specs diverge, reconcile the documents before implementation.
 
 ## Domain review checklist
 
