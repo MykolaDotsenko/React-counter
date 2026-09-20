@@ -240,9 +240,11 @@ May be zero.
 
 ### Item price
 
-Recommended MVP: reject zero-price item creation unless a real free-item use case is validated.
+MVP rule: an item unit price must be greater than zero.
 
-A zero item is more likely accidental than useful in this product.
+A zero item is treated as invalid/incomplete at the item-domain boundary. The generic money parser may still represent zero because zero is valid for other monetary concepts such as the safety buffer and actual checkout total.
+
+If free promotional items later become a validated use case, revise D-019 and this specification deliberately.
 
 ## Decimal parser algorithm
 
