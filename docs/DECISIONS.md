@@ -266,20 +266,23 @@ Status: accepted
 
 ### Decision
 
-Represent whether a price is:
+Represent price confidence explicitly and independently from price source.
+
+Current confidence states:
 
 - confirmed
 - remembered
-- scanned
 - estimated
 
 ### Rationale
 
-Not all pre-checkout totals have equal certainty. Making price origin explicit supports honest UI, safe buffers, and better future automation.
+Not all pre-checkout totals have equal certainty. The UI and safety-buffer logic need to distinguish a price confirmed for the current trip from a stale remembered value or an intentional estimate.
+
+Whether the numeric value came from manual entry, shelf scan, barcode payload, price memory, or another source is a separate provenance dimension recorded by D-017.
 
 ### Consequence
 
-Price origin must survive persistence and be available to UI/selectors.
+Price confidence must survive persistence and be available to selectors/UI. Source must not be inferred from confidence.
 
 ### Revisit when
 
@@ -434,6 +437,47 @@ CartItem, persistence schema, selectors, and future scanner/price-memory code mu
 ### Revisit when
 
 Only if a simpler representation can preserve the same provenance and trust information without ambiguity.
+
+
+
+## D-018 — MVP supports EUR only
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+The first shopping-budget MVP supports EUR as the only user-selectable currency.
+
+The architecture remains currency-aware, but the UI, parser, formatter, fixtures, and persistence validation accept only EUR until additional currencies are deliberately implemented and tested.
+
+### Rationale
+
+The primary launch context is euro-denominated shopping. Supporting multiple currencies immediately would multiply parsing, formatting, minor-unit precision, auto-cents, locale, accessibility, and test cases before the core shopping interaction has been validated.
+
+EUR-only allows the first implementation to be exact and deeply tested while preserving a clear extension seam through CurrencySpec / SupportedCurrency.
+
+### Rejected alternative
+
+Ship EUR, USD, GBP, JPY, and other currencies in the first release behind a generic ISO currency type.
+
+This looks flexible but risks false correctness: different currencies can have different minor-unit precision and formatting/input conventions.
+
+### Consequence
+
+For MVP:
+
+- SupportedCurrency = 'EUR'
+- fractionDigits = 2
+- all canonical EUR money uses integer cents
+- no FX conversion exists
+- changing currency is not exposed because there is no alternative supported currency
+- persistence rejects unsupported currency codes rather than guessing
+
+### Revisit when
+
+A validated user need requires another currency. Each new currency must add an explicit CurrencySpec, parsing/formatting tests, accessibility checks, and relevant fixtures before it becomes user-selectable.
 
 
 ## How to add a decision
