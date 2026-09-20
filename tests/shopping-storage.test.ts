@@ -484,25 +484,27 @@ describe("shopping storage codec", () => {
     ).toBe("invalid-data");
   });
 
-  it("rejects non-canonical whitespace instead of normalizing storage silently", () => {
-    const envelope = validEnvelope();
-    const data = structuredClone(envelope.data) as {
-      items: Array<Record<string, unknown>>;
-    };
-    const item = data.items[0];
+  it("rejects blank and whitespace-padded labels instead of normalizing storage silently", () => {
+    for (const label of ["", " Milk "]) {
+      const envelope = validEnvelope();
+      const data = structuredClone(envelope.data) as {
+        items: Array<Record<string, unknown>>;
+      };
+      const item = data.items[0];
 
-    if (item === undefined) {
-      throw new Error("Fixture item missing");
+      if (item === undefined) {
+        throw new Error("Fixture item missing");
+      }
+
+      item.label = label;
+
+      expect(
+        decodeIssue({
+          ...envelope,
+          data,
+        }).code,
+      ).toBe("invalid-data");
     }
-
-    item.label = " Milk ";
-
-    expect(
-      decodeIssue({
-        ...envelope,
-        data,
-      }).code,
-    ).toBe("invalid-data");
   });
 });
 
