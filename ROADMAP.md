@@ -96,6 +96,24 @@ Current stack fit: **98/100**.
 
 ## Phase 1 — exact money foundation
 
+**Status: complete — merged via PR #11 on 2026-09-21.**
+
+Implementation evidence:
+
+- TypeScript 6.0.3 strict incremental configuration
+- TypeScript-aware ESLint
+- exact EUR integer-cent domain
+- decimal and auto-cents parsing
+- explicit product/quantity guardrails
+- safe-integer overflow protection
+- Intl-based EUR presentation boundary
+- 43 dedicated money tests
+- 4 property tests × 2,000 generated cases = 8,000 generated invariant cases per test run
+- typecheck included in quality and Pages deployment gates
+- production dependency audit clean at merge
+- PR quality matrix green in Chromium, Firefox, and WebKit
+- existing Pulse Counter UI remained unchanged
+
 Suggested PR:
 
 > refactor: introduce strict TypeScript money domain
@@ -567,8 +585,25 @@ Do not revise simply to accommodate an attractive technology.
 
 ## Current next implementation step
 
-After the documentation foundation is complete, the recommended first code change is:
+Phase 1 is complete.
 
-> Phase 1 — exact money foundation and strict TypeScript domain
+The next implementation slice is:
 
-That step creates the safest base for all later UI work.
+> **Phase 2 — shopping trip and cart domain**
+
+Implement only the pure domain foundation:
+
+- ShoppingTrip
+- CartItem
+- budget and safety buffer invariants
+- quantity
+- price source
+- price confidence
+- exact line/cart totals
+- nominal and safe remaining selectors
+- over-budget representation
+- pure transition/command layer
+
+Do not start the shopping UI, persistence migration, PWA, barcode, OCR, or price memory inside Phase 2.
+
+The goal is to make the complete shopping arithmetic/state model independently testable before any user-facing migration.
