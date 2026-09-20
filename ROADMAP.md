@@ -26,6 +26,7 @@ Goal: make future AI-assisted development consistent.
 ### Deliverables
 
 - PRODUCT.md
+- FUNCTIONALITY.md
 - UX.md
 - DESIGN.md
 - DOMAIN.md
@@ -159,6 +160,7 @@ Suggested PR:
 
 ### Acceptance criteria
 
+- active-trip behaviour matches FUNCTIONALITY.md
 - purpose is understandable in 3–5 seconds
 - no account/setup wall
 - mobile-first at compact viewport
@@ -424,12 +426,13 @@ Before implementing a roadmap item, an AI agent should read:
 
 1. AGENTS.md
 2. PRODUCT.md
-3. relevant UX.md section
-4. DESIGN.md for visual/user-facing work
-5. relevant DOMAIN.md section
-6. ARCHITECTURE.md
-7. TESTING.md
-8. this roadmap item
+3. relevant FUNCTIONALITY.md section
+4. relevant UX.md section
+5. DESIGN.md for visual/user-facing work
+6. relevant DOMAIN.md section
+7. ARCHITECTURE.md
+8. TESTING.md
+9. this roadmap item
 
 The agent should implement only the current roadmap slice plus fixes required to keep main healthy.
 
