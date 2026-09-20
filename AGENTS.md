@@ -264,6 +264,10 @@ Authoritative roles:
 - DOMAIN.md — business rules
 - ARCHITECTURE.md — software boundaries and trade-offs
 - TESTING.md — quality contract
+- docs/specs/MVP-SPEC.md — executable MVP requirements
+- docs/specs/CONTRACTS.md — implementation contracts and ports
+- docs/specs/STATE-MACHINES.md — valid transitions and forbidden states
+- docs/specs/STORAGE-SCHEMA.md — exact persisted schema and completion recovery
 - ROADMAP.md — delivery order
 - docs/COMPETITIVE-RESEARCH.md — external evidence and product lessons
 - docs/DATA-PERSISTENCE.md — storage contract
@@ -328,7 +332,15 @@ Before presenting work as complete verify:
 
 - canonical/derived state remains clear
 - money remains exact
+- price source and confidence remain separate
 - uncertainty remains explicit
+
+### Specs
+
+- numbered requirements affected by the change are identified
+- state-machine transitions remain valid
+- storage schema changes include migration/recovery
+- application/adapter contract changes are deliberate
 
 ### Functionality
 
