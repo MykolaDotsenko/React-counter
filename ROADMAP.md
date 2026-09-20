@@ -141,7 +141,8 @@ Suggested PR:
 - budget
 - safety buffer
 - quantity
-- price origin
+- price source
+- price confidence
 - pure selectors for totals and remaining values
 - reducer or equivalent pure state transition layer
 
