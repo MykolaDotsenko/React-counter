@@ -1,0 +1,482 @@
+# Testing
+
+## Purpose
+
+Testing protects the product promise, not just implementation details.
+
+The target shopping budget companion handles money under real-time, distracted use. The quality bar therefore prioritises:
+
+- exact arithmetic
+- persistence reliability
+- fast correction
+- mobile usability
+- accessibility
+- graceful degradation of optional capabilities
+
+The current repository already has Vitest, React Testing Library, Playwright, axe, and a multi-browser CI matrix. Preserve that foundation while replacing counter-specific scenarios with shopping-domain coverage.
+
+## Definition of done
+
+A feature is not complete until:
+
+- lint passes
+- TypeScript typecheck passes once migration begins
+- relevant unit tests pass
+- relevant component tests pass
+- production build passes
+- affected Playwright flows pass
+- accessibility expectations remain satisfied
+- target documentation is updated when behaviour or contracts change
+
+No feature may rely on “manual QA later” for a critical money or persistence rule.
+
+## Quality layers
+
+### 1. Domain unit tests
+
+Highest density of tests.
+
+Cover pure rules without React or browser dependencies.
+
+Primary areas:
+
+- money parsing
+- minor-unit arithmetic
+- currency constraints
+- line totals
+- quantity
+- cart total
+- remaining and safe remaining
+- safety buffer
+- over-budget boundaries
+- discount rounding once implemented
+- reconciliation difference
+- price-origin transitions
+
+### 2. Persistence tests
+
+Cover schema and failure behaviour.
+
+Primary areas:
+
+- fresh state
+- active-trip restore
+- completed-trip restore
+- malformed JSON
+- missing fields
+- legacy Pulse Counter keys
+- supported schema migration
+- unsupported future version
+- storage unavailable
+- quota/write failure
+- immediate persistence after committed mutation
+
+### 3. Component tests
+
+Test user-visible semantics and interaction contracts.
+
+Primary areas:
+
+- start trip
+- price input
+- projected remaining preview
+- quantity change
+- over-budget warning
+- add anyway
+- undo
+- edit/remove
+- safety-buffer changes
+- price-origin labels
+- persistence warning
+
+Prefer role/name queries over implementation selectors.
+
+### 4. Browser E2E tests
+
+Protect critical real workflows.
+
+Primary browsers remain:
+
+- Chromium
+- Firefox
+- WebKit
+
+Add mobile-focused projects when the product UI migration reaches a stable state.
+
+## Canonical money scenarios
+
+These values should appear in tests as readable fixtures.
+
+### Basic exact arithmetic
+
+Budget: EUR 50.00
+
+Items:
+
+- EUR 3.79
+- EUR 12.50
+- EUR 7.99
+
+Expected:
+
+- cart total: EUR 24.28
+- remaining: EUR 25.72
+
+### Quantity
+
+Budget: EUR 20.00
+
+Item:
+
+- EUR 1.29 × 3
+
+Expected:
+
+- line total: EUR 3.87
+- remaining: EUR 16.13
+
+### Safety buffer
+
+Budget: EUR 50.00
+
+Buffer: EUR 2.00
+
+Cart: EUR 43.00
+
+Expected:
+
+- nominal remaining: EUR 7.00
+- safe remaining: EUR 5.00
+
+### Safe-limit crossing
+
+Budget: EUR 50.00
+
+Buffer: EUR 2.00
+
+Current cart: EUR 47.00
+
+Pending item: EUR 2.00
+
+Expected after commit:
+
+- cart total: EUR 49.00
+- nominal remaining: EUR 1.00
+- safe remaining: -EUR 1.00
+- safe limit exceeded
+- nominal budget not exceeded
+
+### Nominal over-budget
+
+Budget: EUR 50.00
+
+Current cart: EUR 48.00
+
+Pending item: EUR 4.00
+
+Expected projection:
+
+- EUR 2.00 over nominal budget
+- user can cancel or explicitly add anyway
+
+## Invariants to property-test where practical
+
+For valid trip states:
+
+- cartTotal equals the sum of line totals
+- remaining + cartTotal equals budget
+- safeRemaining + cartTotal equals budget - buffer
+- removing an item decreases total by exactly that line total
+- add then undo restores the previous canonical total
+- serialise then restore preserves canonical state
+
+Randomised/property-style tests are encouraged for money and selector logic because arithmetic invariants are more valuable than many hand-picked examples alone.
+
+## Money correctness rules
+
+Tests must prove:
+
+- canonical money never depends on binary decimal addition
+- values such as 0.1 + 0.2 cannot introduce user-visible drift
+- formatting does not mutate canonical values
+- quantity multiplication remains a safe integer
+- rounding policy is explicit for every future percentage calculation
+
+A useful portfolio proof point is a large deterministic cart with zero rounding drift.
+
+## Critical E2E journey
+
+The minimum flagship browser scenario:
+
+1. open app with clean storage
+2. choose EUR 50 budget
+3. add EUR 3.79
+4. add EUR 12.50
+5. change quantity on an item
+6. verify remaining amount
+7. reload page
+8. verify cart and budget restored exactly
+9. add an item that crosses safe limit
+10. undo
+11. add an item that crosses nominal budget
+12. cancel warning
+13. finish trip
+14. optionally enter actual checkout total
+15. verify completed summary
+
+## Reload and interruption testing
+
+Stores are distracting environments. The app must survive interruption.
+
+Test:
+
+- reload immediately after add
+- reload after edit
+- reload after undo
+- close/reopen simulated browser context with persisted storage where practical
+- resume after offline launch
+
+A committed item must not disappear because an animation or asynchronous helper had not finished.
+
+## Persistence failure tests
+
+Simulate storage exceptions.
+
+Expected behaviour:
+
+- valid in-memory state remains usable
+- persistence-health state becomes degraded
+- UI shows a clear warning
+- core arithmetic remains correct
+- no false “saved” status appears
+
+The current Pulse Counter silently falls back to memory. Shopping behaviour must explicitly test the new visible-failure contract.
+
+## Price-origin tests
+
+### Remembered price
+
+When a remembered price is suggested:
+
+- age is available to the UI
+- optional store is available
+- cart does not change until selection/confirmation
+- origin remains remembered unless explicitly confirmed current
+
+### Scanned price
+
+Scanner candidate:
+
+- cannot change cart before confirmation
+- can be rejected
+- supports multiple candidate resolution
+
+### Estimated price
+
+Estimated status survives:
+
+- edit
+- persistence round trip
+- cart summary derivation
+
+## Barcode adapter tests
+
+Do not make camera hardware the only way to test barcode behaviour.
+
+Use deterministic adapter fixtures for:
+
+- supported barcode result
+- unsupported barcode
+- product found
+- product not found
+- service timeout
+- malformed remote response
+
+All failures must preserve manual price entry.
+
+## OCR/price-scan tests
+
+Use static fixtures before camera E2E.
+
+Cases should include:
+
+- one obvious price
+- multiple prices on one label
+- superscript cents
+- unit price plus product price
+- discount and regular price
+- no valid price
+- malformed scanner response
+
+The product must never silently pick a risky candidate when ambiguity is known.
+
+## Accessibility tests
+
+Automated axe checks are necessary but not sufficient.
+
+Automated checks:
+
+- WCAG A/AA axe scan
+- landmarks
+- accessible names
+- no obvious contrast/ARIA violations
+
+Interaction tests:
+
+- keyboard-only start → add → edit → finish
+- focus restoration after modal/sheet close
+- announcement of committed remaining value
+- disabled states when applicable
+- no colour-only over-budget state
+
+Manual/visual checks before major release:
+
+- 200% text zoom
+- reduced motion
+- forced colours
+- 320–390px width
+- large text
+- touch target sizing
+
+## Motion tests
+
+Reduced-motion mode must preserve all behaviour.
+
+Test that:
+
+- add works with reduced motion
+- undo works with reduced motion
+- no financial commit depends on View Transition callback
+- animation failure does not duplicate or drop a mutation
+
+The strongest lesson from the existing Pulse Counter remains: decorative capability failure must not alter domain correctness.
+
+## Mobile/browser matrix
+
+Target stable matrix:
+
+- Desktop Chromium
+- Desktop Firefox
+- Desktop WebKit
+- mobile Chromium viewport/device profile
+- mobile WebKit viewport/device profile
+
+Do not multiply CI projects before stable product flows exist. Add coverage when it protects a distinct browser/input risk.
+
+## Offline/PWA tests
+
+Once PWA work lands:
+
+Test:
+
+- first online visit installs required shell resources
+- subsequent offline launch reaches the active trip
+- adding/editing/removing items works offline
+- network-dependent scanning/product lookup explains unavailability without breaking core UI
+- service-worker update does not discard shopping state
+
+## Visual regression
+
+Use selectively.
+
+Good candidates:
+
+- empty active trip
+- comfortable budget state
+- near-limit state
+- over-budget warning
+- mobile keypad
+- reduced-motion layout if visually distinct
+
+Do not create a brittle full-app screenshot suite for every animation frame.
+
+## Performance checks
+
+Critical interactions should remain local and immediate.
+
+Measure where useful:
+
+- time to interactive on production build
+- bundle size trend
+- input-to-render responsiveness for add/undo
+- scanner bundle isolation/lazy loading
+
+Optional scanner libraries must not penalise the initial manual-entry path unnecessarily.
+
+## Security/privacy tests
+
+If remote services are introduced later:
+
+- no financial or shopping data is transmitted without documented reason
+- API keys are not exposed in client code when secrecy is required
+- camera permission denial is handled
+- user content is not retained remotely beyond documented need
+
+## Regression policy
+
+Every confirmed production bug should gain the smallest durable automated regression test at the appropriate layer.
+
+Examples:
+
+- arithmetic bug → domain unit test
+- migration bug → persistence test
+- focus bug → component/E2E test
+- browser-specific scanner bug → adapter/browser test
+
+## Test naming
+
+Test names should express behaviour and consequence.
+
+Prefer:
+
+> restores the active cart after reload without changing the remaining amount
+
+Over:
+
+> works correctly
+
+## Test data
+
+Use obviously synthetic products and stores in automated tests.
+
+Avoid personal financial data and real user shopping history in fixtures.
+
+## CI target
+
+Target command shape after TypeScript migration:
+
+~~~text
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run test:e2e
+~~~
+
+The exact scripts may evolve, but CI should make the complete quality contract easy to run locally.
+
+## What not to test
+
+Avoid tests that only reproduce implementation details such as:
+
+- internal hook call order
+- exact CSS class names without semantic reason
+- private reducer helper structure
+- decorative particle positions unless visually contractual
+
+Protect behaviour, invariants, and user outcomes.
+
+## Release checklist
+
+Before a significant release:
+
+- all quality gates green
+- active-trip persistence verified
+- money invariants verified
+- mobile primary flow verified
+- offline behaviour verified where implemented
+- accessibility scan green
+- reduced-motion flow works
+- no known silent data-loss path
+- docs match shipped behaviour
+- README does not advertise target-only features as completed
