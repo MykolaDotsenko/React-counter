@@ -513,6 +513,132 @@ MONEY-SPEC.md, domain validation, UI validation, fixtures, and persistence valid
 Real usage requires free items, unusually large quantities, or higher-value purchases outside the intended shopping context.
 
 
+
+## D-020 — Brand promise is pre-checkout remaining control
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+The primary brand promise is:
+
+> Know what you can still afford before checkout.
+
+The product must not position itself primarily as a generic budgeting app, expense tracker, shopping list, or AI scanner.
+
+### Rationale
+
+The category is crowded, but the timing difference is distinctive and directly tied to the user's actionable moment: before payment, while the cart can still change.
+
+Competitor evidence repeatedly validates “know before checkout” language, while general finance positioning would create expectations the product intentionally does not meet.
+
+### Consequence
+
+Landing pages, App Store screenshots, social hooks, README product story, and future paid creative should lead with the pre-checkout remaining problem.
+
+Advanced features such as scanning or price memory are proof/mechanism, not the brand promise.
+
+### Revisit when
+
+Only if user research consistently shows a different job drives adoption and repeated use.
+
+## D-021 — CartRoom remains a working codename, not the locked product name
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Use CartRoom only as a working internal brand until final naming work includes:
+
+- trademark/conflict review
+- domain/handle checks
+- App Store/Google Play checks
+- recall/pronunciation testing
+- international interpretation review
+
+### Rationale
+
+CartRoom fits the “remaining room” metaphor, but “cart” is saturated and “room” is generic. Current search did not surface a major shopping-budget app with the exact name, but search is not legal clearance.
+
+### Consequence
+
+Do not rename repository/package/store identity to CartRoom yet.
+
+Marketing drafts may use [Brand] placeholders or identify CartRoom explicitly as a working name.
+
+### Revisit when
+
+Naming research is complete enough to make a durable public decision.
+
+## D-022 — Organic proof before meaningful paid acquisition
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Prioritize:
+
+1. real-user beta
+2. App Store/Play Store conversion quality
+3. organic short-form/demo content
+4. SEO/build-in-public
+5. only then meaningful paid acquisition
+
+### Rationale
+
+The product does not yet have measured activation, second-trip retention, or lifetime value.
+
+Paid acquisition before retention proof risks buying installs for a product whose repeat value is still unknown.
+
+### Consequence
+
+Do not recommend material paid-ad spend as a launch requirement.
+
+Store-listing experiments and organic creative tests should establish message/conversion signals first.
+
+### Revisit when
+
+The product has credible activation, second-trip retention, conversion, and monetization data.
+
+## D-023 — Monetization must preserve core shopping trust
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+The core manual shopping loop should remain free if the product is commercialized.
+
+Avoid a weekly subscription or surprise paywall before first value.
+
+Potential paid value should come from advanced or ongoing-cost features such as:
+
+- heavy OCR/scanning
+- cross-device sync
+- family sharing
+- advanced price history
+- retailer integrations
+
+### Rationale
+
+The target audience is explicitly budget-conscious. Category evidence shows that transparent/no-subscription positioning can itself become a trust signal.
+
+### Consequence
+
+Marketing copy must never bait users with a free promise that hides the basic trip workflow behind payment.
+
+### Revisit when
+
+Real service economics make a different model necessary, with explicit user-value evidence.
+
+
 ## How to add a decision
 
 Add a new numbered entry when a decision:
