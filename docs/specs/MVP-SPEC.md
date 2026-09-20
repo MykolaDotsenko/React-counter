@@ -90,6 +90,7 @@ Budget must:
 
 - be representable exactly in EUR cents
 - be greater than zero
+- not exceed EUR 999,999.99
 - remain within JavaScript safe-integer bounds after conversion to minor units
 
 Invalid input is rejected inline without discarding the user's draft.
@@ -174,7 +175,9 @@ After commit:
 
 For standard MVP cart items:
 
-- quantity is an integer >= 1
+- unit price must be greater than EUR 0
+- unit price must not exceed EUR 999,999.99
+- quantity is an integer from 1 through 999
 - default is 1
 - lineTotal = unitPriceMinor × quantity
 - arithmetic must remain within safe-integer bounds
