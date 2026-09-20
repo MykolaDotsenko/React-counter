@@ -7,12 +7,18 @@ const DEFAULT_SURFACE_STATE = Object.freeze({
   rotateY: "0deg",
 });
 
+const INTERACTIVE_SELECTOR =
+  "button, a, input, select, textarea, [role='button'], [contenteditable='true']";
+
 const applySurfaceState = (surface, state) => {
   surface.style.setProperty("--pointer-x", state.pointerX);
   surface.style.setProperty("--pointer-y", state.pointerY);
   surface.style.setProperty("--rotate-x", state.rotateX);
   surface.style.setProperty("--rotate-y", state.rotateY);
 };
+
+const isInteractiveTarget = (target) =>
+  target instanceof Element && target.closest(INTERACTIVE_SELECTOR) !== null;
 
 export function usePointerSurface() {
   const surfaceRef = useRef(null);
@@ -45,13 +51,21 @@ export function usePointerSurface() {
     applySurfaceState(surface, {
       pointerX: `${clampedX}%`,
       pointerY: `${clampedY}%`,
-      rotateX: `${((50 - clampedY) / 50) * 2.2}deg`,
-      rotateY: `${((clampedX - 50) / 50) * 2.6}deg`,
+      rotateX: pointer.allowTilt
+        ? `${((50 - clampedY) / 50) * 2.2}deg`
+        : "0deg",
+      rotateY: pointer.allowTilt
+        ? `${((clampedX - 50) / 50) * 2.6}deg`
+        : "0deg",
     });
   };
 
   const handlePointerMove = (event) => {
-    pointerRef.current = { x: event.clientX, y: event.clientY };
+    pointerRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      allowTilt: !isInteractiveTarget(event.target),
+    };
 
     if (frameRef.current === null) {
       frameRef.current = window.requestAnimationFrame(flushPointer);
