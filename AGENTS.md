@@ -21,13 +21,14 @@ Before changing code, read:
 1. AGENTS.md
 2. PRODUCT.md
 3. FUNCTIONALITY.md for feature behaviour, user-state transitions, fallbacks, and feature priority
-4. UX.md for interaction principles
-5. DESIGN.md for visual hierarchy, styling, product storytelling, and interaction presentation
-6. DOMAIN.md for business/data rules
-7. ARCHITECTURE.md for boundaries and migration state
-8. TESTING.md for the quality contract
-9. ROADMAP.md for current phase and sequencing
-10. relevant files in docs/ when the task touches those concerns
+4. SCENARIOS.md for scenario coverage, edge cases, and 100-point priority/UX scores
+5. UX.md for interaction principles
+6. DESIGN.md for visual hierarchy, styling, product storytelling, and interaction presentation
+7. DOMAIN.md for business/data rules
+8. ARCHITECTURE.md for boundaries and migration state
+9. TESTING.md for the quality contract
+10. ROADMAP.md for current phase and sequencing
+11. relevant files in docs/ when the task touches those concerns
 
 For a narrow change, do not reread unrelated long sections once the relevant contract is known, but never skip PRODUCT.md and the relevant domain/architecture rules.
 
@@ -257,6 +258,7 @@ Authoritative roles:
 
 - PRODUCT.md — what and why
 - FUNCTIONALITY.md — what the product does, user-state flows, fallbacks, and P0/P1/P2 behaviour
+- SCENARIOS.md — scenario matrix, edge cases, risk prioritisation, and target UX scores
 - UX.md — interaction principles and usability rules
 - DESIGN.md — visual system, hierarchy, branding restraint, and product storytelling
 - DOMAIN.md — business rules
@@ -331,6 +333,8 @@ Before presenting work as complete verify:
 ### Functionality
 
 - feature behaviour matches FUNCTIONALITY.md
+- relevant scenarios in SCENARIOS.md are covered
+- Tier 0 scenarios are not weakened
 - optional services have a manual fallback
 - no new metadata is required without clear value
 - P0/P1/P2 scope is respected
