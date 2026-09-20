@@ -8,15 +8,21 @@ The product is local-first. Persistence is therefore part of the core user exper
 
 ## Status
 
-Current code still uses Pulse Counter storage:
+Phase 3 implements the shopping active-trip persistence boundary:
 
-- pulse-counter:state
-- legacy counter key migration
-- silent in-memory fallback on storage failure
+- `budget-cart:active-trip` schema version 1
+- strict Zod 4 validation of untrusted persisted DTOs
+- validated DTO → Phase 2 domain reconstruction
+- complete active-trip snapshot writes
+- explicit `healthy` / `degraded` outcomes
+- malformed and unsupported-future data preservation for recovery
+- explicit safe retirement of `pulse-counter:state` and `counter` only after shopping-state bootstrap succeeds
 
-The shopping product must replace that schema deliberately.
+The current Pulse Counter UI is intentionally not wired to the new adapter yet; that user-facing migration belongs to the core shopping UI/application phase.
 
-The old numeric counter value must never be interpreted as money.
+History, settings, completion transactions, and price-memory persistence remain later slices.
+
+The old numeric counter value is never interpreted as money.
 
 ## Persistence goals
 
@@ -420,13 +426,13 @@ Required cases:
 
 ### Write failure
 
-- in-memory state correct
-- persistence health degraded
-- UI warned
+- in-memory state correct — implemented and tested
+- persistence health degraded — implemented and tested
+- UI warned — pending shopping UI/application wiring
 
 ### Completion failure
 
-- failed history write does not delete active trip
+- failed history write does not delete active trip — reserved for the checkout/history persistence phase
 
 ### Future version
 

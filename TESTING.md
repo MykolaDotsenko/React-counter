@@ -320,12 +320,14 @@ The selected custom ShoppingAppController + useSyncExternalStore architecture re
 
 ### Zod boundaries
 
-When Zod lands in Phase 3:
+Phase 3 implements this boundary. Tests must continue to prove:
 
 - valid storage DTO maps to domain state
 - invalid DTO never becomes branded domain data
 - unsupported versions fail before domain reconstruction
+- malformed/future raw active-trip data is preserved rather than overwritten
 - schema validation and domain invariant validation remain separate test concerns
+- legacy Pulse values are never converted into shopping money
 
 ### PWA
 

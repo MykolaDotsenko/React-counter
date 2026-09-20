@@ -113,11 +113,10 @@ src/
 │   └── scanning/          # P1
 ├── infrastructure/
 │   ├── storage/
-│   │   ├── local-storage-active-trip.ts
-│   │   ├── local-storage-history.ts
-│   │   ├── local-storage-settings.ts
-│   │   ├── schemas/
-│   │   └── migrations/
+│   │   ├── shopping-storage-schema.ts   # active-trip v1 shipped
+│   │   ├── shopping-storage.ts          # active-trip adapter shipped
+│   │   ├── local-storage-history.ts     # later checkout/history phase
+│   │   └── local-storage-settings.ts    # later settings phase
 │   ├── barcode/           # P1
 │   ├── price-scan/        # P1
 │   └── pwa/
@@ -170,11 +169,11 @@ This layer should be testable without React.
 
 Implements application ports.
 
-MVP infrastructure includes:
+MVP infrastructure target includes:
 
-- localStorage active-trip repository
-- localStorage history repository
-- localStorage settings repository
+- localStorage active-trip repository — implemented in Phase 3
+- localStorage history repository — later checkout/history phase
+- localStorage settings repository — later settings phase
 - production clock
 - UUID generator
 - service worker/PWA setup
@@ -460,12 +459,14 @@ The current Pulse Counter safely falls back to memory on storage errors because 
 
 That behaviour is no longer sufficient for a shopping trip.
 
-Target behaviour:
+Phase 3 infrastructure behaviour:
 
 1. keep the valid in-memory state usable
-2. mark persistence health as degraded
-3. communicate the risk clearly
-4. provide recovery/export options where practical
+2. return persistence health as degraded after the latest failed write/read/remove
+3. preserve malformed/future raw active-trip data instead of overwriting it
+4. never reinterpret legacy counter values as shopping money
+
+The user-facing warning/retry/export presentation remains an application/UI responsibility for the core shopping UI phase.
 
 No silent data-loss risk.
 
@@ -793,7 +794,7 @@ SHOULD:
 
 ## Architecture readiness score
 
-Current target architecture: **97/100**
+Current target architecture: **98/100**
 
 Strengths:
 
@@ -809,7 +810,7 @@ Remaining design decisions before 100:
 
 - final immediate Continue shopping semantics after completion
 - exact PWA update/reload policy during an active trip
-- implementation evidence for the specified money/persistence contracts
+- application-layer orchestration wiring for the shipped active-trip persistence boundary
 
 None block Phase 1 money/domain implementation.
 

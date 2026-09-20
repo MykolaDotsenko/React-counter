@@ -200,6 +200,27 @@ Suggested PR:
 
 ## Phase 3 — persistence migration
 
+**Status: complete — delivered via PR #14 on 2026-09-21.**
+
+Implementation evidence:
+
+- Zod 4.6.5 runtime validation at the storage boundary
+- strict `budget-cart:active-trip` v1 DTO/envelope
+- DTO → domain reconstruction through Phase 2 constructors/reducer
+- domain → DTO complete-snapshot serialization
+- explicit healthy/degraded persistence outcomes
+- malformed JSON and invalid-data recovery without startup crash
+- unsupported future versions preserved and never overwritten during restore/bootstrap
+- canonical data rejects unexpected derived fields
+- active-trip write/restore/clear helpers with injected StorageLike boundary
+- legacy `pulse-counter:state` and `counter` values never interpreted as money
+- legacy keys retired only after successful shopping-state bootstrap
+- valid in-memory trip survives simulated write failure unchanged
+- 33 dedicated persistence tests
+- full repository suite at PR validation: 128 tests
+- production dependency audit clean
+- browser/accessibility matrix retained as regression gate
+
 Suggested PR:
 
 > feat: persist versioned shopping trips safely
@@ -611,25 +632,22 @@ Do not revise simply to accommodate an attractive technology.
 
 ## Current next implementation step
 
-Phases 1 and 2 are complete.
+Phases 1, 2, and 3 are complete.
 
-The next implementation slice is:
+The next implementation gate is:
 
-> **Phase 3 — versioned shopping-trip persistence**
+> **Scenario + design validation before Phase 4 — core Budget Cart UI**
 
-Implement the persistence boundary only:
+Before changing the visible Pulse Counter experience, validate the Tier 0 shopping scenarios and the three documented design directions against the shipped exact-money/domain/persistence contracts.
 
-- add Zod 4 runtime validation at infrastructure boundaries
-- implement the documented v1 storage DTO/schema
-- map validated DTOs into the Phase 2 domain constructors
-- persist and restore the active trip
-- retire the legacy Pulse Counter storage key explicitly
-- never reinterpret the old counter value as money
-- handle malformed, unsupported-version and future-version data safely
-- expose persistence health as healthy/degraded instead of silently falling back
-- preserve valid in-memory shopping state when a write fails
-- add deterministic migration and storage-failure tests
+Then Phase 4 should wire the application/UI to:
 
-Do not start the shopping UI, PWA, barcode, OCR, price memory, cloud sync, or scanner adapters inside Phase 3.
+- start or restore an active shopping trip
+- use the Phase 3 persistence boundary rather than the legacy counter storage
+- make remaining budget the dominant information
+- show cart total / budget and safety-buffer state
+- expose persistence degradation clearly
+- keep manual Add price as the primary action
+- preserve mobile-first accessibility and the existing quality matrix
 
-The goal is to make every committed shopping mutation durably recoverable before the user-facing product migration begins.
+Do not start barcode, OCR, price memory, cloud sync, or PWA work inside Phase 4.
