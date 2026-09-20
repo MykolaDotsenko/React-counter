@@ -18,6 +18,12 @@ Current implementation:
 Target product:
 
 - mobile-first shopping budget companion
+- React 19.3 + Vite 8 static SPA/PWA
+- strict TypeScript 6.0.x migration baseline
+- custom plain-TypeScript application controller + React useSyncExternalStore
+- Zod 4 only at untrusted persistence/network boundaries
+- CSS Modules + native semantic HTML
+- vite-plugin-pwa + Workbox generateSW
 - strict TypeScript domain
 - exact money arithmetic
 - active shopping trip and cart items
@@ -197,17 +203,18 @@ This keeps tests free to inject memory repositories, fixed clocks, and determini
 
 ## Application state ownership
 
-MVP should not introduce Redux/Zustand or another state library without demonstrated need.
+MVP does not use Redux, Zustand, or XState runtime.
 
-Recommended model:
+Selected model:
 
-1. React owns one `ShoppingAppState` value through a top-level hook/provider boundary.
-2. UI sends typed application commands.
-3. application orchestration computes valid next state and attempts persistence.
-4. React receives the resulting state once.
-5. selectors derive display values from canonical trip.
+1. a small plain-TypeScript ShoppingAppController owns one immutable ShoppingAppState snapshot
+2. the controller exposes getSnapshot() and subscribe()
+3. React reads it through useSyncExternalStore
+4. UI sends typed application commands
+5. application orchestration computes valid next state and attempts persistence
+6. selectors derive display values from canonical trip
 
-Do not mirror the same cart state across context, reducer, localStorage, and component state.
+Do not mirror the same cart state across controller, context, reducer, localStorage, and component state.
 
 Only one in-memory canonical application state should exist.
 
@@ -264,6 +271,8 @@ The detailed technical contracts are split by concern:
 - `docs/specs/STATE-MACHINES.md` — lifecycle and ephemeral state transitions
 - `docs/specs/STORAGE-SCHEMA.md` — exact local persistence schema and completion recovery
 - `docs/specs/MONEY-SPEC.md` — EUR-only parsing, formatting, arithmetic, limits, and money tests
+- `TECH-STACK.md` — authoritative technology selections and dependency budget
+- `docs/tech/TECHNOLOGY-RESEARCH.md` — alternatives, scoring, and research evidence
 
 When this architecture document and a detailed spec differ, stop implementation and reconcile the documentation rather than choosing one silently.
 
@@ -401,11 +410,24 @@ domain item commit
 
 Scanner output never mutates canonical cart state directly.
 
+## Runtime validation
+
+Use Zod 4 at untrusted boundaries only:
+
+- localStorage DTOs
+- migrations
+- remote provider responses
+- future scanner/provider payloads
+
+Pure domain modules do not import Zod.
+
+Infrastructure validates unknown data and maps it into domain constructors.
+
 ## Persistence
 
 ### MVP decision
 
-Use versioned localStorage while the canonical dataset remains small and text-only.
+Use versioned localStorage while the canonical dataset remains small and text-only. Validate storage envelopes with Zod before domain reconstruction.
 
 This is intentionally conservative.
 
@@ -480,6 +502,17 @@ Price memory is advisory.
 
 It never changes cart totals until a value is selected/confirmed through the application flow.
 
+## Scanner technology
+
+Selected P1 direction:
+
+- native BarcodeDetector where supported
+- lazy BarcodeDetector-compatible ZXing-C++ WASM fallback
+- self-hosted WASM for offline operation
+- Open Food Facts as an optional ProductLookup provider
+- ShelfPriceScanner remains provider-agnostic
+- Tesseract.js is the first OCR benchmark candidate, not a locked production dependency
+
 ## Scanner architecture
 
 Scanning is progressive enhancement.
@@ -534,6 +567,12 @@ Do not create authentication, server APIs, or databases pre-emptively.
 
 ## PWA and offline
 
+Selected tooling:
+
+- vite-plugin-pwa
+- Workbox generateSW
+- prompt-based update flow
+
 PWA support is product-relevant because stores can have poor connectivity and the app benefits from home-screen launch.
 
 Target PWA responsibilities:
@@ -544,6 +583,20 @@ Target PWA responsibilities:
 - safe update behaviour
 
 Business data remains owned by the persistence layer, not the service worker cache.
+
+## UI technology
+
+MVP uses:
+
+- CSS Modules
+- CSS custom properties/design tokens
+- native semantic HTML
+- native dialog wrappers
+- React 19.3 ViewTransition + CSS motion
+- no Tailwind
+- no CSS-in-JS runtime
+- no full UI kit
+- no router until meaningful deep links exist
 
 ## React boundary
 
