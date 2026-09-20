@@ -2,9 +2,25 @@
 
 ## Status
 
-Target localStorage schema for the shopping-budget MVP.
+The active-trip v1 portion of this localStorage schema is implemented in Phase 3.
 
-This document makes docs/DATA-PERSISTENCE.md concrete. It does not mean the schema is implemented yet.
+Implemented now:
+
+- `budget-cart:active-trip`
+- common v1 envelope for active-trip snapshots
+- strict Zod DTO validation
+- domain reconstruction
+- malformed/future-version recovery outcomes
+- safe legacy Pulse-key retirement after successful shopping bootstrap
+
+Still target-only in this document:
+
+- completed-trip history
+- settings
+- optional meta record
+- completion transaction/reconciliation
+
+This document continues to define those later persistence slices before they are implemented.
 
 ## Goals
 
@@ -470,12 +486,14 @@ Required fixture classes:
 
 ## Schema readiness score
 
-**98/100**
+**Active-trip v1 implementation: 100/100 against the Phase 3 scope.**
 
-Remaining before implementation lock:
+Full persistence design remains **98/100** because later history/completion concerns still need implementation evidence.
 
-- final supported-currency list
+Remaining later-phase decisions:
+
 - whether meta key is worth keeping in MVP
 - exact history quarantine UX for partially invalid old history
+- duplicate active/history reconciliation when completion persistence ships
 
-None of these block Phase 1 exact-money/domain work.
+The supported MVP currency is already locked to EUR.
