@@ -27,6 +27,7 @@ Goal: make future AI-assisted development consistent.
 
 - PRODUCT.md
 - FUNCTIONALITY.md
+- SCENARIOS.md
 - UX.md
 - DESIGN.md
 - DOMAIN.md
@@ -47,6 +48,7 @@ Goal: make future AI-assisted development consistent.
 - target/current architecture distinction is explicit
 - AI agent instructions point to authoritative docs
 - visual design direction and prototype evaluation criteria are explicit
+- Tier 0 scenario coverage and unresolved scenario risks are explicit
 
 ## Phase 1 — exact money foundation
 
@@ -123,6 +125,28 @@ Suggested PR:
 - committed shopping mutations survive reload
 - simulated write failure is visible to application/UI
 - no silent claim that an unsaved trip is safe
+
+## Scenario validation gate — before Phase 4
+
+Before building the final core UI, review the Tier 0 scenarios in SCENARIOS.md and verify that the proposed interaction model supports them without contradictory behaviour.
+
+At minimum, walkthrough/prototype:
+
+- first launch
+- active-trip resume
+- basic manual add
+- typo before and after commit
+- quantity
+- safety buffer
+- safe-limit crossing
+- nominal over-budget preview
+- intentional over-budget state
+- persistence failure
+- reload durability
+- offline launch
+- one-hand use
+
+No Tier 0 scenario may fall below the documented target quality without an explicit decision and updated documentation.
 
 ## Design validation gate — before Phase 4
 
@@ -427,12 +451,13 @@ Before implementing a roadmap item, an AI agent should read:
 1. AGENTS.md
 2. PRODUCT.md
 3. relevant FUNCTIONALITY.md section
-4. relevant UX.md section
-5. DESIGN.md for visual/user-facing work
-6. relevant DOMAIN.md section
-7. ARCHITECTURE.md
-8. TESTING.md
-9. this roadmap item
+4. relevant SCENARIOS.md entries
+5. relevant UX.md section
+6. DESIGN.md for visual/user-facing work
+7. relevant DOMAIN.md section
+8. ARCHITECTURE.md
+9. TESTING.md
+10. this roadmap item
 
 The agent should implement only the current roadmap slice plus fixes required to keep main healthy.
 
