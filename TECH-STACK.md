@@ -676,12 +676,19 @@ If the requirement can be solved clearly with a small amount of native code, pre
 
 Add:
 
-- typescript
+- typescript 6.0.x
 - typescript-eslint tooling as required
-- zod
 - fast-check
 
-No PWA/scanner/OCR dependency yet.
+No runtime production dependency is required for the pure money/domain foundation.
+
+### Phase 3 persistence
+
+Add:
+
+- zod
+
+Only when persisted runtime schemas/migrations are implemented.
 
 ### Core UI / PWA phase
 
