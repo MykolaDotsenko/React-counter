@@ -27,6 +27,7 @@ Goal: make future AI-assisted development consistent.
 
 - PRODUCT.md
 - UX.md
+- DESIGN.md
 - DOMAIN.md
 - ARCHITECTURE.md
 - TESTING.md
@@ -44,6 +45,7 @@ Goal: make future AI-assisted development consistent.
 - money model is explicit
 - target/current architecture distinction is explicit
 - AI agent instructions point to authoritative docs
+- visual design direction and prototype evaluation criteria are explicit
 
 ## Phase 1 — exact money foundation
 
@@ -120,6 +122,24 @@ Suggested PR:
 - committed shopping mutations survive reload
 - simulated write failure is visible to application/UI
 - no silent claim that an unsaved trip is safe
+
+## Design validation gate — before Phase 4
+
+Before implementing the final visual system, prototype the three directions defined in DESIGN.md:
+
+- Calm utility
+- Premium spatial
+- Warm everyday
+
+Evaluate them using task questions rather than aesthetic preference:
+
+- Can a first-time viewer explain the app purpose in 3–5 seconds?
+- Can they identify remaining budget instantly?
+- Can they identify Add price instantly?
+- Can they use the primary action one-handed?
+- Does the progress visual clearly mean remaining capacity?
+
+Choose one direction or a deliberately justified hybrid only after this comparison. Do not merge all three styles by default.
 
 ## Phase 4 — core Budget Cart UI
 
@@ -405,10 +425,11 @@ Before implementing a roadmap item, an AI agent should read:
 1. AGENTS.md
 2. PRODUCT.md
 3. relevant UX.md section
-4. relevant DOMAIN.md section
-5. ARCHITECTURE.md
-6. TESTING.md
-7. this roadmap item
+4. DESIGN.md for visual/user-facing work
+5. relevant DOMAIN.md section
+6. ARCHITECTURE.md
+7. TESTING.md
+8. this roadmap item
 
 The agent should implement only the current roadmap slice plus fixes required to keep main healthy.
 
