@@ -20,12 +20,13 @@ Before changing code, read:
 
 1. AGENTS.md
 2. PRODUCT.md
-3. UX.md for user-facing work
-4. DOMAIN.md for business/data rules
-5. ARCHITECTURE.md for boundaries and migration state
-6. TESTING.md for the quality contract
-7. ROADMAP.md for current phase and sequencing
-8. relevant files in docs/ when the task touches those concerns
+3. UX.md for user-facing behaviour
+4. DESIGN.md for visual hierarchy, styling, product storytelling, and interaction presentation
+5. DOMAIN.md for business/data rules
+6. ARCHITECTURE.md for boundaries and migration state
+7. TESTING.md for the quality contract
+8. ROADMAP.md for current phase and sequencing
+9. relevant files in docs/ when the task touches those concerns
 
 For a narrow change, do not reread unrelated long sections once the relevant contract is known, but never skip PRODUCT.md and the relevant domain/architecture rules.
 
@@ -254,7 +255,8 @@ When behaviour changes:
 Authoritative roles:
 
 - PRODUCT.md — what and why
-- UX.md — interaction and presentation behaviour
+- UX.md — interaction behaviour and user flows
+- DESIGN.md — visual system, hierarchy, branding restraint, and product storytelling
 - DOMAIN.md — business rules
 - ARCHITECTURE.md — software boundaries and trade-offs
 - TESTING.md — quality contract
@@ -329,6 +331,14 @@ Before presenting work as complete verify:
 - remaining amount remains obvious
 - common path did not gain unnecessary taps
 - errors are recoverable
+
+### Design
+
+- product purpose is obvious without explanation
+- one primary visual action remains dominant
+- secondary controls are progressively disclosed
+- brand styling does not overpower shopping information
+- light/dark/large-text states remain coherent
 
 ### Reliability
 
