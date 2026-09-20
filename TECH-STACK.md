@@ -684,11 +684,13 @@ No runtime production dependency is required for the pure money/domain foundatio
 
 ### Phase 3 persistence
 
-Add:
+**Implemented.**
 
-- zod
+Runtime dependency:
 
-Only when persisted runtime schemas/migrations are implemented.
+- zod 4.6.5
+
+Zod is confined to the untrusted storage DTO boundary. The pure money and shopping-trip domain modules remain Zod-free.
 
 ### Core UI / PWA phase
 
