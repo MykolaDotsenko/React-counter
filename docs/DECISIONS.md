@@ -639,6 +639,356 @@ Marketing copy must never bait users with a free promise that hides the basic tr
 Real service economics make a different model necessary, with explicit user-value evidence.
 
 
+
+## D-024 — Core runtime remains React 19.3 + Vite 8
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Keep the existing React/Vite SPA foundation.
+
+Target core:
+
+- React 19.3
+- React DOM
+- Vite 8.x
+- Node 24 tooling/runtime for CI
+
+Do not migrate to Next.js, Preact, Vue, or Svelte for the shopping-product pivot.
+
+### Rationale
+
+The product is a local-first static PWA with no SSR or mandatory server requirement.
+
+React 19.3 and Vite already satisfy the UI, code-splitting, testing, browser-API, and PWA integration needs. Rewriting the UI framework would add migration risk without changing the user outcome.
+
+### Consequence
+
+Architecture work focuses on domain/application/persistence quality rather than framework migration.
+
+### Revisit when
+
+A future requirement materially depends on a capability that the current static React/Vite architecture cannot reasonably provide.
+
+## D-025 — Begin migration on strict TypeScript 6.0.x
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Use strict TypeScript 6.0.x for the first shopping-product migration.
+
+Do not adopt TypeScript 7 in the same change that introduces the new domain/application architecture.
+
+### Rationale
+
+TypeScript 7 is current and materially faster, but the repository is small enough that compiler speed is not a bottleneck.
+
+The first migration already changes:
+
+- money representation
+- persistence schemas
+- application boundaries
+- domain types
+
+Keeping the compiler/tooling transition separate reduces simultaneous risk.
+
+### Consequence
+
+After Phase 1–3 are green, create a focused TypeScript 7 compatibility upgrade.
+
+### Revisit when
+
+The initial TypeScript migration is complete and the current lint/testing ecosystem has verified TS7 compatibility.
+
+## D-026 — No third-party global state library in MVP
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Use a small plain-TypeScript application controller/store and React useSyncExternalStore.
+
+Do not add:
+
+- Redux Toolkit
+- Zustand
+- XState runtime
+
+for MVP.
+
+### Rationale
+
+The app has one small canonical application state, but persistence orchestration should remain outside React.
+
+A custom controller provides:
+
+- deterministic commands
+- one canonical snapshot
+- subscription to React
+- clean dependency injection
+- no library-specific domain model
+
+### Consequence
+
+Application state APIs must remain deliberately small and immutable at the snapshot boundary.
+
+### Revisit when
+
+State complexity or collaboration requirements grow enough that the custom solution becomes harder to reason about than a library.
+
+## D-027 — Zod validates untrusted boundaries, not the domain
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Use Zod 4 for:
+
+- persisted DTOs
+- migrations
+- external API responses
+- future provider/scanner DTOs
+
+Pure domain code must not depend on Zod.
+
+### Rationale
+
+TypeScript types cannot validate runtime JSON.
+
+Zod materially reduces persistence/API corruption risk, while keeping it outside the domain preserves framework/library independence.
+
+### Consequence
+
+Infrastructure maps validated DTOs into domain constructors/branded types.
+
+### Revisit when
+
+A smaller/safer runtime validator materially improves the system without reducing schema clarity or migration reliability.
+
+## D-028 — PWA uses vite-plugin-pwa + Workbox generateSW first
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Implement initial offline/PWA support with:
+
+- vite-plugin-pwa
+- Workbox generateSW
+- prompt-based updates
+- application-shell precaching
+
+Do not hand-write the first service worker.
+
+### Rationale
+
+The core offline requirement is simple static-shell availability.
+
+A generated Workbox service worker is more reliable and maintainable than custom lifecycle/cache code for the MVP.
+
+### Consequence
+
+Business data remains in localStorage, not Cache Storage.
+
+The service worker must never force a reload during an active trip.
+
+### Revisit when
+
+A documented feature requires custom background sync, complex runtime caching, or bespoke service-worker messaging. At that point, evaluate injectManifest.
+
+## D-029 — MVP uses native semantic UI and CSS Modules, not a UI framework
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Use:
+
+- semantic HTML
+- native dialog
+- CSS Modules
+- CSS custom properties
+- React ViewTransition + CSS
+
+Do not add Tailwind, a full component library, CSS-in-JS, or a general animation runtime for MVP.
+
+### Rationale
+
+The product has a small, custom, accessibility-sensitive interface.
+
+Native primitives now cover the required modal/dialog semantics, while CSS Modules preserve strong custom design control with no runtime styling dependency.
+
+### Consequence
+
+Any later Radix/UI-library addition must solve a verified accessibility/browser problem rather than convenience alone.
+
+### Revisit when
+
+Native primitives fail a documented interaction/accessibility requirement.
+
+## D-030 — No router until URLs have real product value
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Do not add React Router or another router to MVP.
+
+Use application/UI state for:
+
+- active trip
+- add-price overlay
+- history
+- settings
+- completed summary
+
+### Rationale
+
+The core product is one task surface.
+
+Routing would add URL/state synchronization complexity without a deep-link requirement.
+
+### Consequence
+
+If future history/shared/public pages require durable URLs, prefer React Router Declarative Mode as the first option.
+
+### Revisit when
+
+A real deep-link/navigation requirement appears.
+
+## D-031 — Barcode scanning uses progressive native + lazy WASM detection
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+For P1 barcode scanning:
+
+1. use native BarcodeDetector when supported for required formats
+2. otherwise lazy-load a BarcodeDetector-compatible ZXing-C++ WebAssembly ponyfill
+3. self-host WASM for offline compatibility
+
+The current preferred fallback candidate is the barcode-detector package.
+
+### Rationale
+
+The native Barcode Detection API remains unavailable in some widely used browsers.
+
+A standardized native/ponyfill interface gives cleaner capability boundaries than coupling the application to one scanner library.
+
+### Consequence
+
+Scanner code remains outside the initial bundle and behind BarcodeScanner.
+
+Manual price entry remains available in every scanner failure state.
+
+### Revisit when
+
+Browser support becomes sufficient to drop the fallback, or benchmark data shows a materially better scanner SDK.
+
+## D-032 — Open Food Facts is an optional product-identity provider, not a price provider
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Use Open Food Facts as the first provider candidate behind ProductLookup for barcode-based product identity.
+
+Do not treat it as an authoritative current store-price source.
+
+### Rationale
+
+The API supports product retrieval by barcode and an official JS/TS SDK exists.
+
+The product's business rule remains that barcode identifies a product; current shelf price is contextual.
+
+### Consequence
+
+- remote responses are runtime-validated
+- not-found is normal
+- manual flow survives provider failure
+- API client-identification policy must be resolved before production
+- provider-specific DTOs never enter the domain
+
+### Revisit when
+
+A better product-identity data source exists for the target market, or API policy makes browser usage impractical.
+
+## D-033 — Shelf OCR provider remains benchmark-gated
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Do not make a production OCR vendor/library part of core architecture yet.
+
+Keep ShelfPriceScanner provider-agnostic.
+
+Use Tesseract.js in a Web Worker as the first on-device benchmark candidate.
+
+### Rationale
+
+OCR accuracy and latency on real grocery shelf labels are empirical risks.
+
+Locking a heavy OCR library or cloud vendor before mobile benchmarking would be technology-first design.
+
+### Consequence
+
+No OCR production dependency is added until fixture/mobile tests demonstrate useful speed and candidate quality.
+
+If local OCR fails, cloud OCR can be evaluated behind the same port without changing domain/application code.
+
+### Revisit when
+
+Benchmark data exists.
+
+## D-034 — localStorage remains MVP persistence despite adding runtime validation
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Keep versioned localStorage as MVP canonical persistence and add Zod validation at its boundary.
+
+Do not move to IndexedDB/Dexie merely because the product is becoming more complex.
+
+### Rationale
+
+Canonical shopping state remains small text data, and synchronous write semantics are useful for the durability contract.
+
+### Consequence
+
+Upgrade storage only for actual data-volume/query/media requirements.
+
+### Revisit when
+
+Images, large price history, large offline datasets, or indexed-query requirements appear.
+
+
 ## How to add a decision
 
 Add a new numbered entry when a decision:
