@@ -1,15 +1,25 @@
-import js from "@eslint/js";
+import js from "eslint/configs/recommended";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
+import tseslint from "typescript-eslint";
+
+const typescriptRecommended = tseslint.configs.recommended.map((config) => ({
+  ...config,
+  files: ["**/*.{ts,tsx}"],
+}));
 
 export default [
   {
     ignores: ["dist", "coverage", "playwright-report", "test-results"],
   },
-  js.configs.recommended,
   {
+    ...js,
     files: ["**/*.{js,jsx,mjs}"],
+  },
+  ...typescriptRecommended,
+  {
+    files: ["**/*.{js,jsx,mjs,ts,tsx}"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -31,7 +41,7 @@ export default [
     },
   },
   {
-    files: ["src/**/*.jsx"],
+    files: ["src/**/*.{jsx,tsx}"],
     plugins: {
       "react-refresh": reactRefresh,
     },
