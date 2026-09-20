@@ -831,28 +831,22 @@ export const reduceTrip = (
         return labelResult;
       }
 
-      const candidate: CartItem = {
-        ...current,
-        ...(command.patch.unitPriceMinor === undefined
-          ? {}
-          : { unitPriceMinor: command.patch.unitPriceMinor }),
-        ...(command.patch.quantity === undefined
-          ? {}
-          : { quantity: command.patch.quantity }),
-        ...(labelResult.value === undefined
-          ? (() => {
-              const { label: _removed, ...withoutLabel } = current;
-              return withoutLabel;
-            })()
-          : { label: labelResult.value }),
-        ...(command.patch.priceSource === undefined
-          ? {}
-          : { priceSource: command.patch.priceSource }),
-        ...(command.patch.priceConfidence === undefined
-          ? {}
-          : { priceConfidence: command.patch.priceConfidence }),
+      const candidateBase = {
+        id: current.id,
+        unitPriceMinor:
+          command.patch.unitPriceMinor ?? current.unitPriceMinor,
+        quantity: command.patch.quantity ?? current.quantity,
+        priceSource: command.patch.priceSource ?? current.priceSource,
+        priceConfidence:
+          command.patch.priceConfidence ?? current.priceConfidence,
+        createdAt: current.createdAt,
         updatedAt: command.now,
-      };
+      } satisfies Omit<CartItem, "label">;
+
+      const candidate: CartItem =
+        labelResult.value === undefined
+          ? candidateBase
+          : { ...candidateBase, label: labelResult.value };
 
       const candidateResult = validateCartItem(candidate);
 
