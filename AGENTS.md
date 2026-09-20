@@ -273,6 +273,11 @@ Authoritative roles:
 - docs/specs/STATE-MACHINES.md — valid transitions and forbidden states
 - docs/specs/STORAGE-SCHEMA.md — exact persisted schema and completion recovery
 - docs/specs/MONEY-SPEC.md — EUR-only parsing, formatting, arithmetic, limits, and money tests
+- BRAND.md — positioning, naming rules, voice, identity, and trust system
+- MARKETING.md — acquisition, ASO, content, launch, pricing, and experimentation strategy
+- docs/marketing/RESEARCH.md — platform guidance, competitor cases, and evidence quality
+- docs/marketing/STORE-LISTING-SPEC.md — exact store metadata/assets contract
+- docs/marketing/LAUNCH-CHECKLIST.md — marketing/release readiness gates
 - ROADMAP.md — delivery order
 - docs/COMPETITIVE-RESEARCH.md — external evidence and product lessons
 - docs/DATA-PERSISTENCE.md — storage contract
@@ -372,6 +377,15 @@ Before presenting work as complete verify:
 - secondary controls are progressively disclosed
 - brand styling does not overpower shopping information
 - light/dark/large-text states remain coherent
+
+### Brand / marketing
+
+- message leads with pre-checkout remaining control, not generic finance or AI
+- CartRoom is not treated as a final public name
+- no marketing copy claims unshipped features
+- store assets match STORE-LISTING-SPEC.md
+- monetization does not contradict D-023
+- material paid acquisition is not treated as required before retention evidence
 
 ### Reliability
 
