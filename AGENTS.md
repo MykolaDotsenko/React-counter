@@ -98,12 +98,16 @@ The domain must not depend on React, DOM, storage, camera, OCR, network, or anim
 
 ### Exact money
 
-Once the shopping money domain lands, all canonical monetary arithmetic uses integer minor units.
+MVP supports EUR only.
+
+All canonical monetary arithmetic uses integer cents.
 
 Example:
 
 - EUR 4.79 → 479
 - EUR 50.00 → 5000
+
+Do not widen currency support without an explicit documented decision and complete MONEY-SPEC coverage.
 
 Formatting is presentation. Arithmetic is domain.
 
@@ -268,6 +272,7 @@ Authoritative roles:
 - docs/specs/CONTRACTS.md — implementation contracts and ports
 - docs/specs/STATE-MACHINES.md — valid transitions and forbidden states
 - docs/specs/STORAGE-SCHEMA.md — exact persisted schema and completion recovery
+- docs/specs/MONEY-SPEC.md — EUR-only parsing, formatting, arithmetic, limits, and money tests
 - ROADMAP.md — delivery order
 - docs/COMPETITIVE-RESEARCH.md — external evidence and product lessons
 - docs/DATA-PERSISTENCE.md — storage contract
@@ -341,6 +346,9 @@ Before presenting work as complete verify:
 - state-machine transitions remain valid
 - storage schema changes include migration/recovery
 - application/adapter contract changes are deliberate
+- money changes comply with docs/specs/MONEY-SPEC.md
+- no parseFloat-based canonical money path is introduced
+- EUR-only scope is preserved unless deliberately revised
 
 ### Functionality
 
