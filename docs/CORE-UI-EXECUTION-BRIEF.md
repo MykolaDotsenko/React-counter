@@ -702,6 +702,12 @@ Persistence failure:
 
 ## B6 — Minimum correction and quality gate
 
+Status: **automated/code gate implemented via PR #28; representative human timing and physical one-hand/bright-store evidence pending**
+
+Evidence protocol:
+
+- docs/SPRINT-B-QUALITY-GATE.md
+
 Priority: **99/100**
 
 Although full correction is Phase 6, Sprint B must not ship an unusable mistake trap.
@@ -749,6 +755,8 @@ Representative one-hand users/devices should target:
 
 ### Done when
 
+Automated/code requirements:
+
 - all exact-money assertions pass
 - no duplicate commit under rapid input
 - mobile no-overflow remains green
@@ -756,7 +764,15 @@ Representative one-hand users/devices should target:
 - axe passes
 - Chromium/Firefox/WebKit pass
 - reduced motion works
-- no network is required
+- no network is required for the loaded manual core
+
+Empirical requirements before Sprint B is declared complete:
+
+- representative one-hand timing is recorded
+- ordinary price-only median is interpreted against the <=2.5 second target and <=3 second release floor
+- physical one-hand reach is checked on representative compact/modern phone sizes
+- bright/light-mode readability is checked
+- the real mobile software keyboard does not obscure the critical flow
 
 # PR decomposition
 
