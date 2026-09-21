@@ -460,8 +460,6 @@ describe("add projection", () => {
       projectAddItem(trip, {
         unitPriceMinor: money(200),
         quantity: 1,
-        priceSource: MANUAL,
-        priceConfidence: confirmed(),
       }),
     );
 
@@ -489,8 +487,6 @@ describe("add projection", () => {
       projectAddItem(trip, {
         unitPriceMinor: money(400),
         quantity: 1,
-        priceSource: MANUAL,
-        priceConfidence: confirmed(),
       }),
     );
 
@@ -507,8 +503,6 @@ describe("add projection", () => {
       projectAddItem(trip, {
         unitPriceMinor: money(0),
         quantity: 1,
-        priceSource: MANUAL,
-        priceConfidence: confirmed(),
       }),
       "invalid-price",
     );
@@ -517,8 +511,6 @@ describe("add projection", () => {
       projectAddItem(trip, {
         unitPriceMinor: money(100),
         quantity: 0,
-        priceSource: MANUAL,
-        priceConfidence: confirmed(),
       }),
       "invalid-quantity",
     );
@@ -528,8 +520,6 @@ describe("add projection", () => {
         unitPriceMinor: money(100),
         quantity: 1,
         label: "x".repeat(MAX_ITEM_LABEL_CODE_POINTS + 1),
-        priceSource: MANUAL,
-        priceConfidence: confirmed(),
       }),
       "invalid-label",
     );
@@ -957,8 +947,6 @@ describe("property-based shopping invariants", () => {
           const draft = {
             unitPriceMinor: money(price),
             quantity,
-            priceSource: MANUAL,
-            priceConfidence: confirmed(),
           } as const;
 
           const projection = unwrap(projectAddItem(trip, draft));
