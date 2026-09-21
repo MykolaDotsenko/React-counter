@@ -4,6 +4,7 @@ import { mvpMinorUnits, type Result } from "../src/domain/money";
 import {
   createActiveTrip,
   isoTimestamp,
+  itemId as parseItemId,
   type ActiveTrip,
   type IsoTimestamp,
 } from "../src/domain/shopping-trip";
@@ -996,7 +997,7 @@ describe("ShoppingAppController item correction", () => {
     controller.bootstrap();
 
     const result = controller.updateManualItem({
-      itemId: "missing-item" as never,
+      itemId: unwrap(parseItemId("missing-item")),
       unitPriceMinor: money(479),
       quantity: 1,
     });
