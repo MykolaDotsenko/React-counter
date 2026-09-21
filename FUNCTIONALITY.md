@@ -78,6 +78,27 @@ Primary actions:
 
 The application should not introduce additional lifecycle states unless a real workflow requires them.
 
+## Quick Cart
+
+Quick Cart is a later secondary acquisition path.
+
+It allows a user to track a running cart total without first setting a hard budget.
+
+Primary action remains:
+
+> Set a budget
+
+Secondary option may become:
+
+> Quick total
+
+Rules:
+
+- Quick Cart must not replace the remaining-first hard-limit product promise
+- it must reuse exact-money/cart foundations
+- it should be tested only after the basic Budget Cart interaction is stable
+- later UX may invite the user to set a limit on a future trip
+
 ## First launch
 
 ### Goal
@@ -339,6 +360,8 @@ This allows the final cart to communicate uncertainty honestly.
 
 Barcode scanning is optional.
 
+Before production barcode UX is implemented, the product may run a small post-Phase-5 benchmark prototype to compare scan -> confirm against the stable manual baseline. Experimental scanner access must not become a dependency of the core flow.
+
 ### Known barcode + remembered price
 
 1. scan
@@ -383,6 +406,8 @@ Manual flow remains one tap away.
 ## Add item: shelf-price scan
 
 This is potentially more useful than barcode for the core job because it can capture the current price.
+
+A benchmark prototype may test this interaction early, but production OCR remains later and evidence-gated.
 
 ### Flow
 
