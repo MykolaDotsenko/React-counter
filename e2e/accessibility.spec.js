@@ -35,6 +35,67 @@ test("has no detectable WCAG A/AA violations on the active-trip screen", async (
   expect(results.violations).toEqual([]);
 });
 
+test("has no detectable WCAG A/AA violations on the price-entry surface", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "axe scan runs once in Chromium");
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+  await page.getByRole("button", { name: "Add price" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "What does this item cost?" }),
+  ).toBeVisible();
+
+  const results = await scan(page);
+  expect(results.violations).toEqual([]);
+});
+
+test("has no detectable WCAG A/AA violations on nominal over-budget review", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "axe scan runs once in Chromium");
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("53.41");
+  await page.getByRole("button", { name: "Add · €53.41" }).click();
+
+  const cancel = page.getByRole("button", { name: "Cancel" }).last();
+  await expect(cancel).toBeFocused();
+  await expect(
+    page.getByRole("heading", { name: "Add this price anyway?" }),
+  ).toBeVisible();
+
+  const results = await scan(page);
+  expect(results.violations).toEqual([]);
+});
+
+test("keeps the core shopping semantics visible in forced-colours mode", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "forced-colours gate runs in Chromium");
+
+  await page.emulateMedia({ forcedColors: "active" });
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+
+  await expect(
+    page.getByLabel("Current spending status"),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("progressbar", { name: "Shopping budget used" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Add price" }),
+  ).toBeVisible();
+});
+
 test("retains visible focus across the core keyboard path", async ({
   page,
 }) => {
