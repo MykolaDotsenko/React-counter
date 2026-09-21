@@ -191,7 +191,7 @@ describe("ActiveTripScreen", () => {
       "€31.42 in cart",
     );
     expect(progress.getAttribute("aria-valuetext")).toContain(
-      "€18.58 total remains · €2.00 kept in reserve",
+      "€16.58 available before your reserve",
     );
     expect(
       screen.getByText("Safe limit €48.00 · Reserve €2.00"),
