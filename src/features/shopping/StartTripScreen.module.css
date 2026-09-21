@@ -78,7 +78,8 @@
 
 .quickButton,
 .customToggle,
-.startButton {
+.startButton,
+.historyButton {
   min-height: 52px;
   border-radius: 16px;
   font: inherit;
@@ -247,6 +248,24 @@
   text-align: center;
 }
 
+.historyButton {
+  justify-self: center;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--accent-primary);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.historyButton:hover {
+  background: var(--surface-soft);
+}
+
 .trustNote {
   margin: -8px 0 0;
   color: var(--text-secondary);
@@ -257,7 +276,8 @@
 
 .quickButton:focus-visible,
 .customToggle:focus-visible,
-.startButton:focus-visible {
+.startButton:focus-visible,
+.historyButton:focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 3px;
 }
@@ -296,7 +316,8 @@
   .quickButton,
   .customToggle,
   .inputShell,
-  .startButton {
+  .startButton,
+  .historyButton {
     forced-color-adjust: auto;
   }
 
@@ -304,7 +325,8 @@
   .quickButton,
   .customToggle,
   .inputShell,
-  .startButton {
+  .startButton,
+  .historyButton {
     border: 1px solid ButtonText;
   }
 }
