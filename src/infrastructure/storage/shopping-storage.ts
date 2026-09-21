@@ -1167,39 +1167,102 @@ export const bootstrapShoppingPersistence = (
   storage: StorageLike | null | undefined,
 ): ShoppingPersistenceBootstrap => {
   const restored = restoreActiveTrip(storage);
+  const history = restoreHistory(storage);
 
   if (restored.health === "degraded") {
     return {
       health: "degraded",
       activeTrip: null,
+      completedTrips: history.trips,
       legacyKeysRetired: false,
       issue: restored.issue,
       ...(restored.raw === undefined
         ? {}
         : { recoveryRaw: restored.raw }),
+      ...(history.health === "healthy" && history.savedAt !== undefined
+        ? { historySavedAt: history.savedAt }
+        : {}),
+    };
+  }
+
+  let activeTrip = restored.trip;
+  let reconciledCompletion = false;
+  let reconciliationIssue: PersistenceIssue | null = null;
+
+  if (
+    activeTrip !== null &&
+    history.trips.some((trip) => trip.id === activeTrip?.id)
+  ) {
+    const clearResult = clearActiveTrip(storage);
+    activeTrip = null;
+    reconciledCompletion = true;
+
+    if (clearResult.health === "degraded") {
+      reconciliationIssue = clearResult.issue;
+    }
+  }
+
+  if (history.health === "degraded") {
+    return {
+      health: "degraded",
+      activeTrip,
+      completedTrips: history.trips,
+      legacyKeysRetired: false,
+      issue: reconciliationIssue ?? history.issue,
+      ...(restored.status === "restored"
+        ? { restoredSavedAt: restored.savedAt }
+        : {}),
+      ...(reconciledCompletion ? { reconciledCompletion: true } : {}),
     };
   }
 
   const retirement = retireLegacyPulseKeys(storage);
 
+  if (reconciliationIssue !== null) {
+    return {
+      health: "degraded",
+      activeTrip,
+      completedTrips: history.trips,
+      legacyKeysRetired: retirement.health === "healthy",
+      issue: reconciliationIssue,
+      ...(restored.status === "restored"
+        ? { restoredSavedAt: restored.savedAt }
+        : {}),
+      ...(history.savedAt === undefined
+        ? {}
+        : { historySavedAt: history.savedAt }),
+      ...(reconciledCompletion ? { reconciledCompletion: true } : {}),
+    };
+  }
+
   if (retirement.health === "degraded") {
     return {
       health: "degraded",
-      activeTrip: restored.trip,
+      activeTrip,
+      completedTrips: history.trips,
       legacyKeysRetired: false,
       issue: retirement.issue,
       ...(restored.status === "restored"
         ? { restoredSavedAt: restored.savedAt }
         : {}),
+      ...(history.savedAt === undefined
+        ? {}
+        : { historySavedAt: history.savedAt }),
+      ...(reconciledCompletion ? { reconciledCompletion: true } : {}),
     };
   }
 
   return {
     health: "healthy",
-    activeTrip: restored.trip,
+    activeTrip,
+    completedTrips: history.trips,
     legacyKeysRetired: true,
     ...(restored.status === "restored"
       ? { restoredSavedAt: restored.savedAt }
       : {}),
+    ...(history.savedAt === undefined
+      ? {}
+      : { historySavedAt: history.savedAt }),
+    ...(reconciledCompletion ? { reconciledCompletion: true } : {}),
   };
 };
