@@ -989,6 +989,90 @@ Upgrade storage only for actual data-volume/query/media requirements.
 Images, large price history, large offline datasets, or indexed-query requirements appear.
 
 
+
+## D-035 — Repeat-trip acceleration precedes scanner breadth
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+After the core manual/correction/completion flow is stable, prioritise:
+
+1. Shop again / repeat previous budget
+2. Recent Items
+3. basic Price Memory
+
+before:
+
+- barcode scanning
+- shelf OCR
+- voice capture
+- broader smart-shopping features
+
+PWA/installability may follow the retention gate, but must not displace repeat-trip validation.
+
+### Rationale
+
+The largest unresolved product risk is not capture technology. It is whether users tolerate repeated entry and voluntarily return for another real shopping trip.
+
+Repeat-trip acceleration reduces friction for products the user already buys without introducing:
+
+- camera permission
+- network dependency
+- recognition latency
+- OCR ambiguity
+- external product-database coverage
+
+This directly targets retention rather than feature breadth.
+
+### Consequence
+
+ROADMAP.md must keep Repeat Trip / Recent Items / Price Memory ahead of barcode/OCR work.
+
+Scanner/OCR work cannot be justified merely because competitors have it.
+
+### Revisit when
+
+Real-store evidence shows another capability is repeatedly blocking the core job before repeat-trip acceleration can help.
+
+## D-036 — Second-trip rate is the primary early product-validation signal
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Use second-trip rate as the primary early product-success signal after the repeat-trip flow is implemented.
+
+Provisional internal decision bands:
+
+- 35% or higher — very strong early signal
+- 25–35% — promising; optimise recurring friction
+- 15–25% — material retention problem
+- below 15% — revisit the core interaction/job before expanding features
+
+These thresholds are heuristics, not external market benchmarks.
+
+### Rationale
+
+Downloads, first launches, feature usage, and stated intent can all look healthy while the product fails to become a real shopping habit.
+
+A second real shopping trip is a much stronger signal that the product creates repeated value.
+
+### Consequence
+
+After Repeat Trip / Recent Items / Price Memory are implemented, freeze non-critical feature expansion long enough to run a focused real-store beta with approximately 20–50 shoppers.
+
+Do not respond to weak retention by automatically adding OCR, barcode, voice, cloud sync, or more analytics.
+
+### Revisit when
+
+Enough real cohort data exists to replace these provisional thresholds with observed product-specific baselines.
+
+
 ## How to add a decision
 
 Add a new numbered entry when a decision:
