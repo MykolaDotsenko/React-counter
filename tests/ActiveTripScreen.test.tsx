@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -259,7 +259,7 @@ describe("ActiveTripScreen", () => {
     expect(screen.getByText("4 items")).not.toBeNull();
   });
 
-  it("reacts to controller state changes through the canonical external-store bridge", () => {
+  it("reacts to controller state changes through the canonical external-store bridge", async () => {
     const controller = createController(createTrip());
     const onAddPrice = vi.fn();
 
@@ -279,7 +279,10 @@ describe("ActiveTripScreen", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(screen.getByText("€45.00")).not.toBeNull();
-    expect(screen.getByText("SAFE TO SPEND")).not.toBeNull();
+
+    await waitFor(() => {
+      expect(screen.getByText("€45.00")).not.toBeNull();
+      expect(screen.getByText("SAFE TO SPEND")).not.toBeNull();
+    });
   });
 });
