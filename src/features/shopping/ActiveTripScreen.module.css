@@ -4,6 +4,7 @@
   --panel-soft: #f0ede6;
   --text: #202520;
   --muted: #687068;
+  --muted-on-soft: #626a62;
   --border: #d9d5cc;
   --accent: #315f4f;
   --accent-contrast: #ffffff;
@@ -290,7 +291,7 @@
 }
 
 .emptyState span {
-  color: var(--muted);
+  color: var(--muted-on-soft);
   font-size: 0.9rem;
   line-height: 1.45;
 }
@@ -401,6 +402,7 @@
     --panel-soft: #292e2a;
     --text: #f3f5f1;
     --muted: #b3bbb3;
+    --muted-on-soft: #c2cac2;
     --border: #3d453e;
     --accent: #89cbb2;
     --accent-contrast: #10221b;
