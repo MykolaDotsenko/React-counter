@@ -978,7 +978,7 @@ Fits:
 
 Important:
 
-- configure Vite/PWA base/scope correctly for /React-counter/
+- configure Vite/PWA base/scope correctly for /shopping-budget-companion/
 - service-worker update tests must run against the production subpath
 
 ## Cloudflare Pages
