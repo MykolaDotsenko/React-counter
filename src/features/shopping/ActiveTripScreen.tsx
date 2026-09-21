@@ -10,6 +10,7 @@ import {
   remaining,
   safeLimit,
   safeRemaining,
+  type CartItem,
 } from "../../domain/shopping-trip";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./ActiveTripScreen.module.css";
@@ -20,8 +21,44 @@ export interface ActiveTripScreenProps {
   readonly addPriceButtonRef?: Ref<HTMLButtonElement>;
   readonly feedbackMessage?: string;
   readonly onUndo?: () => void;
+  readonly onEditItem?: (item: CartItem) => void;
+  readonly onRemoveItem?: (item: CartItem) => void;
   readonly locale?: string;
 }
+
+const confidenceLabel = (item: CartItem): string => {
+  switch (item.priceConfidence.kind) {
+    case "confirmed":
+      return "Confirmed";
+    case "remembered":
+      return "Remembered";
+    case "estimated":
+      return "Estimated";
+    default: {
+      const exhaustive: never = item.priceConfidence;
+      return exhaustive;
+    }
+  }
+};
+
+const sourceLabel = (item: CartItem): string => {
+  switch (item.priceSource.kind) {
+    case "manual":
+      return "Manual";
+    case "price-memory":
+      return "Price memory";
+    case "shelf-scan":
+      return "Shelf scan";
+    case "encoded-barcode":
+      return "Barcode";
+    case "retailer-feed":
+      return "Retailer feed";
+    default: {
+      const exhaustive: never = item.priceSource;
+      return exhaustive;
+    }
+  }
+};
 
 const clampPercentage = (value: number): number =>
   Math.min(100, Math.max(0, value));
@@ -45,6 +82,8 @@ export function ActiveTripScreen({
   addPriceButtonRef,
   feedbackMessage,
   onUndo,
+  onEditItem,
+  onRemoveItem,
   locale = "en-FI",
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
@@ -264,14 +303,47 @@ export function ActiveTripScreen({
                       <span>
                         {item.quantity > 1
                           ? `${formatEur(item.unitPriceMinor, locale)} × ${item.quantity}`
-                          : item.priceConfidence.kind === "estimated"
-                            ? "Estimated price"
-                            : "Confirmed price"}
+                          : "Single item"}
                       </span>
+                      <small
+                        className={styles.itemTrust}
+                        data-confidence={item.priceConfidence.kind}
+                      >
+                        {confidenceLabel(item)} · {sourceLabel(item)}
+                      </small>
                     </div>
-                    <strong className={styles.itemTotal}>
-                      {formatEur(itemTotal, locale)}
-                    </strong>
+
+                    <div className={styles.itemActions}>
+                      <strong className={styles.itemTotal}>
+                        {formatEur(itemTotal, locale)}
+                      </strong>
+                      {onEditItem || onRemoveItem ? (
+                        <div className={styles.itemButtons}>
+                          {onEditItem ? (
+                            <button
+                              type="button"
+                              className={styles.itemActionButton}
+                              onClick={() => {
+                                onEditItem(item);
+                              }}
+                            >
+                              Edit
+                            </button>
+                          ) : null}
+                          {onRemoveItem ? (
+                            <button
+                              type="button"
+                              className={styles.removeButton}
+                              onClick={() => {
+                                onRemoveItem(item);
+                              }}
+                            >
+                              Remove
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
                   </li>
                 );
               })}
