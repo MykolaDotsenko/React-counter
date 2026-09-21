@@ -180,7 +180,7 @@ test("commits exact price and quantity, persists them, and restores the same car
   ).toBeVisible();
   await expect(page.getByText("€46.13", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("€1.29 × 3", { exact: true })).toBeVisible();
-  await expect(page.getByText("€3.87 added", { exact: true })).toBeVisible();
+  await expect(page.getByText("€3.87 added. €46.13 remaining.", { exact: true })).toBeVisible();
 
   const persistedBeforeReload = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)),
