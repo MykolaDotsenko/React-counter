@@ -383,9 +383,11 @@ Progress:
 - B1 One-hand price-entry surface — **complete via PR #22**
 - B2 Live projected remaining — **complete via PR #23**
 - B3 Buffer / over-budget consequence states — **complete via PR #24**
-- B4 Quantity — next
-- B5 Commit / persist / return — pending
+- B4 Quantity — **complete via PR #25**
+- B5 Commit / persist / return — next
 - B6 Correction minimum + quality gate — pending
+
+B4 keeps quantity ephemeral until commit while projecting the exact Phase 2 line total through `projectAddItem()`. The validated handoff now carries both `unitPriceMinor` and `quantity`, so B5 can commit the exact reviewed item intent without reconstructing quantity from UI state.
 
 B3 locks the threshold interaction before canonical commit wiring: reserve-only crossing stays frictionless, while nominal over-budget requires explicit `Add anyway`. The exact reviewed price intent is emitted only after confirmation. B5 remains responsible for proving that this intent becomes the identical canonical/persisted cart state.
 
