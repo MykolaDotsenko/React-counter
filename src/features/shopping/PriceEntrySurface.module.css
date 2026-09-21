@@ -231,6 +231,89 @@
   color: var(--danger);
 }
 
+
+.overBudgetConfirmation {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 38%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--danger) 7%, var(--panel));
+}
+
+.confirmationCopy {
+  display: grid;
+  gap: 6px;
+}
+
+.confirmationEyebrow,
+.confirmationCopy h2,
+.confirmationCopy p {
+  margin: 0;
+}
+
+.confirmationEyebrow {
+  color: var(--danger);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.confirmationCopy h2 {
+  font-size: 1.12rem;
+  line-height: 1.25;
+}
+
+.confirmationCopy p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.confirmationCopy strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.confirmationActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.confirmationCancel,
+.addAnywayButton {
+  min-height: 52px;
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.confirmationCancel {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+}
+
+.addAnywayButton {
+  border: 1px solid transparent;
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.addAnywayButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.confirmationCancel:focus-visible,
+.addAnywayButton:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
 .keypad {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -322,6 +405,10 @@
   .utilityRow {
     align-items: flex-start;
   }
+
+  .confirmationActions {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (min-height: 860px) {
@@ -368,7 +455,10 @@
   .key,
   .clearButton,
   .cancelButton,
-  .addButton {
+  .addButton,
+  .overBudgetConfirmation,
+  .confirmationCancel,
+  .addAnywayButton {
     forced-color-adjust: auto;
   }
 
@@ -379,7 +469,10 @@
   .key,
   .clearButton,
   .cancelButton,
-  .addButton {
+  .addButton,
+  .overBudgetConfirmation,
+  .confirmationCancel,
+  .addAnywayButton {
     border: 1px solid ButtonText;
   }
 }
