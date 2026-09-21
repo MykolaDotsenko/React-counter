@@ -94,15 +94,23 @@ test("starts with a safety buffer and makes safe remaining unambiguous", async (
   );
 });
 
-test("surfaces a failed write without losing the in-memory trip", async ({
+test("keeps an added item in memory when its persistence write fails", async ({
   page,
 }) => {
   await page.addInitScript((storageKey) => {
     const original = Storage.prototype.setItem;
+    let activeTripWrites = 0;
 
     Storage.prototype.setItem = function setItem(key, value) {
       if (key === storageKey) {
-        throw new DOMException("Simulated quota failure", "QuotaExceededError");
+        activeTripWrites += 1;
+
+        if (activeTripWrites === 2) {
+          throw new DOMException(
+            "Simulated add persistence failure",
+            "QuotaExceededError",
+          );
+        }
       }
 
       return original.call(this, key, value);
@@ -114,6 +122,21 @@ test("surfaces a failed write without losing the in-memory trip", async ({
 
   await expect(
     page.getByText("This trip is not being saved right now"),
+  ).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Stay inside your limit" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("€4.79 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("€45.21", { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByText("This trip is not being saved right now"),
   ).toBeVisible();
   await expect(
     page.getByText(/Keep this page open until checkout/),
@@ -122,10 +145,65 @@ test("surfaces a failed write without losing the in-memory trip", async ({
     page.getByRole("button", { name: "Retry" }),
   ).toBeVisible();
 
-  await expect(page.getByText("LEFT", { exact: true })).toBeVisible();
+  const persisted = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    ACTIVE_TRIP_KEY,
+  );
+
+  expect(persisted.data.items).toHaveLength(0);
+});
+
+test("commits exact price and quantity, persists them, and restores the same cart", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("1.29");
+  await page.getByRole("button", { name: "Increase quantity" }).click();
+  await page.getByRole("button", { name: "Increase quantity" }).click();
+
+  await expect(page.getByText("€1.29 × 3 = €3.87")).toBeVisible();
   await expect(
-    page.getByText("€0.00 of €50.00", { exact: true }),
+    page.getByText("After adding: €46.13 left"),
   ).toBeVisible();
+
+  await page.getByRole("button", { name: "Add · €3.87" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Stay inside your limit" }),
+  ).toBeVisible();
+  await expect(page.getByText("3 items", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("€3.87 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("€46.13", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("€1.29 × 3", { exact: true })).toBeVisible();
+  await expect(page.getByText("€3.87 added", { exact: true })).toBeVisible();
+
+  const persistedBeforeReload = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    ACTIVE_TRIP_KEY,
+  );
+
+  expect(persistedBeforeReload.data.items).toHaveLength(1);
+  expect(persistedBeforeReload.data.items[0]).toMatchObject({
+    unitPriceMinor: 129,
+    quantity: 3,
+    priceSource: { kind: "manual" },
+  });
+  expect(persistedBeforeReload.data.items[0].priceConfidence.kind).toBe(
+    "confirmed",
+  );
+
+  await page.reload();
+
+  await expect(
+    page.getByText("€3.87 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("€1.29 × 3", { exact: true })).toBeVisible();
+  await expect(page.getByText("3 items", { exact: true })).toBeVisible();
 });
 
 test("enters recovery mode for malformed saved data without overwriting it", async ({
@@ -240,7 +318,7 @@ test("keeps the core active-trip controls inside compact phone viewports", async
   }
 });
 
-test("supports keyboard activation for the primary start and add actions", async ({
+test("supports keyboard add and returns focus to the canonical Add price action", async ({
   page,
 }) => {
   await page.goto("/");
@@ -255,22 +333,21 @@ test("supports keyboard activation for the primary start and add actions", async
   await page.keyboard.press("Enter");
 
   const addPrice = page.getByRole("button", { name: "Add price" });
-  await expect(addPrice).toBeVisible();
   await addPrice.focus();
   await expect(addPrice).toBeFocused();
   await page.keyboard.press("Enter");
 
-  await expect(
-    page.getByText("Price entry is the next migration step."),
-  ).toBeVisible();
-
-  const dismiss = page.getByRole("button", { name: "Dismiss" });
-  await dismiss.focus();
+  const price = page.getByRole("textbox", { name: "Price" });
+  await expect(price).toBeFocused();
+  await price.fill("4.79");
   await page.keyboard.press("Enter");
 
+  const returnedAddPrice = page.getByRole("button", { name: "Add price" });
+  await expect(returnedAddPrice).toBeFocused();
+  await expect(page.getByText("€4.79 added")).toBeVisible();
   await expect(
-    page.getByText("Price entry is the next migration step."),
-  ).toHaveCount(0);
+    page.getByText("€4.79 of €50.00", { exact: true }),
+  ).toBeVisible();
 });
 
 test("remains usable at 200 percent text sizing without horizontal overflow", async ({

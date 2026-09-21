@@ -562,6 +562,176 @@ describe("ShoppingAppController startTrip", () => {
   });
 });
 
+describe("ShoppingAppController addManualItem", () => {
+  it("creates one canonical confirmed manual item and persists the exact committed trip", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    let notifications = 0;
+    controller.subscribe(() => {
+      notifications += 1;
+    });
+
+    const result = controller.addManualItem({
+      unitPriceMinor: money(129),
+      quantity: 3,
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected manual item commit");
+    }
+
+    expect(result.changed).toBe(true);
+    expect(result.durability).toBe("persisted");
+    expect(result.state.activeTrip?.items).toHaveLength(1);
+    expect(result.state.activeTrip?.items[0]).toMatchObject({
+      id: "item-generated",
+      unitPriceMinor: 129,
+      quantity: 3,
+      priceSource: { kind: "manual" },
+      priceConfidence: {
+        kind: "confirmed",
+        confirmedAt: NEXT,
+      },
+      createdAt: NEXT,
+      updatedAt: NEXT,
+    });
+    expect(persistence.saveCalls).toHaveLength(1);
+    expect(persistence.saveCalls[0]?.trip).toBe(result.state.activeTrip);
+    expect(persistence.saveCalls[0]?.savedAt).toBe(LATER);
+    expect(notifications).toBe(1);
+  });
+
+  it("keeps the committed manual item in memory when persistence fails", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    persistence.queueSaveResult({
+      ok: false,
+      issue: writeFailure,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.addManualItem({
+      unitPriceMinor: money(479),
+      quantity: 1,
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected memory-only manual item commit");
+    }
+
+    expect(result.changed).toBe(true);
+    expect(result.durability).toBe("memory-only");
+    expect(result.state.activeTrip?.items).toHaveLength(1);
+    expect(result.state.activeTrip?.items[0]).toMatchObject({
+      unitPriceMinor: 479,
+      quantity: 1,
+    });
+    expect(result.state.persistence).toEqual({
+      status: "degraded",
+      issue: writeFailure,
+      since: LATER,
+    });
+    expect(persistence.saveCalls[0]?.trip).toBe(result.state.activeTrip);
+  });
+
+  it("rejects an invalid quantity before persistence and publication", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    let notifications = 0;
+    controller.subscribe(() => {
+      notifications += 1;
+    });
+
+    const before = controller.getSnapshot();
+    const result = controller.addManualItem({
+      unitPriceMinor: money(129),
+      quantity: 0,
+    });
+
+    expect(result.ok).toBe(false);
+
+    if (result.ok) {
+      throw new Error("Expected invalid quantity rejection");
+    }
+
+    expect(result.error).toEqual({
+      kind: "domain",
+      code: "invalid-quantity",
+    });
+    expect(controller.getSnapshot()).toBe(before);
+    expect(persistence.saveCalls).toHaveLength(0);
+    expect(notifications).toBe(0);
+  });
+
+  it("rejects manual add outside an active lifecycle without persistence", () => {
+    const persistence = createPersistence();
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(START),
+      ids,
+    });
+
+    const beforeBootstrap = controller.addManualItem({
+      unitPriceMinor: money(479),
+      quantity: 1,
+    });
+
+    expect(beforeBootstrap).toMatchObject({
+      ok: false,
+      error: {
+        kind: "application",
+        code: "not-ready",
+      },
+    });
+    expect(persistence.saveCalls).toHaveLength(0);
+
+    controller.bootstrap();
+
+    const idleResult = controller.addManualItem({
+      unitPriceMinor: money(479),
+      quantity: 1,
+    });
+
+    expect(idleResult).toMatchObject({
+      ok: false,
+      error: {
+        kind: "application",
+        code: "no-active-trip",
+      },
+    });
+    expect(persistence.saveCalls).toHaveLength(0);
+  });
+});
+
 describe("ShoppingAppController retryPersistence", () => {
   it("retries the exact canonical active trip and heals degraded persistence", () => {
     const persistence = createPersistence({
