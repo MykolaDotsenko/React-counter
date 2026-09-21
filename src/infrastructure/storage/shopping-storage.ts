@@ -386,6 +386,278 @@ const toActiveTripDataV1 = (trip: ActiveTrip): ActiveTripDataV1 => ({
   })),
 });
 
+
+const decodeCompletedTripData = (
+  data: CompletedTripDataV1,
+): CompletedTrip | null => {
+  const active = decodeActiveTripData({
+    id: data.id,
+    status: "active",
+    currency: data.currency,
+    budgetMinor: data.budgetMinor,
+    safetyBufferMinor: data.safetyBufferMinor,
+    startedAt: data.startedAt,
+    items: data.items,
+  });
+
+  if (active === null) {
+    return null;
+  }
+
+  const completed = reduceTrip(active, {
+    type: "complete-trip",
+    completedAt: data.completedAt,
+  });
+
+  if (!completed.ok || completed.value.status !== "completed") {
+    return null;
+  }
+
+  if (data.actualCheckoutMinor === undefined) {
+    return completed.value;
+  }
+
+  const actualCheckoutMinor = mvpMinorUnits(data.actualCheckoutMinor);
+
+  if (!actualCheckoutMinor.ok) {
+    return null;
+  }
+
+  const reconciled = reduceTrip(completed.value, {
+    type: "set-actual-checkout",
+    actualCheckoutMinor: actualCheckoutMinor.value,
+  });
+
+  if (!reconciled.ok || reconciled.value.status !== "completed") {
+    return null;
+  }
+
+  return reconciled.value;
+};
+
+const toCompletedTripDataV1 = (
+  trip: CompletedTrip,
+): CompletedTripDataV1 => ({
+  id: trip.id,
+  status: "completed",
+  currency: trip.currency,
+  budgetMinor: trip.budgetMinor,
+  safetyBufferMinor: trip.safetyBufferMinor,
+  startedAt: trip.startedAt,
+  completedAt: trip.completedAt,
+  ...(trip.actualCheckoutMinor === undefined
+    ? {}
+    : { actualCheckoutMinor: trip.actualCheckoutMinor }),
+  items: trip.items.map((item) => ({
+    id: item.id,
+    unitPriceMinor: item.unitPriceMinor,
+    quantity: item.quantity,
+    ...(item.label === undefined ? {} : { label: item.label }),
+    priceSource: item.priceSource,
+    priceConfidence: item.priceConfidence,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  })),
+});
+
+const sameCompletedTrip = (
+  left: CompletedTrip,
+  right: CompletedTrip,
+): boolean =>
+  JSON.stringify(toCompletedTripDataV1(left)) ===
+  JSON.stringify(toCompletedTripDataV1(right));
+
+const hasDuplicateTripIds = (
+  trips: readonly CompletedTrip[],
+): boolean => {
+  const seen = new Set<string>();
+
+  for (const trip of trips) {
+    if (seen.has(trip.id)) {
+      return true;
+    }
+
+    seen.add(trip.id);
+  }
+
+  return false;
+};
+
+
+
+export const decodeHistorySnapshot = (
+  raw: string,
+): DecodeHistoryResult => {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return {
+      ok: false,
+      issue: persistenceIssue("malformed-json", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  const header = storageEnvelopeHeaderSchema.safeParse(parsed);
+
+  if (!header.success) {
+    return {
+      ok: false,
+      issue: persistenceIssue("invalid-envelope", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  if (header.data.schemaVersion !== CURRENT_HISTORY_SCHEMA_VERSION) {
+    return {
+      ok: false,
+      issue: persistenceIssue(
+        "unsupported-version",
+        HISTORY_STORAGE_KEY,
+        header.data.schemaVersion,
+      ),
+    };
+  }
+
+  const envelope = historyStorageEnvelopeV1Schema.safeParse(parsed);
+
+  if (!envelope.success) {
+    return {
+      ok: false,
+      issue: persistenceIssue("invalid-envelope", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  const savedAt = isoTimestamp(envelope.data.savedAt);
+
+  if (!savedAt.ok) {
+    return {
+      ok: false,
+      issue: persistenceIssue("invalid-envelope", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  const data = historyDataEnvelopeV1Schema.safeParse(envelope.data.data);
+
+  if (!data.success) {
+    return {
+      ok: false,
+      issue: persistenceIssue("invalid-data", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  const trips: CompletedTrip[] = [];
+  let invalidEntryCount = 0;
+
+  for (const candidate of data.data.trips) {
+    const parsedTrip = completedTripDataV1Schema.safeParse(candidate);
+
+    if (!parsedTrip.success) {
+      invalidEntryCount += 1;
+      continue;
+    }
+
+    const trip = decodeCompletedTripData(parsedTrip.data);
+
+    if (trip === null) {
+      invalidEntryCount += 1;
+      continue;
+    }
+
+    trips.push(trip);
+  }
+
+  if (hasDuplicateTripIds(trips)) {
+    return {
+      ok: false,
+      issue: persistenceIssue("history-conflict", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  return {
+    ok: true,
+    trips,
+    invalidEntryCount,
+    savedAt: savedAt.value,
+  };
+};
+
+export const encodeHistorySnapshot = (
+  trips: readonly CompletedTrip[],
+  savedAtInput: string,
+): EncodeHistoryResult => {
+  const savedAt = isoTimestamp(savedAtInput);
+
+  if (!savedAt.ok) {
+    return {
+      ok: false,
+      issue: persistenceIssue(
+        "serialization-failed",
+        HISTORY_STORAGE_KEY,
+      ),
+    };
+  }
+
+  if (hasDuplicateTripIds(trips)) {
+    return {
+      ok: false,
+      issue: persistenceIssue("history-conflict", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  const encodedTrips: CompletedTripDataV1[] = [];
+
+  for (const trip of trips) {
+    const candidate = toCompletedTripDataV1(trip);
+    const validated = completedTripDataV1Schema.safeParse(candidate);
+
+    if (!validated.success || decodeCompletedTripData(candidate) === null) {
+      return {
+        ok: false,
+        issue: persistenceIssue("invalid-data", HISTORY_STORAGE_KEY),
+      };
+    }
+
+    encodedTrips.push(validated.data);
+  }
+
+  const envelope: HistoryEnvelopeV1 = {
+    schemaVersion: CURRENT_HISTORY_SCHEMA_VERSION,
+    savedAt: savedAt.value,
+    data: {
+      trips: encodedTrips,
+    },
+  };
+
+  const validatedEnvelope = historyStorageEnvelopeV1Schema.safeParse(envelope);
+
+  if (!validatedEnvelope.success) {
+    return {
+      ok: false,
+      issue: persistenceIssue(
+        "serialization-failed",
+        HISTORY_STORAGE_KEY,
+      ),
+    };
+  }
+
+  try {
+    return {
+      ok: true,
+      raw: JSON.stringify(envelope),
+      savedAt: savedAt.value,
+    };
+  } catch {
+    return {
+      ok: false,
+      issue: persistenceIssue(
+        "serialization-failed",
+        HISTORY_STORAGE_KEY,
+      ),
+    };
+  }
+};
+
 export const decodeActiveTripSnapshot = (
   raw: string,
 ): DecodeActiveTripResult => {
