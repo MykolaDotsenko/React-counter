@@ -18,6 +18,7 @@ import styles from "./ActiveTripScreen.module.css";
 export interface ActiveTripScreenProps {
   readonly controller: ShoppingAppController;
   readonly onAddPrice: () => void;
+  readonly onFinishTrip?: () => void;
   readonly addPriceButtonRef?: Ref<HTMLButtonElement>;
   readonly feedbackMessage?: string;
   readonly onUndo?: () => void;
@@ -79,6 +80,7 @@ const formatSignedAmount = (
 export function ActiveTripScreen({
   controller,
   onAddPrice,
+  onFinishTrip,
   addPriceButtonRef,
   feedbackMessage,
   onUndo,
@@ -265,15 +267,26 @@ export function ActiveTripScreen({
           </div>
         ) : null}
 
-        <button
-          ref={addPriceButtonRef}
-          type="button"
-          className={styles.addButton}
-          onClick={onAddPrice}
-        >
-          <span aria-hidden="true">+</span>
-          <span>Add price</span>
-        </button>
+        <div className={styles.tripActions}>
+          <button
+            ref={addPriceButtonRef}
+            type="button"
+            className={styles.addButton}
+            onClick={onAddPrice}
+          >
+            <span aria-hidden="true">+</span>
+            <span>Add price</span>
+          </button>
+          {onFinishTrip ? (
+            <button
+              type="button"
+              className={styles.finishButton}
+              onClick={onFinishTrip}
+            >
+              Finish trip
+            </button>
+          ) : null}
+        </div>
 
         <section className={styles.cart} aria-labelledby="cart-title">
           <div className={styles.cartHeading}>
