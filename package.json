@@ -1,9 +1,9 @@
 {
-  "name": "pulse-counter",
+  "name": "shopping-budget-companion",
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "A production-minded React interaction-engineering case study.",
+  "description": "Mobile-first shopping budget companion with exact-money arithmetic, local-first persistence, accessibility, and evidence-driven release gates.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -43,5 +43,10 @@
   },
   "engines": {
     "node": ">=24"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MykolaDotsenko/shopping-budget-companion.git"
+  },
+  "homepage": "https://mykoladotsenko.github.io/shopping-budget-companion/"
 }
