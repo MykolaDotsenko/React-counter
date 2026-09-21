@@ -852,7 +852,7 @@ Phases 1, 2, and 3 are complete.
 
 Phase 4 / Sprint A is complete for the guarded shopping shell.
 
-Phase 5 / Sprint B is complete through B5.
+Phase 5 / Sprint B has completed B0–B5 and the automated/code portion of B6; only the representative human B6 evidence gate remains.
 
 The next implementation gate is:
 
@@ -876,6 +876,6 @@ The <=2.5 second KPI remains an empirical human interaction target. Automation m
 
 Before the default/public shell can switch away from Pulse Counter, record the representative timing, one-hand reach, software-keyboard, and bright-store checks defined in `docs/SPRINT-B-QUALITY-GATE.md`.
 
-Do not switch the default production shell, rewrite the README around the shopping product, or begin the post-Sprint-B scanner benchmark until that empirical gate passes.
+Do not switch the default production shell or begin the post-Sprint-B scanner benchmark until that empirical gate passes. README/repository copy may describe the migration and guarded implementation, but must not claim the shopping shell is the default shipped product before the gate.
 
 After the empirical B6 gate, follow the roadmap's Experimental Scanner Benchmark Gate as a measurement spike, then Phase 6 correction/confidence work. Production scanner sequencing remains governed by D-035 and D-037.
