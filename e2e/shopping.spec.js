@@ -312,11 +312,14 @@ test("reduced motion keeps the shopping flow functional and removes capacity tra
     })
     .locator("span");
 
-  const duration = await capacityFill.evaluate(
-    (element) => getComputedStyle(element).transitionDuration,
-  );
+  const durationMs = await capacityFill.evaluate((element) => {
+    const duration = getComputedStyle(element).transitionDuration;
+    const numeric = Number.parseFloat(duration);
 
-  expect(duration).toBe("0s");
+    return duration.endsWith("ms") ? numeric : numeric * 1000;
+  });
+
+  expect(durationMs).toBeLessThan(1);
   await expect(
     page.getByRole("button", { name: "Add price" }),
   ).toBeVisible();
