@@ -40,12 +40,15 @@ Preferred stronger signal:
 
 Retention interpretation should follow docs/PRODUCT-SUCCESS-STRATEGY.md.
 
-Provisional decision bands:
+Provisional internal decision bands:
 
-- 35% or higher second-trip rate — very strong early signal
-- 25–35% — promising; improve recurring friction before broadening
-- 15–25% — material retention problem; freeze non-critical expansion
-- below 15% — revisit the core interaction/job before scanner/OCR or acquisition scaling
+- 45% or higher second-trip rate — exceptional early signal
+- 35–45% — strong
+- 25–35% — viable/promising; improve recurring friction before broadening
+- 15–25% — problematic; freeze non-critical expansion
+- below 15% — revisit the core interaction/job before production scanner/OCR or acquisition scaling
+
+Also inspect third-trip behaviour before assigning high confidence to retention.
 
 ## Gate 3 — Brand
 
@@ -211,6 +214,7 @@ Learn:
 - median items per real trip
 - trip completion
 - second-trip rate at 7/14/30 days
+- third-trip rate
 - repeated-budget usage
 - Recent Items / remembered-price usage when available
 - common correction type
