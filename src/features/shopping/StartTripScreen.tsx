@@ -249,37 +249,42 @@ export function StartTripScreen({
             Custom amount
           </button>
 
-          <div className={styles.reserveField}>
-            <label
-              htmlFor={reserveInputId}
-              className={styles.label}
-            >
-              Safety buffer
-              <span className={styles.optional}>Optional</span>
-            </label>
-            <div className={styles.inputShell}>
-              <span aria-hidden="true" className={styles.currency}>
-                €
-              </span>
-              <input
-                id={reserveInputId}
-                className={styles.amountInput}
-                inputMode="decimal"
-                autoComplete="off"
-                value={reserveRaw}
-                placeholder="0"
-                aria-describedby={errorMessage ? errorId : undefined}
-                onChange={(event) => {
-                  setReserveRaw(event.currentTarget.value);
-                  setErrorMessage("");
-                }}
-              />
+          <details className={styles.reserveDetails}>
+            <summary className={styles.reserveSummary}>
+              Add a safety buffer
+            </summary>
+            <div className={styles.reserveField}>
+              <label
+                htmlFor={reserveInputId}
+                className={styles.label}
+              >
+                Safety buffer
+                <span className={styles.optional}>Optional</span>
+              </label>
+              <div className={styles.inputShell}>
+                <span aria-hidden="true" className={styles.currency}>
+                  €
+                </span>
+                <input
+                  id={reserveInputId}
+                  className={styles.amountInput}
+                  inputMode="decimal"
+                  autoComplete="off"
+                  value={reserveRaw}
+                  placeholder="0"
+                  aria-describedby={errorMessage ? errorId : undefined}
+                  onChange={(event) => {
+                    setReserveRaw(event.currentTarget.value);
+                    setErrorMessage("");
+                  }}
+                />
+              </div>
+              <p className={styles.hint}>
+                Keep a little in reserve for weighed items, deposits,
+                and small price differences.
+              </p>
             </div>
-            <p className={styles.hint}>
-              Keep a little in reserve for weighed items, deposits,
-              and small price differences.
-            </p>
-          </div>
+          </details>
         </div>
 
         {customOpen ? (
