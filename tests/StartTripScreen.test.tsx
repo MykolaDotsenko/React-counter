@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   createShoppingAppController,
@@ -76,8 +76,31 @@ describe("StartTripScreen", () => {
     expect(screen.getByRole("button", { name: "€100" })).not.toBeNull();
     expect(screen.getByText("Add a safety buffer")).not.toBeNull();
     expect(
-      screen.getByText("No account. Your active trip stays on this device."),
+      screen.getByText(
+        "No account. Your active trip and history stay on this device.",
+      ),
     ).not.toBeNull();
+  });
+
+  it("offers local history as a secondary action only when completed trips exist", async () => {
+    const user = userEvent.setup();
+    const controller = createController();
+    const onOpenHistory = vi.fn();
+
+    render(
+      <StartTripScreen
+        controller={controller}
+        completedTripCount={2}
+        onOpenHistory={onOpenHistory}
+      />,
+    );
+
+    const history = screen.getByRole("button", {
+      name: "View trip history · 2",
+    });
+    await user.click(history);
+
+    expect(onOpenHistory).toHaveBeenCalledTimes(1);
   });
 
   it("starts a €50 trip in one action", async () => {
