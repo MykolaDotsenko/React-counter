@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const ACTIVE_TRIP_KEY = "budget-cart:active-trip";
+const HISTORY_KEY = "budget-cart:history";
 
 const startQuickBudget = async (page, label = "€50") => {
   await page.getByRole("button", { name: label, exact: true }).click();
@@ -569,6 +570,176 @@ test("completes the Sprint B flagship exact-money shopping journey", async ({
     page.getByText(
       "Safety buffer reached · €0.24 remains in your nominal budget",
     ),
+  ).toBeVisible();
+});
+
+test("finishes a trip loss-safely, reconciles checkout, persists history, and restores history after reload", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Ready to finish this trip?",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Keep shopping" }),
+  ).toBeFocused();
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Your shopping trip is complete",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "No checkout total added. Your completed trip is still valid.",
+    ),
+  ).toBeVisible();
+
+  const persistedAfterFinish = await page.evaluate(
+    ({ activeKey, historyKey }) => ({
+      active: localStorage.getItem(activeKey),
+      history: JSON.parse(localStorage.getItem(historyKey)),
+    }),
+    { activeKey: ACTIVE_TRIP_KEY, historyKey: HISTORY_KEY },
+  );
+
+  expect(persistedAfterFinish.active).toBeNull();
+  expect(persistedAfterFinish.history.schemaVersion).toBe(1);
+  expect(persistedAfterFinish.history.data.trips).toHaveLength(1);
+  expect(persistedAfterFinish.history.data.trips[0]).toMatchObject({
+    status: "completed",
+    budgetMinor: 5000,
+  });
+  expect(persistedAfterFinish.history.data.trips[0].items).toHaveLength(1);
+  expect(persistedAfterFinish.history.data.trips[0].items[0]).toMatchObject({
+    unitPriceMinor: 479,
+    quantity: 1,
+  });
+
+  await page
+    .getByRole("textbox", { name: "Actual checkout total" })
+    .fill("5.00");
+  await page
+    .getByRole("button", { name: "Save checkout total" })
+    .click();
+
+  await expect(
+    page.getByText("€0.21 more than the tracked cart."),
+  ).toBeVisible();
+
+  const persistedAfterCheckout = await page.evaluate(
+    (historyKey) => JSON.parse(localStorage.getItem(historyKey)),
+    HISTORY_KEY,
+  );
+  expect(
+    persistedAfterCheckout.data.trips[0].actualCheckoutMinor,
+  ).toBe(500);
+
+  await page
+    .getByRole("button", { name: "View trip history" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Past shopping trips" }),
+  ).toBeVisible();
+  await expect(page.getByText("€4.79 tracked")).toBeVisible();
+  await expect(page.getByText("€5.00")).toBeVisible();
+  await expect(
+    page.getByText("€0.21 more at checkout"),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "How much can you spend today?",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "View trip history · 1" }),
+  ).toBeVisible();
+
+  await page.reload();
+
+  await expect(
+    page.getByRole("button", { name: "View trip history · 1" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "View trip history · 1" })
+    .click();
+  await expect(page.getByText("€4.79 tracked")).toBeVisible();
+  await expect(
+    page.getByText("€0.21 more at checkout"),
+  ).toBeVisible();
+});
+
+test("never clears the active trip when completed-history persistence fails", async ({
+  page,
+}) => {
+  await page.addInitScript((historyKey) => {
+    const original = Storage.prototype.setItem;
+
+    Storage.prototype.setItem = function setItem(key, value) {
+      if (key === historyKey) {
+        throw new DOMException(
+          "Simulated history write failure",
+          "QuotaExceededError",
+        );
+      }
+
+      return original.call(this, key, value);
+    };
+  }, HISTORY_KEY);
+
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  const activeBeforeFinish = await page.evaluate(
+    (key) => localStorage.getItem(key),
+    ACTIVE_TRIP_KEY,
+  );
+  expect(activeBeforeFinish).not.toBeNull();
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+
+  await expect(
+    page.getByRole("alert"),
+  ).toContainText("active trip is still intact");
+
+  const persistedAfterFailure = await page.evaluate(
+    ({ activeKey, historyKey }) => ({
+      active: localStorage.getItem(activeKey),
+      history: localStorage.getItem(historyKey),
+    }),
+    { activeKey: ACTIVE_TRIP_KEY, historyKey: HISTORY_KEY },
+  );
+
+  expect(persistedAfterFailure.active).toBe(activeBeforeFinish);
+  expect(persistedAfterFailure.history).toBeNull();
+
+  await page.getByRole("button", { name: "Keep shopping" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Know what’s left" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("€4.79 of €50.00", { exact: true }),
   ).toBeVisible();
 });
 
