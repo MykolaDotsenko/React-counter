@@ -20,7 +20,7 @@ Phase 3 implements the shopping active-trip persistence boundary:
 
 The guarded shopping shell is now wired to this adapter through the ShoppingAppController. Start-trip and active-cart mutations attempt persistence synchronously through the application boundary, and degraded writes are surfaced through the Phase 4 persistence-health UX.
 
-The default/public build still remains Pulse Counter until the shopping shell passes Sprint B's final B6 quality gate.
+The default/public build still remains Pulse Counter. The automated/code portion of Sprint B / B6 is implemented; representative human one-hand timing, software-keyboard, and bright-store evidence remain the release gate before switching the public shell.
 
 History, settings, completion transactions, and price-memory persistence remain later slices.
 

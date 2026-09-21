@@ -145,7 +145,7 @@ describe("ActiveTripScreen", () => {
     const { onAddPrice } = renderScreen(createTrip());
 
     expect(screen.getByText("€50.00")).not.toBeNull();
-    expect(screen.getByText("LEFT")).not.toBeNull();
+    expect(screen.getByText("left")).not.toBeNull();
     expect(
       screen.getByText("€0.00 of €50.00"),
     ).not.toBeNull();
@@ -175,12 +175,12 @@ describe("ActiveTripScreen", () => {
     renderScreen(trip);
 
     expect(screen.getByText("€16.58")).not.toBeNull();
-    expect(screen.getByText("SAFE TO SPEND")).not.toBeNull();
+    expect(screen.getByText("safe to spend")).not.toBeNull();
     expect(
       screen.getByText("€31.42 of €50.00"),
     ).not.toBeNull();
     expect(
-      screen.getByText(/€2.00 kept in reserve/),
+      screen.getByText(/^€2\.00 kept in reserve\./),
     ).not.toBeNull();
 
     const progress = screen.getByRole("progressbar", {
@@ -211,10 +211,12 @@ describe("ActiveTripScreen", () => {
 
     renderScreen(trip);
 
-    expect(screen.getByText("€1.00")).not.toBeNull();
-    expect(screen.getByText("INTO RESERVE")).not.toBeNull();
+    expect(screen.getByText("€0.00")).not.toBeNull();
+    expect(screen.getByText("safe to spend")).not.toBeNull();
     expect(
-      screen.getByText("€1.00 still inside your budget"),
+      screen.getByText(
+        "Safety buffer reached · €1.00 remains in your nominal budget",
+      ),
     ).not.toBeNull();
   });
 
@@ -232,9 +234,9 @@ describe("ActiveTripScreen", () => {
     renderScreen(trip);
 
     expect(screen.getByText("€3.41")).not.toBeNull();
-    expect(screen.getByText("OVER BUDGET")).not.toBeNull();
+    expect(screen.getByText("over your limit")).not.toBeNull();
     expect(
-      screen.getByText("€3.41 over your budget"),
+      screen.getByText("€3.41 over your limit"),
     ).not.toBeNull();
   });
 
@@ -320,7 +322,7 @@ describe("ActiveTripScreen", () => {
 
     await waitFor(() => {
       expect(screen.getByText("€45.00")).not.toBeNull();
-      expect(screen.getByText("SAFE TO SPEND")).not.toBeNull();
+      expect(screen.getByText("safe to spend")).not.toBeNull();
     });
   });
 });

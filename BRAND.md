@@ -563,6 +563,14 @@ Avoid:
 
 > Close to your safety buffer.
 
+### Safety buffer reached
+
+> €0.00 safe to spend.
+
+Supporting copy:
+
+> Safety buffer reached · €1.44 remains in your nominal budget.
+
 ### Over nominal budget
 
 > €3.41 over your limit.

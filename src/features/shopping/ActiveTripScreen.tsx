@@ -66,18 +66,18 @@ export function ActiveTripScreen({
   const heroAmount = nominalOverBudget
     ? Math.abs(nominalRemaining)
     : reserveInUse
-      ? Math.abs(protectedRemaining)
+      ? 0
       : hasBuffer
         ? protectedRemaining
         : nominalRemaining;
 
   const heroLabel = nominalOverBudget
-    ? "OVER BUDGET"
+    ? "over your limit"
     : reserveInUse
-      ? "INTO RESERVE"
+      ? "safe to spend"
       : hasBuffer
-        ? "SAFE TO SPEND"
-        : "LEFT";
+        ? "safe to spend"
+        : "left";
 
   const spentPercent = clampPercentage(
     (total / trip.budgetMinor) * 100,
@@ -99,9 +99,12 @@ export function ActiveTripScreen({
 
   const totalQuantity = itemCount(trip);
   const remainingContext = nominalOverBudget
-    ? `${formatSignedAmount(Math.abs(nominalRemaining), locale)} over your budget`
+    ? `${formatSignedAmount(Math.abs(nominalRemaining), locale)} over your limit`
     : reserveInUse
-      ? `${formatSignedAmount(nominalRemaining, locale)} still inside your budget`
+      ? `Safety buffer reached · ${formatSignedAmount(
+          nominalRemaining,
+          locale,
+        )} remains in your nominal budget`
       : hasBuffer
         ? `${formatSignedAmount(protectedRemaining, locale)} available before your reserve`
         : `${formatSignedAmount(nominalRemaining, locale)} available before your limit`;
@@ -113,7 +116,7 @@ export function ActiveTripScreen({
           <div>
             <p className={styles.eyebrow}>Shopping trip</p>
             <h1 id="active-trip-title" className={styles.title}>
-              Stay inside your limit
+              Know what’s left
             </h1>
           </div>
           <p className={styles.itemCount}>

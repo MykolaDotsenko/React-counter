@@ -1,15 +1,16 @@
 .screen {
   color-scheme: light;
-  --page: #f5f3ee;
-  --panel: #fffdf9;
-  --soft: #f0ede6;
-  --text: #202520;
-  --muted: #626a62;
-  --border: #d9d5cc;
-  --accent: #315f4f;
-  --accent-contrast: #ffffff;
-  --danger: #8a2d2d;
-  --focus: #245fca;
+  --page: var(--shopping-page);
+  --panel: var(--shopping-panel);
+  --soft: var(--shopping-soft);
+  --text: var(--shopping-text);
+  --muted: var(--shopping-muted-strong);
+  --border: var(--shopping-border);
+  --accent: var(--shopping-accent);
+  --accent-contrast: var(--shopping-accent-contrast);
+  --warning: var(--shopping-warning);
+  --danger: var(--shopping-danger);
+  --focus: var(--shopping-focus);
 
   min-height: 100dvh;
   display: grid;
@@ -305,7 +306,7 @@
 }
 
 .projection[data-status="reserve"] strong {
-  color: #79501d;
+  color: var(--warning);
 }
 
 .projection[data-status="over"] strong {
@@ -553,20 +554,6 @@
 @media (prefers-color-scheme: dark) {
   .screen {
     color-scheme: dark;
-    --page: #171a18;
-    --panel: #202421;
-    --soft: #292e2a;
-    --text: #f3f5f1;
-    --muted: #c2cac2;
-    --border: #3d453e;
-    --accent: #89cbb2;
-    --accent-contrast: #10221b;
-    --danger: #ffb6b6;
-    --focus: #9fc1ff;
-  }
-
-  .projection[data-status="reserve"] strong {
-    color: #efc47e;
   }
 
   .addButton {

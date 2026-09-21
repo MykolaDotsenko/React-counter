@@ -10,7 +10,7 @@ Decision evidence:
 
 - docs/design/PHASE-4-DESIGN-VALIDATION.md
 
-The default/public build still ships the Pulse Counter interface while the replacement shopping shell remains guarded behind `VITE_SHOPPING_SHELL=1`. Phase 4 and Phase 5 through B5 now implement the selected Calm Utility direction in that guarded shell. The shopping design must not be presented as the public/default product until Sprint B's final B6 quality gate and production-shell switch are complete.
+The default/public build still ships the Pulse Counter interface while the replacement shopping shell remains guarded behind `VITE_SHOPPING_SHELL=1`. Phase 4 and the automated/code portion of Phase 5 through B6 implement the selected Calm Utility direction in that guarded shell, including one-step Undo, exact reserve/over-limit states, mobile/a11y hardening, and the empirical timing harness. The shopping design must not be presented as the public/default product until the representative human B6 timing/one-hand/bright-store gate passes and the production-shell switch is intentionally made.
 
 This document complements:
 
@@ -154,6 +154,8 @@ When a safety buffer is active, the hero represents safe remaining:
 for the canonical EUR 50 / EUR 31.42 cart / EUR 2 reserve fixture.
 
 Nominal remaining stays secondary when a reserve exists.
+
+If the safe limit has already been crossed but the nominal budget has not, do not present a negative amount as “safe to spend.” Keep the hero at **EUR 0.00 safe to spend** and use secondary copy to state that the safety buffer has been reached plus the exact nominal amount still remaining. Only a true nominal-budget overage changes the hero into an exact over-limit amount.
 
 Everything else supports the safe shopping decision.
 

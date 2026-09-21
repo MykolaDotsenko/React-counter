@@ -13,13 +13,13 @@ Current repository reality:
 - exact EUR money and ShoppingTrip / CartItem domain are implemented
 - the plain-TypeScript ShoppingAppController + `useSyncExternalStore` bridge are implemented
 - versioned Zod-validated active-trip localStorage persistence is implemented
-- Calm Utility start, active-trip, persistence-health, recovery, and manual price-entry flows through Phase 5 / B5 are implemented in the guarded shell
+- Calm Utility start, active-trip, persistence-health, recovery, manual price-entry, one-step Undo, and the automated/code portion of Phase 5 / B6 are implemented in the guarded shell
 - the legacy Pulse Counter UI, native typed View Transitions, and pointer-rendering adapter remain only on the default compatibility path
 - Vitest + React Testing Library + Playwright + axe remain the quality foundation
 
 Remaining target areas before the documented MVP is complete:
 
-- one-step Undo plus edit/remove application flows
+- full edit/remove correction flows beyond the already-implemented one-step Undo
 - trip completion orchestration and completed-trip history persistence
 - checkout reconciliation
 - repeat-trip/history/price-memory slices in their scheduled phases
@@ -462,7 +462,7 @@ Phase 3 infrastructure behaviour:
 3. preserve malformed/future raw active-trip data instead of overwriting it
 4. never reinterpret legacy counter values as shopping money
 
-The user-facing warning/retry/export presentation remains an application/UI responsibility for the core shopping UI phase.
+The guarded shopping UI now surfaces persistence-health warnings and Retry where meaningful. Raw recovery data is preserved for explicit diagnostics; broader export tooling remains a later capability.
 
 No silent data-loss risk.
 

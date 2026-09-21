@@ -1,0 +1,33 @@
+:root {
+  --shopping-page: #f5f3ee;
+  --shopping-panel: #fffdf9;
+  --shopping-soft: #f0ede6;
+  --shopping-text: #202520;
+  --shopping-muted: #687068;
+  --shopping-muted-strong: #626a62;
+  --shopping-border: #d9d5cc;
+  --shopping-accent: #315f4f;
+  --shopping-accent-contrast: #ffffff;
+  --shopping-warning: #8a5b20;
+  --shopping-danger: #8a2d2d;
+  --shopping-focus: #245fca;
+  --shopping-track: #dedbd3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --shopping-page: #171a18;
+    --shopping-panel: #202421;
+    --shopping-soft: #292e2a;
+    --shopping-text: #f3f5f1;
+    --shopping-muted: #b3bbb3;
+    --shopping-muted-strong: #c2cac2;
+    --shopping-border: #3d453e;
+    --shopping-accent: #89cbb2;
+    --shopping-accent-contrast: #10221b;
+    --shopping-warning: #efc47e;
+    --shopping-danger: #ffb6b6;
+    --shopping-focus: #9fc1ff;
+    --shopping-track: #343a35;
+  }
+}

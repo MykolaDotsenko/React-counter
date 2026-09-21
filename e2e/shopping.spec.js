@@ -5,7 +5,7 @@ const ACTIVE_TRIP_KEY = "budget-cart:active-trip";
 const startQuickBudget = async (page, label = "€50") => {
   await page.getByRole("button", { name: label, exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Stay inside your limit" }),
+    page.getByRole("heading", { name: "Know what’s left" }),
   ).toBeVisible();
 };
 
@@ -32,7 +32,7 @@ test("starts a EUR 50 trip and restores it exactly after reload", async ({
   await expect(
     page.getByText("€50.00", { exact: true }).first(),
   ).toBeVisible();
-  await expect(page.getByText("LEFT", { exact: true })).toBeVisible();
+  await expect(page.getByText("left", { exact: true })).toBeVisible();
   await expect(
     page.getByText("€0.00 of €50.00", { exact: true }),
   ).toBeVisible();
@@ -47,9 +47,9 @@ test("starts a EUR 50 trip and restores it exactly after reload", async ({
   await page.reload();
 
   await expect(
-    page.getByRole("heading", { name: "Stay inside your limit" }),
+    page.getByRole("heading", { name: "Know what’s left" }),
   ).toBeVisible();
-  await expect(page.getByText("LEFT", { exact: true })).toBeVisible();
+  await expect(page.getByText("left", { exact: true })).toBeVisible();
   await expect(
     page.getByText("€0.00 of €50.00", { exact: true }),
   ).toBeVisible();
@@ -78,10 +78,10 @@ test("starts with a safety buffer and makes safe remaining unambiguous", async (
     page.getByText("€48.00", { exact: true }).first(),
   ).toBeVisible();
   await expect(
-    page.getByText("SAFE TO SPEND", { exact: true }),
+    page.getByText("safe to spend", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText(/€2.00 kept in reserve/),
+    page.getByText(/^€2\.00 kept in reserve\./),
   ).toBeVisible();
 
   const capacity = page.getByRole("progressbar", {
@@ -129,7 +129,7 @@ test("keeps an added item in memory when its persistence write fails", async ({
   await page.getByRole("button", { name: "Add · €4.79" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "Stay inside your limit" }),
+    page.getByRole("heading", { name: "Know what’s left" }),
   ).toBeVisible();
   await expect(
     page.getByText("€4.79 of €50.00", { exact: true }),
@@ -172,7 +172,7 @@ test("commits exact price and quantity, persists them, and restores the same car
   await page.getByRole("button", { name: "Add · €3.87" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "Stay inside your limit" }),
+    page.getByRole("heading", { name: "Know what’s left" }),
   ).toBeVisible();
   await expect(page.getByText("3 items", { exact: true })).toBeVisible();
   await expect(
@@ -424,7 +424,13 @@ test("completes the Sprint B flagship exact-money shopping journey", async ({
   await expect(
     page.getByText("€48.56 of €50.00", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("INTO RESERVE", { exact: true })).toBeVisible();
+  await expect(page.getByText("safe to spend", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(
+      "Safety buffer reached · €1.44 remains in your nominal budget",
+      { exact: true },
+    ),
+  ).toBeVisible();
 
   await page.getByRole("button", { name: "Add price" }).click();
   await page.getByRole("textbox", { name: "Price" }).fill("2.00");
@@ -466,7 +472,9 @@ test("completes the Sprint B flagship exact-money shopping journey", async ({
     page.getByText("€49.76 of €50.00", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("€0.24 still inside your budget"),
+    page.getByText(
+      "Safety buffer reached · €0.24 remains in your nominal budget",
+    ),
   ).toBeVisible();
 });
 

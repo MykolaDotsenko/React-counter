@@ -1,17 +1,17 @@
 .screen {
-  --page: #f5f3ee;
-  --panel: #fffdf9;
-  --panel-soft: #f0ede6;
-  --text: #202520;
-  --muted: #687068;
-  --muted-on-soft: #626a62;
-  --border: #d9d5cc;
-  --accent: #315f4f;
-  --accent-contrast: #ffffff;
-  --track: #dedbd3;
-  --warning: #8a5b20;
-  --danger: #8a2d2d;
-  --focus: #245fca;
+  --page: var(--shopping-page);
+  --panel: var(--shopping-panel);
+  --panel-soft: var(--shopping-soft);
+  --text: var(--shopping-text);
+  --muted: var(--shopping-muted);
+  --muted-on-soft: var(--shopping-muted-strong);
+  --border: var(--shopping-border);
+  --accent: var(--shopping-accent);
+  --accent-contrast: var(--shopping-accent-contrast);
+  --track: var(--shopping-track);
+  --warning: var(--shopping-warning);
+  --danger: var(--shopping-danger);
+  --focus: var(--shopping-focus);
 
   color-scheme: light;
   min-height: 100dvh;
@@ -466,19 +466,6 @@
 @media (prefers-color-scheme: dark) {
   .screen {
     color-scheme: dark;
-    --page: #171a18;
-    --panel: #202421;
-    --panel-soft: #292e2a;
-    --text: #f3f5f1;
-    --muted: #b3bbb3;
-    --muted-on-soft: #c2cac2;
-    --border: #3d453e;
-    --accent: #89cbb2;
-    --accent-contrast: #10221b;
-    --track: #343a35;
-    --warning: #efc47e;
-    --danger: #ffb6b6;
-    --focus: #9fc1ff;
   }
 
   .addButton {

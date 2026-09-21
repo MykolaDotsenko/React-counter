@@ -28,7 +28,7 @@ test("has no detectable WCAG A/AA violations on the active-trip screen", async (
   await page.getByRole("button", { name: "€50", exact: true }).click();
 
   await expect(
-    page.getByRole("heading", { name: "Stay inside your limit" }),
+    page.getByRole("heading", { name: "Know what’s left" }),
   ).toBeVisible();
 
   const results = await scan(page);
