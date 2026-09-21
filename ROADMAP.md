@@ -386,7 +386,43 @@ Suggested PR:
 - completed trip is recoverable from persistence
 - history remains shopping-task focused
 
-## Phase 8 — offline PWA
+## Phase 8 — repeat-trip acceleration and price memory
+
+Suggested PR:
+
+> feat: make repeated shopping materially faster
+
+### Why this moves before PWA/scanning
+
+The largest unresolved product risk is repeated-use friction, not installability or capture technology.
+
+The second and third trips should be materially easier than the first.
+
+### Scope
+
+- Shop again with previous budget
+- recent-budget shortcut on later launch
+- Recent Items
+- product identity abstraction sufficient for remembered items
+- remembered price records
+- observed date
+- optional store context
+- one/two-action remembered-item reuse
+- clear freshness labels
+- current-price override always available
+
+### Acceptance criteria
+
+- a returning user can restart the previous budget in one action
+- remembered price never appears as confirmed-current without explicit action
+- age is visible
+- store-specific suggestion works when store is known
+- recent familiar items can be reused in one/two actions
+- user can always enter current price instead
+- repeated-trip workflow is measurably lighter than first-trip setup
+- no account, network, or camera is required for this acceleration
+
+## Phase 9 — offline PWA
 
 Suggested PR:
 
@@ -407,28 +443,6 @@ Suggested PR:
 - active shopping workflow works offline
 - service worker does not own canonical business data
 - external helpers can fail independently
-
-## Phase 9 — price memory
-
-Suggested PR:
-
-> feat: remember prices without pretending they are current
-
-### Scope
-
-- product identity abstraction
-- remembered price records
-- observed date
-- optional store context
-- one/two-action reuse
-- clear freshness labels
-
-### Acceptance criteria
-
-- remembered price never appears as confirmed-current without explicit action
-- age is visible
-- store-specific suggestion works when store is known
-- user can always enter current price instead
 
 ## Phase 10 — barcode identification
 
