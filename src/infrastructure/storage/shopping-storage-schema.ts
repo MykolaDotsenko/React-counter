@@ -5,7 +5,10 @@ import {
   MAX_MVP_QUANTITY,
   MIN_MVP_QUANTITY,
 } from "../../domain/money";
-import { MAX_ITEM_LABEL_CODE_POINTS } from "../../domain/shopping-trip";
+import {
+  MAX_ITEM_LABEL_CODE_POINTS,
+  MAX_STORE_LABEL_CODE_POINTS,
+} from "../../domain/shopping-trip";
 
 export const ACTIVE_TRIP_STORAGE_KEY = "budget-cart:active-trip";
 export const HISTORY_STORAGE_KEY = "budget-cart:history";
@@ -13,8 +16,8 @@ export const LEGACY_PULSE_STORAGE_KEYS = [
   "pulse-counter:state",
   "counter",
 ] as const;
-export const CURRENT_ACTIVE_TRIP_SCHEMA_VERSION = 1;
-export const CURRENT_HISTORY_SCHEMA_VERSION = 1;
+export const CURRENT_ACTIVE_TRIP_SCHEMA_VERSION = 2;
+export const CURRENT_HISTORY_SCHEMA_VERSION = 2;
 
 const CANONICAL_ISO_TIMESTAMP =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
@@ -35,6 +38,20 @@ const canonicalLabelSchema = z
   .min(1)
   .refine((value) => value.trim() === value)
   .refine((value) => [...value].length <= MAX_ITEM_LABEL_CODE_POINTS);
+
+
+export const storeContextV2Schema = z
+  .object({
+    id: canonicalIdentifierSchema,
+    label: z
+      .string()
+      .min(1)
+      .refine((value) => value.trim() === value)
+      .refine(
+        (value) => [...value].length <= MAX_STORE_LABEL_CODE_POINTS,
+      ),
+  })
+  .strict();
 
 const positiveMvpMoneySchema = z
   .number()
@@ -149,6 +166,10 @@ export const activeTripDataV1Schema = z
   })
   .strict();
 
+export const activeTripDataV2Schema = activeTripDataV1Schema.extend({
+  store: storeContextV2Schema.optional(),
+}).strict();
+
 
 export const completedTripDataV1Schema = z
   .object({
@@ -164,6 +185,10 @@ export const completedTripDataV1Schema = z
   })
   .strict();
 
+export const completedTripDataV2Schema = completedTripDataV1Schema.extend({
+  store: storeContextV2Schema.optional(),
+}).strict();
+
 export const historyDataEnvelopeV1Schema = z
   .object({
     trips: z.array(z.unknown()),
@@ -178,16 +203,31 @@ export const storageEnvelopeHeaderSchema = z
 
 export const storageEnvelopeV1Schema = z
   .object({
-    schemaVersion: z.literal(CURRENT_ACTIVE_TRIP_SCHEMA_VERSION),
+    schemaVersion: z.literal(1),
     savedAt: canonicalIsoTimestampSchema,
     data: z.unknown(),
   })
   .strict();
 
+export const storageEnvelopeV2Schema = z
+  .object({
+    schemaVersion: z.literal(2),
+    savedAt: canonicalIsoTimestampSchema,
+    data: z.unknown(),
+  })
+  .strict();
 
 export const historyStorageEnvelopeV1Schema = z
   .object({
-    schemaVersion: z.literal(CURRENT_HISTORY_SCHEMA_VERSION),
+    schemaVersion: z.literal(1),
+    savedAt: canonicalIsoTimestampSchema,
+    data: z.unknown(),
+  })
+  .strict();
+
+export const historyStorageEnvelopeV2Schema = z
+  .object({
+    schemaVersion: z.literal(2),
     savedAt: canonicalIsoTimestampSchema,
     data: z.unknown(),
   })
@@ -197,19 +237,21 @@ export type PriceSourceV1 = z.infer<typeof priceSourceV1Schema>;
 export type PriceConfidenceV1 = z.infer<typeof priceConfidenceV1Schema>;
 export type CartItemV1 = z.infer<typeof cartItemV1Schema>;
 export type ActiveTripDataV1 = z.infer<typeof activeTripDataV1Schema>;
+export type ActiveTripDataV2 = z.infer<typeof activeTripDataV2Schema>;
 
 export type CompletedTripDataV1 = z.infer<typeof completedTripDataV1Schema>;
+export type CompletedTripDataV2 = z.infer<typeof completedTripDataV2Schema>;
 
-export interface ActiveTripEnvelopeV1 {
+export interface ActiveTripEnvelopeV2 {
   readonly schemaVersion: typeof CURRENT_ACTIVE_TRIP_SCHEMA_VERSION;
   readonly savedAt: string;
-  readonly data: ActiveTripDataV1;
+  readonly data: ActiveTripDataV2;
 }
 
-export interface HistoryEnvelopeV1 {
+export interface HistoryEnvelopeV2 {
   readonly schemaVersion: typeof CURRENT_HISTORY_SCHEMA_VERSION;
   readonly savedAt: string;
   readonly data: {
-    readonly trips: readonly CompletedTripDataV1[];
+    readonly trips: readonly CompletedTripDataV2[];
   };
 }
