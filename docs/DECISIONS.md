@@ -1041,7 +1041,7 @@ Real-store evidence shows another capability is repeatedly blocking the core job
 
 Date: 2026-09-21
 
-Status: accepted
+Status: accepted; threshold bands refined by D-038
 
 ### Decision
 
@@ -1071,6 +1071,107 @@ Do not respond to weak retention by automatically adding OCR, barcode, voice, cl
 ### Revisit when
 
 Enough real cohort data exists to replace these provisional thresholds with observed product-specific baselines.
+
+
+
+## D-037 — Run an early scanner benchmark without promoting scanner to the production roadmap
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+After Phase 5 establishes a stable, measured manual baseline, run a small experimental scanner benchmark before Phase 6–8 and the broader real-store beta.
+
+This benchmark may test:
+
+- barcode capture
+- shelf-label price capture
+- scan -> confirm interaction
+- failure/fallback behaviour
+
+It must remain:
+
+- experimental
+- optional
+- outside the critical product bundle/path
+- recoverable immediately to manual entry
+
+Production barcode and OCR implementation remains scheduled for Phase 10/11.
+
+### Rationale
+
+The manual path is the universal baseline, but scanner value is an empirical interaction question.
+
+A scanner could reduce:
+
+- seconds per item
+- typing effort
+- cognitive fatigue
+
+or it could increase:
+
+- latency
+- correction work
+- ambiguity
+- trust risk
+
+Testing the hypothesis cheaply after the manual baseline exists gives earlier evidence without committing the product to scanner-first architecture.
+
+### Consequence
+
+The roadmap contains an Experimental Scanner Benchmark Gate after Phase 5.
+
+Positive benchmark evidence may justify a scanner cohort in later beta testing.
+
+Negative evidence must simplify/defer scanning rather than trigger more scanner engineering.
+
+D-035 remains authoritative for production feature sequencing: Repeat Trip / Recent Items / Price Memory still precede production scanner breadth.
+
+### Revisit when
+
+The benchmark has representative mobile timing, failure, correction, and repeated-use data.
+
+## D-038 — Refine retention thresholds and include third-trip behaviour
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Keep second-trip rate as the primary early retention signal, but refine the provisional internal decision bands to:
+
+- 45% or higher — exceptional early signal
+- 35–45% — strong
+- 25–35% — viable/promising
+- 15–25% — problematic
+- below 15% — core product-risk signal
+
+Also track third-trip behaviour before assigning high confidence to retention.
+
+These thresholds are internal heuristics, not claimed industry benchmarks.
+
+### Rationale
+
+A single return trip is a strong signal, but healthy third-trip behaviour better distinguishes a one-time novelty/revisit from a forming habit.
+
+The stricter upper band creates a more demanding internal bar before scaling distribution or monetisation.
+
+### Consequence
+
+Product-success, roadmap, beta, and launch documentation must use the refined bands.
+
+High-confidence product-success estimates require:
+
+- strong second-trip behaviour
+- healthy third-trip behaviour
+- no major trust/data-loss issue
+
+### Revisit when
+
+Enough product-specific cohort data exists to replace heuristic bands with observed baselines.
 
 
 ## How to add a decision
