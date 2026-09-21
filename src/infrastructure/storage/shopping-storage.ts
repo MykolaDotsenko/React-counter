@@ -851,6 +851,220 @@ export const restoreActiveTrip = (
   };
 };
 
+export const restoreHistory = (
+  storage: StorageLike | null | undefined,
+): RestoreHistoryResult => {
+  if (storage === null || storage === undefined) {
+    return {
+      health: "degraded",
+      trips: [],
+      issue: persistenceIssue(
+        "storage-unavailable",
+        HISTORY_STORAGE_KEY,
+      ),
+    };
+  }
+
+  let raw: string | null;
+
+  try {
+    raw = storage.getItem(HISTORY_STORAGE_KEY);
+  } catch {
+    return {
+      health: "degraded",
+      trips: [],
+      issue: persistenceIssue("read-failed", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  if (raw === null) {
+    return {
+      health: "healthy",
+      trips: [],
+    };
+  }
+
+  const decoded = decodeHistorySnapshot(raw);
+
+  if (!decoded.ok) {
+    return {
+      health: "degraded",
+      trips: [],
+      issue: decoded.issue,
+      raw,
+    };
+  }
+
+  if (decoded.invalidEntryCount > 0) {
+    return {
+      health: "degraded",
+      trips: decoded.trips,
+      issue: persistenceIssue(
+        "invalid-history-entry",
+        HISTORY_STORAGE_KEY,
+      ),
+      raw,
+    };
+  }
+
+  return {
+    health: "healthy",
+    trips: decoded.trips,
+    savedAt: decoded.savedAt,
+  };
+};
+
+export const writeHistory = (
+  storage: StorageLike | null | undefined,
+  trips: readonly CompletedTrip[],
+  savedAt: string,
+): PersistenceWriteResult => {
+  if (storage === null || storage === undefined) {
+    return {
+      health: "degraded",
+      issue: persistenceIssue(
+        "storage-unavailable",
+        HISTORY_STORAGE_KEY,
+      ),
+    };
+  }
+
+  const encoded = encodeHistorySnapshot(trips, savedAt);
+
+  if (!encoded.ok) {
+    return {
+      health: "degraded",
+      issue: encoded.issue,
+    };
+  }
+
+  try {
+    storage.setItem(HISTORY_STORAGE_KEY, encoded.raw);
+  } catch {
+    return {
+      health: "degraded",
+      issue: persistenceIssue("write-failed", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  return {
+    health: "healthy",
+    savedAt: encoded.savedAt,
+  };
+};
+
+const appendCompletedTripForCompletion = (
+  history: readonly CompletedTrip[],
+  trip: CompletedTrip,
+):
+  | { readonly ok: true; readonly trips: readonly CompletedTrip[] }
+  | { readonly ok: false; readonly issue: PersistenceIssue } => {
+  const existing = history.find((candidate) => candidate.id === trip.id);
+
+  if (existing === undefined) {
+    return {
+      ok: true,
+      trips: [...history, trip],
+    };
+  }
+
+  if (!sameCompletedTrip(existing, trip)) {
+    return {
+      ok: false,
+      issue: persistenceIssue("history-conflict", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  return {
+    ok: true,
+    trips: history,
+  };
+};
+
+export const completeTripPersistence = (
+  storage: StorageLike | null | undefined,
+  trip: CompletedTrip,
+  savedAt: string,
+): CompletionPersistenceResult => {
+  const history = restoreHistory(storage);
+
+  if (history.health === "degraded") {
+    return {
+      ok: false,
+      stage: "history-write",
+      issue: history.issue,
+      historyPersisted: false,
+    };
+  }
+
+  const appended = appendCompletedTripForCompletion(history.trips, trip);
+
+  if (!appended.ok) {
+    return {
+      ok: false,
+      stage: "history-write",
+      issue: appended.issue,
+      historyPersisted: false,
+    };
+  }
+
+  const historyWrite = writeHistory(storage, appended.trips, savedAt);
+
+  if (historyWrite.health === "degraded") {
+    return {
+      ok: false,
+      stage: "history-write",
+      issue: historyWrite.issue,
+      historyPersisted: false,
+    };
+  }
+
+  const activeClear = clearActiveTrip(storage);
+
+  if (activeClear.health === "degraded") {
+    return {
+      ok: false,
+      stage: "active-clear",
+      issue: activeClear.issue,
+      historyPersisted: true,
+    };
+  }
+
+  return { ok: true };
+};
+
+export const updateCompletedTripPersistence = (
+  storage: StorageLike | null | undefined,
+  trip: CompletedTrip,
+  savedAt: string,
+): PersistenceWriteResult => {
+  const history = restoreHistory(storage);
+
+  if (history.health === "degraded") {
+    return {
+      health: "degraded",
+      issue: history.issue,
+    };
+  }
+
+  const index = history.trips.findIndex(
+    (candidate) => candidate.id === trip.id,
+  );
+
+  if (index < 0) {
+    return {
+      health: "degraded",
+      issue: persistenceIssue("history-conflict", HISTORY_STORAGE_KEY),
+    };
+  }
+
+  const nextTrips = history.trips.map((candidate, candidateIndex) =>
+    candidateIndex === index ? trip : candidate,
+  );
+
+  return writeHistory(storage, nextTrips, savedAt);
+};
+
 export const writeActiveTrip = (
   storage: StorageLike | null | undefined,
   trip: ActiveTrip,
