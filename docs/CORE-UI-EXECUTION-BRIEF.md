@@ -423,6 +423,8 @@ Provide a controlled path that can later support export/recovery.
 
 ## A6 — Sprint A quality gate
 
+Status: **complete via PR #21**
+
 Priority: **100/100**
 
 ### Required automated coverage
@@ -451,6 +453,23 @@ Representative phone-size viewport:
 Check one-hand reach and bright/light-mode readability.
 
 ### Sprint A stop/go gate
+
+**Result: passed for the guarded shopping shell.**
+
+Evidence:
+
+- first-time purpose is explicit on the start screen
+- hero remaining semantics are unambiguous with and without a safety buffer
+- Add price remains the single visually primary action
+- active trips restore exactly after reload
+- degraded persistence is visible and recovery data is never overwritten
+- 360×800 and 390×844 layouts have no horizontal overflow
+- 200% text sizing is resilient after an A6 regression fix
+- reduced-motion behavior is verified across engines
+- axe WCAG A/AA scans pass on start and active-trip screens
+- Chromium, Firefox, and WebKit pass the browser matrix
+
+A6 deliberately keeps the default/public Pulse Counter shell in place because Sprint A does not yet implement functional manual price entry. The shopping shell is exercised under `VITE_SHOPPING_SHELL=1` in the browser gate. Retire the default Pulse shell only after Sprint B makes the Add price path complete and passes its own quality gate.
 
 Do not begin Sprint B if:
 

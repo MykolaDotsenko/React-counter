@@ -324,7 +324,27 @@ Progress:
 - A3 Start Trip screen — **complete via PR #18**
 - A4 Remaining-first active screen — **complete via PR #19**
 - A5 Persistence-health UX — **complete via PR #20**
-- A6 Mobile/a11y/E2E hardening — next
+- A6 Mobile/a11y/E2E hardening — **complete via PR #21**
+
+Sprint A stop/go status: **passed for the guarded shopping shell**.
+
+Validation evidence:
+
+- exact EUR 50 start and reload/restore
+- safety-buffer semantics
+- degraded-write and recovery paths
+- malformed and future-version storage preservation
+- 360×800 and 390×844 compact layouts
+- 200% text-size resilience
+- reduced-motion behavior
+- keyboard focus/activation
+- axe WCAG A/AA on start and active screens
+- Chromium, Firefox, and WebKit green
+- A6 caught and fixed a real 200% overflow defect and a WCAG contrast defect before merge
+
+The public/default Pulse Counter shell remains in place until Sprint B makes **Add price** genuinely functional. The replacement shopping shell is browser-gated with `VITE_SHOPPING_SHELL=1` during migration so every merged PR leaves the default product usable.
+
+**Next: Phase 5 / Sprint B — ultra-fast manual price entry.**
 
 Execution contract:
 
