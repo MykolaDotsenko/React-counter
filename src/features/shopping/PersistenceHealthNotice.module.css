@@ -1,0 +1,101 @@
+.notice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--warning, #8a5b20) 38%, var(--border, #d9d5cc));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--warning, #8a5b20) 8%, var(--panel, #fffdf9));
+  color: var(--text, #202520);
+}
+
+.notice[data-risk="cleanup"] {
+  border-color: var(--border, #d9d5cc);
+  background: var(--panel-soft, #f0ede6);
+}
+
+.marker {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  color: var(--warning, #8a5b20);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.notice[data-risk="cleanup"] .marker {
+  color: var(--muted, #687068);
+}
+
+.copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.copy strong,
+.copy p {
+  margin: 0;
+}
+
+.copy strong {
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.copy p {
+  color: var(--muted, #687068);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.retryStatus {
+  color: var(--warning, #8a5b20) !important;
+  font-weight: 700;
+}
+
+.retryButton {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border, #d9d5cc);
+  border-radius: 12px;
+  background: var(--panel, #fffdf9);
+  color: var(--text, #202520);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  border-color: var(--warning, #8a5b20);
+}
+
+.retryButton:focus-visible {
+  outline: 3px solid var(--focus, #245fca);
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .notice {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .retryButton {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (forced-colors: active) {
+  .notice,
+  .retryButton {
+    forced-color-adjust: auto;
+    border: 1px solid ButtonText;
+  }
+}
