@@ -206,6 +206,100 @@ test("commits exact price and quantity, persists them, and restores the same car
   await expect(page.getByText("3 items", { exact: true })).toBeVisible();
 });
 
+test("edits price and quantity, removes the item, undoes removal, and restores the correction", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  await expect(page.getByText("Confirmed · Manual")).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit" }).click();
+
+  const editedPrice = page.getByRole("textbox", { name: "Price" });
+  await expect(editedPrice).toHaveValue("4.79");
+  await editedPrice.fill("5.29");
+  await page
+    .getByRole("button", { name: "Increase edited quantity" })
+    .click();
+
+  await expect(
+    page.getByText("After saving: €39.42 left"),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Cart would be €10.58 of €50.00."),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Save correction" })
+    .click();
+
+  await expect(
+    page.getByText("€10.58 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("€5.29 × 2", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Item corrected. €39.42 remaining.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Edit" }),
+  ).toBeFocused();
+
+  const persistedAfterEdit = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    ACTIVE_TRIP_KEY,
+  );
+
+  expect(persistedAfterEdit.data.items).toHaveLength(1);
+  expect(persistedAfterEdit.data.items[0]).toMatchObject({
+    unitPriceMinor: 529,
+    quantity: 2,
+    priceSource: { kind: "manual" },
+  });
+  expect(persistedAfterEdit.data.items[0].priceConfidence.kind).toBe(
+    "confirmed",
+  );
+
+  await page.getByRole("button", { name: "Remove" }).click();
+
+  await expect(
+    page.getByText("€0.00 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Item removed. €50.00 remaining.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  const undo = page.getByRole("button", { name: "Undo" });
+  await expect(undo).toBeVisible();
+  await undo.click();
+
+  await expect(
+    page.getByText("€10.58 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("€5.29 × 2", { exact: true }),
+  ).toBeVisible();
+
+  await page.reload();
+
+  await expect(
+    page.getByText("€10.58 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("€5.29 × 2", { exact: true }),
+  ).toBeVisible();
+});
+
 test("offers one-action Undo, persists the restored cart, and survives reload", async ({
   page,
 }) => {

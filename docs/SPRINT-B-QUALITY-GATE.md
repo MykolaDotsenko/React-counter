@@ -17,7 +17,7 @@ The automated code head has passed:
 
 The first expanded B6 browser run exposed a real 360×800 price-entry overflow: the Add action ended below the viewport. The compact layout was corrected without reducing frequent controls below the 48 CSS px product target, and the subsequent browser matrix passed.
 
-The empirical human timing/device section below is still pending and remains a production-switch blocker.
+The empirical human timing/device section below is still pending. Under D-039, it is explicitly waived as a **development-sequencing blocker only** so Phase 6 implementation may continue. It remains unverified evidence and must not be described as passed.
 
 The QA evidence recorder now treats empirical evidence as a strict contract rather than a free-form note:
 - only EUR 4.79 / EUR 12.50 quantity-1 samples captured under the documented EUR 500, zero-buffer fixture count toward timing
@@ -297,7 +297,7 @@ B6 can be marked complete only when:
 
 Until then:
 
-- keep `VITE_SHOPPING_SHELL=1` gating
-- do not make the shopping shell the default/public build
-- do not rewrite README as though the shopping product is shipped
+- keep the human B6 result labelled unverified
 - do not claim the <=2.5 second KPI has been achieved
+- do not use automation as a substitute for physical one-hand evidence
+- D-039 permits Phase 6 implementation to continue, but does not itself prove release quality

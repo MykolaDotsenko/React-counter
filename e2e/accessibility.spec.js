@@ -53,6 +53,30 @@ test("has no detectable WCAG A/AA violations on the price-entry surface", async 
   expect(results.violations).toEqual([]);
 });
 
+test("has no detectable WCAG A/AA violations on the item-correction surface", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "axe scan runs once in Chromium");
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+  await page.getByRole("button", { name: "Edit" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Edit price and quantity" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Price" }),
+  ).toBeFocused();
+
+  const results = await scan(page);
+  expect(results.violations).toEqual([]);
+});
+
 test("has no detectable WCAG A/AA violations on nominal over-budget review", async ({
   page,
   browserName,
@@ -94,6 +118,36 @@ test("keeps the core shopping semantics visible in forced-colours mode", async (
   await expect(
     page.getByRole("button", { name: "Add price" }),
   ).toBeVisible();
+});
+
+test("returns keyboard focus to the edited item after cancel and save", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  const edit = page.getByRole("button", { name: "Edit" });
+  await edit.focus();
+  await page.keyboard.press("Enter");
+
+  const price = page.getByRole("textbox", { name: "Price" });
+  await expect(price).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Edit" })).toBeFocused();
+
+  await page.keyboard.press("Enter");
+  await page.getByRole("textbox", { name: "Price" }).fill("5.29");
+  await page.keyboard.press("Enter");
+
+  await expect(
+    page.getByText("Item corrected. €44.71 remaining.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit" })).toBeFocused();
 });
 
 test("retains visible focus across the core keyboard path", async ({

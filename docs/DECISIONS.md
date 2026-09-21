@@ -1195,3 +1195,35 @@ Instead:
 2. add the new decision
 3. explain evidence that changed
 4. update authoritative product/domain/architecture docs
+
+
+## D-039 — Human B6 gate is explicitly waived for continued development, not declared passed
+
+Date: 2026-09-21
+
+Status: accepted risk
+
+### Decision
+
+Continue development beyond the Sprint B human B6 gate without claiming that representative one-hand timing, physical reach, software-keyboard, or bright-store validation has passed.
+
+The automated/code B6 gate remains valid and green. The human KPI remains **unverified**.
+
+### Rationale
+
+The project owner explicitly chose to continue implementation rather than pause roadmap work for a manual physical-device test.
+
+This is a sequencing waiver, not evidence. Automated browser timing, Playwright, desktop emulation, or AI review must not be re-labelled as representative human interaction evidence.
+
+### Consequence
+
+- the public/default shell remains guarded unless a later explicit release decision changes that
+- documentation must distinguish `automated-green` from `human-unverified`
+- the <=2.5 second one-hand KPI must not be described as achieved
+- Phase 6 correction/confidence work may proceed
+- the experimental scanner benchmark is deferred because its meaningful comparison also depends on representative human interaction evidence
+- future release/marketing work must revisit the human gate before making speed or physical-usability claims
+
+### Revisit when
+
+Representative physical-device evidence is recorded, or when the project owner explicitly changes the release-quality policy with documented rationale.

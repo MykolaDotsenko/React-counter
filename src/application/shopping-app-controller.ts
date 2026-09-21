@@ -7,6 +7,7 @@ import {
   type CompletedTrip,
   type DomainError,
   type IsoTimestamp,
+  type ItemId,
   type TripCommand,
 } from "../domain/shopping-trip";
 
@@ -96,6 +97,12 @@ export interface AddManualItemInput {
   readonly quantity: number;
 }
 
+export interface UpdateManualItemInput {
+  readonly itemId: ItemId;
+  readonly unitPriceMinor: MinorUnits;
+  readonly quantity: number;
+}
+
 type ActiveTripCommand = Exclude<
   TripCommand,
   { readonly type: "complete-trip" } | { readonly type: "set-actual-checkout" }
@@ -133,6 +140,10 @@ export interface ShoppingAppController {
   readonly bootstrap: () => ShoppingAppState;
   readonly startTrip: (input: StartTripInput) => AppCommandResult;
   readonly addManualItem: (input: AddManualItemInput) => AppCommandResult;
+  readonly updateManualItem: (
+    input: UpdateManualItemInput,
+  ) => AppCommandResult;
+  readonly removeItem: (itemId: ItemId) => AppCommandResult;
   readonly undo: () => AppCommandResult;
   readonly retryPersistence: () => AppCommandResult;
   readonly dispatch: (command: ActiveTripCommand) => AppCommandResult;
@@ -369,6 +380,62 @@ export const createShoppingAppController = ({
     });
   };
 
+  const updateManualItem = (
+    input: UpdateManualItemInput,
+  ): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (state.activeTrip === null) {
+      return failure(state, applicationError("no-active-trip"));
+    }
+
+    const current = state.activeTrip.items.find(
+      (item) => item.id === input.itemId,
+    );
+
+    if (current === undefined) {
+      return failure(state, {
+        kind: "domain",
+        code: "item-not-found",
+      });
+    }
+
+    const now = clock.now();
+    const priceChanged =
+      current.unitPriceMinor !== input.unitPriceMinor;
+
+    return dispatch({
+      type: "update-item",
+      itemId: input.itemId,
+      patch: {
+        unitPriceMinor: input.unitPriceMinor,
+        quantity: input.quantity,
+        ...(priceChanged
+          ? {
+              priceSource: { kind: "manual" as const },
+              priceConfidence: {
+                kind: "confirmed" as const,
+                confirmedAt: now,
+              },
+            }
+          : {}),
+      },
+      now,
+    });
+  };
+
+  const removeItem = (itemId: ItemId): AppCommandResult =>
+    dispatch({
+      type: "remove-item",
+      itemId,
+    });
+
   const undoStateForCommand = (
     previousTrip: ActiveTrip,
     command: ActiveTripCommand,
@@ -526,6 +593,8 @@ export const createShoppingAppController = ({
     bootstrap,
     startTrip,
     addManualItem,
+    updateManualItem,
+    removeItem,
     undo,
     retryPersistence,
     dispatch,

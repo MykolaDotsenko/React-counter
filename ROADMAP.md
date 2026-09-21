@@ -385,7 +385,7 @@ Progress:
 - B3 Buffer / over-budget consequence states — **complete via PR #24**
 - B4 Quantity — **complete via PR #25**
 - B5 Commit / persist / return — **complete via PR #26**
-- B6 Correction minimum + quality gate — **automated/code gate implemented via PR #28; empirical recorder hardened to reject non-representative timing evidence; representative human timing and physical one-hand/bright-store evidence still pending**
+- B6 Correction minimum + quality gate — **automated/code gate implemented and green; representative human timing and physical one-hand/bright-store evidence remains unverified under explicit D-039 sequencing waiver**
 
 B5 closes the projection-to-canonical loop: the application controller creates the confirmed manual CartItem from the validated `unitPriceMinor + quantity` intent, commits it through the domain reducer, attempts persistence immediately, and returns the UI to canonical summary state. A failed storage write keeps the committed item in memory and surfaces degraded persistence rather than rolling back valid shopping state.
 
@@ -484,9 +484,25 @@ If scanner is slower, fragile, or confusing:
 
 ## Phase 6 — correction and confidence
 
-Suggested PR:
+**Status: complete — delivered via PR #37.**
 
-> feat: add undo, editing and price confidence states
+Implementation evidence:
+
+- one-action Undo covers add, edit, and remove
+- item price and quantity can be corrected without restarting the trip
+- decrementing quantity 1 to zero is an explicit remove path with Undo
+- manual price correction explicitly refreshes source/confidence to manual + confirmed
+- quantity-only correction preserves existing price provenance/confidence
+- confidence and source remain independent dimensions in cart presentation
+- ordinary correction does not introduce a destructive confirmation modal
+- edit/remove mutations persist immediately and remain recoverable through one-level Undo
+- add/edit primary overlays use one discriminated UI state rather than independent booleans
+- edit cancel/save restores predictable keyboard focus
+- correction surface is covered by component, controller, E2E, axe, and cross-browser tests
+
+PR:
+
+> feat: add Phase 6 item correction and confidence UX
 
 ### Scope
 
@@ -854,9 +870,13 @@ Phase 4 / Sprint A is complete for the guarded shopping shell.
 
 Phase 5 / Sprint B has completed B0–B5 and the automated/code portion of B6; only the representative human B6 evidence gate remains.
 
-The next implementation gate is:
+The B6 empirical validation remains a release-quality debt under D-039 rather than the active implementation blocker.
 
-> **B6 empirical validation — representative one-hand timing and physical usability evidence**
+Phase 6 correction/confidence is implemented via PR #37.
+
+The next implementation step is:
+
+> **Phase 7 — trip completion and reconciliation**
 
 PR #28 implements the B6 code/automated portion:
 
@@ -874,8 +894,8 @@ PR #28 implements the B6 code/automated portion:
 
 The <=2.5 second KPI remains an empirical human interaction target. Automation must not be used as a substitute.
 
-Before the default/public shell can switch away from Pulse Counter, record the representative timing, one-hand reach, software-keyboard, typo/repeated-add, compact-device/equivalent, and bright-store checks defined in `docs/SPRINT-B-QUALITY-GATE.md`. The QA recorder must show the evidence as release-eligible; code/automation alone cannot satisfy this gate.
+Before the default/public shell makes speed/physical-usability claims, record the representative timing, one-hand reach, software-keyboard, typo/repeated-add, compact-device/equivalent, and bright-store checks defined in `docs/SPRINT-B-QUALITY-GATE.md`. The QA recorder must show the evidence as release-eligible; code/automation alone cannot satisfy this gate.
 
-Do not switch the default production shell or begin the post-Sprint-B scanner benchmark until that empirical gate passes. README/repository copy may describe the migration and guarded implementation, but must not claim the shopping shell is the default shipped product before the gate.
+D-039 explicitly waives this human gate only for **continued implementation sequencing**. It does not mark the gate passed and does not authorize claiming the <=2.5 second KPI.
 
-After the empirical B6 gate, follow the roadmap's Experimental Scanner Benchmark Gate as a measurement spike, then Phase 6 correction/confidence work. Production scanner sequencing remains governed by D-035 and D-037.
+The Experimental Scanner Benchmark Gate is deferred while human timing evidence is unavailable, because an automated scanner-vs-manual comparison would not answer the intended human-friction question. Proceed with Phase 6 correction/confidence work. Production scanner sequencing remains governed by D-035 and D-037.
