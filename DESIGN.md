@@ -10,7 +10,7 @@ Decision evidence:
 
 - docs/design/PHASE-4-DESIGN-VALIDATION.md
 
-The current repository still ships the Pulse Counter interface until the Phase 4 UI PRs land. The design described here must not be presented as already implemented.
+The default/public build still ships the Pulse Counter interface while the replacement shopping shell remains guarded behind `VITE_SHOPPING_SHELL=1`. Phase 4 and Phase 5 through B5 now implement the selected Calm Utility direction in that guarded shell. The shopping design must not be presented as the public/default product until Sprint B's final B6 quality gate and production-shell switch are complete.
 
 This document complements:
 
