@@ -90,7 +90,7 @@ describe("ItemEditSurface", () => {
     );
 
     const price = screen.getByRole("textbox", { name: "Price" });
-    expect(price).toHaveValue("4.79");
+    expect((price as HTMLInputElement).value).toBe("4.79");
     expect(screen.getByText("Confirmed · manual")).not.toBeNull();
 
     await user.clear(price);
@@ -197,7 +197,11 @@ describe("ItemEditSurface", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: "Save correction" }),
-    ).toBeDisabled();
+      (
+        screen.getByRole("button", {
+          name: "Save correction",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
   });
 });
