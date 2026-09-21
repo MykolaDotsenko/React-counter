@@ -242,11 +242,10 @@ export function ItemEditSurface({
               spellCheck={false}
               aria-invalid={Boolean(invalidMessage)}
               onChange={(event) => {
+                const nextRaw = event.currentTarget.value;
+
                 setDraft((current) =>
-                  replacePriceEntryRaw(
-                    current,
-                    event.currentTarget.value,
-                  ),
+                  replacePriceEntryRaw(current, nextRaw),
                 );
               }}
               onKeyDown={(event) => {
