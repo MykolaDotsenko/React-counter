@@ -364,6 +364,8 @@ Do not add these in MVP without a new documented decision:
 
 Scanner/OCR dependencies are phase-gated and must stay out of the initial critical bundle.
 
+Exception: after Phase 5, an isolated experimental scanner benchmark may be built exactly as defined by ROADMAP.md and D-037. That experiment must not become a required production path or justify shipping scanner breadth without evidence.
+
 ## Code review checklist for AI
 
 Before presenting work as complete verify:
@@ -407,7 +409,8 @@ Before presenting work as complete verify:
 - no new metadata is required without clear value
 - P0/P1/P2 scope is respected
 - repeat-trip work follows docs/PRODUCT-SUCCESS-STRATEGY.md
-- scanner/OCR work does not bypass the retention validation gate
+- scanner/OCR production work does not bypass the retention validation gate
+- any early scanner work is limited to the D-037 benchmark contract
 
 ### UX
 
