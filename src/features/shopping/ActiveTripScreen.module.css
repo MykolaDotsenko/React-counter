@@ -500,7 +500,8 @@
   .cart,
   .emptyState,
   .capacity,
-  .addButton {
+  .addButton,
+  .undoButton {
     forced-color-adjust: auto;
   }
 
@@ -509,7 +510,8 @@
   .cart,
   .emptyState,
   .capacity,
-  .addButton {
+  .addButton,
+  .undoButton {
     border: 1px solid ButtonText;
   }
 
