@@ -325,6 +325,7 @@ export const createShoppingAppController = ({
         activeTrip: result.activeTrip,
         completedSummary: null,
         completedTrips: result.completedTrips,
+        completionCleanupPending: result.completionCleanupPending,
         persistence: HEALTHY_PERSISTENCE,
         undo: null,
         recovery: null,
@@ -340,6 +341,7 @@ export const createShoppingAppController = ({
         activeTrip: null,
         completedSummary: null,
         completedTrips: result.completedTrips,
+        completionCleanupPending: result.completionCleanupPending,
         persistence: persistenceHealth,
         undo: null,
         recovery: recoveryState(
@@ -354,6 +356,7 @@ export const createShoppingAppController = ({
       activeTrip: result.activeTrip,
       completedSummary: null,
       completedTrips: result.completedTrips,
+      completionCleanupPending: result.completionCleanupPending,
       persistence: persistenceHealth,
       undo: null,
       recovery: null,
@@ -397,6 +400,7 @@ export const createShoppingAppController = ({
       activeTrip: tripResult.value,
       completedSummary: null,
       completedTrips: state.completedTrips,
+      completionCleanupPending: false,
       persistence: saveResult.ok
         ? HEALTHY_PERSISTENCE
         : degradedPersistence(saveResult.issue, now),
