@@ -145,6 +145,7 @@ export function PriceEntrySurface({
 }: PriceEntrySurfaceProps) {
   const amountInputId = useId();
   const statusId = useId();
+  const projectionId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
@@ -285,7 +286,7 @@ export function PriceEntrySurface({
       : "";
 
   return (
-    <section
+    <main
       className={styles.screen}
       aria-labelledby="price-entry-title"
     >
@@ -398,7 +399,9 @@ export function PriceEntrySurface({
           <div
             id={statusId}
             className={styles.status}
-            aria-live="polite"
+            aria-live={
+              submissionError || invalidCopy ? "polite" : undefined
+            }
           >
             {submissionError ? (
               <span className={styles.error}>{submissionError}</span>
@@ -467,7 +470,7 @@ export function PriceEntrySurface({
         </section>
 
         {projection !== null && validPrice !== null && quantity > 1 ? (
-          <p className={styles.lineTotal} aria-live="polite">
+          <p className={styles.lineTotal}>
             {formatEur(validPrice, locale)} × {quantity} ={" "}
             {formatAbsoluteSigned(projection.lineTotalMinor, locale)}
           </p>
@@ -475,10 +478,10 @@ export function PriceEntrySurface({
 
         {consequence ? (
           <section
+            id={projectionId}
             className={styles.projection}
             data-status={consequence.status}
             aria-label="Projected cart result"
-            aria-live="polite"
           >
             <strong>{consequence.primary}</strong>
             {consequence.secondary ? (
@@ -553,6 +556,7 @@ export function PriceEntrySurface({
             type="button"
             className={styles.addButton}
             disabled={validPrice === null || submitted}
+            aria-describedby={projection === null ? undefined : projectionId}
             onClick={commit}
           >
             {submitted
@@ -615,6 +619,6 @@ export function PriceEntrySurface({
           </section>
         )}
       </div>
-    </section>
+    </main>
   );
 }

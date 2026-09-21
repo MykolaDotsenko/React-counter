@@ -1,4 +1,5 @@
 .screen {
+  color-scheme: light;
   --page: #f5f3ee;
   --panel: #fffdf9;
   --soft: #f0ede6;
@@ -499,6 +500,50 @@
   }
 }
 
+@media (max-height: 860px) {
+  .sheet {
+    gap: 8px;
+    padding-block: 10px;
+  }
+
+  .modeGroup {
+    gap: 3px;
+  }
+
+  .modeHint,
+  .utilityRow p,
+  .status {
+    font-size: 0.76rem;
+    line-height: 1.3;
+  }
+
+  .amountBlock {
+    gap: 5px;
+  }
+
+  .amountShell {
+    min-height: 64px;
+    padding-inline: 14px;
+  }
+
+  .quantitySection {
+    padding-block: 6px;
+  }
+
+  .projection {
+    gap: 2px;
+    padding: 8px 10px;
+  }
+
+  .key {
+    min-height: 48px;
+  }
+
+  .addButton {
+    min-height: 52px;
+  }
+}
+
 @media (min-height: 860px) {
   .sheet {
     margin-bottom: 10px;
@@ -507,6 +552,7 @@
 
 @media (prefers-color-scheme: dark) {
   .screen {
+    color-scheme: dark;
     --page: #171a18;
     --panel: #202421;
     --soft: #292e2a;

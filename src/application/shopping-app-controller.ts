@@ -133,6 +133,7 @@ export interface ShoppingAppController {
   readonly bootstrap: () => ShoppingAppState;
   readonly startTrip: (input: StartTripInput) => AppCommandResult;
   readonly addManualItem: (input: AddManualItemInput) => AppCommandResult;
+  readonly undo: () => AppCommandResult;
   readonly retryPersistence: () => AppCommandResult;
   readonly dispatch: (command: ActiveTripCommand) => AppCommandResult;
 }
@@ -368,6 +369,36 @@ export const createShoppingAppController = ({
     });
   };
 
+  const undoStateForCommand = (
+    previousTrip: ActiveTrip,
+    command: ActiveTripCommand,
+  ): UndoState | null => {
+    switch (command.type) {
+      case "add-item":
+        return Object.freeze({
+          previousTrip,
+          description: "add",
+        });
+      case "update-item":
+        return Object.freeze({
+          previousTrip,
+          description: "edit",
+        });
+      case "remove-item":
+        return Object.freeze({
+          previousTrip,
+          description: "remove",
+        });
+      case "set-budget":
+      case "set-buffer":
+        return null;
+      default: {
+        const exhaustive: never = command;
+        return exhaustive;
+      }
+    }
+  };
+
   const retryPersistence = (): AppCommandResult => {
     if (state.lifecycle === "booting") {
       return failure(state, applicationError("not-ready"));
@@ -440,6 +471,45 @@ export const createShoppingAppController = ({
       persistence: saveResult.ok
         ? HEALTHY_PERSISTENCE
         : degradedPersistence(saveResult.issue, now),
+      undo: undoStateForCommand(currentTrip, command),
+      recovery: null,
+    });
+
+    return success(
+      nextState,
+      true,
+      saveResult.ok ? "persisted" : "memory-only",
+    );
+  };
+
+  const undo = (): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (state.activeTrip === null) {
+      return failure(state, applicationError("no-active-trip"));
+    }
+
+    if (state.undo === null) {
+      return success(state, false, "unchanged");
+    }
+
+    const previousTrip = state.undo.previousTrip;
+    const now = clock.now();
+    const saveResult = persistence.save(previousTrip, now);
+    const nextState = publish({
+      ...state,
+      lifecycle: "active",
+      activeTrip: previousTrip,
+      persistence: saveResult.ok
+        ? HEALTHY_PERSISTENCE
+        : degradedPersistence(saveResult.issue, now),
+      undo: null,
       recovery: null,
     });
 
@@ -456,6 +526,7 @@ export const createShoppingAppController = ({
     bootstrap,
     startTrip,
     addManualItem,
+    undo,
     retryPersistence,
     dispatch,
   });

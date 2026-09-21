@@ -184,12 +184,18 @@ describe("ActiveTripScreen", () => {
     ).not.toBeNull();
 
     const progress = screen.getByRole("progressbar", {
-      name: "Safe spending capacity remaining",
+      name: "Shopping budget used",
     });
 
     expect(progress.getAttribute("aria-valuetext")).toContain(
+      "€31.42 in cart",
+    );
+    expect(progress.getAttribute("aria-valuetext")).toContain(
       "€16.58 available before your reserve",
     );
+    expect(
+      screen.getByText("Safe limit €48.00 · Reserve €2.00"),
+    ).not.toBeNull();
   });
 
   it("distinguishes using the reserve from exceeding the nominal budget", () => {
@@ -257,6 +263,38 @@ describe("ActiveTripScreen", () => {
     expect(screen.getByText("Item 2")).not.toBeNull();
     expect(screen.getByText("Estimated price")).not.toBeNull();
     expect(screen.getByText("4 items")).not.toBeNull();
+  });
+
+  it("keeps one-action Undo beside committed feedback", async () => {
+    const user = userEvent.setup();
+    const controller = createController(createTrip());
+    const added = controller.addManualItem({
+      unitPriceMinor: money(479),
+      quantity: 1,
+    });
+
+    expect(added.ok).toBe(true);
+
+    const onUndo = vi.fn();
+
+    render(
+      <ActiveTripScreen
+        controller={controller}
+        onAddPrice={vi.fn()}
+        onUndo={onUndo}
+        feedbackMessage="€4.79 added. €45.21 remaining."
+        locale="en-IE"
+      />,
+    );
+
+    expect(
+      screen.getByText("€4.79 added. €45.21 remaining."),
+    ).not.toBeNull();
+
+    const undo = screen.getByRole("button", { name: "Undo" });
+    await user.click(undo);
+
+    expect(onUndo).toHaveBeenCalledTimes(1);
   });
 
   it("reacts to controller state changes through the canonical external-store bridge", async () => {

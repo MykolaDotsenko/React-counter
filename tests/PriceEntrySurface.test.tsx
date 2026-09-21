@@ -53,7 +53,11 @@ describe("PriceEntrySurface", () => {
     expect(
       screen.getByText("After adding: €45.21 left"),
     ).not.toBeNull();
-    expect(screen.getByLabelText("Projected cart result")).not.toBeNull();
+    const projection = screen.getByLabelText("Projected cart result");
+    const add = screen.getByRole("button", { name: "Add · €4.79" });
+
+    expect(projection).not.toBeNull();
+    expect(add.getAttribute("aria-describedby")).toBe(projection.id);
     expect(trip.items).toHaveLength(0);
   });
 

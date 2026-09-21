@@ -2,8 +2,14 @@ import { useRef, useState } from "react";
 
 import { useShoppingAppState } from "../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../application/shopping-app-controller";
-import { formatEur } from "../domain/money";
-import { lineTotal } from "../domain/shopping-trip";
+import { formatEur, signedMinorUnits } from "../domain/money";
+import {
+  lineTotal,
+  remaining,
+  safeRemaining,
+  type ActiveTrip,
+  type CartItem,
+} from "../domain/shopping-trip";
 import { ActiveTripScreen } from "../features/shopping/ActiveTripScreen";
 import {
   PriceEntrySurface,
@@ -16,6 +22,43 @@ import styles from "./ShoppingAppShell.module.css";
 export interface ShoppingAppShellProps {
   readonly controller: ShoppingAppController;
 }
+
+const formatAbsoluteEur = (value: number, locale: string): string => {
+  const amount = signedMinorUnits(Math.abs(value));
+
+  if (!amount.ok) {
+    throw new RangeError("Shopping feedback amount exceeded safe integer bounds");
+  }
+
+  return formatEur(amount.value, locale);
+};
+
+const remainingFeedback = (trip: ActiveTrip, locale: string): string => {
+  const nominalRemaining = remaining(trip);
+
+  if (nominalRemaining < 0) {
+    return `${formatAbsoluteEur(nominalRemaining, locale)} over your limit.`;
+  }
+
+  if (trip.safetyBufferMinor > 0) {
+    const protectedRemaining = safeRemaining(trip);
+
+    if (protectedRemaining >= 0) {
+      return `${formatEur(protectedRemaining, locale)} safe to spend.`;
+    }
+
+    return `${formatEur(nominalRemaining, locale)} remains before your nominal limit.`;
+  }
+
+  return `${formatEur(nominalRemaining, locale)} remaining.`;
+};
+
+const addedFeedback = (
+  trip: ActiveTrip,
+  item: CartItem,
+  locale: string,
+): string =>
+  `${formatEur(lineTotal(item), locale)} added. ${remainingFeedback(trip, locale)}`;
 
 export function ShoppingAppShell({
   controller,
@@ -74,7 +117,7 @@ export function ShoppingAppShell({
           }
 
           setLastAddedMessage(
-            `${formatEur(lineTotal(addedItem), "en-FI")} added`,
+            addedFeedback(result.state.activeTrip, addedItem, "en-FI"),
           );
           setPriceEntryOpen(false);
           returnFocusToAddPrice();
@@ -89,6 +132,23 @@ export function ShoppingAppShell({
       controller={controller}
       addPriceButtonRef={addPriceButtonRef}
       feedbackMessage={lastAddedMessage}
+      onUndo={() => {
+        const result = controller.undo();
+
+        if (
+          result.ok &&
+          result.changed &&
+          result.state.activeTrip !== null
+        ) {
+          setLastAddedMessage(
+            `Last change undone. ${remainingFeedback(
+              result.state.activeTrip,
+              "en-FI",
+            )}`,
+          );
+          returnFocusToAddPrice();
+        }
+      }}
       onAddPrice={() => {
         setLastAddedMessage("");
         setPriceEntryOpen(true);
