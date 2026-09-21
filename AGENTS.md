@@ -26,11 +26,12 @@ Before changing code, read:
 6. TECH-STACK.md
 7. relevant docs/specs/* contracts
 8. TESTING.md
-9. UX.md / DESIGN.md for user-facing work
-10. BRAND.md / MARKETING.md / docs/marketing/* for naming, copy, store, or launch work
-11. docs/tech/TECHNOLOGY-RESEARCH.md when changing dependencies, frameworks, scanner/OCR, storage, PWA, hosting, or platform architecture
-12. ROADMAP.md for the current implementation phase
-13. other relevant docs/* for the concern being changed
+9. docs/PRODUCT-SUCCESS-STRATEGY.md for onboarding, entry speed, repeat use, retention, scanner sequencing, distribution, or analytics work
+10. UX.md / DESIGN.md for user-facing work
+11. BRAND.md / MARKETING.md / docs/marketing/* for naming, copy, store, or launch work
+12. docs/tech/TECHNOLOGY-RESEARCH.md when changing dependencies, frameworks, scanner/OCR, storage, PWA, hosting, or platform architecture
+13. ROADMAP.md for the current implementation phase
+14. other relevant docs/* for the concern being changed
 
 For a narrow change, do not reread every long document once the relevant contract is known. Never skip PRODUCT.md, the relevant domain/spec contract, ARCHITECTURE.md, TECH-STACK.md, and the current roadmap phase.
 
@@ -263,6 +264,7 @@ When behaviour changes:
 Authoritative roles:
 
 - PRODUCT.md — what and why
+- docs/PRODUCT-SUCCESS-STRATEGY.md — retention-first sequencing, second-trip validation, and product-success decision gates
 - FUNCTIONALITY.md — what the product does, user-state flows, fallbacks, and P0/P1/P2 behaviour
 - SCENARIOS.md — scenario matrix, edge cases, risk prioritisation, and target UX scores
 - UX.md — interaction principles and usability rules
@@ -402,6 +404,8 @@ Before presenting work as complete verify:
 - optional services have a manual fallback
 - no new metadata is required without clear value
 - P0/P1/P2 scope is respected
+- repeat-trip work follows docs/PRODUCT-SUCCESS-STRATEGY.md
+- scanner/OCR work does not bypass the retention validation gate
 
 ### UX
 
