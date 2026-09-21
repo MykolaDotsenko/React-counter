@@ -281,6 +281,31 @@ Why:
 
 Do not collect actual shopping values unless necessary and privacy-reviewed.
 
+## Quick Cart acquisition experiment
+
+Quick Cart is a secondary acquisition experiment, not the core brand promise.
+
+Concept:
+
+> **Quick total**
+
+Purpose:
+
+- serve users who initially want only a running cart total
+- provide immediate calculator value without requiring a budget
+- create a bridge into hard-limit shopping later
+
+Priority:
+
+> **92/100 after the basic Budget Cart is proven usable**
+
+Constraints:
+
+- Set a budget remains the primary path
+- Quick Cart must not delay retention validation
+- it must not turn positioning into a generic calculator app
+- success is measured by activation and later transition into budgeted trips, not raw usage alone
+
 ## App Store strategy
 
 Apple states that the first screenshots and product-page elements strongly affect discovery/conversion.
@@ -796,6 +821,14 @@ Recruit:
 - strict-budget users
 - students/families
 
+Where practical, segment directionally:
+
+- Cohort A — manual-first
+- Cohort B — manual + Repeat Trip / Recent Items / Price Memory
+- Cohort C — manual + experimental scanner, only if the early benchmark was positive
+
+The cohort is for directional learning, not statistical significance.
+
 Ask after actual trips:
 
 - Did you use it in-store?
@@ -805,12 +838,16 @@ Ask after actual trips:
 - Did the total feel trustworthy?
 - Would you use it next week?
 - Did you actually use it on your next trip?
+- Did you return for a third trip?
+- If you used scanning, did it actually save time or reduce effort?
 
-Observed second-trip behaviour matters more than stated intent.
+Observed second/third-trip behaviour matters more than stated intent.
 
 ## Phase C — store launch
 
 Only after retention evidence is credible enough to justify distribution work.
+
+A strong second-trip result without healthy third-trip behaviour is not enough to justify aggressive scaling.
 
 Before store launch, prefer the sequence:
 
