@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useShoppingAppState } from "../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../application/shopping-app-controller";
@@ -17,11 +17,34 @@ import {
 } from "../features/shopping/PriceEntrySurface";
 import { RecoveryScreen } from "../features/shopping/RecoveryScreen";
 import { StartTripScreen } from "../features/shopping/StartTripScreen";
+import { ShoppingTimingQaPanel } from "../qa/ShoppingTimingQaPanel";
+import {
+  appendQaTimingSample,
+  captureQaTimingEnvironment,
+  createQaTimingSession,
+  loadQaTimingSession,
+  persistQaTimingSession,
+  resetQaTimingSamples,
+  updateQaChecklist,
+  updateQaDeviceLabel,
+  updateQaTimingNotes,
+  type QaTimingSession,
+} from "../qa/shopping-timing";
 import styles from "./ShoppingAppShell.module.css";
 
 export interface ShoppingAppShellProps {
   readonly controller: ShoppingAppController;
 }
+
+const qaTimingEnabled =
+  import.meta.env.VITE_SHOPPING_QA_TIMING === "1";
+
+interface PendingQaSample {
+  readonly unitPriceMinor: number;
+  readonly quantity: number;
+  readonly lineTotalMinor: number;
+}
+
 
 const formatAbsoluteEur = (value: number, locale: string): string => {
   const amount = signedMinorUnits(Math.abs(value));
@@ -65,8 +88,23 @@ export function ShoppingAppShell({
 }: ShoppingAppShellProps) {
   const state = useShoppingAppState(controller);
   const addPriceButtonRef = useRef<HTMLButtonElement>(null);
+  const qaStartedAtRef = useRef<number | null>(null);
+  const qaPendingSampleRef = useRef<PendingQaSample | null>(null);
   const [priceEntryOpen, setPriceEntryOpen] = useState(false);
   const [lastAddedMessage, setLastAddedMessage] = useState("");
+  const [qaSession, setQaSession] = useState<QaTimingSession | null>(() => {
+    if (!qaTimingEnabled) {
+      return null;
+    }
+
+    const environment = captureQaTimingEnvironment();
+
+    try {
+      return loadQaTimingSession(sessionStorage, environment);
+    } catch {
+      return createQaTimingSession(environment);
+    }
+  });
 
   const returnFocusToAddPrice = (): void => {
     queueMicrotask(() => {
@@ -74,31 +112,122 @@ export function ShoppingAppShell({
     });
   };
 
+  const updateQaSessionState = (
+    updater: (current: QaTimingSession) => QaTimingSession,
+  ): void => {
+    setQaSession((current) => {
+      if (current === null) {
+        return null;
+      }
+
+      const next = updater(current);
+
+      try {
+        persistQaTimingSession(sessionStorage, next);
+      } catch {
+        // QA persistence must never change the shopping product behavior.
+      }
+
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (
+      !qaTimingEnabled ||
+      priceEntryOpen ||
+      qaPendingSampleRef.current === null ||
+      qaStartedAtRef.current === null
+    ) {
+      return;
+    }
+
+    const pending = qaPendingSampleRef.current;
+    const durationMs = performance.now() - qaStartedAtRef.current;
+
+    qaPendingSampleRef.current = null;
+    qaStartedAtRef.current = null;
+
+    updateQaSessionState((current) =>
+      appendQaTimingSample(current, {
+        id: crypto.randomUUID(),
+        durationMs,
+        unitPriceMinor: pending.unitPriceMinor,
+        quantity: pending.quantity,
+        lineTotalMinor: pending.lineTotalMinor,
+        completedAt: new Date().toISOString(),
+      }),
+    );
+  }, [priceEntryOpen]);
+
+  const qaPanel =
+    qaSession === null ? null : (
+      <ShoppingTimingQaPanel
+        session={qaSession}
+        onChecklistChange={(key, value) => {
+          updateQaSessionState((current) =>
+            updateQaChecklist(current, key, value),
+          );
+        }}
+        onDeviceLabelChange={(value) => {
+          updateQaSessionState((current) =>
+            updateQaDeviceLabel(current, value),
+          );
+        }}
+        onNotesChange={(value) => {
+          updateQaSessionState((current) =>
+            updateQaTimingNotes(current, value),
+          );
+        }}
+        onResetSamples={() => {
+          updateQaSessionState(resetQaTimingSamples);
+        }}
+        />
+        {qaPanel}
+      </>
+    );
+
   if (state.lifecycle === "booting") {
     return (
-      <main className={styles.loading} aria-busy="true">
-        <p>Opening your shopping budget…</p>
-      </main>
+      <>
+        <main className={styles.loading} aria-busy="true">
+          <p>Opening your shopping budget…</p>
+        </main>
+        {qaPanel}
+      </>
     );
   }
 
   if (state.lifecycle === "recovery") {
-    return <RecoveryScreen controller={controller} />;
+    return (
+      <>
+        <RecoveryScreen controller={controller} />
+        {qaPanel}
+      </>
+    );
   }
 
   if (state.lifecycle === "idle") {
-    return <StartTripScreen controller={controller} />;
+    return (
+      <>
+        <StartTripScreen controller={controller} />
+        {qaPanel}
+      </>
+    );
   }
 
   if (priceEntryOpen && state.activeTrip !== null) {
     return (
-      <PriceEntrySurface
-        trip={state.activeTrip}
-        locale="en-FI"
-        onCancel={() => {
-          setPriceEntryOpen(false);
-          returnFocusToAddPrice();
-        }}
+      <>
+        <PriceEntrySurface
+          trip={state.activeTrip}
+          locale="en-FI"
+          onCancel={() => {
+            qaStartedAtRef.current = null;
+            qaPendingSampleRef.current = null;
+            setPriceEntryOpen(false);
+            returnFocusToAddPrice();
+          }}
         onValidatedItem={(intent: ValidatedItemIntent) => {
           const result = controller.addManualItem(intent);
 
@@ -119,6 +248,15 @@ export function ShoppingAppShell({
           setLastAddedMessage(
             addedFeedback(result.state.activeTrip, addedItem, "en-FI"),
           );
+
+          if (qaTimingEnabled && qaStartedAtRef.current !== null) {
+            qaPendingSampleRef.current = {
+              unitPriceMinor: intent.unitPriceMinor,
+              quantity: intent.quantity,
+              lineTotalMinor: lineTotal(addedItem),
+            };
+          }
+
           setPriceEntryOpen(false);
           returnFocusToAddPrice();
           return true;
@@ -128,31 +266,40 @@ export function ShoppingAppShell({
   }
 
   return (
-    <ActiveTripScreen
-      controller={controller}
-      addPriceButtonRef={addPriceButtonRef}
-      feedbackMessage={lastAddedMessage}
-      onUndo={() => {
-        const result = controller.undo();
+    <>
+      <ActiveTripScreen
+        controller={controller}
+        addPriceButtonRef={addPriceButtonRef}
+        feedbackMessage={lastAddedMessage}
+        onUndo={() => {
+          const result = controller.undo();
 
-        if (
-          result.ok &&
-          result.changed &&
-          result.state.activeTrip !== null
-        ) {
-          setLastAddedMessage(
-            `Last change undone. ${remainingFeedback(
-              result.state.activeTrip,
-              "en-FI",
-            )}`,
-          );
-          returnFocusToAddPrice();
-        }
-      }}
-      onAddPrice={() => {
-        setLastAddedMessage("");
-        setPriceEntryOpen(true);
-      }}
-    />
+          if (
+            result.ok &&
+            result.changed &&
+            result.state.activeTrip !== null
+          ) {
+            setLastAddedMessage(
+              `Last change undone. ${remainingFeedback(
+                result.state.activeTrip,
+                "en-FI",
+              )}`,
+            );
+            returnFocusToAddPrice();
+          }
+        }}
+        onAddPrice={() => {
+          setLastAddedMessage("");
+
+          if (qaTimingEnabled) {
+            qaStartedAtRef.current = performance.now();
+            qaPendingSampleRef.current = null;
+          }
+
+          setPriceEntryOpen(true);
+        }}
+      />
+      {qaPanel}
+    </>
   );
 }
