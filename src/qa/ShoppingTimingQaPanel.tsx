@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  QA_TARGET_PRICE_1250,
-  QA_TARGET_PRICE_479,
   QA_TARGET_SAMPLE_COUNT,
-  qaChecklistComplete,
+  summarizeQaEmpiricalGate,
   summarizeQaTimingSamples,
   type QaChecklistKey,
   type QaTimingSession,
@@ -99,15 +97,14 @@ export function ShoppingTimingQaPanel({
 }: ShoppingTimingQaPanelProps) {
   const [open, setOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
+  const [resetArmed, setResetArmed] = useState(false);
 
-  const summary479 = useMemo(
-    () => summarizeQaTimingSamples(session.samples, QA_TARGET_PRICE_479),
-    [session.samples],
+  const gate = useMemo(
+    () => summarizeQaEmpiricalGate(session),
+    [session],
   );
-  const summary1250 = useMemo(
-    () => summarizeQaTimingSamples(session.samples, QA_TARGET_PRICE_1250),
-    [session.samples],
-  );
+  const summary479 = gate.eur479;
+  const summary1250 = gate.eur1250;
 
   useEffect(() => {
     document.title = "Budget Cart — Empirical Timing QA";
@@ -136,6 +133,22 @@ export function ShoppingTimingQaPanel({
     Math.min(summary479.count, QA_TARGET_SAMPLE_COUNT) +
     Math.min(summary1250.count, QA_TARGET_SAMPLE_COUNT);
 
+  const nextStep =
+    summary479.count < QA_TARGET_SAMPLE_COUNT
+      ? `Next: €4.79 sample ${summary479.count + 1}/${QA_TARGET_SAMPLE_COUNT}`
+      : summary1250.count < QA_TARGET_SAMPLE_COUNT
+        ? `Next: €12.50 sample ${summary1250.count + 1}/${QA_TARGET_SAMPLE_COUNT}`
+        : !gate.deviceLabelPresent
+          ? "Add the device/browser label."
+          : !gate.checklistComplete
+            ? "Complete the one-hand / bright-store checklist."
+            : gate.status === "target-met"
+              ? "Empirical target met."
+              : gate.status === "release-floor"
+                ? "Release floor met; speed target still missed."
+                : gate.status === "fail"
+                  ? "Gate failed; redesign before production switch."
+                  : "Review evidence before release.";
   const copyResults = async (): Promise<void> => {
     const report = {
       generatedAt: new Date().toISOString(),
@@ -143,7 +156,7 @@ export function ShoppingTimingQaPanel({
       deviceLabel: session.deviceLabel,
       notes: session.notes,
       checklist: session.checklist,
-      checklistComplete: qaChecklistComplete(session.checklist),
+      gate,
       summaries: {
         eur479: summary479,
         eur1250: summary1250,
@@ -193,6 +206,30 @@ export function ShoppingTimingQaPanel({
             This panel is not part of the product UI. Measure one-handed on a
             real phone. Automation cannot prove the ≤2.5 s KPI.
           </p>
+
+          <section
+            className={styles.gateBanner}
+            data-status={gate.status}
+            aria-live="polite"
+          >
+            <strong>
+              {gate.status === "target-met"
+                ? "Empirical gate: target met"
+                : gate.status === "release-floor"
+                  ? "Empirical gate: release floor only"
+                  : gate.status === "fail"
+                    ? "Empirical gate: failed"
+                    : "Empirical gate: not ready"}
+            </strong>
+            <span>{nextStep}</span>
+            <small>
+              Checklist {gate.checklistComplete ? "complete" : "incomplete"} ·
+              Device label {gate.deviceLabelPresent ? "set" : "missing"}
+              {gate.ignoredSampleCount > 0
+                ? ` · ${gate.ignoredSampleCount} non-target sample(s) ignored`
+                : ""}
+            </small>
+          </section>
 
           <div className={styles.summaryGrid}>
             <TimingCard label="€4.79" summary={summary479} />
@@ -266,8 +303,22 @@ export function ShoppingTimingQaPanel({
             <button type="button" onClick={() => void copyResults()}>
               Copy JSON results
             </button>
-            <button type="button" onClick={onResetSamples}>
-              Reset timing samples
+            <button
+              type="button"
+              data-danger={resetArmed}
+              onClick={() => {
+                if (resetArmed) {
+                  onResetSamples();
+                  setResetArmed(false);
+                  setCopyStatus("Timing samples reset");
+                  return;
+                }
+
+                setResetArmed(true);
+                setCopyStatus("Press Confirm reset to delete timing samples");
+              }}
+            >
+              {resetArmed ? "Confirm reset" : "Reset timing samples"}
             </button>
           </div>
 

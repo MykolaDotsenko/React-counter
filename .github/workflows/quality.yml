@@ -40,7 +40,9 @@ jobs:
         env:
           VITE_SHOPPING_SHELL: "1"
           VITE_SHOPPING_QA_TIMING: "1"
-        run: npm run build -- --base=/React-counter/qa/ --outDir=dist-qa
+        run: |
+          npm run build -- --base=/React-counter/qa/ --outDir=dist-qa
+          npm run qa:prepare-index
 
   browser:
     needs: quality

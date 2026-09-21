@@ -66,6 +66,16 @@ export interface QaTimingSummary {
   readonly status: "pending" | "target-met" | "release-floor" | "fail";
 }
 
+export interface QaEmpiricalGateSummary {
+  readonly eur479: QaTimingSummary;
+  readonly eur1250: QaTimingSummary;
+  readonly checklistComplete: boolean;
+  readonly deviceLabelPresent: boolean;
+  readonly ignoredSampleCount: number;
+  readonly status: "pending" | "target-met" | "release-floor" | "fail";
+  readonly releaseEligible: boolean;
+}
+
 const emptyChecklist = (): QaTimingChecklist => ({
   addPriceReachable: false,
   numericKeysReachable: false,
@@ -335,3 +345,65 @@ export const summarizeQaTimingSamples = (
 export const qaChecklistComplete = (
   checklist: QaTimingChecklist,
 ): boolean => Object.values(checklist).every(Boolean);
+
+const targetSampleCount = (
+  samples: readonly QaTimingSample[],
+): number =>
+  samples.filter(
+    (sample) =>
+      sample.quantity === 1 &&
+      (sample.lineTotalMinor === QA_TARGET_PRICE_479 ||
+        sample.lineTotalMinor === QA_TARGET_PRICE_1250),
+  ).length;
+
+export const summarizeQaEmpiricalGate = (
+  session: QaTimingSession,
+): QaEmpiricalGateSummary => {
+  const eur479 = summarizeQaTimingSamples(
+    session.samples,
+    QA_TARGET_PRICE_479,
+  );
+  const eur1250 = summarizeQaTimingSamples(
+    session.samples,
+    QA_TARGET_PRICE_1250,
+  );
+  const checklistComplete = qaChecklistComplete(session.checklist);
+  const deviceLabelPresent = session.deviceLabel.trim().length > 0;
+  const ignoredSampleCount =
+    session.samples.length - targetSampleCount(session.samples);
+
+  const evidenceComplete =
+    eur479.count >= QA_TARGET_SAMPLE_COUNT &&
+    eur1250.count >= QA_TARGET_SAMPLE_COUNT &&
+    checklistComplete &&
+    deviceLabelPresent;
+
+  let status: QaEmpiricalGateSummary["status"] = "pending";
+
+  if (evidenceComplete) {
+    if (eur479.status === "fail" || eur1250.status === "fail") {
+      status = "fail";
+    } else if (
+      eur479.status === "release-floor" ||
+      eur1250.status === "release-floor"
+    ) {
+      status = "release-floor";
+    } else if (
+      eur479.status === "target-met" &&
+      eur1250.status === "target-met"
+    ) {
+      status = "target-met";
+    }
+  }
+
+  return {
+    eur479,
+    eur1250,
+    checklistComplete,
+    deviceLabelPresent,
+    ignoredSampleCount,
+    status,
+    releaseEligible:
+      status === "target-met" || status === "release-floor",
+  };
+};
