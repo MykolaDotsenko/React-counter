@@ -323,6 +323,7 @@ export function ActiveTripScreen({
                             <button
                               type="button"
                               className={styles.itemActionButton}
+                              data-edit-item-id={item.id}
                               onClick={() => {
                                 onEditItem(item);
                               }}
