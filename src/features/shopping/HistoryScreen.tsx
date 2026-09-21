@@ -1,3 +1,7 @@
+import type {
+  PersistenceHealth,
+  ShoppingAppController,
+} from "../../application/shopping-app-controller";
 import { formatEur, signedMinorUnits } from "../../domain/money";
 import {
   cartTotal,
@@ -5,9 +9,12 @@ import {
   itemCount,
   type CompletedTrip,
 } from "../../domain/shopping-trip";
+import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./HistoryScreen.module.css";
 
 export interface HistoryScreenProps {
+  readonly controller: ShoppingAppController;
+  readonly persistenceHealth: PersistenceHealth;
   readonly trips: readonly CompletedTrip[];
   readonly onBack: () => void;
   readonly locale?: string;
@@ -62,6 +69,8 @@ const completedLabel = (
 };
 
 export function HistoryScreen({
+  controller,
+  persistenceHealth,
   trips,
   onBack,
   locale = "en-FI",
@@ -91,6 +100,12 @@ export function HistoryScreen({
             </p>
           </div>
         </header>
+
+        <PersistenceHealthNotice
+          controller={controller}
+          health={persistenceHealth}
+          context="idle"
+        />
 
         {ordered.length === 0 ? (
           <section className={styles.emptyState}>
