@@ -13,7 +13,8 @@ The roadmap is ordered by product dependency, not novelty.
 - one clear responsibility per PR
 - every PR leaves main in a working state
 - domain correctness lands before visual expansion
-- manual price entry is complete before scanning
+- manual price entry is complete before any scanner benchmark
+- an early scanner benchmark may test interaction value, but production scanner breadth stays phase-gated
 - optional smart features never block the core workflow
 - TypeScript migration is incremental
 - documentation changes ship with the behaviour they describe
@@ -355,6 +356,67 @@ Suggested PR:
 - keypad does not remain dangerously active after commit
 - no item name/category required
 
+## Experimental scanner benchmark gate — after Phase 5
+
+This is a **measurement spike, not a production scanner phase**.
+
+Purpose:
+
+- compare the stable manual baseline against a minimal scan -> confirm path
+- measure whether camera capture reduces time or cognitive effort
+- identify large failure modes before the broader retention beta
+
+### Allowed scope
+
+- isolated experimental branch or clearly gated prototype
+- representative barcode and/or shelf-label capture path
+- timing instrumentation for the experiment
+- manual fallback
+- fixture-based recognition tests
+- no production navigation dependency
+
+### Required comparison
+
+Benchmark manual:
+
+> digits -> Add
+
+against experimental scanner:
+
+> open -> frame -> detect -> confirm
+
+Measure:
+
+- median seconds per item
+- P75/P90 latency
+- recognition failure rate
+- correction rate
+- fallback-to-manual rate
+- user preference after repeated use
+- fatigue after 10+ items
+
+### Decision
+
+If scanner is materially faster or lower-friction without reducing trust:
+
+- retain the evidence
+- allow Cohort C in the later real-store beta
+- keep production implementation scheduled for Phase 10/11
+
+If scanner is slower, fragile, or confusing:
+
+- simplify or defer
+- do not promote scanner in product positioning
+- do not let scanner work delay Phase 6–8
+
+### Hard constraints
+
+- no scanner candidate commits without confirmation
+- no camera/network requirement for the core flow
+- no scanner dependency in the initial critical bundle
+- no production scanner UI becomes required before the retention gate
+- Phase 10/11 remain the production implementation phases
+
 ## Phase 6 — correction and confidence
 
 Suggested PR:
@@ -442,24 +504,36 @@ Recommended cohort:
 
 > **20–50 real shoppers**
 
+Where practical, segment directionally:
+
+- Cohort A — manual-first
+- Cohort B — manual + Repeat Trip / Recent Items / Price Memory
+- Cohort C — manual + the experimental scanner path, only if the benchmark was positive
+
+This cohort size is directional, not statistically powered.
+
 Primary signal:
 
 > **Second-trip rate**
 
 Provisional decision bands:
 
-- 35% or higher — very strong early signal; preserve the core and proceed
-- 25–35% — promising; optimise recurring friction before broadening
-- 15–25% — material retention problem; freeze feature expansion
-- below 15% — revisit the core interaction/job before building scanner/OCR
+- 45% or higher — exceptional early signal; validate third-trip behaviour
+- 35–45% — strong; preserve the core and proceed carefully
+- 25–35% — viable/promising; optimise recurring friction before broadening
+- 15–25% — problematic; freeze feature expansion
+- below 15% — revisit the core interaction/job before building production scanner/OCR
 
 Also measure:
 
 - median manual price-entry time
 - first / fifth / tenth item reached
 - trip completion
+- second-trip rate
+- third-trip rate
 - repeated-budget use
 - remembered-item use
+- scanner fallback rate for Cohort C
 - manual-entry abandonment
 - trust/data-loss complaints
 
