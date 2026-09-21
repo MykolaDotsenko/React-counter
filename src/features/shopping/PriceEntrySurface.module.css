@@ -193,6 +193,86 @@
   font-weight: 750;
 }
 
+
+.quantitySection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+}
+
+.quantityCopy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.quantityCopy span {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.quantityCopy small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.quantityStepper {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 48px minmax(52px, auto) 48px;
+  align-items: center;
+  gap: 6px;
+}
+
+.quantityButton {
+  min-width: 48px;
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.quantityButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.quantityButton:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.quantityValue {
+  min-width: 52px;
+  text-align: center;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.lineTotal {
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.4;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .projection {
   display: grid;
   gap: 4px;
@@ -406,6 +486,14 @@
     align-items: flex-start;
   }
 
+  .quantitySection {
+    padding: 10px 12px;
+  }
+
+  .quantityStepper {
+    grid-template-columns: 48px minmax(44px, auto) 48px;
+  }
+
   .confirmationActions {
     grid-template-columns: 1fr;
   }
@@ -456,6 +544,8 @@
   .clearButton,
   .cancelButton,
   .addButton,
+  .quantitySection,
+  .quantityButton,
   .overBudgetConfirmation,
   .confirmationCancel,
   .addAnywayButton {
@@ -470,6 +560,8 @@
   .clearButton,
   .cancelButton,
   .addButton,
+  .quantitySection,
+  .quantityButton,
   .overBudgetConfirmation,
   .confirmationCancel,
   .addAnywayButton {

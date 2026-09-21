@@ -44,7 +44,7 @@ describe("PriceEntrySurface", () => {
         trip={trip}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={vi.fn()}
+        onValidatedItem={vi.fn()}
       />,
     );
 
@@ -65,7 +65,7 @@ describe("PriceEntrySurface", () => {
         trip={createTrip(5_000, 200)}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={vi.fn()}
+        onValidatedItem={vi.fn()}
       />,
     );
 
@@ -81,7 +81,7 @@ describe("PriceEntrySurface", () => {
 
   it("distinguishes safety-buffer use without adding a confirmation step", async () => {
     const user = userEvent.setup();
-    const onValidatedPrice = vi.fn();
+    const onValidatedItem = vi.fn();
     const trip = createTrip(5_000, 200);
 
     render(
@@ -89,7 +89,7 @@ describe("PriceEntrySurface", () => {
         trip={trip}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={onValidatedPrice}
+        onValidatedItem={onValidatedItem}
       />,
     );
 
@@ -109,14 +109,17 @@ describe("PriceEntrySurface", () => {
       screen.getByRole("button", { name: "Add · €49.00" }),
     );
 
-    expect(onValidatedPrice).toHaveBeenCalledTimes(1);
-    expect(onValidatedPrice).toHaveBeenCalledWith(4_900);
+    expect(onValidatedItem).toHaveBeenCalledTimes(1);
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 4_900,
+      quantity: 1,
+    });
     expect(trip.items).toHaveLength(0);
   });
 
   it("requires explicit Add anyway before emitting a nominal over-budget intent", async () => {
     const user = userEvent.setup();
-    const onValidatedPrice = vi.fn();
+    const onValidatedItem = vi.fn();
     const trip = createTrip();
 
     render(
@@ -124,7 +127,7 @@ describe("PriceEntrySurface", () => {
         trip={trip}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={onValidatedPrice}
+        onValidatedItem={onValidatedItem}
       />,
     );
 
@@ -139,7 +142,7 @@ describe("PriceEntrySurface", () => {
       screen.getByRole("button", { name: "Add · €53.41" }),
     );
 
-    expect(onValidatedPrice).not.toHaveBeenCalled();
+    expect(onValidatedItem).not.toHaveBeenCalled();
     expect(
       screen.getByRole("heading", { name: "Add this price anyway?" }),
     ).not.toBeNull();
@@ -150,14 +153,17 @@ describe("PriceEntrySurface", () => {
       screen.getByRole("button", { name: "Add anyway · €53.41" }),
     );
 
-    expect(onValidatedPrice).toHaveBeenCalledTimes(1);
-    expect(onValidatedPrice).toHaveBeenCalledWith(5_341);
+    expect(onValidatedItem).toHaveBeenCalledTimes(1);
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 5_341,
+      quantity: 1,
+    });
     expect(trip.items).toHaveLength(0);
   });
 
   it("cancels over-budget review without changing the trip or draft", async () => {
     const user = userEvent.setup();
-    const onValidatedPrice = vi.fn();
+    const onValidatedItem = vi.fn();
     const onCancel = vi.fn();
     const trip = createTrip();
 
@@ -166,7 +172,7 @@ describe("PriceEntrySurface", () => {
         trip={trip}
         locale="en-IE"
         onCancel={onCancel}
-        onValidatedPrice={onValidatedPrice}
+        onValidatedItem={onValidatedItem}
       />,
     );
 
@@ -180,7 +186,7 @@ describe("PriceEntrySurface", () => {
       screen.getAllByRole("button", { name: "Cancel" }).at(-1)!,
     );
 
-    expect(onValidatedPrice).not.toHaveBeenCalled();
+    expect(onValidatedItem).not.toHaveBeenCalled();
     expect(onCancel).not.toHaveBeenCalled();
     expect(input.value).toBe("53.41");
     expect(input.readOnly).toBe(false);
@@ -199,7 +205,7 @@ describe("PriceEntrySurface", () => {
         trip={createTrip()}
         locale="en-IE"
         onCancel={onCancel}
-        onValidatedPrice={vi.fn()}
+        onValidatedItem={vi.fn()}
       />,
     );
 
@@ -222,14 +228,14 @@ describe("PriceEntrySurface", () => {
 
   it("guards Add anyway from rapid duplicate submission", async () => {
     const user = userEvent.setup();
-    const onValidatedPrice = vi.fn();
+    const onValidatedItem = vi.fn();
 
     render(
       <PriceEntrySurface
         trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={onValidatedPrice}
+        onValidatedItem={onValidatedItem}
       />,
     );
 
@@ -244,7 +250,193 @@ describe("PriceEntrySurface", () => {
 
     await user.dblClick(addAnyway);
 
-    expect(onValidatedPrice).toHaveBeenCalledTimes(1);
+    expect(onValidatedItem).toHaveBeenCalledTimes(1);
+  });
+
+  it("defaults quantity to one and prevents decrementing below the domain minimum", () => {
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Current quantity").textContent).toBe("1");
+    expect(
+      (screen.getByRole("button", {
+        name: "Decrease quantity",
+      }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("button", {
+        name: "Increase quantity",
+      }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
+  it("projects exact line total and remaining for EUR 1.29 times three", async () => {
+    const user = userEvent.setup();
+    const onValidatedItem = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={onValidatedItem}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "1.29");
+    await user.click(
+      screen.getByRole("button", { name: "Increase quantity" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Increase quantity" }),
+    );
+
+    expect(screen.getByLabelText("Current quantity").textContent).toBe("3");
+    expect(screen.getByText("€1.29 × 3 = €3.87")).not.toBeNull();
+    expect(
+      screen.getByText("After adding: €46.13 left"),
+    ).not.toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: "Add · €3.87" }),
+    );
+
+    expect(onValidatedItem).toHaveBeenCalledTimes(1);
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 129,
+      quantity: 3,
+    });
+  });
+
+  it("updates projection immediately when quantity decreases", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "1.29");
+    const increase = screen.getByRole("button", {
+      name: "Increase quantity",
+    });
+    const decrease = screen.getByRole("button", {
+      name: "Decrease quantity",
+    });
+
+    await user.click(increase);
+    await user.click(increase);
+    expect(screen.getByText("€1.29 × 3 = €3.87")).not.toBeNull();
+
+    await user.click(decrease);
+
+    expect(screen.getByLabelText("Current quantity").textContent).toBe("2");
+    expect(screen.getByText("€1.29 × 2 = €2.58")).not.toBeNull();
+    expect(
+      screen.getByText("After adding: €47.42 left"),
+    ).not.toBeNull();
+  });
+
+  it("lets quantity trigger safety-buffer use without nominal confirmation", async () => {
+    const user = userEvent.setup();
+    const onValidatedItem = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip(5_000, 200)}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={onValidatedItem}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "16.50");
+    const increase = screen.getByRole("button", {
+      name: "Increase quantity",
+    });
+    await user.click(increase);
+    await user.click(increase);
+
+    expect(
+      screen.getByText("This item uses €1.50 of your safety buffer."),
+    ).not.toBeNull();
+    expect(
+      screen.getByText("€0.50 remains before your nominal limit."),
+    ).not.toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Add this price anyway?" }),
+    ).toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: "Add · €49.50" }),
+    );
+
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 1_650,
+      quantity: 3,
+    });
+  });
+
+  it("freezes the reviewed quantity when quantity creates nominal over-budget", async () => {
+    const user = userEvent.setup();
+    const onValidatedItem = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={onValidatedItem}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "20");
+    const increase = screen.getByRole("button", {
+      name: "Increase quantity",
+    });
+    await user.click(increase);
+    await user.click(increase);
+
+    expect(screen.getByText("€20.00 × 3 = €60.00")).not.toBeNull();
+    expect(
+      screen.getByText("This puts you €10.00 over your limit."),
+    ).not.toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: "Add · €60.00" }),
+    );
+
+    expect(
+      (screen.getByRole("button", {
+        name: "Increase quantity",
+      }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("button", {
+        name: "Decrease quantity",
+      }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Add anyway · €60.00",
+      }),
+    );
+
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 2_000,
+      quantity: 3,
+    });
   });
 
   it("shows no fake projection for an incomplete or invalid draft", async () => {
@@ -255,7 +447,7 @@ describe("PriceEntrySurface", () => {
         trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={vi.fn()}
+        onValidatedItem={vi.fn()}
       />,
     );
 
@@ -270,14 +462,14 @@ describe("PriceEntrySurface", () => {
   });
   it("enters a basic EUR 4.79 price with the one-hand keypad", async () => {
     const user = userEvent.setup();
-    const onValidatedPrice = vi.fn();
+    const onValidatedItem = vi.fn();
 
     render(
       <PriceEntrySurface
         trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={onValidatedPrice}
+        onValidatedItem={onValidatedItem}
       />,
     );
 
@@ -295,20 +487,23 @@ describe("PriceEntrySurface", () => {
       screen.getByRole("button", { name: "Add · €4.79" }),
     );
 
-    expect(onValidatedPrice).toHaveBeenCalledTimes(1);
-    expect(onValidatedPrice).toHaveBeenCalledWith(479);
+    expect(onValidatedItem).toHaveBeenCalledTimes(1);
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 479,
+      quantity: 1,
+    });
   });
 
   it("accepts comma input and paste through the real text field", async () => {
     const user = userEvent.setup();
-    const onValidatedPrice = vi.fn();
+    const onValidatedItem = vi.fn();
 
     render(
       <PriceEntrySurface
         trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={onValidatedPrice}
+        onValidatedItem={onValidatedItem}
       />,
     );
 
@@ -321,7 +516,10 @@ describe("PriceEntrySurface", () => {
 
     await user.keyboard("{Enter}");
 
-    expect(onValidatedPrice).toHaveBeenCalledWith(479);
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 479,
+      quantity: 1,
+    });
   });
 
   it("keeps normal incomplete decimal typing visible without an error", async () => {
@@ -332,7 +530,7 @@ describe("PriceEntrySurface", () => {
         trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={vi.fn()}
+        onValidatedItem={vi.fn()}
       />,
     );
 
@@ -352,7 +550,7 @@ describe("PriceEntrySurface", () => {
         trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={vi.fn()}
+        onValidatedItem={vi.fn()}
       />,
     );
 
@@ -372,7 +570,7 @@ describe("PriceEntrySurface", () => {
         trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={vi.fn()}
+        onValidatedItem={vi.fn()}
       />,
     );
 
@@ -390,7 +588,7 @@ describe("PriceEntrySurface", () => {
         trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={vi.fn()}
+        onValidatedItem={vi.fn()}
       />,
     );
 
@@ -406,14 +604,14 @@ describe("PriceEntrySurface", () => {
 
   it("makes auto-cents explicit and prevents mid-draft reinterpretation", async () => {
     const user = userEvent.setup();
-    const onValidatedPrice = vi.fn();
+    const onValidatedItem = vi.fn();
 
     render(
       <PriceEntrySurface
         trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={onValidatedPrice}
+        onValidatedItem={onValidatedItem}
       />,
     );
 
@@ -440,7 +638,10 @@ describe("PriceEntrySurface", () => {
       screen.getByRole("button", { name: "Add · €4.79" }),
     );
 
-    expect(onValidatedPrice).toHaveBeenCalledWith(479);
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 479,
+      quantity: 1,
+    });
   });
 
   it("supports Escape as a predictable cancel path", async () => {
@@ -452,7 +653,7 @@ describe("PriceEntrySurface", () => {
         trip={createTrip()}
         locale="en-IE"
         onCancel={onCancel}
-        onValidatedPrice={vi.fn()}
+        onValidatedItem={vi.fn()}
       />,
     );
 
@@ -464,14 +665,14 @@ describe("PriceEntrySurface", () => {
 
   it("guards the submit callback from re-entry during one commit", async () => {
     const user = userEvent.setup();
-    const onValidatedPrice = vi.fn();
+    const onValidatedItem = vi.fn();
 
     render(
       <PriceEntrySurface
         trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
-        onValidatedPrice={onValidatedPrice}
+        onValidatedItem={onValidatedItem}
       />,
     );
 
@@ -480,7 +681,7 @@ describe("PriceEntrySurface", () => {
     const add = screen.getByRole("button", { name: "Add · €4.79" });
     await user.dblClick(add);
 
-    expect(onValidatedPrice).toHaveBeenCalledTimes(1);
+    expect(onValidatedItem).toHaveBeenCalledTimes(1);
     expect((add as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole("button", { name: "Adding…" })).not.toBeNull();
   });
