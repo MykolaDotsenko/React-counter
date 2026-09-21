@@ -83,7 +83,7 @@ Current progress:
 - A3 — **complete via PR #18**
 - A4 — **complete via PR #19**
 - A5 — **complete via PR #20**
-- A6 — next
+- A6 — **complete via PR #21**
 
 ## Sprint objective
 
@@ -662,6 +662,8 @@ Rules remain Phase 2 rules:
 
 ## B5 — Commit, persist, return
 
+Status: **complete via PR #26**
+
 Priority: **100/100**
 
 Commit order:
@@ -691,6 +693,10 @@ Persistence failure:
 - repeat tapping does not double-submit
 - summary immediately reflects exact total/remaining
 - reduced-motion path remains complete
+- UI does not construct canonical CartItem metadata
+- persisted item matches the exact reviewed unit price and quantity
+- failed add persistence returns to summary with the item intact and degraded warning visible
+- keyboard commit returns focus to the canonical Add price action
 
 ## B6 — Minimum correction and quality gate
 
