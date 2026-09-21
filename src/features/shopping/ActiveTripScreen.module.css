@@ -279,6 +279,11 @@
   outline-offset: 3px;
 }
 
+.tripActions {
+  display: grid;
+  gap: 10px;
+}
+
 .addButton {
   width: 100%;
   min-height: 60px;
@@ -314,6 +319,29 @@
 }
 
 .addButton:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+
+.finishButton {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--muted-on-soft);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.finishButton:hover {
+  background: var(--panel-soft);
+  color: var(--text);
+}
+
+.finishButton:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
@@ -536,7 +564,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .capacityFill,
-  .addButton {
+  .addButton,
+  .finishButton {
     transition: none;
   }
 }
@@ -549,6 +578,7 @@
   .emptyState,
   .capacity,
   .addButton,
+  .finishButton,
   .undoButton,
   .itemActionButton,
   .removeButton {
@@ -561,6 +591,7 @@
   .emptyState,
   .capacity,
   .addButton,
+  .finishButton,
   .undoButton,
   .itemActionButton,
   .removeButton {
