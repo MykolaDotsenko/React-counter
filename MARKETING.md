@@ -786,7 +786,7 @@ Need:
 
 Goal:
 
-validate repeated shopping.
+validate repeated shopping before scanner/OCR breadth or meaningful paid acquisition.
 
 Recruit:
 
@@ -797,12 +797,26 @@ Recruit:
 Ask after actual trips:
 
 - Did you use it in-store?
+- At what item did entry begin to feel tedious?
 - Did it change a purchase decision?
 - What did you stop entering because it was annoying?
 - Did the total feel trustworthy?
 - Would you use it next week?
+- Did you actually use it on your next trip?
+
+Observed second-trip behaviour matters more than stated intent.
 
 ## Phase C — store launch
+
+Only after retention evidence is credible enough to justify distribution work.
+
+Before store launch, prefer the sequence:
+
+1. polished manual core
+2. Repeat Trip / Recent Items / Price Memory
+3. 20–50 real-store beta users
+4. retention analysis and core-friction fixes
+5. store packaging/listing
 
 Only after:
 
