@@ -106,10 +106,7 @@ export function ActiveTripScreen({
           locale,
         )} remains in your nominal budget`
       : hasBuffer
-        ? `${formatSignedAmount(nominalRemaining, locale)} total remains · ${formatEur(
-            trip.safetyBufferMinor,
-            locale,
-          )} kept in reserve`
+        ? `${formatSignedAmount(protectedRemaining, locale)} available before your reserve`
         : `${formatSignedAmount(nominalRemaining, locale)} available before your limit`;
 
   return (
