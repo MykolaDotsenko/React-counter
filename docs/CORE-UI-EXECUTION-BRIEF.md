@@ -471,6 +471,8 @@ Evidence:
 
 A6 deliberately keeps the default/public Pulse Counter shell in place because Sprint A does not yet implement functional manual price entry. The shopping shell is exercised under `VITE_SHOPPING_SHELL=1` in the browser gate. Retire the default Pulse shell only after Sprint B makes the Add price path complete and passes its own quality gate.
 
+The automated viewport evidence proves layout behavior at the documented dimensions; it does not by itself prove physical one-hand reach or bright-store readability on real hardware. Those empirical checks remain required before the production-shell switch and should be recorded alongside B6/manual timing evidence.
+
 Do not begin Sprint B if:
 
 - first-time purpose is unclear
