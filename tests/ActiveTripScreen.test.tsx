@@ -211,10 +211,12 @@ describe("ActiveTripScreen", () => {
 
     renderScreen(trip);
 
-    expect(screen.getByText("€1.00")).not.toBeNull();
-    expect(screen.getByText("left in budget")).not.toBeNull();
+    expect(screen.getByText("€0.00")).not.toBeNull();
+    expect(screen.getByText("safe to spend")).not.toBeNull();
     expect(
-      screen.getByText("€1.00 of your €2.00 reserve is being used"),
+      screen.getByText(
+        "Safety buffer reached · €1.00 remains in your nominal budget",
+      ),
     ).not.toBeNull();
   });
 
