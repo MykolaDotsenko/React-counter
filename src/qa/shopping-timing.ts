@@ -103,21 +103,91 @@ export const createQaTimingSession = (
   samples: [],
 });
 
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
+const isQaTimingEnvironment = (
+  value: unknown,
+): value is QaTimingEnvironment => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<QaTimingEnvironment>;
+
+  return (
+    typeof candidate.userAgent === "string" &&
+    isFiniteNumber(candidate.viewportWidth) &&
+    isFiniteNumber(candidate.viewportHeight) &&
+    isFiniteNumber(candidate.screenWidth) &&
+    isFiniteNumber(candidate.screenHeight) &&
+    isFiniteNumber(candidate.devicePixelRatio) &&
+    (candidate.colorScheme === "light" ||
+      candidate.colorScheme === "dark") &&
+    typeof candidate.reducedMotion === "boolean"
+  );
+};
+
+const isQaTimingChecklist = (
+  value: unknown,
+): value is QaTimingChecklist => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<QaTimingChecklist>;
+
+  return (
+    typeof candidate.addPriceReachable === "boolean" &&
+    typeof candidate.numericKeysReachable === "boolean" &&
+    typeof candidate.cancelReachable === "boolean" &&
+    typeof candidate.projectionReadable === "boolean" &&
+    typeof candidate.reserveWithoutColour === "boolean" &&
+    typeof candidate.addPlacementStable === "boolean" &&
+    typeof candidate.keypadCloses === "boolean" &&
+    typeof candidate.brightSummaryReadable === "boolean" &&
+    typeof candidate.softwareKeyboardClear === "boolean" &&
+    typeof candidate.repeatedAddNoScroll === "boolean"
+  );
+};
+
+const isQaTimingSample = (value: unknown): value is QaTimingSample => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<QaTimingSample>;
+
+  return (
+    typeof candidate.id === "string" &&
+    isFiniteNumber(candidate.durationMs) &&
+    candidate.durationMs >= 0 &&
+    isFiniteNumber(candidate.unitPriceMinor) &&
+    Number.isSafeInteger(candidate.unitPriceMinor) &&
+    isFiniteNumber(candidate.quantity) &&
+    Number.isSafeInteger(candidate.quantity) &&
+    candidate.quantity >= 1 &&
+    isFiniteNumber(candidate.lineTotalMinor) &&
+    Number.isSafeInteger(candidate.lineTotalMinor) &&
+    typeof candidate.completedAt === "string"
+  );
+};
+
 const isQaTimingSession = (value: unknown): value is QaTimingSession => {
   if (typeof value !== "object" || value === null) {
     return false;
   }
 
   const candidate = value as Partial<QaTimingSession>;
+
   return (
     candidate.version === 1 &&
-    typeof candidate.environment === "object" &&
-    candidate.environment !== null &&
+    isQaTimingEnvironment(candidate.environment) &&
     typeof candidate.deviceLabel === "string" &&
     typeof candidate.notes === "string" &&
-    typeof candidate.checklist === "object" &&
-    candidate.checklist !== null &&
-    Array.isArray(candidate.samples)
+    isQaTimingChecklist(candidate.checklist) &&
+    Array.isArray(candidate.samples) &&
+    candidate.samples.every(isQaTimingSample)
   );
 };
 
