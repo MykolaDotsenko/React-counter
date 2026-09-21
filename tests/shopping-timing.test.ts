@@ -5,6 +5,7 @@ import {
   QA_TARGET_PRICE_479,
   appendQaTimingSample,
   createQaTimingSession,
+  loadQaTimingSession,
   qaChecklistComplete,
   resetQaTimingSamples,
   summarizeQaTimingSamples,
@@ -120,6 +121,34 @@ describe("shopping timing QA model", () => {
         QA_TARGET_PRICE_479,
       ).count,
     ).toBe(0);
+  });
+
+  it("discards malformed stored evidence instead of trusting it", () => {
+    sessionStorage.setItem(
+      "budget-cart:qa:timing-v1",
+      JSON.stringify({
+        version: 1,
+        environment,
+        deviceLabel: "fake",
+        notes: "",
+        checklist: {},
+        samples: [
+          {
+            id: "forged",
+            durationMs: -50,
+            unitPriceMinor: 479,
+            quantity: 1,
+            lineTotalMinor: 479,
+            completedAt: "not-a-real-sample",
+          },
+        ],
+      }),
+    );
+
+    const restored = loadQaTimingSession(sessionStorage, environment);
+
+    expect(restored.samples).toHaveLength(0);
+    expect(restored.deviceLabel).toBe("");
   });
 
   it("tracks the manual checklist independently from timing samples", () => {
