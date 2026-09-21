@@ -79,7 +79,11 @@ Current progress:
 
 - A0 — **complete**, Calm Utility selected
 - A1 — **complete via PR #15**
-- A2 — next
+- A2 — **complete via PR #17**
+- A3 — **complete via PR #18**
+- A4 — **complete via PR #19**
+- A5 — next
+- A6 — pending
 
 ## Sprint objective
 
@@ -327,6 +331,8 @@ A user who wants EUR 50 should enter the active shopping screen in one obvious a
 - screen works at 360px width and 200% zoom
 
 ## A4 — Remaining-first active shopping screen
+
+Status: **complete via PR #19**
 
 Priority: **100/100**
 
