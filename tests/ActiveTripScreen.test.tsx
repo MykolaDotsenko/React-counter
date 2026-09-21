@@ -180,7 +180,7 @@ describe("ActiveTripScreen", () => {
       screen.getByText("€31.42 of €50.00"),
     ).not.toBeNull();
     expect(
-      screen.getByText(/€2.00 kept in reserve/),
+      screen.getByText(/^€2\.00 kept in reserve\./),
     ).not.toBeNull();
 
     const progress = screen.getByRole("progressbar", {
