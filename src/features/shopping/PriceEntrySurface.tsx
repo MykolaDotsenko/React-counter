@@ -42,7 +42,9 @@ export interface ValidatedItemIntent {
 export interface PriceEntrySurfaceProps {
   readonly trip: ActiveTrip;
   readonly onCancel: () => void;
-  readonly onValidatedItem: (intent: ValidatedItemIntent) => void;
+  readonly onValidatedItem: (
+    intent: ValidatedItemIntent,
+  ) => boolean | void;
   readonly locale?: string;
 }
 
@@ -147,6 +149,7 @@ export function PriceEntrySurface({
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
   const [overBudgetConfirmation, setOverBudgetConfirmation] =
     useState<OverBudgetConfirmation | null>(null);
   const [draft, setDraft] = useState<PriceEntryDraft>(
@@ -200,8 +203,18 @@ export function PriceEntrySurface({
     }
 
     submittingRef.current = true;
+    setSubmissionError("");
+
+    const accepted = onValidatedItem(intent);
+
+    if (accepted === false) {
+      submittingRef.current = false;
+      setSubmitted(false);
+      setSubmissionError("Could not add this item. Check the trip and try again.");
+      return;
+    }
+
     setSubmitted(true);
-    onValidatedItem(intent);
   };
 
   const commit = (): void => {
@@ -387,7 +400,9 @@ export function PriceEntrySurface({
             className={styles.status}
             aria-live="polite"
           >
-            {state.kind === "valid" ? (
+            {submissionError ? (
+              <span className={styles.error}>{submissionError}</span>
+            ) : state.kind === "valid" ? (
               <span className={styles.validPreview}>
                 {formatEur(state.value, locale)}
               </span>
