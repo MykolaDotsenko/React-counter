@@ -821,15 +821,27 @@ If Sprint A/B meet their usability targets:
 
 The next major probability increase should come from:
 
-> **Trip completion -> Shop again -> Recent Items -> Price Memory -> real-store retention validation**
+> **stable manual core -> cheap scanner hypothesis test -> Trip completion -> Shop again -> Recent Items -> Price Memory -> real-store retention validation**
 
-not scanner/OCR breadth.
+The scanner benchmark is evidence gathering, not production scanner breadth.
 
 # Sprint handoff
 
 After Sprint B:
 
-Proceed to Phase 6/7 only if the fast manual core is stable.
+Proceed only if the fast manual core is stable.
+
+Before Phase 6/7, run the roadmap's **Experimental Scanner Benchmark Gate** as a short measurement spike.
+
+The spike must:
+
+- compare manual digits -> Add against scan -> confirm
+- remain isolated from the production critical path
+- preserve immediate manual fallback
+- collect timing/failure/correction evidence
+- end with a clear keep/defer decision
+
+Do not turn the spike into production scanner implementation.
 
 Then implement:
 
@@ -847,4 +859,10 @@ Then:
 
 > **feature freeze + 20–50 real-store beta**
 
-Only after the retention gate should Phase 9+ breadth proceed.
+Where practical:
+
+- Cohort A — manual-first
+- Cohort B — manual + repeat acceleration / Price Memory
+- Cohort C — manual + experimental scanner only if the benchmark was positive
+
+Only after the retention gate should Phase 9+ production breadth proceed.
