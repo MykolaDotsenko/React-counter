@@ -19,7 +19,7 @@ Current repository reality:
 
 Remaining target areas before the documented MVP is complete:
 
-- trip completion orchestration and completed-trip history persistence
+- Phase 7 loss-safe trip completion, completed-trip history persistence, optional checkout reconciliation, and startup stale-active reconciliation
 - checkout reconciliation
 - repeat-trip/history/price-memory slices in their scheduled phases
 - vite-plugin-pwa + Workbox generateSW and offline installed-shell validation
