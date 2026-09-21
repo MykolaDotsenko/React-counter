@@ -134,15 +134,13 @@ EDITING
   └─ CANCEL ──────────────────→ CLOSED
 
 EDITING_VALID
-  ├─ COMMIT within limits ────→ COMMITTING
-  ├─ COMMIT crosses safe ─────→ SAFE_WARNING
-  ├─ COMMIT crosses nominal ──→ OVER_WARNING
-  ├─ edit draft ──────────────→ EDITING*
-  └─ CANCEL ──────────────────→ CLOSED
+  ├─ COMMIT within safe limit ───────────→ COMMITTING
+  ├─ COMMIT crosses safe only ───────────→ COMMITTING
+  ├─ COMMIT crosses nominal budget ──────→ OVER_WARNING
+  ├─ edit draft ─────────────────────────→ EDITING*
+  └─ CANCEL ──────────────────────────────→ CLOSED
 
-SAFE_WARNING
-  ├─ ADD_ANYWAY ──────────────→ COMMITTING
-  └─ CANCEL/EDIT ─────────────→ EDITING_VALID
+Crossing only the safety buffer is an informational projected state inside EDITING_VALID. The UI explains reserve use before commit, but does not add a second confirmation step while the item remains within the nominal budget.
 
 OVER_WARNING
   ├─ ADD_ANYWAY ──────────────→ COMMITTING
