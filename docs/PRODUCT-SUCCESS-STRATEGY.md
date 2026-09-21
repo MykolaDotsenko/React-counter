@@ -43,7 +43,7 @@ Therefore future prioritisation must reduce **usage and retention risk** before 
 
 At the current stage:
 
-> **approximately 42–48% chance of strong niche product success**
+> **approximately 43–50% chance of strong niche product success**
 
 Definition of strong niche product success:
 
@@ -63,7 +63,7 @@ These ranges are directional and overlapping; percentage-point gains must not be
 
 Phase 1–3 complete:
 
-> **42–48%**
+> **43–50%**
 
 ### After excellent Phase 4–5 core interaction
 
@@ -77,7 +77,7 @@ Conditions:
 
 Target range:
 
-> **52–58%**
+> **52–60%**
 
 ### After repeat-trip acceleration
 
@@ -91,20 +91,41 @@ Conditions:
 
 Target range:
 
-> **60–66%**
+> **60–68%**
+
+### After an early scanner benchmark that proves real interaction value
+
+Conditions:
+
+- manual core is already stable
+- scanner is tested only as an experimental accelerator
+- scan -> confirm is measurably faster or lower-friction than manual entry for representative cases
+- failure immediately falls back to manual
+- scanner remains outside the critical product path
+
+Target range:
+
+> **63–71%**
+
+This is not permission to ship a production scanner early. It is permission to test the hypothesis earlier.
 
 ### After focused real-store beta
 
 If 20–50 real shoppers demonstrate:
 
 - meaningful full-trip use
-- second-trip rate around 30–35% or better
+- second-trip rate around 35% or better
+- healthy third-trip behaviour
 - no major trust/data-loss issue
 - manual entry is not the dominant abandonment reason
 
 Target range:
 
 > **68–75%**
+
+If second-trip rate reaches roughly 45% or better and third-trip behaviour remains healthy:
+
+> **74–80%**
 
 ### After validated distribution
 
@@ -115,18 +136,22 @@ If retention is credible and the product then adds:
 - App Store / Google Play distribution or equivalent install trust
 - organic demo content
 - ASO
+- repeatable acquisition hooks that do not degrade product trust
 
 Target range:
 
-> **72–78%**
+> **78–83%**
 
-### With genuinely friction-reducing scanning
+### Upper-confidence rule
 
-Only if barcode/OCR benchmarking demonstrates that it improves speed or confidence over manual entry in real supermarket conditions:
+Do not assign materially higher confidence than the ranges above before there are:
 
-> **approximately 75–80%**
+- hundreds of real users
+- several months of retention data
+- stable third-trip behaviour
+- credible organic/store conversion evidence
 
-Do not assign a higher confidence before there are hundreds of users and several months of retention evidence.
+Scanner usage alone is never proof of product success.
 
 ## Primary product-success metric
 
@@ -154,22 +179,32 @@ The exact cohort window should follow observed shopping cadence, but initial ana
 
 ## Retention interpretation bands
 
-These are provisional decision thresholds until enough real data exists.
+These are provisional internal decision thresholds until enough real data exists. They are not claimed as industry benchmarks.
 
-### >= 35% second-trip rate
+### >= 45% second-trip rate
 
-**Very strong early signal**
+**Exceptional early signal**
 
 Action:
 
 - preserve the core interaction
-- improve distribution
-- cautiously add accelerators
+- validate third-trip behaviour
+- improve distribution carefully
 - test monetisation only after trust remains strong
+
+### 35–45%
+
+**Strong**
+
+Action:
+
+- preserve the main interaction model
+- optimise repeat friction
+- proceed cautiously with validated accelerators and distribution
 
 ### 25–35%
 
-**Promising / viable**
+**Viable / promising**
 
 Action:
 
@@ -180,7 +215,7 @@ Action:
 
 ### 15–25%
 
-**Material retention problem**
+**Problematic**
 
 Action:
 
@@ -212,9 +247,13 @@ Track privacy-safe behaviour such as:
 - trip_finished
 - trip_restored
 - second_trip_started
+- third_trip_started
 - manual_entry_abandoned
 - remembered_item_used
-- scan_fallback_to_manual later
+- quick_cart_started later
+- scan_started in benchmark cohorts
+- scan_confirmed in benchmark cohorts
+- scan_fallback_to_manual in benchmark cohorts
 
 Do not send monetary or shopping content by default.
 
@@ -311,7 +350,25 @@ It should arrive before barcode/OCR because it reduces friction for the exact pr
 
 Remembered price remains explicitly remembered until the user confirms it as current.
 
-## Why scanner/OCR stays later
+## Early scanner benchmark, production scanner later
+
+The production scanner remains later because it must never become a core dependency before the manual and repeat-trip loops are proven.
+
+However, after the Phase 5 manual flow is stable, run a **small scanner benchmark prototype** before the broader retention beta.
+
+Purpose:
+
+- test whether camera capture is a real interaction accelerator
+- compare it directly against the manual baseline
+- identify whether scanner value is speed, lower cognitive load, or neither
+
+This prototype must be isolated:
+
+- experimental branch or clearly gated code path
+- no production dependency for the core product
+- no product roadmap promotion unless benchmark evidence is positive
+- no scanner-only state
+- immediate manual fallback
 
 A scanner is valuable only if it beats the manual baseline.
 
@@ -345,9 +402,23 @@ then scanning does not improve the product.
 
 Technical novelty does not override interaction cost.
 
+### Recommended benchmark metrics
+
+Compare manual vs scan -> confirm:
+
+- median seconds per item
+- P75/P90 latency
+- recognition failure rate
+- correction rate
+- fallback-to-manual rate
+- user preference after repeated use
+- cognitive effort reported after 10+ items
+
+A positive scanner result can justify a later production implementation. A negative result should simplify or defer scanning.
+
 ## Safety Buffer as differentiation
 
-Safety Buffer should be treated as a core differentiation layer.
+Safety Buffer should be treated as a **branded core differentiation layer**, not hidden as an obscure settings feature.
 
 It addresses uncertainty that normal calculators pretend does not exist:
 
@@ -387,7 +458,14 @@ This is materially different from a generic running-total calculator.
 
 Price confidence is a trust feature.
 
-Potential summary:
+Default presentation should stay quiet.
+
+Prefer contextual confidence such as:
+
+> **EUR 16.40 safely left**  
+> Includes 2 remembered prices
+
+Detailed counts may appear on demand:
 
 > Estimated cart EUR 46.30  
 > 9 confirmed  
@@ -446,7 +524,7 @@ Purpose:
 
 Priority:
 
-> **86/100 later, not current core priority**
+> **92/100 as a later acquisition experiment, not a current core priority**
 
 Constraints:
 
@@ -461,14 +539,15 @@ Do not scale acquisition before repeat value is credible.
 Recommended order:
 
 1. polished core interaction
-2. Repeat Trip / Recent Items / Price Memory
-3. 20–50 real-store beta users
-4. retention analysis
-5. fix core friction
-6. store-ready packaging/listing
-7. organic short-form product demos
-8. ASO/store experiments
-9. meaningful paid acquisition only after retention/LTV evidence
+2. early scanner benchmark prototype after the manual baseline is stable
+3. Repeat Trip / Recent Items / Price Memory
+4. 20–50 real-store beta users
+5. retention analysis
+6. fix core friction
+7. store-ready packaging/listing
+8. organic short-form product demos
+9. ASO/store experiments
+10. meaningful paid acquisition only after retention/LTV evidence
 
 ## Native store packaging
 
@@ -517,6 +596,37 @@ Minimum recommended cohort:
 
 > **20–50 real shoppers**
 
+Where practical, structure the beta as directional cohorts:
+
+### Cohort A — manual-first
+
+Core manual experience only.
+
+### Cohort B — manual + repeat acceleration
+
+Manual core plus:
+
+- Shop again
+- Recent Items
+- Price Memory
+
+### Cohort C — manual + experimental scanner
+
+Manual core plus the benchmark scanner path.
+
+Cohorts are not a statistically powered experiment at this size. They are directional evidence designed to expose large interaction differences.
+
+Compare:
+
+- full-trip completion
+- tenth-item reached
+- median seconds per item
+- second-trip rate
+- third-trip rate
+- scanner fallback rate
+- reported fatigue
+- trust in remaining amount
+
 The test is not:
 
 > “Can you click through this prototype?”
@@ -551,6 +661,30 @@ For any proposed feature, estimate its effect on:
 
 A feature that increases breadth but does not materially improve one of the first five should normally be deferred.
 
+## Monetization guardrail
+
+Do not paywall the habit-forming core before retention is proven.
+
+Keep the core product broadly useful without payment:
+
+- manual tracking
+- hard budget
+- Safety Buffer
+- basic repeat-trip flow
+- basic Price Memory
+- offline/local-first core
+
+Potential paid extensions later may include:
+
+- high-volume scanning
+- deeper price history
+- recurring templates
+- export/backup
+- household sync
+- store comparisons
+
+Monetization must amplify retained value, not block the behaviour needed to create retention.
+
 ## Anti-feature-race rule
 
 Do not attempt to beat broader grocery apps by matching every capability.
@@ -580,16 +714,18 @@ Current ranked priorities:
 |---|---|---:|
 | 1 | One-hand manual flow <= 2–3 sec | 100/100 |
 | 2 | Repeat Trip + Recent Items + Price Memory | 100/100 |
-| 3 | Real-store beta + second-trip gate | 100/100 |
-| 4 | Narrow hard-limit positioning | 97/100 |
-| 5 | Local-first/privacy trust | 95/100 |
-| 6 | Store distribution after retention proof | 94/100 |
-| 7 | Privacy-safe product analytics | 96/100 |
-| 8 | Scanner/OCR only if faster/better than manual | 86/100 |
+| 3 | Real-store beta + second/third-trip gate | 100/100 |
+| 4 | Early scanner benchmark prototype | 97/100 |
+| 5 | Narrow hard-limit positioning | 96/100 |
+| 6 | Safety Buffer as branded differentiation | 96/100 |
+| 7 | Local-first/privacy trust | 94/100 |
+| 8 | Quick Cart acquisition experiment | 92/100 |
+| 9 | Store distribution after retention proof | 92/100 |
+| 10 | More feature breadth without evidence | 45/100 |
 
 The ordering is deliberate.
 
-Scanner/OCR may be visually impressive but is lower expected ROI than making repeated shopping dramatically easier.
+Production scanner/OCR breadth remains lower priority than manual speed and repeated shopping. The early benchmark exists to test the hypothesis cheaply, not to pre-commit the product to scanning.
 
 ## Maintenance rule
 
