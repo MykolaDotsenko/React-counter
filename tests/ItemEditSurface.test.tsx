@@ -84,6 +84,7 @@ describe("ItemEditSurface", () => {
         item={item}
         onCancel={vi.fn()}
         onSave={onSave}
+        onRemove={vi.fn()}
         locale="en-IE"
       />,
     );
@@ -129,6 +130,7 @@ describe("ItemEditSurface", () => {
         item={item}
         onCancel={vi.fn()}
         onSave={onSave}
+        onRemove={vi.fn()}
         locale="en-IE"
       />,
     );
@@ -155,6 +157,31 @@ describe("ItemEditSurface", () => {
     });
   });
 
+  it("treats quantity one decremented to zero as an explicit reversible removal intent", async () => {
+    const user = userEvent.setup();
+    const item = createItem(479, 1);
+    const onRemove = vi.fn(() => true);
+
+    render(
+      <ItemEditSurface
+        trip={createTrip(item)}
+        item={item}
+        onCancel={vi.fn()}
+        onSave={vi.fn()}
+        onRemove={onRemove}
+        locale="en-IE"
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Remove item by decreasing quantity",
+      }),
+    );
+
+    expect(onRemove).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps Save disabled until the correction actually changes canonical values", () => {
     const item = createItem(479, 2);
 
@@ -164,6 +191,7 @@ describe("ItemEditSurface", () => {
         item={item}
         onCancel={vi.fn()}
         onSave={vi.fn()}
+        onRemove={vi.fn()}
         locale="en-IE"
       />,
     );
