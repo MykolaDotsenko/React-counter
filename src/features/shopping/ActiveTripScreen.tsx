@@ -19,6 +19,7 @@ export interface ActiveTripScreenProps {
   readonly onAddPrice: () => void;
   readonly addPriceButtonRef?: Ref<HTMLButtonElement>;
   readonly feedbackMessage?: string;
+  readonly onUndo?: () => void;
   readonly locale?: string;
 }
 
@@ -43,6 +44,7 @@ export function ActiveTripScreen({
   onAddPrice,
   addPriceButtonRef,
   feedbackMessage,
+  onUndo,
   locale = "en-FI",
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
@@ -77,15 +79,22 @@ export function ActiveTripScreen({
         ? "SAFE TO SPEND"
         : "LEFT";
 
-  const capacityLimit = hasBuffer ? protectedLimit : trip.budgetMinor;
-  const capacityRemaining = hasBuffer ? protectedRemaining : nominalRemaining;
-  const capacityPercent =
-    capacityLimit <= 0
-      ? 0
-      : clampPercentage((capacityRemaining / capacityLimit) * 100);
+  const spentPercent = clampPercentage(
+    (total / trip.budgetMinor) * 100,
+  );
+  const safeBoundaryPercent = clampPercentage(
+    (protectedLimit / trip.budgetMinor) * 100,
+  );
+  const reservePercent = hasBuffer
+    ? clampPercentage(
+        (trip.safetyBufferMinor / trip.budgetMinor) * 100,
+      )
+    : 0;
 
   const capacityStyle = {
-    "--capacity-percent": `${capacityPercent}%`,
+    "--spent-percent": `${spentPercent}%`,
+    "--safe-boundary-percent": `${safeBoundaryPercent}%`,
+    "--reserve-percent": `${reservePercent}%`,
   } as CSSProperties;
 
   const totalQuantity = itemCount(trip);
@@ -148,25 +157,38 @@ export function ActiveTripScreen({
           <div
             className={styles.capacity}
             role="progressbar"
-            aria-label={
-              hasBuffer
-                ? "Safe spending capacity remaining"
-                : "Budget capacity remaining"
-            }
+            aria-label="Shopping budget used"
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuenow={Math.round(capacityPercent)}
-            aria-valuetext={remainingContext}
+            aria-valuenow={Math.round(spentPercent)}
+            aria-valuetext={
+              hasBuffer
+                ? `${formatEur(total, locale)} in cart. ${remainingContext}. Reserve ${formatEur(
+                    trip.safetyBufferMinor,
+                    locale,
+                  )}.`
+                : `${formatEur(total, locale)} in cart. ${remainingContext}.`
+            }
             style={capacityStyle}
           >
-            <span className={styles.capacityFill} />
+            <span className={styles.capacityFill} aria-hidden="true" />
+            {hasBuffer ? (
+              <span
+                className={styles.reserveZone}
+                data-consumed={reserveInUse || nominalOverBudget}
+                aria-hidden="true"
+              />
+            ) : null}
           </div>
 
           <div className={styles.capacityLabels} aria-hidden="true">
-            <span>Spent {formatEur(total, locale)}</span>
+            <span>Cart {formatEur(total, locale)}</span>
             <span>
               {hasBuffer
-                ? `Safe limit ${formatEur(protectedLimit, locale)}`
+                ? `Safe limit ${formatEur(protectedLimit, locale)} · Reserve ${formatEur(
+                    trip.safetyBufferMinor,
+                    locale,
+                  )}`
                 : `Budget ${formatEur(trip.budgetMinor, locale)}`}
             </span>
           </div>
@@ -182,10 +204,23 @@ export function ActiveTripScreen({
           ) : null}
         </section>
 
-        {feedbackMessage ? (
-          <p className={styles.feedback} role="status" aria-live="polite">
-            {feedbackMessage}
-          </p>
+        {feedbackMessage || (state.undo !== null && onUndo) ? (
+          <div className={styles.feedback}>
+            {feedbackMessage ? (
+              <p role="status" aria-live="polite">
+                {feedbackMessage}
+              </p>
+            ) : null}
+            {state.undo !== null && onUndo ? (
+              <button
+                type="button"
+                className={styles.undoButton}
+                onClick={onUndo}
+              >
+                Undo
+              </button>
+            ) : null}
+          </div>
         ) : null}
 
         <button
