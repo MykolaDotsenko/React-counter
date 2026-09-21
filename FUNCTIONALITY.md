@@ -651,7 +651,9 @@ A lightweight recent-item picker may show:
 - store context
 - freshness
 
-This is P1 after the manual flow is excellent.
+This is P1 immediately after the core manual/correction/completion flow is excellent.
+
+Recent Items and remembered prices are retention accelerators and should be implemented before barcode/OCR breadth.
 
 Do not turn the home screen into a grocery catalogue.
 
@@ -851,13 +853,17 @@ Not included:
 
 ## Repeat-trip shortcut
 
-After previous usage, first launch with no active trip may offer:
+After previous usage, first launch with no active trip should be able to offer:
 
 > Shop again with EUR 50
 
 and:
 
 > Choose another amount
+
+The previous budget should be restartable in one action.
+
+Repeated trips should feel materially lighter than the first trip, especially when combined with Recent Items and Price Memory.
 
 This reduces setup without hiding user control.
 
@@ -1193,17 +1199,23 @@ Flow:
 
 ### P1 — make repeated use materially faster
 
+First retention tier:
+
 - completed-trip history
-- repeat previous budget
+- repeat previous budget / Shop again
+- Recent Items
 - price memory
 - optional item labels
 - optional store context
+
+Then, only after real-store retention validation:
+
+- PWA offline installation
 - barcode identity
 - price-tag scanning
 - weighted goods
 - discounts
 - data export
-- PWA offline installation
 
 ### P2 — only after evidence
 
