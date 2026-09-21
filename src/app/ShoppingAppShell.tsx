@@ -1,8 +1,14 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { useShoppingAppState } from "../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../application/shopping-app-controller";
+import { formatEur } from "../domain/money";
+import { lineTotal } from "../domain/shopping-trip";
 import { ActiveTripScreen } from "../features/shopping/ActiveTripScreen";
+import {
+  PriceEntrySurface,
+  type ValidatedItemIntent,
+} from "../features/shopping/PriceEntrySurface";
 import { RecoveryScreen } from "../features/shopping/RecoveryScreen";
 import { StartTripScreen } from "../features/shopping/StartTripScreen";
 import styles from "./ShoppingAppShell.module.css";
@@ -15,7 +21,15 @@ export function ShoppingAppShell({
   controller,
 }: ShoppingAppShellProps) {
   const state = useShoppingAppState(controller);
-  const [phaseNotice, setPhaseNotice] = useState(false);
+  const addPriceButtonRef = useRef<HTMLButtonElement>(null);
+  const [priceEntryOpen, setPriceEntryOpen] = useState(false);
+  const [lastAddedMessage, setLastAddedMessage] = useState("");
+
+  const returnFocusToAddPrice = (): void => {
+    queueMicrotask(() => {
+      addPriceButtonRef.current?.focus();
+    });
+  };
 
   if (state.lifecycle === "booting") {
     return (
@@ -33,35 +47,52 @@ export function ShoppingAppShell({
     return <StartTripScreen controller={controller} />;
   }
 
-  return (
-    <>
-      <ActiveTripScreen
-        controller={controller}
-        onAddPrice={() => {
-          setPhaseNotice(true);
+  if (priceEntryOpen && state.activeTrip !== null) {
+    return (
+      <PriceEntrySurface
+        trip={state.activeTrip}
+        locale="en-FI"
+        onCancel={() => {
+          setPriceEntryOpen(false);
+          returnFocusToAddPrice();
+        }}
+        onValidatedItem={(intent: ValidatedItemIntent) => {
+          const result = controller.addManualItem(intent);
+
+          if (
+            !result.ok ||
+            !result.changed ||
+            result.state.activeTrip === null
+          ) {
+            return false;
+          }
+
+          const addedItem = result.state.activeTrip.items.at(-1);
+
+          if (addedItem === undefined) {
+            return false;
+          }
+
+          setLastAddedMessage(
+            `${formatEur(lineTotal(addedItem), "en-FI")} added`,
+          );
+          setPriceEntryOpen(false);
+          returnFocusToAddPrice();
+          return true;
         }}
       />
+    );
+  }
 
-      {phaseNotice ? (
-        <aside
-          className={styles.phaseNotice}
-          role="status"
-          aria-live="polite"
-        >
-          <strong>Price entry is the next migration step.</strong>
-          <span>
-            Your current budget and saved trip remain unchanged.
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              setPhaseNotice(false);
-            }}
-          >
-            Dismiss
-          </button>
-        </aside>
-      ) : null}
-    </>
+  return (
+    <ActiveTripScreen
+      controller={controller}
+      addPriceButtonRef={addPriceButtonRef}
+      feedbackMessage={lastAddedMessage}
+      onAddPrice={() => {
+        setLastAddedMessage("");
+        setPriceEntryOpen(true);
+      }}
+    />
   );
 }
