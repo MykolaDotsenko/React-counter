@@ -599,15 +599,22 @@ Do not fabricate user-success statistics.
 
 ### P1 — reduce repeated friction
 
+First retention tier:
+
 - trip history
+- repeat previous budget / Shop again
+- Recent Items
 - price memory
 - optional store context
+
+After retention validation:
+
+- PWA/offline installation
 - barcode identification
 - price-tag scanning
 - weighted items
 - discount support
 - export/backup
-- PWA/offline installation
 
 ### P2 — only after evidence
 
