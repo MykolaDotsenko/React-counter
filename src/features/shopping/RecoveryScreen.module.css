@@ -1,15 +1,15 @@
 .screen {
   color-scheme: light;
-  --page: #f5f3ee;
-  --panel: #fffdf9;
-  --panel-soft: #f0ede6;
-  --text: #202520;
-  --muted: #687068;
-  --border: #d9d5cc;
-  --accent: #315f4f;
-  --accent-contrast: #ffffff;
-  --warning: #8a5b20;
-  --focus: #245fca;
+  --page: var(--shopping-page);
+  --panel: var(--shopping-panel);
+  --panel-soft: var(--shopping-soft);
+  --text: var(--shopping-text);
+  --muted: var(--shopping-muted);
+  --border: var(--shopping-border);
+  --accent: var(--shopping-accent);
+  --accent-contrast: var(--shopping-accent-contrast);
+  --warning: var(--shopping-warning);
+  --focus: var(--shopping-focus);
 
   min-height: 100dvh;
   display: grid;
@@ -156,16 +156,6 @@
 @media (prefers-color-scheme: dark) {
   .screen {
     color-scheme: dark;
-    --page: #171a18;
-    --panel: #202421;
-    --panel-soft: #292e2a;
-    --text: #f3f5f1;
-    --muted: #b3bbb3;
-    --border: #3d453e;
-    --accent: #89cbb2;
-    --accent-contrast: #10221b;
-    --warning: #efc47e;
-    --focus: #9fc1ff;
   }
 }
 
