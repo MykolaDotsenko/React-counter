@@ -4,15 +4,15 @@
   align-items: start;
   gap: 12px;
   padding: 14px 16px;
-  border: 1px solid color-mix(in srgb, var(--warning, #8a5b20) 38%, var(--border, #d9d5cc));
+  border: 1px solid color-mix(in srgb, var(--shopping-warning) 38%, var(--shopping-border));
   border-radius: 16px;
-  background: color-mix(in srgb, var(--warning, #8a5b20) 8%, var(--panel, #fffdf9));
-  color: var(--text, #202520);
+  background: color-mix(in srgb, var(--shopping-warning) 8%, var(--shopping-panel));
+  color: var(--shopping-text);
 }
 
 .notice[data-risk="cleanup"] {
-  border-color: var(--border, #d9d5cc);
-  background: var(--panel-soft, #f0ede6);
+  border-color: var(--shopping-border);
+  background: var(--shopping-soft);
 }
 
 .marker {
@@ -22,14 +22,14 @@
   place-items: center;
   border: 1px solid currentColor;
   border-radius: 50%;
-  color: var(--warning, #8a5b20);
+  color: var(--shopping-warning);
   font-size: 0.82rem;
   font-weight: 900;
   line-height: 1;
 }
 
 .notice[data-risk="cleanup"] .marker {
-  color: var(--muted, #687068);
+  color: var(--shopping-muted);
 }
 
 .copy {
@@ -49,23 +49,23 @@
 }
 
 .copy p {
-  color: var(--muted, #687068);
+  color: var(--shopping-muted);
   font-size: 0.82rem;
   line-height: 1.45;
 }
 
 .retryStatus {
-  color: var(--warning, #8a5b20) !important;
+  color: var(--shopping-warning) !important;
   font-weight: 700;
 }
 
 .retryButton {
   min-height: 48px;
   padding: 0 14px;
-  border: 1px solid var(--border, #d9d5cc);
+  border: 1px solid var(--shopping-border);
   border-radius: 12px;
-  background: var(--panel, #fffdf9);
-  color: var(--text, #202520);
+  background: var(--shopping-panel);
+  color: var(--shopping-text);
   font: inherit;
   font-size: 0.86rem;
   font-weight: 800;
@@ -73,11 +73,11 @@
 }
 
 .retryButton:hover {
-  border-color: var(--warning, #8a5b20);
+  border-color: var(--shopping-warning);
 }
 
 .retryButton:focus-visible {
-  outline: 3px solid var(--focus, #245fca);
+  outline: 3px solid var(--shopping-focus);
   outline-offset: 3px;
 }
 
