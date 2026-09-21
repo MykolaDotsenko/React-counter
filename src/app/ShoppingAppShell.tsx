@@ -12,6 +12,9 @@ import {
   type ItemId,
 } from "../domain/shopping-trip";
 import { ActiveTripScreen } from "../features/shopping/ActiveTripScreen";
+import { CompletedSummaryScreen } from "../features/shopping/CompletedSummaryScreen";
+import { FinishTripSurface } from "../features/shopping/FinishTripSurface";
+import { HistoryScreen } from "../features/shopping/HistoryScreen";
 import {
   ItemEditSurface,
   type ItemEditIntent,
@@ -49,7 +52,9 @@ const qaTimingEnabled =
 type OverlayState =
   | { readonly kind: "none" }
   | { readonly kind: "add-price" }
-  | { readonly kind: "edit-item"; readonly itemId: ItemId };
+  | { readonly kind: "edit-item"; readonly itemId: ItemId }
+  | { readonly kind: "finish-trip" }
+  | { readonly kind: "history" };
 
 interface PendingQaSample {
   readonly unitPriceMinor: number;
@@ -101,6 +106,7 @@ export function ShoppingAppShell({
 }: ShoppingAppShellProps) {
   const state = useShoppingAppState(controller);
   const addPriceButtonRef = useRef<HTMLButtonElement>(null);
+  const finishTripButtonRef = useRef<HTMLButtonElement>(null);
   const qaStartedAtRef = useRef<number | null>(null);
   const qaPendingSampleRef = useRef<PendingQaSample | null>(null);
   const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
@@ -122,6 +128,13 @@ export function ShoppingAppShell({
   const returnFocusToAddPrice = (): void => {
     queueMicrotask(() => {
       addPriceButtonRef.current?.focus();
+    });
+  };
+
+
+  const returnFocusToFinishTrip = (): void => {
+    queueMicrotask(() => {
+      finishTripButtonRef.current?.focus();
     });
   };
 
@@ -238,12 +251,72 @@ export function ShoppingAppShell({
   }
 
   if (state.lifecycle === "idle") {
+    if (overlay.kind === "history") {
+      return (
+        <>
+          <HistoryScreen
+            trips={state.completedTrips}
+            onBack={() => {
+              setOverlay({ kind: "none" });
+            }}
+            locale="en-FI"
+          />
+          {qaPanel}
+        </>
+      );
+    }
+
     return (
       <>
-        <StartTripScreen controller={controller} />
+        <StartTripScreen
+          controller={controller}
+          completedTripCount={state.completedTrips.length}
+          persistenceHealth={state.persistence}
+          onOpenHistory={() => {
+            qaStartedAtRef.current = null;
+            qaPendingSampleRef.current = null;
+            setOverlay({ kind: "history" });
+          }}
+        />
         {qaPanel}
       </>
     );
+  }
+
+  if (state.lifecycle === "completed-summary") {
+    if (overlay.kind === "history") {
+      return (
+        <>
+          <HistoryScreen
+            trips={state.completedTrips}
+            onBack={() => {
+              setOverlay({ kind: "none" });
+            }}
+            locale="en-FI"
+          />
+          {qaPanel}
+        </>
+      );
+    }
+
+    if (state.completedSummary !== null) {
+      return (
+        <>
+          <CompletedSummaryScreen
+            controller={controller}
+            trip={state.completedSummary}
+            locale="en-FI"
+            onDone={() => {
+              setOverlay({ kind: "none" });
+            }}
+            onViewHistory={() => {
+              setOverlay({ kind: "history" });
+            }}
+          />
+          {qaPanel}
+        </>
+      );
+    }
   }
 
   if (overlay.kind === "add-price" && state.activeTrip !== null) {
@@ -292,6 +365,35 @@ export function ShoppingAppShell({
 
             setOverlay({ kind: "none" });
             returnFocusToAddPrice();
+            return true;
+          }}
+        />
+        {qaPanel}
+      </>
+    );
+  }
+
+  if (
+    overlay.kind === "finish-trip" &&
+    state.activeTrip !== null
+  ) {
+    return (
+      <>
+        <FinishTripSurface
+          trip={state.activeTrip}
+          locale="en-FI"
+          onCancel={() => {
+            setOverlay({ kind: "none" });
+            returnFocusToFinishTrip();
+          }}
+          onConfirm={() => {
+            const result = controller.completeTrip();
+
+            if (!result.ok) {
+              return false;
+            }
+
+            setOverlay({ kind: "none" });
             return true;
           }}
         />
@@ -399,6 +501,7 @@ export function ShoppingAppShell({
       <ActiveTripScreen
         controller={controller}
         addPriceButtonRef={addPriceButtonRef}
+        finishTripButtonRef={finishTripButtonRef}
         feedbackMessage={lastAddedMessage}
         onUndo={() => {
           const result = controller.undo();
@@ -426,6 +529,12 @@ export function ShoppingAppShell({
           }
 
           setOverlay({ kind: "add-price" });
+        }}
+        onFinishTrip={() => {
+          qaStartedAtRef.current = null;
+          qaPendingSampleRef.current = null;
+          setLastAddedMessage("");
+          setOverlay({ kind: "finish-trip" });
         }}
         onEditItem={(item) => {
           qaStartedAtRef.current = null;
