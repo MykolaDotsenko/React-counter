@@ -51,9 +51,23 @@ A successful shopping trip means the user:
 
 ## North-star product metric
 
+### In-product decision metric
+
 Remaining safe spending amount.
 
 The interface may show cart total and budget progress, but the primary metric is what the user can still do, not what they have already done.
+
+### Product-validation metric
+
+The primary retention signal is:
+
+> **Second-trip rate**
+
+The product is not validated merely because a first trip works. It becomes meaningfully stronger when a shopper voluntarily returns and uses it on another real shopping trip.
+
+Initial decision thresholds and the full retention strategy are defined in:
+
+- docs/PRODUCT-SUCCESS-STRATEGY.md
 
 ## Product principles
 
@@ -98,6 +112,26 @@ Use neutral language such as “EUR 3.41 over your limit,” never moralising la
 Every feature must either reduce entry friction, improve confidence before checkout, prevent data loss, or make a repeated shopping task materially faster.
 
 Otherwise it does not belong in the core product.
+
+### 9. Repeated use must get easier
+
+The second and third shopping trips should require materially less effort than the first.
+
+Prioritise:
+
+- repeat previous budget
+- Shop again
+- Recent Items
+- remembered prices with freshness
+- one/two-action reuse
+
+before adding scanner/OCR breadth.
+
+### 10. Evidence beats feature race
+
+After the core manual and repeat-trip flows are implemented, real-store retention evidence takes priority over adding more capabilities.
+
+A low second-trip rate is a core product signal, not a request for more features.
 
 ## Core experience
 
@@ -171,9 +205,20 @@ The UI must make uncertainty visible without making the interface noisy.
 
 Always available, offline, deterministic, and fast.
 
-### P1 — price memory
+### P1 — repeat-trip acceleration and price memory
 
-Remember prior prices and reduce repeated typing. Remembered values include freshness context such as “Last paid EUR 1.39 at Prisma, 8 days ago.”
+Repeat-trip acceleration is a retention feature, not merely a convenience.
+
+Prioritise:
+
+- repeat previous budget
+- Shop again
+- Recent Items
+- remembered prices
+
+Remembered values include freshness context such as “Last paid EUR 1.39 at Prisma, 8 days ago.”
+
+This work should land before barcode/OCR because it reduces repeated friction without camera permissions, network dependency, recognition latency, or product-database coverage.
 
 ### P1 — barcode identification
 
@@ -293,6 +338,25 @@ A first-time user can:
 - complete the core workflow without an account or internet connection
 
 These are internal targets until measured.
+
+### Repeated-use success
+
+After repeat-trip acceleration is implemented, validate the product with real shopping trips.
+
+The highest-value early signal is second-trip rate.
+
+Provisional interpretation:
+
+- >=35% — very strong early signal
+- 25–35% — promising; optimise recurring friction
+- 15–25% — material retention problem
+- <15% — revisit the core interaction/job before expanding features
+
+These thresholds are decision heuristics, not established benchmarks. Real cohort evidence overrides them.
+
+The common manual price-only flow should target a median of <=2.5 seconds in representative one-hand testing, with approximately 3 seconds or less as a minimum release-quality expectation.
+
+See docs/PRODUCT-SUCCESS-STRATEGY.md for the full model.
 
 ## Product risks
 
