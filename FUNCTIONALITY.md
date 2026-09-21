@@ -557,14 +557,13 @@ Do not describe this as overspending.
 
 ## Pending item over safe limit
 
-Before commit:
+Before commit, show the consequence inline:
 
 > This item uses EUR 1.25 of your safety buffer.
 
-Actions:
+The normal **Add** action remains available. Crossing only the safety buffer does not introduce a second confirmation step.
 
-- Add anyway
-- Cancel
+Reserve use is intentionally frictionless because the item remains within the user's nominal budget. Only a projected nominal-budget overage requires the explicit **Add anyway / Cancel** confirmation.
 
 The user owns the buffer.
 

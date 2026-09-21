@@ -2,6 +2,8 @@
 
 A tiny counter rebuilt as a focused **interaction-engineering case study**.
 
+> **Migration note:** the default/public build is still Pulse Counter. A shopping-budget replacement is being developed behind the guarded `VITE_SHOPPING_SHELL=1` path and is not yet the public product. See `ROADMAP.md` for the current migration phase.
+
 The product is intentionally simple. The engineering work is not about inventing unnecessary business logic; it is about showing how much quality can be extracted from a small interface through clear state transitions, resilient persistence, accessibility, responsive interaction design, and high-fidelity visual feedback.
 
 ## What it does
@@ -94,10 +96,11 @@ npm run test:e2e
 `npm run check` runs:
 
 1. ESLint
-2. Vitest unit and component tests
-3. Vite production build
+2. strict TypeScript typecheck
+3. Vitest unit and component tests
+4. Vite production build
 
-GitHub Actions then runs Playwright separately in Chromium, Firefox, and WebKit. Chromium also runs an axe WCAG A/AA scan. Browser scenarios cover persistence, keyboard scoping, boundaries, compact mobile layout and reduced motion.
+GitHub Actions then runs Playwright separately in Chromium, Firefox, and WebKit. Chromium also runs axe WCAG A/AA coverage. The default Pulse compatibility path and the guarded shopping path are tested according to their current migration gates.
 
 ## Interaction map
 

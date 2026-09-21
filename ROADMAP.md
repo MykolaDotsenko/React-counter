@@ -850,20 +850,27 @@ Do not revise simply to accommodate an attractive technology.
 
 Phases 1, 2, and 3 are complete.
 
-The next implementation gate is:
+Phase 4 / Sprint A is complete for the guarded shopping shell.
 
-> **Scenario + design validation before Phase 4 — core Budget Cart UI**
+Phase 5 / Sprint B is complete through B5.
 
-Before changing the visible Pulse Counter experience, validate the Tier 0 shopping scenarios and the three documented design directions against the shipped exact-money/domain/persistence contracts.
+The next implementation step is:
 
-Then Phase 4 should wire the application/UI to:
+> **B6 — Minimum correction and final Sprint B quality gate**
 
-- start or restore an active shopping trip
-- use the Phase 3 persistence boundary rather than the legacy counter storage
-- make remaining budget the dominant information
-- show cart total / budget and safety-buffer state
-- expose persistence degradation clearly
-- keep manual Add price as the primary action
-- preserve mobile-first accessibility and the existing quality matrix
+B6 must close the documented gaps before the default/public shell can switch away from Pulse Counter:
 
-Do not start barcode, OCR, price memory, cloud sync, or PWA work inside Phase 4.
+- one-action Undo after add where feasible
+- typo/correction minimum
+- full flagship exact-money E2E
+- price-entry and warning accessibility coverage
+- compact/mobile and 200% text resilience for the keypad flow
+- reduced-motion add/undo equivalence
+- keyboard/focus completion
+- Chromium / Firefox / WebKit
+- no-network requirement
+- honest timing evidence: automated technical responsiveness plus representative human one-hand timing before claiming the <=2.5 s KPI
+
+Do not switch the default production shell, rewrite the README around the shopping product, or begin production scanner/PWA breadth before this gate is satisfied.
+
+After B6, follow the roadmap's Experimental Scanner Benchmark Gate as a measurement spike, then Phase 6 correction/confidence work. Production scanner sequencing remains governed by D-035 and D-037.

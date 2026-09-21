@@ -73,18 +73,32 @@ MUST NOT:
 
 ## Current repository reality
 
-At the time this contract was introduced, main still contains the Pulse Counter implementation:
+The repository is mid-migration.
 
-- JavaScript
-- counter reducer/model
-- counter localStorage schema
-- counter UI
-- native View Transition orchestration
-- pointer-reactive effects
+Default/public path:
 
-Target shopping documentation describes planned migration.
+- Pulse Counter remains the default compatibility shell
+- its JavaScript counter model/UI, native View Transition orchestration, and pointer-reactive effects remain in the repository
 
-When modifying a target area, first inspect the actual current code. Do not assume a documented target module already exists.
+Guarded shopping path behind `VITE_SHOPPING_SHELL=1`:
+
+- strict TypeScript EUR money domain
+- ShoppingTrip / CartItem domain and projections
+- Zod-validated active-trip localStorage persistence
+- plain-TypeScript ShoppingAppController + React `useSyncExternalStore`
+- Calm Utility start/active/recovery/persistence-health UI
+- manual price-entry flow implemented through Phase 5 / B5
+
+Still target-only or incomplete:
+
+- B6 final Sprint B correction/quality gate
+- full edit/remove correction flow
+- completion/history/reconciliation
+- repeat-trip acceleration and price memory
+- installable offline PWA
+- production scanner/OCR breadth
+
+When modifying any area, inspect actual current code and the current roadmap slice. Never infer implementation solely from a target document.
 
 ## Architecture principles
 
