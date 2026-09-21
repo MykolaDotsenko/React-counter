@@ -777,10 +777,12 @@ Channels:
 
 Need:
 
-- live PWA
-- polished screenshots
-- clear landing page
+- reliable HTTPS beta build usable on a real phone
+- polished enough core UI to test the shopping task
+- clear problem/value explanation
 - feedback capture
+
+PWA installability is not a prerequisite for retention validation. It follows the repeat-trip gate unless real beta evidence shows installability itself is blocking repeated use.
 
 ## Phase B — focused public beta
 
