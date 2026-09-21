@@ -20,6 +20,7 @@ import {
   activeTripDataV1Schema,
   completedTripDataV1Schema,
   historyDataEnvelopeV1Schema,
+  historyStorageEnvelopeV1Schema,
   storageEnvelopeHeaderSchema,
   storageEnvelopeV1Schema,
   type ActiveTripDataV1,
