@@ -184,6 +184,15 @@ export const storageEnvelopeV1Schema = z
   })
   .strict();
 
+
+export const historyStorageEnvelopeV1Schema = z
+  .object({
+    schemaVersion: z.literal(CURRENT_HISTORY_SCHEMA_VERSION),
+    savedAt: canonicalIsoTimestampSchema,
+    data: z.unknown(),
+  })
+  .strict();
+
 export type PriceSourceV1 = z.infer<typeof priceSourceV1Schema>;
 export type PriceConfidenceV1 = z.infer<typeof priceConfidenceV1Schema>;
 export type CartItemV1 = z.infer<typeof cartItemV1Schema>;
