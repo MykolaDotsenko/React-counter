@@ -422,6 +422,48 @@ The second and third trips should be materially easier than the first.
 - repeated-trip workflow is measurably lighter than first-trip setup
 - no account, network, or camera is required for this acceleration
 
+## Retention validation gate — after Phase 8
+
+Before adding PWA/scanner/OCR breadth, run a focused real-store beta.
+
+Recommended cohort:
+
+> **20–50 real shoppers**
+
+Primary signal:
+
+> **Second-trip rate**
+
+Provisional decision bands:
+
+- 35% or higher — very strong early signal; preserve the core and proceed
+- 25–35% — promising; optimise recurring friction before broadening
+- 15–25% — material retention problem; freeze feature expansion
+- below 15% — revisit the core interaction/job before building scanner/OCR
+
+Also measure:
+
+- median manual price-entry time
+- first / fifth / tenth item reached
+- trip completion
+- repeated-budget use
+- remembered-item use
+- manual-entry abandonment
+- trust/data-loss complaints
+
+During this gate, do not add barcode, OCR, voice, cloud sync, family sharing, retailer integrations, or advanced analytics merely because they are available.
+
+Exceptions:
+
+- blocker bug
+- data-integrity issue
+- accessibility failure
+- repeatedly observed missing capability preventing the core job
+
+Full retention contract:
+
+- docs/PRODUCT-SUCCESS-STRATEGY.md
+
 ## Phase 9 — offline PWA
 
 Suggested PR:
