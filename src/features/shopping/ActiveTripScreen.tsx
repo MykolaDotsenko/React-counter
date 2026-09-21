@@ -66,7 +66,7 @@ export function ActiveTripScreen({
   const heroAmount = nominalOverBudget
     ? Math.abs(nominalRemaining)
     : reserveInUse
-      ? nominalRemaining
+      ? 0
       : hasBuffer
         ? protectedRemaining
         : nominalRemaining;
@@ -74,7 +74,7 @@ export function ActiveTripScreen({
   const heroLabel = nominalOverBudget
     ? "over your limit"
     : reserveInUse
-      ? "left in budget"
+      ? "safe to spend"
       : hasBuffer
         ? "safe to spend"
         : "left";
@@ -101,10 +101,10 @@ export function ActiveTripScreen({
   const remainingContext = nominalOverBudget
     ? `${formatSignedAmount(Math.abs(nominalRemaining), locale)} over your limit`
     : reserveInUse
-      ? `${formatSignedAmount(Math.abs(protectedRemaining), locale)} of your ${formatEur(
-          trip.safetyBufferMinor,
+      ? `Safety buffer reached · ${formatSignedAmount(
+          nominalRemaining,
           locale,
-        )} reserve is being used`
+        )} remains in your nominal budget`
       : hasBuffer
         ? `${formatSignedAmount(nominalRemaining, locale)} total remains · ${formatEur(
             trip.safetyBufferMinor,
