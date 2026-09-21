@@ -424,11 +424,12 @@ test("completes the Sprint B flagship exact-money shopping journey", async ({
   await expect(
     page.getByText("€48.56 of €50.00", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("left in budget", { exact: true })).toBeVisible();
+  await expect(page.getByText("safe to spend", { exact: true })).toBeVisible();
   await expect(
-    page.getByText("€0.56 of your €2.00 reserve is being used", {
-      exact: true,
-    }),
+    page.getByText(
+      "Safety buffer reached · €1.44 remains in your nominal budget",
+      { exact: true },
+    ),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Add price" }).click();
@@ -471,7 +472,9 @@ test("completes the Sprint B flagship exact-money shopping journey", async ({
     page.getByText("€49.76 of €50.00", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("€0.24 of your €2.00 reserve is being used"),
+    page.getByText(
+      "Safety buffer reached · €0.24 remains in your nominal budget",
+    ),
   ).toBeVisible();
 });
 
