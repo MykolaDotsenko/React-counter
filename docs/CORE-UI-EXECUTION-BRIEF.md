@@ -702,7 +702,7 @@ Persistence failure:
 
 ## B6 — Minimum correction and quality gate
 
-Status: **automated/code gate implemented via PR #28; representative human timing and physical one-hand/bright-store evidence pending**
+Status: **automated/code gate implemented via PR #28; representative human timing and physical one-hand/bright-store evidence remains unverified under D-039 sequencing waiver**
 
 Evidence protocol:
 
@@ -933,23 +933,18 @@ After Sprint B:
 
 Proceed only if the fast manual core is stable.
 
-Before Phase 6/7, run the roadmap's **Experimental Scanner Benchmark Gate** as a short measurement spike.
+D-039 waives the unresolved human B6 evidence only as a development-sequencing blocker. Because the Experimental Scanner Benchmark Gate depends on representative human timing evidence for a meaningful manual-vs-scan comparison, defer that spike rather than replacing it with automation.
 
-The spike must:
+Phase 6 correction/confidence is implemented via PR #37:
 
-- compare manual digits -> Add against scan -> confirm
-- remain isolated from the production critical path
-- preserve immediate manual fallback
-- collect timing/failure/correction evidence
-- end with a clear keep/defer decision
+- robust one-level Undo across add/edit/remove
+- price and quantity correction
+- explicit remove including quantity 1 -> zero removal
+- source/confidence presentation and provenance-preserving quantity edits
 
-Do not turn the spike into production scanner implementation.
+Next implement:
 
-Then implement:
-
-- robust Undo/edit/remove
-- confidence presentation
-- completion/history
+- Phase 7 trip completion/history/reconciliation
 
 Then Phase 8:
 
