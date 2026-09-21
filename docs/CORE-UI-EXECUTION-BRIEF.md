@@ -569,6 +569,8 @@ A basic EUR 4.79 add can be completed without scrolling or secondary metadata.
 
 ## B2 — Live projected remaining
 
+Status: **complete via PR #23**
+
 Priority: **100/100**
 
 During input show consequence before commit:
@@ -594,6 +596,8 @@ Do not duplicate projection arithmetic in components.
 - exact cents match post-commit state
 
 ## B3 — Threshold and over-budget states
+
+Status: **complete via PR #24**
 
 Priority: **100/100**
 
@@ -623,9 +627,11 @@ No hard block.
 ### Done when
 
 - safe-limit crossing and nominal overage are distinct
-- Add anyway commits exact projected state
+- Add anyway emits the exact validated price that produced the reviewed projection
 - Cancel preserves the previous trip exactly
 - no confirmation appears for ordinary within-budget adds
+
+Canonical commit/persistence equality remains a B5 acceptance criterion because B3 deliberately owns threshold interaction semantics rather than application mutation.
 
 ## B4 — Quantity
 
