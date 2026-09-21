@@ -90,10 +90,8 @@ const applicationErrorMessage = (
       return "Resolve the saved-trip issue before starting a new trip.";
     case "no-active-trip":
       return "No active shopping trip is available.";
-    default: {
-      const exhaustive: never = result.error.code;
-      return exhaustive;
-    }
+    default:
+      return "Unable to start the shopping trip.";
   }
 };
 
