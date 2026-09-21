@@ -31,6 +31,7 @@ export interface ShoppingPersistencePort {
     trip: CompletedTrip,
     savedAt: IsoTimestamp,
   ): ActiveTripSaveResult;
+  clearCompletedActive(): ActiveTripSaveResult;
 }
 
 export type ActiveTripPersistencePort = ShoppingPersistencePort;
@@ -40,11 +41,13 @@ export type ActiveTripBootstrapResult =
       readonly ok: true;
       readonly activeTrip: ActiveTrip | null;
       readonly completedTrips: readonly CompletedTrip[];
+      readonly completionCleanupPending: boolean;
     }
   | {
       readonly ok: false;
       readonly activeTrip: ActiveTrip | null;
       readonly completedTrips: readonly CompletedTrip[];
+      readonly completionCleanupPending: boolean;
       readonly issue: PersistenceProblem;
       readonly recoveryRequired: boolean;
       readonly recoveryRaw?: string;
@@ -112,6 +115,7 @@ export interface ShoppingAppState {
   readonly activeTrip: ActiveTrip | null;
   readonly completedSummary: CompletedTrip | null;
   readonly completedTrips: readonly CompletedTrip[];
+  readonly completionCleanupPending: boolean;
   readonly persistence: PersistenceHealth;
   readonly undo: UndoState | null;
   readonly recovery: RecoveryState | null;
@@ -215,6 +219,7 @@ const initialState = (): ShoppingAppState =>
     activeTrip: null,
     completedSummary: null,
     completedTrips: EMPTY_COMPLETED_TRIPS,
+    completionCleanupPending: false,
     persistence: HEALTHY_PERSISTENCE,
     undo: null,
     recovery: null,
