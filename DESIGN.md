@@ -155,6 +155,8 @@ for the canonical EUR 50 / EUR 31.42 cart / EUR 2 reserve fixture.
 
 Nominal remaining stays secondary when a reserve exists.
 
+If the safe limit has already been crossed but the nominal budget has not, do not present a negative amount as “safe to spend.” Keep the hero at **EUR 0.00 safe to spend** and use secondary copy to state that the safety buffer has been reached plus the exact nominal amount still remaining. Only a true nominal-budget overage changes the hero into an exact over-limit amount.
+
 Everything else supports the safe shopping decision.
 
 Hierarchy:
