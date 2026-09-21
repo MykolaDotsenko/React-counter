@@ -42,24 +42,24 @@ jobs:
         run: npm test
 
       - name: Build public Pulse Counter
-        run: npm run build -- --base=/React-counter/
+        run: npm run build -- --base=/shopping-budget-companion/
 
       - name: Build guarded shopping timing QA
         env:
           VITE_SHOPPING_SHELL: "1"
           VITE_SHOPPING_QA_TIMING: "1"
         run: |
-          npm run build -- --base=/React-counter/qa/ --outDir=dist-qa
+          npm run build -- --base=/shopping-budget-companion/qa/ --outDir=dist-qa
           npm run qa:prepare-index
 
       - name: Stage static site
         run: |
-          rm -rf /tmp/pulse-counter-pages
-          mkdir -p /tmp/pulse-counter-pages
-          cp -R dist/. /tmp/pulse-counter-pages/
-          mkdir -p /tmp/pulse-counter-pages/qa
-          cp -R dist-qa/. /tmp/pulse-counter-pages/qa/
-          touch /tmp/pulse-counter-pages/.nojekyll
+          rm -rf /tmp/shopping-budget-companion-pages
+          mkdir -p /tmp/shopping-budget-companion-pages
+          cp -R dist/. /tmp/shopping-budget-companion-pages/
+          mkdir -p /tmp/shopping-budget-companion-pages/qa
+          cp -R dist-qa/. /tmp/shopping-budget-companion-pages/qa/
+          touch /tmp/shopping-budget-companion-pages/.nojekyll
 
       - name: Publish gh-pages branch
         run: |
@@ -67,7 +67,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch --orphan gh-pages
           git rm -rf . || true
-          cp -R /tmp/pulse-counter-pages/. .
+          cp -R /tmp/shopping-budget-companion-pages/. .
           git add -A
           git commit -m "deploy: Pulse Counter + guarded QA ${GITHUB_SHA}"
           git push --force origin gh-pages
