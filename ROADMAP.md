@@ -385,7 +385,7 @@ Progress:
 - B3 Buffer / over-budget consequence states — **complete via PR #24**
 - B4 Quantity — **complete via PR #25**
 - B5 Commit / persist / return — **complete via PR #26**
-- B6 Correction minimum + quality gate — next
+- B6 Correction minimum + quality gate — **automated/code gate implemented via PR #28; representative human timing and physical one-hand/bright-store evidence pending**
 
 B5 closes the projection-to-canonical loop: the application controller creates the confirmed manual CartItem from the validated `unitPriceMinor + quantity` intent, commits it through the domain reducer, attempts persistence immediately, and returns the UI to canonical summary state. A failed storage write keeps the committed item in memory and surfaces degraded persistence rather than rolling back valid shopping state.
 
@@ -854,23 +854,28 @@ Phase 4 / Sprint A is complete for the guarded shopping shell.
 
 Phase 5 / Sprint B is complete through B5.
 
-The next implementation step is:
+The next implementation gate is:
 
-> **B6 — Minimum correction and final Sprint B quality gate**
+> **B6 empirical validation — representative one-hand timing and physical usability evidence**
 
-B6 must close the documented gaps before the default/public shell can switch away from Pulse Counter:
+PR #28 implements the B6 code/automated portion:
 
-- one-action Undo after add where feasible
+- one-action Undo after add
 - typo/correction minimum
 - full flagship exact-money E2E
 - price-entry and warning accessibility coverage
-- compact/mobile and 200% text resilience for the keypad flow
+- compact 360×800 / 390×844 keypad coverage
+- 200% text resilience for the price-entry flow
 - reduced-motion add/undo equivalence
 - keyboard/focus completion
 - Chromium / Firefox / WebKit
-- no-network requirement
-- honest timing evidence: automated technical responsiveness plus representative human one-hand timing before claiming the <=2.5 s KPI
+- runtime no-network manual-core proof
+- Calm Utility reserve-boundary and light/dark design alignment
 
-Do not switch the default production shell, rewrite the README around the shopping product, or begin production scanner/PWA breadth before this gate is satisfied.
+The <=2.5 second KPI remains an empirical human interaction target. Automation must not be used as a substitute.
 
-After B6, follow the roadmap's Experimental Scanner Benchmark Gate as a measurement spike, then Phase 6 correction/confidence work. Production scanner sequencing remains governed by D-035 and D-037.
+Before the default/public shell can switch away from Pulse Counter, record the representative timing, one-hand reach, software-keyboard, and bright-store checks defined in `docs/SPRINT-B-QUALITY-GATE.md`.
+
+Do not switch the default production shell, rewrite the README around the shopping product, or begin the post-Sprint-B scanner benchmark until that empirical gate passes.
+
+After the empirical B6 gate, follow the roadmap's Experimental Scanner Benchmark Gate as a measurement spike, then Phase 6 correction/confidence work. Production scanner sequencing remains governed by D-035 and D-037.
