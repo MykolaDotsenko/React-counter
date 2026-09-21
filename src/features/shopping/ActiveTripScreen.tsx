@@ -20,6 +20,7 @@ export interface ActiveTripScreenProps {
   readonly onAddPrice: () => void;
   readonly onFinishTrip?: () => void;
   readonly addPriceButtonRef?: Ref<HTMLButtonElement>;
+  readonly finishTripButtonRef?: Ref<HTMLButtonElement>;
   readonly feedbackMessage?: string;
   readonly onUndo?: () => void;
   readonly onEditItem?: (item: CartItem) => void;
@@ -82,6 +83,7 @@ export function ActiveTripScreen({
   onAddPrice,
   onFinishTrip,
   addPriceButtonRef,
+  finishTripButtonRef,
   feedbackMessage,
   onUndo,
   onEditItem,
@@ -279,6 +281,7 @@ export function ActiveTripScreen({
           </button>
           {onFinishTrip ? (
             <button
+              ref={finishTripButtonRef}
               type="button"
               className={styles.finishButton}
               onClick={onFinishTrip}
