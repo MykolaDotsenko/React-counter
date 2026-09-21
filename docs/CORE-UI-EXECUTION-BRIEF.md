@@ -82,8 +82,8 @@ Current progress:
 - A2 — **complete via PR #17**
 - A3 — **complete via PR #18**
 - A4 — **complete via PR #19**
-- A5 — next
-- A6 — pending
+- A5 — **complete via PR #20**
+- A6 — next
 
 ## Sprint objective
 
@@ -388,6 +388,8 @@ Must:
 - light/dark/forced-colour/reduced-motion states remain coherent
 
 ## A5 — Persistence health UX
+
+Status: **complete via PR #20**
 
 Priority: **100/100**
 
