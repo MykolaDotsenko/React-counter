@@ -229,6 +229,13 @@ export const createShoppingAppController = ({
   };
 
   const bootstrap = (): ShoppingAppState => {
+    if (
+      state.lifecycle !== "booting" &&
+      state.lifecycle !== "recovery"
+    ) {
+      return state;
+    }
+
     const result = persistence.bootstrap();
 
     if (result.ok) {
