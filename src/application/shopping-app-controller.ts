@@ -300,7 +300,8 @@ export const createShoppingAppController = ({
       return publish({
         lifecycle: result.activeTrip === null ? "idle" : "active",
         activeTrip: result.activeTrip,
-        completedTrips: EMPTY_COMPLETED_TRIPS,
+        completedSummary: null,
+        completedTrips: result.completedTrips,
         persistence: HEALTHY_PERSISTENCE,
         undo: null,
         recovery: null,
@@ -314,7 +315,8 @@ export const createShoppingAppController = ({
       return publish({
         lifecycle: "recovery",
         activeTrip: null,
-        completedTrips: EMPTY_COMPLETED_TRIPS,
+        completedSummary: null,
+        completedTrips: result.completedTrips,
         persistence: persistenceHealth,
         undo: null,
         recovery: recoveryState(
@@ -327,7 +329,8 @@ export const createShoppingAppController = ({
     return publish({
       lifecycle: result.activeTrip === null ? "idle" : "active",
       activeTrip: result.activeTrip,
-      completedTrips: EMPTY_COMPLETED_TRIPS,
+      completedSummary: null,
+      completedTrips: result.completedTrips,
       persistence: persistenceHealth,
       undo: null,
       recovery: null,
@@ -365,6 +368,7 @@ export const createShoppingAppController = ({
     const nextState = publish({
       lifecycle: "active",
       activeTrip: tripResult.value,
+      completedSummary: null,
       completedTrips: state.completedTrips,
       persistence: saveResult.ok
         ? HEALTHY_PERSISTENCE
