@@ -259,6 +259,23 @@ const failure = (
   state,
 });
 
+const upsertCompletedTrip = (
+  trips: readonly CompletedTrip[],
+  trip: CompletedTrip,
+): readonly CompletedTrip[] => {
+  const index = trips.findIndex((candidate) => candidate.id === trip.id);
+
+  if (index < 0) {
+    return Object.freeze([...trips, trip]);
+  }
+
+  return Object.freeze(
+    trips.map((candidate, candidateIndex) =>
+      candidateIndex === index ? trip : candidate,
+    ),
+  );
+};
+
 export const createShoppingAppController = ({
   persistence,
   clock,
