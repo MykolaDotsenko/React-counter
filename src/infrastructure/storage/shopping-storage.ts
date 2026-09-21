@@ -6,6 +6,7 @@ import {
   reduceTrip,
   storeId,
   type ActiveTrip,
+  type CompletedTrip,
   type IsoTimestamp,
   type PriceConfidence,
   type PriceSource,
@@ -13,12 +14,18 @@ import {
 import {
   ACTIVE_TRIP_STORAGE_KEY,
   CURRENT_ACTIVE_TRIP_SCHEMA_VERSION,
+  CURRENT_HISTORY_SCHEMA_VERSION,
+  HISTORY_STORAGE_KEY,
   LEGACY_PULSE_STORAGE_KEYS,
   activeTripDataV1Schema,
+  completedTripDataV1Schema,
+  historyDataEnvelopeV1Schema,
   storageEnvelopeHeaderSchema,
   storageEnvelopeV1Schema,
   type ActiveTripDataV1,
   type ActiveTripEnvelopeV1,
+  type CompletedTripDataV1,
+  type HistoryEnvelopeV1,
   type PriceConfidenceV1,
   type PriceSourceV1,
 } from "./shopping-storage-schema";
@@ -41,6 +48,8 @@ export type PersistenceIssueCode =
   | "serialization-failed"
   | "write-failed"
   | "remove-failed"
+  | "history-conflict"
+  | "invalid-history-entry"
   | "legacy-retirement-failed";
 
 export interface PersistenceIssue {
@@ -70,6 +79,53 @@ export type EncodeActiveTripResult =
   | {
       readonly ok: false;
       readonly issue: PersistenceIssue;
+    };
+
+export type DecodeHistoryResult =
+  | {
+      readonly ok: true;
+      readonly trips: readonly CompletedTrip[];
+      readonly invalidEntryCount: number;
+      readonly savedAt: IsoTimestamp;
+    }
+  | {
+      readonly ok: false;
+      readonly issue: PersistenceIssue;
+    };
+
+export type EncodeHistoryResult =
+  | {
+      readonly ok: true;
+      readonly raw: string;
+      readonly savedAt: IsoTimestamp;
+    }
+  | {
+      readonly ok: false;
+      readonly issue: PersistenceIssue;
+    };
+
+export type RestoreHistoryResult =
+  | {
+      readonly health: "healthy";
+      readonly trips: readonly CompletedTrip[];
+      readonly savedAt?: IsoTimestamp;
+    }
+  | {
+      readonly health: "degraded";
+      readonly trips: readonly CompletedTrip[];
+      readonly issue: PersistenceIssue;
+      readonly raw?: string;
+    };
+
+export type CompletionPersistenceResult =
+  | {
+      readonly ok: true;
+    }
+  | {
+      readonly ok: false;
+      readonly stage: "history-write" | "active-clear";
+      readonly issue: PersistenceIssue;
+      readonly historyPersisted: boolean;
     };
 
 export type RestoreActiveTripResult =
@@ -117,16 +173,22 @@ export type ShoppingPersistenceBootstrap =
   | {
       readonly health: "healthy";
       readonly activeTrip: ActiveTrip | null;
+      readonly completedTrips: readonly CompletedTrip[];
       readonly legacyKeysRetired: true;
       readonly restoredSavedAt?: IsoTimestamp;
+      readonly historySavedAt?: IsoTimestamp;
+      readonly reconciledCompletion?: true;
     }
   | {
       readonly health: "degraded";
       readonly activeTrip: ActiveTrip | null;
-      readonly legacyKeysRetired: false;
+      readonly completedTrips: readonly CompletedTrip[];
+      readonly legacyKeysRetired: boolean;
       readonly issue: PersistenceIssue;
       readonly recoveryRaw?: string;
       readonly restoredSavedAt?: IsoTimestamp;
+      readonly historySavedAt?: IsoTimestamp;
+      readonly reconciledCompletion?: true;
     };
 
 const persistenceIssue = (
