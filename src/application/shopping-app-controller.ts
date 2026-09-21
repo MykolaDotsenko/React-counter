@@ -1,6 +1,7 @@
 import type { MinorUnits } from "../domain/money";
 import {
   createActiveTrip,
+  createCartItem,
   reduceTrip,
   type ActiveTrip,
   type CompletedTrip,
@@ -90,6 +91,11 @@ export interface StartTripInput {
   readonly safetyBufferMinor?: MinorUnits;
 }
 
+export interface AddManualItemInput {
+  readonly unitPriceMinor: MinorUnits;
+  readonly quantity: number;
+}
+
 type ActiveTripCommand = Exclude<
   TripCommand,
   { readonly type: "complete-trip" } | { readonly type: "set-actual-checkout" }
@@ -126,6 +132,7 @@ export interface ShoppingAppController {
   readonly subscribe: (listener: () => void) => () => void;
   readonly bootstrap: () => ShoppingAppState;
   readonly startTrip: (input: StartTripInput) => AppCommandResult;
+  readonly addManualItem: (input: AddManualItemInput) => AppCommandResult;
   readonly retryPersistence: () => AppCommandResult;
   readonly dispatch: (command: ActiveTripCommand) => AppCommandResult;
 }
@@ -323,6 +330,44 @@ export const createShoppingAppController = ({
     );
   };
 
+  const addManualItem = (
+    input: AddManualItemInput,
+  ): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (state.activeTrip === null) {
+      return failure(state, applicationError("no-active-trip"));
+    }
+
+    const now = clock.now();
+    const itemResult = createCartItem({
+      id: ids.itemId(),
+      unitPriceMinor: input.unitPriceMinor,
+      quantity: input.quantity,
+      priceSource: { kind: "manual" },
+      priceConfidence: {
+        kind: "confirmed",
+        confirmedAt: now,
+      },
+      createdAt: now,
+    });
+
+    if (!itemResult.ok) {
+      return failure(state, itemResult.error);
+    }
+
+    return dispatch({
+      type: "add-item",
+      item: itemResult.value,
+    });
+  };
+
   const retryPersistence = (): AppCommandResult => {
     if (state.lifecycle === "booting") {
       return failure(state, applicationError("not-ready"));
@@ -410,6 +455,7 @@ export const createShoppingAppController = ({
     subscribe,
     bootstrap,
     startTrip,
+    addManualItem,
     retryPersistence,
     dispatch,
   });
