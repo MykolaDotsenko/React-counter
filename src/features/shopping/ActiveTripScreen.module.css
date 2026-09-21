@@ -13,6 +13,7 @@
   --danger: #8a2d2d;
   --focus: #245fca;
 
+  color-scheme: light;
   min-height: 100dvh;
   padding:
     max(20px, env(safe-area-inset-top))
@@ -176,11 +177,37 @@
 
 .capacityFill {
   display: block;
-  width: var(--capacity-percent);
+  width: var(--spent-percent);
   height: 100%;
   border-radius: inherit;
   background: var(--accent);
   transition: width 180ms ease;
+}
+
+.reserveZone {
+  position: absolute;
+  inset-block: -1px;
+  left: var(--safe-boundary-percent);
+  width: var(--reserve-percent);
+  min-width: 2px;
+  border-inline-start: 2px solid var(--warning);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 4px,
+      color-mix(in srgb, var(--warning) 35%, transparent) 4px 7px
+    );
+  pointer-events: none;
+}
+
+.reserveZone[data-consumed="true"] {
+  border-inline-start-style: solid;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--warning) 18%, transparent) 0 4px,
+      color-mix(in srgb, var(--warning) 58%, transparent) 4px 7px
+    );
 }
 
 .capacityLabels {
@@ -214,7 +241,12 @@
 
 .feedback {
   margin: -4px 0 0;
-  padding: 10px 12px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px 6px 12px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--panel-soft);
@@ -222,7 +254,29 @@
   font-size: 0.86rem;
   font-weight: 800;
   line-height: 1.4;
-  text-align: center;
+}
+
+.feedback p {
+  min-width: 0;
+  margin: 0;
+}
+
+.undoButton {
+  flex: 0 0 auto;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--accent);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.undoButton:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
 }
 
 .addButton {
@@ -411,6 +465,7 @@
 
 @media (prefers-color-scheme: dark) {
   .screen {
+    color-scheme: dark;
     --page: #171a18;
     --panel: #202421;
     --panel-soft: #292e2a;
@@ -460,5 +515,14 @@
 
   .capacityFill {
     background: Highlight;
+  }
+
+  .reserveZone {
+    border-inline-start: 2px solid ButtonText;
+    background: Canvas;
+  }
+
+  .undoButton {
+    border: 1px solid ButtonText;
   }
 }
