@@ -199,6 +199,8 @@ Example:
 
 When active, the primary hero should prefer safe remaining. Nominal remaining can remain available in secondary detail.
 
+After the safe limit is crossed but the nominal budget is still intact, the safe-spend hero should floor at EUR 0.00 rather than show a negative “safe to spend” amount. Secondary copy should say that the safety buffer has been reached and show the exact nominal amount still available.
+
 ## Threshold states
 
 Use progressive attention, not alarm fatigue.
