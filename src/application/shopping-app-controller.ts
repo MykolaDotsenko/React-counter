@@ -147,6 +147,7 @@ export type ApplicationError =
         | "recovery-required"
         | "no-active-trip"
         | "no-completed-summary"
+        | "completed-summary-open"
         | "completion-not-saved";
     }
   | DomainError;
@@ -344,6 +345,10 @@ export const createShoppingAppController = ({
 
     if (state.lifecycle === "recovery") {
       return failure(state, applicationError("recovery-required"));
+    }
+
+    if (state.lifecycle === "completed-summary") {
+      return failure(state, applicationError("completed-summary-open"));
     }
 
     if (state.activeTrip !== null) {
