@@ -279,7 +279,17 @@ Marketing must not delay Phase 1–3 engineering work.
 
 ## Design validation gate — before Phase 4
 
-Before implementing the final visual system, prototype the three directions defined in DESIGN.md:
+**Status: complete — Phase 4 A0.**
+
+Selected direction:
+
+> **Calm Utility**
+
+Decision record:
+
+- docs/design/PHASE-4-DESIGN-VALIDATION.md
+
+The three directions defined in DESIGN.md were compared against the same canonical fixture:
 
 - Calm utility
 - Premium spatial
@@ -293,9 +303,28 @@ Evaluate them using task questions rather than aesthetic preference:
 - Can they use the primary action one-handed?
 - Does the progress visual clearly mean remaining capacity?
 
-Choose one direction or a deliberately justified hybrid only after this comparison. Do not merge all three styles by default.
+Decision: use Calm Utility as the base direction. Do not merge all three styles by default.
+
+Key locks:
+
+- safe remaining is the hero when a safety buffer exists
+- nominal remaining is secondary
+- quiet linear capacity bar
+- Add price is the single primary action
+- light mode is first-class for bright-store use
+- subtle Pulse-quality motion may survive only as polish
 
 ## Phase 4 — core Budget Cart UI
+
+Progress:
+
+- A0 Design validation — **complete**
+- A1 ShoppingAppController + React bridge — **complete via PR #15**
+- A2 App bootstrap / restore state — next
+- A3 Start Trip screen — pending
+- A4 Remaining-first active screen — pending
+- A5 Persistence-health UX — pending
+- A6 Mobile/a11y/E2E hardening — pending
 
 Execution contract:
 
