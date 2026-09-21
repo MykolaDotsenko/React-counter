@@ -193,6 +193,44 @@
   font-weight: 750;
 }
 
+.projection {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--soft);
+}
+
+.projection strong,
+.projection span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.projection strong {
+  font-size: 0.96rem;
+  line-height: 1.35;
+}
+
+.projection span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.projection[data-status="within"] strong {
+  color: var(--accent);
+}
+
+.projection[data-status="reserve"] strong {
+  color: #79501d;
+}
+
+.projection[data-status="over"] strong {
+  color: var(--danger);
+}
+
 .keypad {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -304,6 +342,10 @@
     --accent-contrast: #10221b;
     --danger: #ffb6b6;
     --focus: #9fc1ff;
+  }
+
+  .projection[data-status="reserve"] strong {
+    color: #efc47e;
   }
 
   .addButton {

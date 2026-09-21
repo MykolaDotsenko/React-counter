@@ -121,6 +121,12 @@ export interface AddItemDraft {
   readonly priceConfidence: PriceConfidence;
 }
 
+export interface AddItemProjectionDraft {
+  readonly unitPriceMinor: MinorUnits;
+  readonly quantity: number;
+  readonly label?: string | null;
+}
+
 export interface TripProjection {
   readonly lineTotalMinor: SignedMinorUnits;
   readonly cartTotalMinor: SignedMinorUnits;
@@ -621,7 +627,7 @@ export const itemCount = (trip: ShoppingTrip): number => {
 };
 
 const validateDraft = (
-  draft: AddItemDraft,
+  draft: AddItemProjectionDraft,
 ): Result<
   {
     readonly unitPriceMinor: MinorUnits;
@@ -668,7 +674,7 @@ const validateDraft = (
 
 export const projectAddItem = (
   trip: ActiveTrip,
-  draft: AddItemDraft,
+  draft: AddItemProjectionDraft,
 ): Result<TripProjection, DomainError> => {
   const draftResult = validateDraft(draft);
 
