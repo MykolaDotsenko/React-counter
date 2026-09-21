@@ -179,6 +179,7 @@ export type ShoppingPersistenceBootstrap =
       readonly restoredSavedAt?: IsoTimestamp;
       readonly historySavedAt?: IsoTimestamp;
       readonly reconciledCompletion?: true;
+      readonly completionCleanupPending: boolean;
     }
   | {
       readonly health: "degraded";
@@ -190,6 +191,7 @@ export type ShoppingPersistenceBootstrap =
       readonly restoredSavedAt?: IsoTimestamp;
       readonly historySavedAt?: IsoTimestamp;
       readonly reconciledCompletion?: true;
+      readonly completionCleanupPending: boolean;
     };
 
 const persistenceIssue = (
@@ -1175,6 +1177,7 @@ export const bootstrapShoppingPersistence = (
       activeTrip: null,
       completedTrips: history.trips,
       legacyKeysRetired: false,
+      completionCleanupPending: false,
       issue: restored.issue,
       ...(restored.raw === undefined
         ? {}
@@ -1208,6 +1211,7 @@ export const bootstrapShoppingPersistence = (
       activeTrip,
       completedTrips: history.trips,
       legacyKeysRetired: false,
+      completionCleanupPending: reconciliationIssue !== null,
       issue: reconciliationIssue ?? history.issue,
       ...(restored.status === "restored"
         ? { restoredSavedAt: restored.savedAt }
@@ -1224,6 +1228,7 @@ export const bootstrapShoppingPersistence = (
       activeTrip,
       completedTrips: history.trips,
       legacyKeysRetired: retirement.health === "healthy",
+      completionCleanupPending: true,
       issue: reconciliationIssue,
       ...(restored.status === "restored"
         ? { restoredSavedAt: restored.savedAt }
@@ -1241,6 +1246,7 @@ export const bootstrapShoppingPersistence = (
       activeTrip,
       completedTrips: history.trips,
       legacyKeysRetired: false,
+      completionCleanupPending: false,
       issue: retirement.issue,
       ...(restored.status === "restored"
         ? { restoredSavedAt: restored.savedAt }
@@ -1257,6 +1263,7 @@ export const bootstrapShoppingPersistence = (
     activeTrip,
     completedTrips: history.trips,
     legacyKeysRetired: true,
+    completionCleanupPending: false,
     ...(restored.status === "restored"
       ? { restoredSavedAt: restored.savedAt }
       : {}),
