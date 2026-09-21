@@ -2,7 +2,22 @@
 
 ## Status
 
-B6 implementation and automated evidence are being completed on the guarded shopping shell.
+B6 code and automated evidence are implemented in PR #28 on the guarded shopping shell.
+
+The automated code head has passed:
+
+- production dependency audit
+- lint
+- strict TypeScript
+- unit/component tests
+- production build
+- Chromium browser/a11y suite
+- Firefox browser suite
+- WebKit browser suite
+
+The first expanded B6 browser run exposed a real 360×800 price-entry overflow: the Add action ended below the viewport. The compact layout was corrected without reducing frequent controls below the 48 CSS px product target, and the subsequent browser matrix passed.
+
+The empirical human timing/device section below is still pending and remains a production-switch blocker.
 
 This document separates:
 
