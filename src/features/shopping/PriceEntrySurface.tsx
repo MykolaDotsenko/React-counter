@@ -195,11 +195,10 @@ export function PriceEntrySurface({
                 draft.mode === "decimal" ? "0.00" : "0"
               }
               onChange={(event) => {
+                const nextRaw = event.currentTarget.value;
+
                 setDraft((current) =>
-                  replacePriceEntryRaw(
-                    current,
-                    event.currentTarget.value,
-                  ),
+                  replacePriceEntryRaw(current, nextRaw),
                 );
               }}
               onKeyDown={(event) => {
