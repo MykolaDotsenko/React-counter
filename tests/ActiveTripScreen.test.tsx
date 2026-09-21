@@ -263,8 +263,36 @@ describe("ActiveTripScreen", () => {
     expect(screen.getByText("€1.29 × 3")).not.toBeNull();
     expect(screen.getByText("€3.87")).not.toBeNull();
     expect(screen.getByText("Item 2")).not.toBeNull();
-    expect(screen.getByText("Estimated price")).not.toBeNull();
+    expect(screen.getByText("Estimated · Manual")).not.toBeNull();
     expect(screen.getByText("4 items")).not.toBeNull();
+  });
+
+  it("exposes edit and remove as secondary correction actions", async () => {
+    const user = userEvent.setup();
+    const item = createItem({
+      id: "correctable",
+      price: 479,
+    });
+    const onEditItem = vi.fn();
+    const onRemoveItem = vi.fn();
+
+    render(
+      <ActiveTripScreen
+        controller={createController(createTrip({ items: [item] }))}
+        onAddPrice={vi.fn()}
+        onEditItem={onEditItem}
+        onRemoveItem={onRemoveItem}
+        locale="en-IE"
+      />,
+    );
+
+    expect(screen.getByText("Confirmed · Manual")).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(onEditItem).toHaveBeenCalledWith(item);
+
+    await user.click(screen.getByRole("button", { name: "Remove" }));
+    expect(onRemoveItem).toHaveBeenCalledWith(item);
   });
 
   it("keeps one-action Undo beside committed feedback", async () => {
