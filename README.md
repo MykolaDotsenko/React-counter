@@ -10,13 +10,13 @@ The repository deliberately separates **implemented**, **guarded**, and **future
 
 ### Public demo — Pulse Counter
 
-https://mykoladotsenko.github.io/React-counter/
+https://mykoladotsenko.github.io/shopping-budget-companion/
 
 This remains the default GitHub Pages experience until the shopping replacement passes its empirical release gate.
 
 ### Guarded shopping QA
 
-https://mykoladotsenko.github.io/React-counter/qa/
+https://mykoladotsenko.github.io/shopping-budget-companion/qa/
 
 The QA route is a separate internal build used for real-device timing and usability validation. It is statically marked noindex/nofollow/noarchive and does not change the public Pulse Counter bundle.
 
@@ -472,8 +472,8 @@ The Quality workflow also compiles the guarded empirical QA build separately.
 GitHub Pages publishes two isolated artifacts:
 
 ~~~text
-/React-counter/      → public Pulse Counter
-/React-counter/qa/   → guarded shopping empirical QA
+/shopping-budget-companion/      → public Pulse Counter
+/shopping-budget-companion/qa/   → guarded shopping empirical QA
 ~~~
 
 QA instrumentation is tree-shaken from the public Pulse production bundle.

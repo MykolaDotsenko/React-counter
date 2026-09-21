@@ -124,7 +124,7 @@ The public/default GitHub Pages root remains Pulse Counter.
 
 A separate guarded empirical build is published at:
 
-> **https://mykoladotsenko.github.io/React-counter/qa/**
+> **https://mykoladotsenko.github.io/shopping-budget-companion/qa/**
 
 Build flags:
 
