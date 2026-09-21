@@ -27,11 +27,12 @@ Before changing code, read:
 7. relevant docs/specs/* contracts
 8. TESTING.md
 9. docs/PRODUCT-SUCCESS-STRATEGY.md for onboarding, entry speed, repeat use, retention, scanner sequencing, distribution, or analytics work
-10. UX.md / DESIGN.md for user-facing work
-11. BRAND.md / MARKETING.md / docs/marketing/* for naming, copy, store, or launch work
-12. docs/tech/TECHNOLOGY-RESEARCH.md when changing dependencies, frameworks, scanner/OCR, storage, PWA, hosting, or platform architecture
-13. ROADMAP.md for the current implementation phase
-14. other relevant docs/* for the concern being changed
+10. docs/CORE-UI-EXECUTION-BRIEF.md for Phase 4–5 implementation, PR slicing, dependencies, stop/go gates, and Definition of Done
+11. UX.md / DESIGN.md for user-facing work
+12. BRAND.md / MARKETING.md / docs/marketing/* for naming, copy, store, or launch work
+13. docs/tech/TECHNOLOGY-RESEARCH.md when changing dependencies, frameworks, scanner/OCR, storage, PWA, hosting, or platform architecture
+14. ROADMAP.md for the current implementation phase
+15. other relevant docs/* for the concern being changed
 
 For a narrow change, do not reread every long document once the relevant contract is known. Never skip PRODUCT.md, the relevant domain/spec contract, ARCHITECTURE.md, TECH-STACK.md, and the current roadmap phase.
 
@@ -265,6 +266,7 @@ Authoritative roles:
 
 - PRODUCT.md — what and why
 - docs/PRODUCT-SUCCESS-STRATEGY.md — retention-first sequencing, second-trip validation, and product-success decision gates
+- docs/CORE-UI-EXECUTION-BRIEF.md — concrete Phase 4–5 tasks, dependency graph, PR decomposition, stop/go gates, and release blockers
 - FUNCTIONALITY.md — what the product does, user-state flows, fallbacks, and P0/P1/P2 behaviour
 - SCENARIOS.md — scenario matrix, edge cases, risk prioritisation, and target UX scores
 - UX.md — interaction principles and usability rules
