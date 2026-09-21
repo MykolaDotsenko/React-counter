@@ -17,22 +17,34 @@ export interface PersistenceProblem {
   readonly schemaVersion?: number;
 }
 
-export interface ActiveTripPersistencePort {
+export interface ShoppingPersistencePort {
   bootstrap(): ActiveTripBootstrapResult;
   save(
     trip: ActiveTrip,
     savedAt: IsoTimestamp,
   ): ActiveTripSaveResult;
+  complete(
+    trip: CompletedTrip,
+    savedAt: IsoTimestamp,
+  ): CompletionSaveResult;
+  saveCompleted(
+    trip: CompletedTrip,
+    savedAt: IsoTimestamp,
+  ): ActiveTripSaveResult;
 }
+
+export type ActiveTripPersistencePort = ShoppingPersistencePort;
 
 export type ActiveTripBootstrapResult =
   | {
       readonly ok: true;
       readonly activeTrip: ActiveTrip | null;
+      readonly completedTrips: readonly CompletedTrip[];
     }
   | {
       readonly ok: false;
       readonly activeTrip: ActiveTrip | null;
+      readonly completedTrips: readonly CompletedTrip[];
       readonly issue: PersistenceProblem;
       readonly recoveryRequired: boolean;
       readonly recoveryRaw?: string;
@@ -47,6 +59,18 @@ export type ActiveTripSaveResult =
       readonly issue: PersistenceProblem;
     };
 
+
+export type CompletionSaveResult =
+  | {
+      readonly ok: true;
+    }
+  | {
+      readonly ok: false;
+      readonly stage: "history-write" | "active-clear";
+      readonly issue: PersistenceProblem;
+      readonly historyPersisted: boolean;
+    };
+
 export interface Clock {
   now(): IsoTimestamp;
 }
@@ -56,7 +80,12 @@ export interface IdGenerator {
   itemId(): string;
 }
 
-export type AppLifecycle = "booting" | "idle" | "active" | "recovery";
+export type AppLifecycle =
+  | "booting"
+  | "idle"
+  | "active"
+  | "completed-summary"
+  | "recovery";
 
 export type PersistenceHealth =
   | {
@@ -81,6 +110,7 @@ export interface RecoveryState {
 export interface ShoppingAppState {
   readonly lifecycle: AppLifecycle;
   readonly activeTrip: ActiveTrip | null;
+  readonly completedSummary: CompletedTrip | null;
   readonly completedTrips: readonly CompletedTrip[];
   readonly persistence: PersistenceHealth;
   readonly undo: UndoState | null;
@@ -115,7 +145,9 @@ export type ApplicationError =
         | "not-ready"
         | "active-trip-exists"
         | "recovery-required"
-        | "no-active-trip";
+        | "no-active-trip"
+        | "no-completed-summary"
+        | "completion-not-saved";
     }
   | DomainError;
 
@@ -145,12 +177,17 @@ export interface ShoppingAppController {
   ) => AppCommandResult;
   readonly removeItem: (itemId: ItemId) => AppCommandResult;
   readonly undo: () => AppCommandResult;
+  readonly completeTrip: () => AppCommandResult;
+  readonly setActualCheckout: (
+    actualCheckoutMinor: MinorUnits,
+  ) => AppCommandResult;
+  readonly dismissCompletedSummary: () => AppCommandResult;
   readonly retryPersistence: () => AppCommandResult;
   readonly dispatch: (command: ActiveTripCommand) => AppCommandResult;
 }
 
 export interface ShoppingAppControllerDependencies {
-  readonly persistence: ActiveTripPersistencePort;
+  readonly persistence: ShoppingPersistencePort;
   readonly clock: Clock;
   readonly ids: IdGenerator;
 }
@@ -175,6 +212,7 @@ const initialState = (): ShoppingAppState =>
   freezeState({
     lifecycle: "booting",
     activeTrip: null,
+    completedSummary: null,
     completedTrips: EMPTY_COMPLETED_TRIPS,
     persistence: HEALTHY_PERSISTENCE,
     undo: null,
