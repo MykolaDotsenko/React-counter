@@ -17,23 +17,17 @@ Current repository reality:
 - the legacy Pulse Counter UI, native typed View Transitions, and pointer-rendering adapter remain only on the default compatibility path
 - Vitest + React Testing Library + Playwright + axe remain the quality foundation
 
-Target product still requires:
+Remaining target areas before the documented MVP is complete:
 
-- mobile-first shopping budget companion
-- React 19.3 + Vite 8 static SPA/PWA
-- strict TypeScript 6.0.x migration baseline
-- custom plain-TypeScript application controller + React useSyncExternalStore
-- Zod 4 only at untrusted persistence/network boundaries
-- CSS Modules + native semantic HTML
-- vite-plugin-pwa + Workbox generateSW
-- strict TypeScript domain
-- exact money arithmetic
-- active shopping trip and cart items
-- local-first persistence
-- optional scanning adapters
-- offline-capable PWA
+- one-step Undo plus edit/remove application flows
+- trip completion orchestration and completed-trip history persistence
+- checkout reconciliation
+- repeat-trip/history/price-memory slices in their scheduled phases
+- vite-plugin-pwa + Workbox generateSW and offline installed-shell validation
+- optional scanning adapters only in their evidence-gated later phases
+- eventual retirement of the Pulse Counter compatibility shell after the guarded replacement passes its release gates
 
-This document describes both the current architectural strengths to preserve and the target boundaries for the product migration. It must not be read as evidence that target features already exist.
+This document describes both implemented shopping foundations and later target boundaries. Each section must be read together with its explicit phase/status language; target-only capabilities are not shipped merely because their architecture is documented.
 
 ## Architectural goal
 
