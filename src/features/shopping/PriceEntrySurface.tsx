@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import {
+  MAX_MVP_QUANTITY,
+  MIN_MVP_QUANTITY,
   formatEur,
   signedMinorUnits,
   type MinorUnits,
@@ -23,12 +25,24 @@ import {
   type PriceEntryDraft,
   type PriceEntryInvalidReason,
 } from "./price-entry-draft";
+import {
+  canDecreaseQuantity,
+  canIncreaseQuantity,
+  decreaseQuantity,
+  defaultQuantity,
+  increaseQuantity,
+} from "./quantity-draft";
 import styles from "./PriceEntrySurface.module.css";
+
+export interface ValidatedItemIntent {
+  readonly unitPriceMinor: MinorUnits;
+  readonly quantity: number;
+}
 
 export interface PriceEntrySurfaceProps {
   readonly trip: ActiveTrip;
   readonly onCancel: () => void;
-  readonly onValidatedPrice: (price: MinorUnits) => void;
+  readonly onValidatedItem: (intent: ValidatedItemIntent) => void;
   readonly locale?: string;
 }
 
@@ -116,7 +130,7 @@ const projectionCopy = (
 };
 
 interface OverBudgetConfirmation {
-  readonly price: MinorUnits;
+  readonly intent: ValidatedItemIntent;
   readonly projection: TripProjection;
   readonly sourceTrip: ActiveTrip;
 }
@@ -124,7 +138,7 @@ interface OverBudgetConfirmation {
 export function PriceEntrySurface({
   trip,
   onCancel,
-  onValidatedPrice,
+  onValidatedItem,
   locale = "en-FI",
 }: PriceEntrySurfaceProps) {
   const amountInputId = useId();
@@ -138,6 +152,7 @@ export function PriceEntrySurface({
   const [draft, setDraft] = useState<PriceEntryDraft>(
     initialPriceEntryDraft,
   );
+  const [quantity, setQuantity] = useState(defaultQuantity);
 
   const state = useMemo(
     () => classifyPriceEntryDraft(draft),
@@ -153,9 +168,9 @@ export function PriceEntrySurface({
         ? null
         : projectAddItem(trip, {
             unitPriceMinor: validPrice,
-            quantity: 1,
+            quantity,
           }),
-    [trip, validPrice],
+    [trip, validPrice, quantity],
   );
 
   const projection =
@@ -179,14 +194,14 @@ export function PriceEntrySurface({
     }
   }, [activeConfirmation]);
 
-  const submitValidatedPrice = (price: MinorUnits): void => {
+  const submitValidatedItem = (intent: ValidatedItemIntent): void => {
     if (submittingRef.current) {
       return;
     }
 
     submittingRef.current = true;
     setSubmitted(true);
-    onValidatedPrice(price);
+    onValidatedItem(intent);
   };
 
   const commit = (): void => {
@@ -198,16 +213,21 @@ export function PriceEntrySurface({
       return;
     }
 
+    const intent: ValidatedItemIntent = {
+      unitPriceMinor: validPrice,
+      quantity,
+    };
+
     if (projection?.crossesNominalBudget === true) {
       setOverBudgetConfirmation({
-        price: validPrice,
+        intent,
         projection,
         sourceTrip: trip,
       });
       return;
     }
 
-    submitValidatedPrice(validPrice);
+    submitValidatedItem(intent);
   };
 
   const cancelOverBudgetConfirmation = (): void => {
@@ -222,7 +242,7 @@ export function PriceEntrySurface({
       return;
     }
 
-    submitValidatedPrice(activeConfirmation.price);
+    submitValidatedItem(activeConfirmation.intent);
   };
 
   const updateMode = (mode: MoneyDraftMode): void => {
@@ -381,6 +401,63 @@ export function PriceEntrySurface({
           </div>
         </div>
 
+        <section
+          className={styles.quantitySection}
+          aria-labelledby="quantity-title"
+        >
+          <div className={styles.quantityCopy}>
+            <span id="quantity-title">Quantity</span>
+            <small>
+              {MIN_MVP_QUANTITY}–{MAX_MVP_QUANTITY}
+            </small>
+          </div>
+
+          <div className={styles.quantityStepper}>
+            <button
+              type="button"
+              className={styles.quantityButton}
+              aria-label="Decrease quantity"
+              disabled={
+                activeConfirmation !== null ||
+                !canDecreaseQuantity(quantity)
+              }
+              onClick={() => {
+                setQuantity((current) => decreaseQuantity(current));
+              }}
+            >
+              −
+            </button>
+            <output
+              className={styles.quantityValue}
+              aria-label="Current quantity"
+              aria-live="polite"
+            >
+              {quantity}
+            </output>
+            <button
+              type="button"
+              className={styles.quantityButton}
+              aria-label="Increase quantity"
+              disabled={
+                activeConfirmation !== null ||
+                !canIncreaseQuantity(quantity)
+              }
+              onClick={() => {
+                setQuantity((current) => increaseQuantity(current));
+              }}
+            >
+              +
+            </button>
+          </div>
+        </section>
+
+        {projection !== null && quantity > 1 ? (
+          <p className={styles.lineTotal} aria-live="polite">
+            {formatEur(validPrice!, locale)} × {quantity} ={" "}
+            {formatAbsoluteSigned(projection.lineTotalMinor, locale)}
+          </p>
+        ) : null}
+
         {consequence ? (
           <section
             className={styles.projection}
@@ -465,7 +542,7 @@ export function PriceEntrySurface({
           >
             {submitted
               ? "Adding…"
-              : `Add${validPrice === null ? "" : ` · ${formatEur(validPrice, locale)}`}`}
+              : `Add${projection === null ? "" : ` · ${formatAbsoluteSigned(projection.lineTotalMinor, locale)}`}`}
           </button>
           </>
         ) : (
@@ -514,8 +591,8 @@ export function PriceEntrySurface({
               >
                 {submitted
                   ? "Adding…"
-                  : `Add anyway · ${formatEur(
-                      activeConfirmation.price,
+                  : `Add anyway · ${formatAbsoluteSigned(
+                      activeConfirmation.projection.lineTotalMinor,
                       locale,
                     )}`}
               </button>
