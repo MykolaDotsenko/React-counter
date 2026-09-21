@@ -125,7 +125,7 @@ test("keeps an added item in memory when its persistence write fails", async ({
   ).toHaveCount(0);
 
   await page.getByRole("button", { name: "Add price" }).click();
-  await page.getByLabel("Price").fill("4.79");
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
   await page.getByRole("button", { name: "Add · €4.79" }).click();
 
   await expect(
@@ -160,7 +160,7 @@ test("commits exact price and quantity, persists them, and restores the same car
   await startQuickBudget(page);
 
   await page.getByRole("button", { name: "Add price" }).click();
-  await page.getByLabel("Price").fill("1.29");
+  await page.getByRole("textbox", { name: "Price" }).fill("1.29");
   await page.getByRole("button", { name: "Increase quantity" }).click();
   await page.getByRole("button", { name: "Increase quantity" }).click();
 
@@ -337,7 +337,7 @@ test("supports keyboard add and returns focus to the canonical Add price action"
   await expect(addPrice).toBeFocused();
   await page.keyboard.press("Enter");
 
-  const price = page.getByLabel("Price");
+  const price = page.getByRole("textbox", { name: "Price" });
   await expect(price).toBeFocused();
   await price.fill("4.79");
   await page.keyboard.press("Enter");
