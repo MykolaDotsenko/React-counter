@@ -385,7 +385,7 @@ Progress:
 - B3 Buffer / over-budget consequence states — **complete via PR #24**
 - B4 Quantity — **complete via PR #25**
 - B5 Commit / persist / return — **complete via PR #26**
-- B6 Correction minimum + quality gate — **automated/code gate implemented via PR #28; representative human timing and physical one-hand/bright-store evidence pending**
+- B6 Correction minimum + quality gate — **automated/code gate implemented via PR #28; empirical recorder hardened to reject non-representative timing evidence; representative human timing and physical one-hand/bright-store evidence still pending**
 
 B5 closes the projection-to-canonical loop: the application controller creates the confirmed manual CartItem from the validated `unitPriceMinor + quantity` intent, commits it through the domain reducer, attempts persistence immediately, and returns the UI to canonical summary state. A failed storage write keeps the committed item in memory and surfaces degraded persistence rather than rolling back valid shopping state.
 
@@ -874,7 +874,7 @@ PR #28 implements the B6 code/automated portion:
 
 The <=2.5 second KPI remains an empirical human interaction target. Automation must not be used as a substitute.
 
-Before the default/public shell can switch away from Pulse Counter, record the representative timing, one-hand reach, software-keyboard, and bright-store checks defined in `docs/SPRINT-B-QUALITY-GATE.md`.
+Before the default/public shell can switch away from Pulse Counter, record the representative timing, one-hand reach, software-keyboard, typo/repeated-add, compact-device/equivalent, and bright-store checks defined in `docs/SPRINT-B-QUALITY-GATE.md`. The QA recorder must show the evidence as release-eligible; code/automation alone cannot satisfy this gate.
 
 Do not switch the default production shell or begin the post-Sprint-B scanner benchmark until that empirical gate passes. README/repository copy may describe the migration and guarded implementation, but must not claim the shopping shell is the default shipped product before the gate.
 
