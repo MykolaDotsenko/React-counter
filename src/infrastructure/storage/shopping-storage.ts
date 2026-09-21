@@ -533,7 +533,10 @@ export const decodeHistorySnapshot = (
     };
   }
 
-  if (header.data.schemaVersion !== CURRENT_HISTORY_SCHEMA_VERSION) {
+  if (
+    header.data.schemaVersion < 1 ||
+    header.data.schemaVersion > CURRENT_HISTORY_SCHEMA_VERSION
+  ) {
     return {
       ok: false,
       issue: persistenceIssue(
@@ -544,7 +547,10 @@ export const decodeHistorySnapshot = (
     };
   }
 
-  const envelope = historyStorageEnvelopeV1Schema.safeParse(parsed);
+  const envelope =
+    header.data.schemaVersion === 1
+      ? historyStorageEnvelopeV1Schema.safeParse(parsed)
+      : historyStorageEnvelopeV2Schema.safeParse(parsed);
 
   if (!envelope.success) {
     return {
@@ -575,7 +581,10 @@ export const decodeHistorySnapshot = (
   let invalidEntryCount = 0;
 
   for (const candidate of data.data.trips) {
-    const parsedTrip = completedTripDataV1Schema.safeParse(candidate);
+    const parsedTrip =
+      header.data.schemaVersion === 1
+        ? completedTripDataV1Schema.safeParse(candidate)
+        : completedTripDataV2Schema.safeParse(candidate);
 
     if (!parsedTrip.success) {
       invalidEntryCount += 1;
@@ -630,11 +639,11 @@ export const encodeHistorySnapshot = (
     };
   }
 
-  const encodedTrips: CompletedTripDataV1[] = [];
+  const encodedTrips: CompletedTripDataV2[] = [];
 
   for (const trip of trips) {
     const candidate = toCompletedTripDataV2(trip);
-    const validated = completedTripDataV1Schema.safeParse(candidate);
+    const validated = completedTripDataV2Schema.safeParse(candidate);
 
     if (!validated.success || decodeCompletedTripData(candidate) === null) {
       return {
@@ -646,7 +655,7 @@ export const encodeHistorySnapshot = (
     encodedTrips.push(validated.data);
   }
 
-  const envelope: HistoryEnvelopeV1 = {
+  const envelope: HistoryEnvelopeV2 = {
     schemaVersion: CURRENT_HISTORY_SCHEMA_VERSION,
     savedAt: savedAt.value,
     data: {
@@ -654,7 +663,7 @@ export const encodeHistorySnapshot = (
     },
   };
 
-  const validatedEnvelope = historyStorageEnvelopeV1Schema.safeParse(envelope);
+  const validatedEnvelope = historyStorageEnvelopeV2Schema.safeParse(envelope);
 
   if (!validatedEnvelope.success) {
     return {
@@ -706,7 +715,10 @@ export const decodeActiveTripSnapshot = (
     };
   }
 
-  if (header.data.schemaVersion > CURRENT_ACTIVE_TRIP_SCHEMA_VERSION) {
+  if (
+    header.data.schemaVersion < 1 ||
+    header.data.schemaVersion > CURRENT_ACTIVE_TRIP_SCHEMA_VERSION
+  ) {
     return {
       ok: false,
       issue: persistenceIssue(
@@ -717,18 +729,10 @@ export const decodeActiveTripSnapshot = (
     };
   }
 
-  if (header.data.schemaVersion !== CURRENT_ACTIVE_TRIP_SCHEMA_VERSION) {
-    return {
-      ok: false,
-      issue: persistenceIssue(
-        "unsupported-version",
-        ACTIVE_TRIP_STORAGE_KEY,
-        header.data.schemaVersion,
-      ),
-    };
-  }
-
-  const envelope = storageEnvelopeV1Schema.safeParse(parsed);
+  const envelope =
+    header.data.schemaVersion === 1
+      ? storageEnvelopeV1Schema.safeParse(parsed)
+      : storageEnvelopeV2Schema.safeParse(parsed);
 
   if (!envelope.success) {
     return {
@@ -746,7 +750,10 @@ export const decodeActiveTripSnapshot = (
     };
   }
 
-  const data = activeTripDataV1Schema.safeParse(envelope.data.data);
+  const data =
+    header.data.schemaVersion === 1
+      ? activeTripDataV1Schema.safeParse(envelope.data.data)
+      : activeTripDataV2Schema.safeParse(envelope.data.data);
 
   if (!data.success) {
     return {
@@ -784,8 +791,8 @@ export const encodeActiveTripSnapshot = (
     };
   }
 
-  const candidateData = toActiveTripDataV1(trip);
-  const validatedData = activeTripDataV1Schema.safeParse(candidateData);
+  const candidateData = toActiveTripDataV2(trip);
+  const validatedData = activeTripDataV2Schema.safeParse(candidateData);
 
   if (!validatedData.success || decodeActiveTripData(candidateData) === null) {
     return {
@@ -794,13 +801,13 @@ export const encodeActiveTripSnapshot = (
     };
   }
 
-  const envelope: ActiveTripEnvelopeV1 = {
+  const envelope: ActiveTripEnvelopeV2 = {
     schemaVersion: CURRENT_ACTIVE_TRIP_SCHEMA_VERSION,
     savedAt: savedAt.value,
     data: validatedData.data,
   };
 
-  const validatedEnvelope = storageEnvelopeV1Schema.safeParse(envelope);
+  const validatedEnvelope = storageEnvelopeV2Schema.safeParse(envelope);
 
   if (!validatedEnvelope.success) {
     return {
