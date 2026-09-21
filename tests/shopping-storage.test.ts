@@ -559,6 +559,392 @@ describe("shopping storage codec", () => {
   });
 });
 
+describe("completed trip history persistence", () => {
+  it("round-trips full completed trips without persisting derived totals", () => {
+    const trip = createCompletedTrip(770);
+    const encoded = encodeHistorySnapshot([trip], RECONCILE_TIME);
+
+    expect(encoded.ok).toBe(true);
+
+    if (!encoded.ok) {
+      throw new Error("Expected history encoding");
+    }
+
+    const parsed = JSON.parse(encoded.raw) as {
+      schemaVersion: number;
+      data: {
+        trips: Array<Record<string, unknown>>;
+      };
+    };
+
+    expect(parsed.schemaVersion).toBe(CURRENT_HISTORY_SCHEMA_VERSION);
+    expect(parsed.data.trips).toHaveLength(1);
+    expect(parsed.data.trips[0]).toMatchObject({
+      id: "trip-1",
+      status: "completed",
+      budgetMinor: 5_000,
+      safetyBufferMinor: 200,
+      completedAt: COMPLETE_TIME,
+      actualCheckoutMinor: 770,
+    });
+
+    for (const forbidden of [
+      "cartTotal",
+      "remaining",
+      "safeRemaining",
+      "checkoutDifference",
+      "overBudget",
+      "progress",
+    ]) {
+      expect(forbidden in (parsed.data.trips[0] ?? {})).toBe(false);
+    }
+
+    const decoded = decodeHistorySnapshot(encoded.raw);
+    expect(decoded.ok).toBe(true);
+
+    if (!decoded.ok) {
+      throw new Error("Expected history decoding");
+    }
+
+    expect(decoded.invalidEntryCount).toBe(0);
+    expect(decoded.trips).toEqual([trip]);
+    expect(decoded.savedAt).toBe(RECONCILE_TIME);
+  });
+
+  it("quarantines an invalid individual history entry without losing valid trips", () => {
+    const encoded = encodeHistorySnapshot(
+      [createCompletedTrip()],
+      RECONCILE_TIME,
+    );
+
+    if (!encoded.ok) {
+      throw new Error("Expected history encoding");
+    }
+
+    const envelope = JSON.parse(encoded.raw) as {
+      data: {
+        trips: Array<Record<string, unknown>>;
+      };
+    };
+    envelope.data.trips.push({
+      ...(structuredClone(envelope.data.trips[0]) as Record<string, unknown>),
+      id: "broken-trip",
+      completedAt: "not-a-timestamp",
+    });
+
+    const raw = JSON.stringify(envelope);
+    const decoded = decodeHistorySnapshot(raw);
+
+    expect(decoded.ok).toBe(true);
+
+    if (!decoded.ok) {
+      throw new Error("Expected partial history decoding");
+    }
+
+    expect(decoded.trips).toHaveLength(1);
+    expect(decoded.trips[0]?.id).toBe("trip-1");
+    expect(decoded.invalidEntryCount).toBe(1);
+
+    const restored = restoreHistory(
+      createStorage({ [HISTORY_STORAGE_KEY]: raw }),
+    );
+
+    expect(restored.health).toBe("degraded");
+    expect(restored.trips).toHaveLength(1);
+
+    if (restored.health !== "degraded") {
+      throw new Error("Expected degraded partial history");
+    }
+
+    expect(restored.issue).toEqual({
+      kind: "persistence",
+      code: "invalid-history-entry",
+      storageKey: HISTORY_STORAGE_KEY,
+    });
+    expect(restored.raw).toBe(raw);
+  });
+
+  it("writes completed history before clearing the active trip", () => {
+    const active = encodeActiveTripSnapshot(createTrip(), SAVE_TIME);
+
+    if (!active.ok) {
+      throw new Error("Expected active encoding");
+    }
+
+    const storage = createStorage({
+      [ACTIVE_TRIP_STORAGE_KEY]: active.raw,
+    });
+    const completed = createCompletedTrip();
+
+    expect(
+      completeTripPersistence(storage, completed, COMPLETE_TIME),
+    ).toEqual({ ok: true });
+
+    expect(storage.events).toContain(`set:${HISTORY_STORAGE_KEY}`);
+    expect(storage.events).toContain(`remove:${ACTIVE_TRIP_STORAGE_KEY}`);
+    expect(
+      storage.events.indexOf(`set:${HISTORY_STORAGE_KEY}`),
+    ).toBeLessThan(
+      storage.events.indexOf(`remove:${ACTIVE_TRIP_STORAGE_KEY}`),
+    );
+    expect(storage.values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
+
+    const history = restoreHistory(storage);
+    expect(history.health).toBe("healthy");
+    expect(history.trips).toEqual([completed]);
+  });
+
+  it("never clears the active trip when the history write fails", () => {
+    const active = encodeActiveTripSnapshot(createTrip(), SAVE_TIME);
+
+    if (!active.ok) {
+      throw new Error("Expected active encoding");
+    }
+
+    const storage = createStorage(
+      { [ACTIVE_TRIP_STORAGE_KEY]: active.raw },
+      { failSetKeys: [HISTORY_STORAGE_KEY] },
+    );
+
+    const result = completeTripPersistence(
+      storage,
+      createCompletedTrip(),
+      COMPLETE_TIME,
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      stage: "history-write",
+      issue: {
+        kind: "persistence",
+        code: "write-failed",
+        storageKey: HISTORY_STORAGE_KEY,
+      },
+      historyPersisted: false,
+    });
+    expect(storage.values.get(ACTIVE_TRIP_STORAGE_KEY)).toBe(active.raw);
+    expect(storage.removals).not.toContain(ACTIVE_TRIP_STORAGE_KEY);
+  });
+
+  it("keeps both durable records when active clear fails after history succeeds", () => {
+    const active = encodeActiveTripSnapshot(createTrip(), SAVE_TIME);
+
+    if (!active.ok) {
+      throw new Error("Expected active encoding");
+    }
+
+    const storage = createStorage(
+      { [ACTIVE_TRIP_STORAGE_KEY]: active.raw },
+      { failRemoveKeys: [ACTIVE_TRIP_STORAGE_KEY] },
+    );
+    const completed = createCompletedTrip();
+
+    const result = completeTripPersistence(
+      storage,
+      completed,
+      COMPLETE_TIME,
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      stage: "active-clear",
+      issue: {
+        kind: "persistence",
+        code: "remove-failed",
+        storageKey: ACTIVE_TRIP_STORAGE_KEY,
+      },
+      historyPersisted: true,
+    });
+    expect(storage.values.get(ACTIVE_TRIP_STORAGE_KEY)).toBe(active.raw);
+    expect(storage.values.has(HISTORY_STORAGE_KEY)).toBe(true);
+
+    const history = restoreHistory(storage);
+    expect(history.trips).toEqual([completed]);
+  });
+
+  it("reconciles an interrupted completion on startup without duplicating history", () => {
+    const active = encodeActiveTripSnapshot(createTrip(), SAVE_TIME);
+    const history = encodeHistorySnapshot(
+      [createCompletedTrip()],
+      COMPLETE_TIME,
+    );
+
+    if (!active.ok || !history.ok) {
+      throw new Error("Expected completion fixtures");
+    }
+
+    const storage = createStorage({
+      [ACTIVE_TRIP_STORAGE_KEY]: active.raw,
+      [HISTORY_STORAGE_KEY]: history.raw,
+    });
+
+    const bootstrap = bootstrapShoppingPersistence(storage);
+
+    expect(bootstrap.health).toBe("healthy");
+    expect(bootstrap.activeTrip).toBeNull();
+    expect(bootstrap.completedTrips).toHaveLength(1);
+    expect(bootstrap.reconciledCompletion).toBe(true);
+    expect(bootstrap.completionCleanupPending).toBe(false);
+    expect(storage.values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
+
+    const restoredHistory = restoreHistory(storage);
+    expect(restoredHistory.trips).toHaveLength(1);
+  });
+
+  it("treats completed history as completion evidence even if stale active cleanup still fails", () => {
+    const active = encodeActiveTripSnapshot(createTrip(), SAVE_TIME);
+    const history = encodeHistorySnapshot(
+      [createCompletedTrip()],
+      COMPLETE_TIME,
+    );
+
+    if (!active.ok || !history.ok) {
+      throw new Error("Expected completion fixtures");
+    }
+
+    const storage = createStorage(
+      {
+        [ACTIVE_TRIP_STORAGE_KEY]: active.raw,
+        [HISTORY_STORAGE_KEY]: history.raw,
+      },
+      { failRemoveKeys: [ACTIVE_TRIP_STORAGE_KEY] },
+    );
+
+    const bootstrap = bootstrapShoppingPersistence(storage);
+
+    expect(bootstrap.health).toBe("degraded");
+    expect(bootstrap.activeTrip).toBeNull();
+    expect(bootstrap.completedTrips).toHaveLength(1);
+    expect(bootstrap.reconciledCompletion).toBe(true);
+    expect(bootstrap.completionCleanupPending).toBe(true);
+
+    if (bootstrap.health !== "degraded") {
+      throw new Error("Expected degraded reconciliation");
+    }
+
+    expect(bootstrap.issue.code).toBe("remove-failed");
+    expect(storage.values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(true);
+  });
+
+  it("rejects conflicting same-id completion instead of silently overwriting history", () => {
+    const existing = createCompletedTrip();
+    const existingHistory = encodeHistorySnapshot(
+      [existing],
+      COMPLETE_TIME,
+    );
+
+    if (!existingHistory.ok) {
+      throw new Error("Expected history encoding");
+    }
+
+    const conflictingResult = reduceTrip(createTrip(), {
+      type: "complete-trip",
+      completedAt: time(RECONCILE_TIME),
+    });
+
+    if (
+      !conflictingResult.ok ||
+      conflictingResult.value.status !== "completed"
+    ) {
+      throw new Error("Expected conflicting completed fixture");
+    }
+
+    const active = encodeActiveTripSnapshot(createTrip(), SAVE_TIME);
+
+    if (!active.ok) {
+      throw new Error("Expected active encoding");
+    }
+
+    const storage = createStorage({
+      [ACTIVE_TRIP_STORAGE_KEY]: active.raw,
+      [HISTORY_STORAGE_KEY]: existingHistory.raw,
+    });
+
+    const result = completeTripPersistence(
+      storage,
+      conflictingResult.value,
+      RECONCILE_TIME,
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      stage: "history-write",
+      historyPersisted: false,
+      issue: {
+        code: "history-conflict",
+        storageKey: HISTORY_STORAGE_KEY,
+      },
+    });
+    expect(storage.values.get(ACTIVE_TRIP_STORAGE_KEY)).toBe(active.raw);
+    expect(restoreHistory(storage).trips).toEqual([existing]);
+  });
+
+  it("updates actual checkout inside the existing completed record", () => {
+    const initial = createCompletedTrip();
+    const initialHistory = encodeHistorySnapshot(
+      [initial],
+      COMPLETE_TIME,
+    );
+
+    if (!initialHistory.ok) {
+      throw new Error("Expected history encoding");
+    }
+
+    const storage = createStorage({
+      [HISTORY_STORAGE_KEY]: initialHistory.raw,
+    });
+    const reconciled = createCompletedTrip(770);
+
+    expect(
+      updateCompletedTripPersistence(
+        storage,
+        reconciled,
+        RECONCILE_TIME,
+      ),
+    ).toEqual({
+      health: "healthy",
+      savedAt: RECONCILE_TIME,
+    });
+
+    const history = restoreHistory(storage);
+    expect(history.trips).toEqual([reconciled]);
+  });
+
+  it("preserves unsupported future history without overwriting it", () => {
+    const raw = JSON.stringify({
+      schemaVersion: CURRENT_HISTORY_SCHEMA_VERSION + 1,
+      savedAt: RECONCILE_TIME,
+      data: { trips: [] },
+    });
+    const storage = createStorage({
+      [HISTORY_STORAGE_KEY]: raw,
+    });
+
+    const restored = restoreHistory(storage);
+    expect(restored.health).toBe("degraded");
+
+    if (restored.health !== "degraded") {
+      throw new Error("Expected future history rejection");
+    }
+
+    expect(restored.issue).toEqual({
+      kind: "persistence",
+      code: "unsupported-version",
+      storageKey: HISTORY_STORAGE_KEY,
+      schemaVersion: CURRENT_HISTORY_SCHEMA_VERSION + 1,
+    });
+
+    const completion = completeTripPersistence(
+      storage,
+      createCompletedTrip(),
+      COMPLETE_TIME,
+    );
+    expect(completion.ok).toBe(false);
+    expect(storage.values.get(HISTORY_STORAGE_KEY)).toBe(raw);
+    expect(storage.writes).toHaveLength(0);
+  });
+});
+
 describe("active trip persistence", () => {
   it("treats a fresh store as healthy and empty", () => {
     expect(restoreActiveTrip(createStorage())).toEqual({
