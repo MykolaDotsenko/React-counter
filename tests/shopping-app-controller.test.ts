@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { mvpMinorUnits, type Result } from "../src/domain/money";
 import {
   createActiveTrip,
+  createCartItem,
   isoTimestamp,
   itemId as parseItemId,
+  reduceTrip,
   type ActiveTrip,
   type IsoTimestamp,
 } from "../src/domain/shopping-trip";
@@ -942,6 +944,70 @@ describe("ShoppingAppController item correction", () => {
     expect(undone.state.activeTrip?.items[0]).toMatchObject({
       unitPriceMinor: 479,
       quantity: 1,
+    });
+  });
+
+  it("preserves remembered provenance and confidence when only quantity changes", () => {
+    const base = createTrip(5_000, 0);
+    const rememberedItem = unwrap(
+      createCartItem({
+        id: "remembered-item",
+        unitPriceMinor: money(139),
+        quantity: 1,
+        label: "Milk",
+        priceSource: {
+          kind: "price-memory",
+          memoryId: "memory-1",
+        },
+        priceConfidence: {
+          kind: "remembered",
+          observedAt: time(START),
+        },
+        createdAt: START,
+      }),
+    );
+    const added = reduceTrip(base, {
+      type: "add-item",
+      item: rememberedItem,
+    });
+
+    if (!added.ok || added.value.status !== "active") {
+      throw new Error("Expected remembered fixture trip");
+    }
+
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: added.value,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.updateManualItem({
+      itemId: rememberedItem.id,
+      unitPriceMinor: rememberedItem.unitPriceMinor,
+      quantity: 2,
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected quantity correction success");
+    }
+
+    expect(result.state.activeTrip?.items[0]).toMatchObject({
+      quantity: 2,
+      priceSource: {
+        kind: "price-memory",
+        memoryId: "memory-1",
+      },
+      priceConfidence: {
+        kind: "remembered",
+        observedAt: START,
+      },
     });
   });
 
