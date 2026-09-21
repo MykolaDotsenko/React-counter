@@ -1,0 +1,321 @@
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  QA_TARGET_PRICE_1250,
+  QA_TARGET_PRICE_479,
+  QA_TARGET_SAMPLE_COUNT,
+  qaChecklistComplete,
+  summarizeQaTimingSamples,
+  type QaChecklistKey,
+  type QaTimingSession,
+} from "./shopping-timing";
+import styles from "./ShoppingTimingQaPanel.module.css";
+
+export interface ShoppingTimingQaPanelProps {
+  readonly session: QaTimingSession;
+  readonly onChecklistChange: (
+    key: QaChecklistKey,
+    value: boolean,
+  ) => void;
+  readonly onDeviceLabelChange: (value: string) => void;
+  readonly onNotesChange: (value: string) => void;
+  readonly onResetSamples: () => void;
+}
+
+const CHECKLIST: readonly {
+  readonly key: QaChecklistKey;
+  readonly label: string;
+}[] = [
+  {
+    key: "addPriceReachable",
+    label: "Add price is comfortably thumb reachable",
+  },
+  {
+    key: "numericKeysReachable",
+    label: "Numeric keys are comfortably reachable",
+  },
+  {
+    key: "cancelReachable",
+    label: "Cancel is reachable without destabilizing grip",
+  },
+  {
+    key: "projectionReadable",
+    label: "Projected remaining is readable before commit",
+  },
+  {
+    key: "reserveWithoutColour",
+    label: "Reserve/over-budget state is clear without colour",
+  },
+  {
+    key: "addPlacementStable",
+    label: "Add stays in a predictable place",
+  },
+  {
+    key: "keypadCloses",
+    label: "Keypad closes after commit",
+  },
+  {
+    key: "brightSummaryReadable",
+    label: "Summary is readable in bright/store-like light",
+  },
+  {
+    key: "softwareKeyboardClear",
+    label: "Software keyboard does not obscure critical controls",
+  },
+  {
+    key: "repeatedAddNoScroll",
+    label: "Ordinary repeated add does not require scrolling",
+  },
+] as const;
+
+const seconds = (value: number | null): string =>
+  value === null ? "—" : `${(value / 1_000).toFixed(2)} s`;
+
+const statusLabel = (
+  status: ReturnType<typeof summarizeQaTimingSamples>["status"],
+): string => {
+  switch (status) {
+    case "pending":
+      return "Need 10 samples";
+    case "target-met":
+      return "≤2.5 s target met";
+    case "release-floor":
+      return "2.5–3.0 s release floor";
+    case "fail":
+      return ">3.0 s — redesign";
+    default: {
+      const exhaustive: never = status;
+      return exhaustive;
+    }
+  }
+};
+
+export function ShoppingTimingQaPanel({
+  session,
+  onChecklistChange,
+  onDeviceLabelChange,
+  onNotesChange,
+  onResetSamples,
+}: ShoppingTimingQaPanelProps) {
+  const [open, setOpen] = useState(false);
+  const [copyStatus, setCopyStatus] = useState("");
+
+  const summary479 = useMemo(
+    () => summarizeQaTimingSamples(session.samples, QA_TARGET_PRICE_479),
+    [session.samples],
+  );
+  const summary1250 = useMemo(
+    () => summarizeQaTimingSamples(session.samples, QA_TARGET_PRICE_1250),
+    [session.samples],
+  );
+
+  useEffect(() => {
+    document.title = "Budget Cart — Empirical Timing QA";
+
+    const robots =
+      document.querySelector<HTMLMetaElement>('meta[name="robots"]') ??
+      document.createElement("meta");
+    robots.name = "robots";
+    robots.content = "noindex,nofollow,noarchive";
+
+    if (!robots.isConnected) {
+      document.head.append(robots);
+    }
+
+    const description = document.querySelector<HTMLMetaElement>(
+      'meta[name="description"]',
+    );
+
+    if (description !== null) {
+      description.content =
+        "Internal Budget Cart empirical timing and one-hand usability QA.";
+    }
+  }, []);
+
+  const targetProgress =
+    Math.min(summary479.count, QA_TARGET_SAMPLE_COUNT) +
+    Math.min(summary1250.count, QA_TARGET_SAMPLE_COUNT);
+
+  const copyResults = async (): Promise<void> => {
+    const report = {
+      generatedAt: new Date().toISOString(),
+      environment: session.environment,
+      deviceLabel: session.deviceLabel,
+      notes: session.notes,
+      checklist: session.checklist,
+      checklistComplete: qaChecklistComplete(session.checklist),
+      summaries: {
+        eur479: summary479,
+        eur1250: summary1250,
+      },
+      samples: session.samples,
+    };
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+      setCopyStatus("Copied");
+    } catch {
+      setCopyStatus("Copy failed — use browser devtools/session storage");
+    }
+  };
+
+  return (
+    <aside className={styles.qaRoot} aria-label="Empirical timing QA">
+      <button
+        type="button"
+        className={styles.qaToggle}
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((current) => !current);
+        }}
+      >
+        QA {targetProgress}/{QA_TARGET_SAMPLE_COUNT * 2}
+      </button>
+
+      {open ? (
+        <div className={styles.panel}>
+          <header className={styles.header}>
+            <div>
+              <p>Internal QA</p>
+              <h2>Human timing gate</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+              }}
+            >
+              Close
+            </button>
+          </header>
+
+          <p className={styles.warning}>
+            This panel is not part of the product UI. Measure one-handed on a
+            real phone. Automation cannot prove the ≤2.5 s KPI.
+          </p>
+
+          <div className={styles.summaryGrid}>
+            <TimingCard label="€4.79" summary={summary479} />
+            <TimingCard label="€12.50" summary={summary1250} />
+          </div>
+
+          <label className={styles.field}>
+            <span>Device / browser label</span>
+            <input
+              value={session.deviceLabel}
+              placeholder="Pixel 8 · Chrome"
+              onChange={(event) => {
+                onDeviceLabelChange(event.currentTarget.value);
+              }}
+            />
+          </label>
+
+          <dl className={styles.environment}>
+            <div>
+              <dt>Viewport</dt>
+              <dd>
+                {session.environment.viewportWidth} ×{" "}
+                {session.environment.viewportHeight}
+              </dd>
+            </div>
+            <div>
+              <dt>Screen</dt>
+              <dd>
+                {session.environment.screenWidth} ×{" "}
+                {session.environment.screenHeight}
+              </dd>
+            </div>
+            <div>
+              <dt>DPR</dt>
+              <dd>{session.environment.devicePixelRatio}</dd>
+            </div>
+            <div>
+              <dt>Appearance</dt>
+              <dd>{session.environment.colorScheme}</dd>
+            </div>
+          </dl>
+
+          <fieldset className={styles.checklist}>
+            <legend>One-hand / bright-store checklist</legend>
+            {CHECKLIST.map((item) => (
+              <label key={item.key}>
+                <input
+                  type="checkbox"
+                  checked={session.checklist[item.key]}
+                  onChange={(event) => {
+                    onChecklistChange(item.key, event.currentTarget.checked);
+                  }}
+                />
+                <span>{item.label}</span>
+              </label>
+            ))}
+          </fieldset>
+
+          <label className={styles.field}>
+            <span>Notes / interruptions / typo test</span>
+            <textarea
+              rows={4}
+              value={session.notes}
+              onChange={(event) => {
+                onNotesChange(event.currentTarget.value);
+              }}
+            />
+          </label>
+
+          <div className={styles.actions}>
+            <button type="button" onClick={() => void copyResults()}>
+              Copy JSON results
+            </button>
+            <button type="button" onClick={onResetSamples}>
+              Reset timing samples
+            </button>
+          </div>
+
+          {copyStatus ? (
+            <p className={styles.copyStatus} role="status">
+              {copyStatus}
+            </p>
+          ) : null}
+
+          <details className={styles.details}>
+            <summary>Environment details</summary>
+            <pre>{session.environment.userAgent}</pre>
+          </details>
+        </div>
+      ) : null}
+    </aside>
+  );
+}
+
+interface TimingCardProps {
+  readonly label: string;
+  readonly summary: ReturnType<typeof summarizeQaTimingSamples>;
+}
+
+function TimingCard({ label, summary }: TimingCardProps) {
+  return (
+    <section className={styles.card} data-status={summary.status}>
+      <div>
+        <strong>{label}</strong>
+        <span>
+          {summary.count}/{QA_TARGET_SAMPLE_COUNT}
+        </span>
+      </div>
+      <dl>
+        <div>
+          <dt>Median</dt>
+          <dd>{seconds(summary.medianMs)}</dd>
+        </div>
+        <div>
+          <dt>P75</dt>
+          <dd>{seconds(summary.p75Ms)}</dd>
+        </div>
+        <div>
+          <dt>Max</dt>
+          <dd>{seconds(summary.maxMs)}</dd>
+        </div>
+      </dl>
+      <p>{statusLabel(summary.status)}</p>
+    </section>
+  );
+}

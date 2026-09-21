@@ -1,4 +1,4 @@
-name: Publish Pulse Counter for GitHub Pages
+name: Publish Pulse Counter and guarded QA
 
 on:
   push:
@@ -41,14 +41,22 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Build for GitHub Pages
+      - name: Build public Pulse Counter
         run: npm run build -- --base=/React-counter/
+
+      - name: Build guarded shopping timing QA
+        env:
+          VITE_SHOPPING_SHELL: "1"
+          VITE_SHOPPING_QA_TIMING: "1"
+        run: npm run build -- --base=/React-counter/qa/ --outDir=dist-qa
 
       - name: Stage static site
         run: |
           rm -rf /tmp/pulse-counter-pages
           mkdir -p /tmp/pulse-counter-pages
           cp -R dist/. /tmp/pulse-counter-pages/
+          mkdir -p /tmp/pulse-counter-pages/qa
+          cp -R dist-qa/. /tmp/pulse-counter-pages/qa/
           touch /tmp/pulse-counter-pages/.nojekyll
 
       - name: Publish gh-pages branch
@@ -59,5 +67,5 @@ jobs:
           git rm -rf . || true
           cp -R /tmp/pulse-counter-pages/. .
           git add -A
-          git commit -m "deploy: Pulse Counter ${GITHUB_SHA}"
+          git commit -m "deploy: Pulse Counter + guarded QA ${GITHUB_SHA}"
           git push --force origin gh-pages
