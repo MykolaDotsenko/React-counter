@@ -22,6 +22,7 @@ export type StoreId = Brand<string, "StoreId">;
 export type IsoTimestamp = Brand<string, "IsoTimestamp">;
 
 export const MAX_ITEM_LABEL_CODE_POINTS = 120;
+export const MAX_STORE_LABEL_CODE_POINTS = 80;
 
 export type DomainErrorCode =
   | "invalid-budget"
@@ -33,6 +34,7 @@ export type DomainErrorCode =
   | "duplicate-item-id"
   | "invalid-id"
   | "invalid-label"
+  | "invalid-store-label"
   | "invalid-timestamp"
   | "trip-not-active"
   | "trip-not-completed"
@@ -62,6 +64,11 @@ export type PriceConfidence =
       readonly reason?: "weighted" | "unknown" | "other";
     };
 
+export interface StoreContext {
+  readonly id: StoreId;
+  readonly label: string;
+}
+
 export interface CartItem {
   readonly id: ItemId;
   readonly unitPriceMinor: MinorUnits;
@@ -79,6 +86,7 @@ interface TripBase {
   readonly budgetMinor: MinorUnits;
   readonly safetyBufferMinor: MinorUnits;
   readonly items: readonly CartItem[];
+  readonly store?: StoreContext;
   readonly startedAt: IsoTimestamp;
 }
 
@@ -99,6 +107,10 @@ export interface CreateActiveTripInput {
   readonly currency?: string;
   readonly budgetMinor: MinorUnits;
   readonly safetyBufferMinor?: MinorUnits;
+  readonly store?: {
+    readonly id: string;
+    readonly label: string;
+  } | null;
   readonly startedAt: string;
 }
 
@@ -158,6 +170,10 @@ export type TripCommand =
   | {
       readonly type: "set-buffer";
       readonly safetyBufferMinor: MinorUnits;
+    }
+  | {
+      readonly type: "set-store";
+      readonly store: StoreContext | null;
     }
   | { readonly type: "complete-trip"; readonly completedAt: IsoTimestamp }
   | {
@@ -320,6 +336,42 @@ const normalizeLabel = (
   }
 
   return ok(normalized);
+};
+
+const normalizeStoreLabel = (
+  label: string,
+): Result<string, DomainError> => {
+  const normalized = label.trim();
+
+  if (
+    normalized === "" ||
+    [...normalized].length > MAX_STORE_LABEL_CODE_POINTS
+  ) {
+    return domainError("invalid-store-label");
+  }
+
+  return ok(normalized);
+};
+
+export const createStoreContext = (
+  input: { readonly id: string; readonly label: string },
+): Result<StoreContext, DomainError> => {
+  const idResult = storeId(input.id);
+
+  if (!idResult.ok) {
+    return idResult;
+  }
+
+  const labelResult = normalizeStoreLabel(input.label);
+
+  if (!labelResult.ok) {
+    return labelResult;
+  }
+
+  return ok({
+    id: idResult.value,
+    label: labelResult.value,
+  });
 };
 
 const toSignedOrThrow = (value: number): SignedMinorUnits => {
@@ -498,12 +550,24 @@ export const createActiveTrip = (
     return startedAtResult;
   }
 
+  const storeResult =
+    input.store === null || input.store === undefined
+      ? ok<StoreContext | undefined>(undefined)
+      : createStoreContext(input.store);
+
+  if (!storeResult.ok) {
+    return storeResult;
+  }
+
   return ok({
     id: idResult.value,
     currency: EUR_SPEC.code,
     budgetMinor: budgetResult.value,
     safetyBufferMinor: bufferResult.value,
     items: [],
+    ...(storeResult.value === undefined
+      ? {}
+      : { store: storeResult.value }),
     status: "active",
     startedAt: startedAtResult.value,
   });
@@ -973,6 +1037,41 @@ export const reduceTrip = (
       });
     }
 
+    case "set-store": {
+      const activeResult = activeTripOnly(trip);
+
+      if (!activeResult.ok) {
+        return activeResult;
+      }
+
+      if (command.store === null) {
+        if (activeResult.value.store === undefined) {
+          return ok(activeResult.value);
+        }
+
+        const { store: _store, ...withoutStore } = activeResult.value;
+        return ok(withoutStore);
+      }
+
+      const storeResult = createStoreContext(command.store);
+
+      if (!storeResult.ok) {
+        return storeResult;
+      }
+
+      if (
+        activeResult.value.store?.id === storeResult.value.id &&
+        activeResult.value.store.label === storeResult.value.label
+      ) {
+        return ok(activeResult.value);
+      }
+
+      return ok({
+        ...activeResult.value,
+        store: storeResult.value,
+      });
+    }
+
     case "complete-trip": {
       const activeResult = activeTripOnly(trip);
 
@@ -1009,6 +1108,9 @@ export const reduceTrip = (
         budgetMinor: activeResult.value.budgetMinor,
         safetyBufferMinor: activeResult.value.safetyBufferMinor,
         items: activeResult.value.items,
+        ...(activeResult.value.store === undefined
+          ? {}
+          : { store: activeResult.value.store }),
         status: "completed",
         startedAt: activeResult.value.startedAt,
         completedAt: completedAtResult.value,
