@@ -635,6 +635,8 @@ Canonical commit/persistence equality remains a B5 acceptance criterion because 
 
 ## B4 — Quantity
 
+Status: **complete via PR #25**
+
 Priority: **95/100**
 
 Support:
@@ -653,9 +655,10 @@ Rules remain Phase 2 rules:
 ### Done when
 
 - quantity cannot create invalid canonical state
-- line total equals domain selector result
+- line total equals domain projection result
 - projected cart values update exactly
 - controls remain one-hand usable
+- validated handoff carries the exact reviewed quantity into B5
 
 ## B5 — Commit, persist, return
 
