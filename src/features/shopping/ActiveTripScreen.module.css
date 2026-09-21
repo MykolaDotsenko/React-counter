@@ -400,9 +400,59 @@
   font-size: 0.82rem;
 }
 
-.itemTotal {
+.itemTrust {
+  width: fit-content;
+  color: var(--muted-on-soft);
+  font-size: 0.72rem;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.itemTrust[data-confidence="remembered"],
+.itemTrust[data-confidence="estimated"] {
+  color: var(--warning);
+}
+
+.itemActions {
   flex: 0 0 auto;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.itemTotal {
   font-variant-numeric: tabular-nums;
+}
+
+.itemButtons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.itemActionButton,
+.removeButton {
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.removeButton {
+  color: var(--danger);
+}
+
+.itemActionButton:focus-visible,
+.removeButton:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
 }
 
 @media (max-width: 420px) {
@@ -425,6 +475,17 @@
   .cartHeading,
   .item {
     flex-wrap: wrap;
+  }
+
+  .itemActions {
+    width: 100%;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    justify-items: stretch;
+  }
+
+  .itemButtons {
+    justify-content: flex-end;
   }
 
   .itemCount {
@@ -488,7 +549,9 @@
   .emptyState,
   .capacity,
   .addButton,
-  .undoButton {
+  .undoButton,
+  .itemActionButton,
+  .removeButton {
     forced-color-adjust: auto;
   }
 
@@ -498,7 +561,9 @@
   .emptyState,
   .capacity,
   .addButton,
-  .undoButton {
+  .undoButton,
+  .itemActionButton,
+  .removeButton {
     border: 1px solid ButtonText;
   }
 
