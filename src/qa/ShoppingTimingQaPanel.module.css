@@ -87,6 +87,55 @@
   line-height: 1.45;
 }
 
+.gateBanner {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.gateBanner strong {
+  font-size: 0.9rem;
+}
+
+.gateBanner span,
+.gateBanner small {
+  line-height: 1.4;
+}
+
+.gateBanner span {
+  color: #334155;
+  font-size: 0.82rem;
+}
+
+.gateBanner small {
+  color: #64748b;
+  font-size: 0.74rem;
+}
+
+.gateBanner[data-status="target-met"] {
+  border-color: #15803d;
+  background: #f0fdf4;
+}
+
+.gateBanner[data-status="release-floor"] {
+  border-color: #b45309;
+  background: #fffbeb;
+}
+
+.gateBanner[data-status="fail"] {
+  border-color: #b91c1c;
+  background: #fef2f2;
+}
+
+.actions button[data-danger="true"] {
+  border-color: #b91c1c;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
 .summaryGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
