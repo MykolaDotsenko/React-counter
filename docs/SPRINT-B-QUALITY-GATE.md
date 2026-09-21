@@ -118,6 +118,51 @@ with the browser network offline.
 
 This does **not** claim offline cold-launch/installability. That remains the later PWA phase.
 
+## Real-device QA build
+
+The public/default GitHub Pages root remains Pulse Counter.
+
+A separate guarded empirical build is published at:
+
+> **https://mykoladotsenko.github.io/React-counter/qa/**
+
+Build flags:
+
+- `VITE_SHOPPING_SHELL=1`
+- `VITE_SHOPPING_QA_TIMING=1`
+
+The QA build:
+
+- is not the public/default product
+- injects `noindex,nofollow,noarchive`
+- stores timing evidence only in tab-scoped `sessionStorage`
+- never writes timing evidence into ShoppingTrip or production persistence DTOs
+- records a sample from intentional **Add price** activation until the canonical summary has rendered again
+- automatically calculates median, P75 and maximum for the two required ordinary price-only tasks
+- provides a manual one-hand/bright-store checklist
+- can copy the raw evidence as JSON
+
+The small **QA n/20** tab is fixed outside document layout. Keep the panel closed while measuring so it does not cover the shopping UI.
+
+### Clean timing setup
+
+For the 20 ordinary speed samples:
+
+1. open the guarded QA URL on the physical phone
+2. reset timing samples from the QA panel
+3. start a **custom EUR 500 budget**
+4. use **no safety buffer**
+5. close the QA panel
+6. perform 10 ordinary adds of EUR 4.79
+7. perform 10 ordinary adds of EUR 12.50
+8. use the same input method for all comparable samples
+9. do not intentionally trigger nominal over-budget confirmation in the timing set
+10. open the QA panel and record/copy the results
+
+EUR 500 is a measurement fixture, not a product recommendation. It prevents threshold confirmation from contaminating the ordinary price-entry timing sample while preserving the real production interaction path.
+
+Run the documented typo-correction, one-hand, bright-light, software-keyboard and other qualitative checks separately and record them in the panel checklist/notes.
+
 ## Human timing protocol
 
 ### Why this is manual
