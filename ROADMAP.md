@@ -323,8 +323,8 @@ Progress:
 - A2 App bootstrap / restore state — **complete via PR #17**
 - A3 Start Trip screen — **complete via PR #18**
 - A4 Remaining-first active screen — **complete via PR #19**
-- A5 Persistence-health UX — next
-- A6 Mobile/a11y/E2E hardening — pending
+- A5 Persistence-health UX — **complete via PR #20**
+- A6 Mobile/a11y/E2E hardening — next
 
 Execution contract:
 

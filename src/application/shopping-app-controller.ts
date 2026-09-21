@@ -126,6 +126,7 @@ export interface ShoppingAppController {
   readonly subscribe: (listener: () => void) => () => void;
   readonly bootstrap: () => ShoppingAppState;
   readonly startTrip: (input: StartTripInput) => AppCommandResult;
+  readonly retryPersistence: () => AppCommandResult;
   readonly dispatch: (command: ActiveTripCommand) => AppCommandResult;
 }
 
@@ -322,6 +323,41 @@ export const createShoppingAppController = ({
     );
   };
 
+  const retryPersistence = (): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (state.activeTrip === null) {
+      return failure(state, applicationError("no-active-trip"));
+    }
+
+    if (state.persistence.status === "healthy") {
+      return success(state, false, "unchanged");
+    }
+
+    const since = state.persistence.since;
+    const now = clock.now();
+    const saveResult = persistence.save(state.activeTrip, now);
+
+    const nextState = publish({
+      ...state,
+      persistence: saveResult.ok
+        ? HEALTHY_PERSISTENCE
+        : degradedPersistence(saveResult.issue, since),
+    });
+
+    return success(
+      nextState,
+      true,
+      saveResult.ok ? "persisted" : "memory-only",
+    );
+  };
+
   const dispatch = (command: ActiveTripCommand): AppCommandResult => {
     if (state.lifecycle === "booting") {
       return failure(state, applicationError("not-ready"));
@@ -374,6 +410,7 @@ export const createShoppingAppController = ({
     subscribe,
     bootstrap,
     startTrip,
+    retryPersistence,
     dispatch,
   });
 };

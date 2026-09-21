@@ -1,0 +1,117 @@
+import { useState } from "react";
+
+import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
+import type {
+  PersistenceProblem,
+  ShoppingAppController,
+} from "../../application/shopping-app-controller";
+import styles from "./RecoveryScreen.module.css";
+
+export interface RecoveryScreenProps {
+  readonly controller: ShoppingAppController;
+}
+
+const recoveryCopy = (
+  issue: PersistenceProblem,
+): {
+  readonly title: string;
+  readonly body: string;
+} => {
+  switch (issue.code) {
+    case "unsupported-version":
+      return {
+        title: "Saved trip needs a newer app version",
+        body:
+          "This device contains shopping data written by a newer version. It has been preserved unchanged and will not be overwritten.",
+      };
+    case "malformed-json":
+    case "invalid-envelope":
+    case "invalid-data":
+      return {
+        title: "Saved trip needs recovery",
+        body:
+          "The saved shopping data could not be read safely. It has been preserved unchanged instead of being guessed into a cart.",
+      };
+    case "storage-unavailable":
+      return {
+        title: "Saved trip is unavailable",
+        body:
+          "Browser storage cannot be accessed right now. Check the browser's storage settings, then try reading the trip again.",
+      };
+    default:
+      return {
+        title: "Saved trip could not be restored safely",
+        body:
+          "The app stopped before changing the saved data. You can try reading it again without overwriting the preserved record.",
+      };
+  }
+};
+
+export function RecoveryScreen({ controller }: RecoveryScreenProps) {
+  const state = useShoppingAppState(controller);
+  const [retryMessage, setRetryMessage] = useState("");
+
+  if (state.lifecycle !== "recovery" || state.recovery === null) {
+    return null;
+  }
+
+  const copy = recoveryCopy(state.recovery.issue);
+  const raw = state.recovery.raw;
+
+  const retry = (): void => {
+    setRetryMessage("");
+    const next = controller.bootstrap();
+
+    if (next.lifecycle === "recovery") {
+      setRetryMessage(
+        "The saved trip still cannot be restored safely. Nothing was overwritten.",
+      );
+    }
+  };
+
+  return (
+    <main className={styles.screen}>
+      <section
+        className={styles.panel}
+        aria-labelledby="recovery-title"
+      >
+        <div className={styles.icon} aria-hidden="true">
+          !
+        </div>
+
+        <div className={styles.intro}>
+          <p className={styles.eyebrow}>Recovery mode</p>
+          <h1 id="recovery-title">{copy.title}</h1>
+          <p>{copy.body}</p>
+        </div>
+
+        <div className={styles.actions}>
+          <button type="button" className={styles.retryButton} onClick={retry}>
+            Try reading again
+          </button>
+          <p className={styles.safetyNote}>
+            The app will not replace the saved record unless it can be
+            validated as a supported shopping trip.
+          </p>
+        </div>
+
+        {retryMessage ? (
+          <p className={styles.retryStatus} role="status" aria-live="polite">
+            {retryMessage}
+          </p>
+        ) : null}
+
+        {raw !== undefined ? (
+          <details className={styles.details}>
+            <summary>Recovery details</summary>
+            <p>
+              This is the preserved raw record for diagnostics. Opening this
+              section does not modify it.
+            </p>
+            <pre>{raw}</pre>
+          </details>
+        ) : null}
+      </section>
+    </main>
+  );
+}
