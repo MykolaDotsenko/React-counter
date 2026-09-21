@@ -381,11 +381,13 @@ Progress:
 
 - B0 Price-entry interaction contract — **complete via PR #22**
 - B1 One-hand price-entry surface — **complete via PR #22**
-- B2 Live projected remaining — next
-- B3 Buffer / over-budget consequence states — pending
-- B4 Quantity — pending
+- B2 Live projected remaining — **complete via PR #23**
+- B3 Buffer / over-budget consequence states — **complete via PR #24**
+- B4 Quantity — next
 - B5 Commit / persist / return — pending
 - B6 Correction minimum + quality gate — pending
+
+B3 locks the threshold interaction before canonical commit wiring: reserve-only crossing stays frictionless, while nominal over-budget requires explicit `Add anyway`. The exact reviewed price intent is emitted only after confirmation. B5 remains responsible for proving that this intent becomes the identical canonical/persisted cart state.
 
 Execution contract:
 
