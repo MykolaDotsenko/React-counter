@@ -4,7 +4,7 @@
 
 This document defines the target business rules for the shopping budget companion.
 
-The current repository still contains the Pulse Counter domain model. The rules below are the migration specification. Code must move toward them incrementally and tests must be added before any target rule is considered implemented.
+The repository still retains the legacy Pulse Counter compatibility path, but the guarded shopping path already implements the exact EUR money model, ShoppingTrip / CartItem domain, price source/confidence semantics, projections, active-trip commands, and manual-cart behaviour used through the automated/code portion of Phase 5 / B6. Completion/history/reconciliation, broader correction flows, price memory, and scanner-backed sources remain later target slices. Each rule below must be read with its explicit MVP/later-phase status rather than assumed shipped merely because it is specified.
 
 ## Domain goals
 
