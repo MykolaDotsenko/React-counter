@@ -77,6 +77,73 @@ test("has no detectable WCAG A/AA violations on the item-correction surface", as
   expect(results.violations).toEqual([]);
 });
 
+test("has no detectable WCAG A/AA violations on finish, completed-summary, and history surfaces", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "axe scan runs once in Chromium");
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Ready to finish this trip?",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Keep shopping" }),
+  ).toBeFocused();
+
+  let results = await scan(page);
+  expect(results.violations).toEqual([]);
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Your shopping trip is complete",
+    }),
+  ).toBeVisible();
+
+  results = await scan(page);
+  expect(results.violations).toEqual([]);
+
+  await page
+    .getByRole("button", { name: "View trip history" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Past shopping trips" }),
+  ).toBeVisible();
+
+  results = await scan(page);
+  expect(results.violations).toEqual([]);
+});
+
+test("returns focus to Finish trip when finish review is cancelled with Escape", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+
+  const finish = page.getByRole("button", { name: "Finish trip" });
+  await finish.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(
+    page.getByRole("button", { name: "Keep shopping" }),
+  ).toBeFocused();
+
+  await page.keyboard.press("Escape");
+
+  await expect(
+    page.getByRole("button", { name: "Finish trip" }),
+  ).toBeFocused();
+});
+
 test("has no detectable WCAG A/AA violations on nominal over-budget review", async ({
   page,
   browserName,

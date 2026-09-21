@@ -523,9 +523,25 @@ PR:
 
 ## Phase 7 — trip completion and reconciliation
 
-Suggested PR:
+**Status: complete — delivered via PR #38.**
 
-> feat: add checkout reconciliation and trip history
+Implementation evidence:
+
+- explicit Finish Trip review keeps ordinary cart editing separate from completion
+- completed history is written before the active-trip key is cleared
+- failed history write leaves the active trip intact
+- successful history write plus failed active-key cleanup enters completed summary with explicit cleanup debt rather than reopening or losing the trip
+- startup reconciliation treats durable completed history as completion evidence and removes stale active copies without duplicating trip IDs
+- strict versioned `budget-cart:history` v1 persistence validates completed trips through domain reconstruction
+- malformed/future/conflicting history is preserved or quarantined rather than silently overwritten
+- actual checkout total is optional
+- checkout difference is derived in the domain, not canonical storage
+- lightweight shopping-focused history avoids general expense-dashboard scope
+- completion/history surfaces have component, storage, controller, E2E, axe, keyboard-focus, and Chromium/Firefox/WebKit coverage
+
+PR:
+
+> feat: add Phase 7 trip completion and reconciliation
 
 ### Scope
 
@@ -874,9 +890,11 @@ The B6 empirical validation remains a release-quality debt under D-039 rather th
 
 Phase 6 correction/confidence is implemented via PR #37.
 
+Phase 7 trip completion/reconciliation is implemented via PR #38.
+
 The next implementation step is:
 
-> **Phase 7 — trip completion and reconciliation**
+> **Phase 8 — repeat-trip acceleration and price memory**
 
 PR #28 implements the B6 code/automated portion:
 

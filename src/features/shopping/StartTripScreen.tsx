@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import type {
+  PersistenceHealth,
   ShoppingAppController,
   StartTripInput,
 } from "../../application/shopping-app-controller";
@@ -15,6 +16,7 @@ import {
   type MinorUnits,
   type MoneyInputErrorCode,
 } from "../../domain/money";
+import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./StartTripScreen.module.css";
 
 interface QuickBudget {
@@ -109,10 +111,16 @@ type BufferResult = ParsedBuffer | InvalidBuffer;
 
 export interface StartTripScreenProps {
   readonly controller: ShoppingAppController;
+  readonly completedTripCount?: number;
+  readonly persistenceHealth?: PersistenceHealth;
+  readonly onOpenHistory?: () => void;
 }
 
 export function StartTripScreen({
   controller,
+  completedTripCount = 0,
+  persistenceHealth,
+  onOpenHistory,
 }: StartTripScreenProps) {
   const customRegionId = useId();
   const reserveInputId = useId();
@@ -214,6 +222,14 @@ export function StartTripScreen({
             Set your limit. Add prices. Always know what&apos;s left.
           </p>
         </div>
+
+        {persistenceHealth ? (
+          <PersistenceHealthNotice
+            controller={controller}
+            health={persistenceHealth}
+            context="idle"
+          />
+        ) : null}
 
         <div
           className={styles.quickGrid}
@@ -337,8 +353,18 @@ export function StartTripScreen({
           {errorMessage}
         </div>
 
+        {completedTripCount > 0 && onOpenHistory ? (
+          <button
+            type="button"
+            className={styles.historyButton}
+            onClick={onOpenHistory}
+          >
+            View trip history · {completedTripCount}
+          </button>
+        ) : null}
+
         <p className={styles.trustNote}>
-          No account. Your active trip stays on this device.
+          No account. Your active trip and history stay on this device.
         </p>
       </section>
     </main>

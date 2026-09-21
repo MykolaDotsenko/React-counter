@@ -113,8 +113,13 @@ const createController = (trip: ActiveTrip) => {
       bootstrap: () => ({
         ok: true,
         activeTrip: trip,
+        completedTrips: [],
+        completionCleanupPending: false,
       }),
       save: () => ({ ok: true }),
+      complete: () => ({ ok: true }),
+      saveCompleted: () => ({ ok: true }),
+      clearCompletedActive: () => ({ ok: true }),
     },
     clock,
     ids,
@@ -265,6 +270,33 @@ describe("ActiveTripScreen", () => {
     expect(screen.getByText("Item 2")).not.toBeNull();
     expect(screen.getByText("Estimated · Manual")).not.toBeNull();
     expect(screen.getByText("4 items")).not.toBeNull();
+  });
+
+  it("keeps Finish trip secondary to Add price and emits an explicit finish intent", async () => {
+    const user = userEvent.setup();
+    const onAddPrice = vi.fn();
+    const onFinishTrip = vi.fn();
+
+    render(
+      <ActiveTripScreen
+        controller={createController(createTrip())}
+        onAddPrice={onAddPrice}
+        onFinishTrip={onFinishTrip}
+        locale="en-IE"
+      />,
+    );
+
+    const addPrice = screen.getByRole("button", { name: "Add price" });
+    const finishTrip = screen.getByRole("button", {
+      name: "Finish trip",
+    });
+
+    expect(addPrice.className).not.toBe(finishTrip.className);
+
+    await user.click(finishTrip);
+
+    expect(onFinishTrip).toHaveBeenCalledTimes(1);
+    expect(onAddPrice).not.toHaveBeenCalled();
   });
 
   it("exposes edit and remove as secondary correction actions", async () => {

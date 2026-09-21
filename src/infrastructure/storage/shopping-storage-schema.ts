@@ -8,11 +8,13 @@ import {
 import { MAX_ITEM_LABEL_CODE_POINTS } from "../../domain/shopping-trip";
 
 export const ACTIVE_TRIP_STORAGE_KEY = "budget-cart:active-trip";
+export const HISTORY_STORAGE_KEY = "budget-cart:history";
 export const LEGACY_PULSE_STORAGE_KEYS = [
   "pulse-counter:state",
   "counter",
 ] as const;
 export const CURRENT_ACTIVE_TRIP_SCHEMA_VERSION = 1;
+export const CURRENT_HISTORY_SCHEMA_VERSION = 1;
 
 const CANONICAL_ISO_TIMESTAMP =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
@@ -147,6 +149,27 @@ export const activeTripDataV1Schema = z
   })
   .strict();
 
+
+export const completedTripDataV1Schema = z
+  .object({
+    id: canonicalIdentifierSchema,
+    status: z.literal("completed"),
+    currency: z.literal("EUR"),
+    budgetMinor: positiveMvpMoneySchema,
+    safetyBufferMinor: nonNegativeMvpMoneySchema,
+    startedAt: canonicalIsoTimestampSchema,
+    completedAt: canonicalIsoTimestampSchema,
+    actualCheckoutMinor: nonNegativeMvpMoneySchema.optional(),
+    items: z.array(cartItemV1Schema),
+  })
+  .strict();
+
+export const historyDataEnvelopeV1Schema = z
+  .object({
+    trips: z.array(z.unknown()),
+  })
+  .strict();
+
 export const storageEnvelopeHeaderSchema = z
   .object({
     schemaVersion: z.number().int().min(1),
@@ -161,13 +184,32 @@ export const storageEnvelopeV1Schema = z
   })
   .strict();
 
+
+export const historyStorageEnvelopeV1Schema = z
+  .object({
+    schemaVersion: z.literal(CURRENT_HISTORY_SCHEMA_VERSION),
+    savedAt: canonicalIsoTimestampSchema,
+    data: z.unknown(),
+  })
+  .strict();
+
 export type PriceSourceV1 = z.infer<typeof priceSourceV1Schema>;
 export type PriceConfidenceV1 = z.infer<typeof priceConfidenceV1Schema>;
 export type CartItemV1 = z.infer<typeof cartItemV1Schema>;
 export type ActiveTripDataV1 = z.infer<typeof activeTripDataV1Schema>;
 
+export type CompletedTripDataV1 = z.infer<typeof completedTripDataV1Schema>;
+
 export interface ActiveTripEnvelopeV1 {
   readonly schemaVersion: typeof CURRENT_ACTIVE_TRIP_SCHEMA_VERSION;
   readonly savedAt: string;
   readonly data: ActiveTripDataV1;
+}
+
+export interface HistoryEnvelopeV1 {
+  readonly schemaVersion: typeof CURRENT_HISTORY_SCHEMA_VERSION;
+  readonly savedAt: string;
+  readonly data: {
+    readonly trips: readonly CompletedTripDataV1[];
+  };
 }

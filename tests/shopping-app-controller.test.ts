@@ -8,6 +8,7 @@ import {
   itemId as parseItemId,
   reduceTrip,
   type ActiveTrip,
+  type CompletedTrip,
   type IsoTimestamp,
 } from "../src/domain/shopping-trip";
 import {
@@ -16,6 +17,7 @@ import {
   type ActiveTripPersistencePort,
   type ActiveTripSaveResult,
   type Clock,
+  type CompletionSaveResult,
   type IdGenerator,
   type PersistenceProblem,
 } from "../src/application/shopping-app-controller";
@@ -50,29 +52,71 @@ const createTrip = (
     }),
   );
 
+type BootstrapInput = ActiveTripBootstrapResult extends infer T
+  ? T extends ActiveTripBootstrapResult
+    ? Omit<T, "completedTrips" | "completionCleanupPending"> & {
+        readonly completedTrips?: readonly CompletedTrip[];
+        readonly completionCleanupPending?: boolean;
+      }
+    : never
+  : never;
+
+const normalizeBootstrap = (
+  result: BootstrapInput,
+): ActiveTripBootstrapResult => ({
+  ...result,
+  completedTrips: result.completedTrips ?? [],
+  completionCleanupPending:
+    result.completionCleanupPending ?? false,
+} as ActiveTripBootstrapResult);
+
 interface PersistenceFake extends ActiveTripPersistencePort {
   readonly bootstrapCalls: number;
   readonly saveCalls: readonly {
     trip: ActiveTrip;
     savedAt: IsoTimestamp;
   }[];
-  setBootstrapResult(result: ActiveTripBootstrapResult): void;
+  readonly completeCalls: readonly {
+    trip: CompletedTrip;
+    savedAt: IsoTimestamp;
+  }[];
+  readonly saveCompletedCalls: readonly {
+    trip: CompletedTrip;
+    savedAt: IsoTimestamp;
+  }[];
+  readonly clearCompletedActiveCalls: number;
+  setBootstrapResult(result: BootstrapInput): void;
   queueSaveResult(result: ActiveTripSaveResult): void;
+  queueCompleteResult(result: CompletionSaveResult): void;
+  queueCompletedSaveResult(result: ActiveTripSaveResult): void;
+  queueClearResult(result: ActiveTripSaveResult): void;
 }
 
 const createPersistence = (
-  initialBootstrap: ActiveTripBootstrapResult = {
+  initialBootstrap: BootstrapInput = {
     ok: true,
     activeTrip: null,
   },
 ): PersistenceFake => {
-  let bootstrapResult = initialBootstrap;
+  let bootstrapResult = normalizeBootstrap(initialBootstrap);
   let bootstrapCalls = 0;
+  let clearCompletedActiveCalls = 0;
   const saveCalls: Array<{
     trip: ActiveTrip;
     savedAt: IsoTimestamp;
   }> = [];
+  const completeCalls: Array<{
+    trip: CompletedTrip;
+    savedAt: IsoTimestamp;
+  }> = [];
+  const saveCompletedCalls: Array<{
+    trip: CompletedTrip;
+    savedAt: IsoTimestamp;
+  }> = [];
   const saveResults: ActiveTripSaveResult[] = [];
+  const completeResults: CompletionSaveResult[] = [];
+  const completedSaveResults: ActiveTripSaveResult[] = [];
+  const clearResults: ActiveTripSaveResult[] = [];
 
   return {
     get bootstrapCalls() {
@@ -81,11 +125,29 @@ const createPersistence = (
     get saveCalls() {
       return saveCalls;
     },
+    get completeCalls() {
+      return completeCalls;
+    },
+    get saveCompletedCalls() {
+      return saveCompletedCalls;
+    },
+    get clearCompletedActiveCalls() {
+      return clearCompletedActiveCalls;
+    },
     setBootstrapResult(result) {
-      bootstrapResult = result;
+      bootstrapResult = normalizeBootstrap(result);
     },
     queueSaveResult(result) {
       saveResults.push(result);
+    },
+    queueCompleteResult(result) {
+      completeResults.push(result);
+    },
+    queueCompletedSaveResult(result) {
+      completedSaveResults.push(result);
+    },
+    queueClearResult(result) {
+      clearResults.push(result);
     },
     bootstrap() {
       bootstrapCalls += 1;
@@ -99,6 +161,20 @@ const createPersistence = (
           ok: true,
         }
       );
+    },
+    complete(trip, savedAt) {
+      completeCalls.push({ trip, savedAt });
+
+      return completeResults.shift() ?? { ok: true };
+    },
+    saveCompleted(trip, savedAt) {
+      saveCompletedCalls.push({ trip, savedAt });
+
+      return completedSaveResults.shift() ?? { ok: true };
+    },
+    clearCompletedActive() {
+      clearCompletedActiveCalls += 1;
+      return clearResults.shift() ?? { ok: true };
     },
   };
 };
@@ -147,7 +223,9 @@ describe("ShoppingAppController snapshot contract", () => {
     expect(first).toEqual({
       lifecycle: "booting",
       activeTrip: null,
+      completedSummary: null,
       completedTrips: [],
+      completionCleanupPending: false,
       persistence: { status: "healthy" },
       undo: null,
       recovery: null,
@@ -1076,6 +1154,318 @@ describe("ShoppingAppController item correction", () => {
       },
     });
     expect(persistence.saveCalls).toHaveLength(0);
+  });
+});
+
+describe("ShoppingAppController trip completion", () => {
+  const historyWriteFailure: PersistenceProblem = {
+    code: "write-failed",
+    storageKey: "budget-cart:history",
+  };
+  const activeClearFailure: PersistenceProblem = {
+    code: "remove-failed",
+    storageKey: "budget-cart:active-trip",
+  };
+
+  it("finishes into a durable completed summary and history entry", () => {
+    const active = createTrip(5_000, 0);
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: active,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.completeTrip();
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected completion success");
+    }
+
+    expect(result.durability).toBe("persisted");
+    expect(result.state).toMatchObject({
+      lifecycle: "completed-summary",
+      activeTrip: null,
+      completedSummary: {
+        id: active.id,
+        status: "completed",
+        completedAt: NEXT,
+      },
+      completionCleanupPending: false,
+      persistence: { status: "healthy" },
+      undo: null,
+    });
+    expect(result.state.completedTrips).toHaveLength(1);
+    expect(persistence.completeCalls).toHaveLength(1);
+    expect(persistence.completeCalls[0]?.savedAt).toBe(NEXT);
+    expect(persistence.completeCalls[0]?.trip).toEqual(
+      result.state.completedSummary,
+    );
+  });
+
+  it("keeps the trip active when history cannot be durably written", () => {
+    const active = createTrip(5_000, 0);
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: active,
+    });
+    persistence.queueCompleteResult({
+      ok: false,
+      stage: "history-write",
+      issue: historyWriteFailure,
+      historyPersisted: false,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.completeTrip();
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        kind: "application",
+        code: "completion-not-saved",
+      },
+      state: {
+        lifecycle: "active",
+        activeTrip: active,
+        completedSummary: null,
+        completedTrips: [],
+        completionCleanupPending: false,
+        persistence: {
+          status: "degraded",
+          issue: historyWriteFailure,
+          since: NEXT,
+        },
+      },
+    });
+  });
+
+  it("enters completed summary when history is durable even if stale active cleanup fails", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    persistence.queueCompleteResult({
+      ok: false,
+      stage: "active-clear",
+      issue: activeClearFailure,
+      historyPersisted: true,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.completeTrip();
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected durable completion");
+    }
+
+    expect(result.state.lifecycle).toBe("completed-summary");
+    expect(result.state.activeTrip).toBeNull();
+    expect(result.state.completedTrips).toHaveLength(1);
+    expect(result.state.completionCleanupPending).toBe(true);
+    expect(result.state.persistence).toEqual({
+      status: "degraded",
+      issue: activeClearFailure,
+      since: NEXT,
+    });
+  });
+
+  it("persists optional actual checkout against the completed record", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    controller.completeTrip();
+
+    const result = controller.setActualCheckout(money(4_672));
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected checkout reconciliation success");
+    }
+
+    expect(result.durability).toBe("persisted");
+    expect(result.state.completedSummary?.actualCheckoutMinor).toBe(
+      4_672,
+    );
+    expect(result.state.completedTrips[0]?.actualCheckoutMinor).toBe(
+      4_672,
+    );
+    expect(persistence.saveCompletedCalls).toHaveLength(1);
+    expect(persistence.saveCompletedCalls[0]?.savedAt).toBe(LATER);
+  });
+
+  it("keeps a checkout reconciliation in memory and warns when history update fails", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    persistence.queueCompletedSaveResult({
+      ok: false,
+      issue: historyWriteFailure,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    controller.completeTrip();
+
+    const result = controller.setActualCheckout(money(4_672));
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected memory-only checkout update");
+    }
+
+    expect(result.durability).toBe("memory-only");
+    expect(result.state.completedSummary?.actualCheckoutMinor).toBe(
+      4_672,
+    );
+    expect(result.state.persistence).toEqual({
+      status: "degraded",
+      issue: historyWriteFailure,
+      since: LATER,
+    });
+  });
+
+  it("retries history and stale-active cleanup before declaring completion persistence healthy", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    persistence.queueCompleteResult({
+      ok: false,
+      stage: "active-clear",
+      issue: activeClearFailure,
+      historyPersisted: true,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    controller.completeTrip();
+
+    const retried = controller.retryPersistence();
+
+    expect(retried.ok).toBe(true);
+
+    if (!retried.ok) {
+      throw new Error("Expected completion retry success");
+    }
+
+    expect(persistence.saveCompletedCalls).toHaveLength(1);
+    expect(persistence.clearCompletedActiveCalls).toBe(1);
+    expect(retried.state.completionCleanupPending).toBe(false);
+    expect(retried.state.persistence).toEqual({
+      status: "healthy",
+    });
+  });
+
+  it("does not dismiss a completion summary while durable cleanup is unresolved", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    persistence.queueCompleteResult({
+      ok: false,
+      stage: "active-clear",
+      issue: activeClearFailure,
+      historyPersisted: true,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    controller.completeTrip();
+
+    expect(controller.dismissCompletedSummary()).toMatchObject({
+      ok: false,
+      error: {
+        kind: "application",
+        code: "completion-not-saved",
+      },
+    });
+
+    controller.retryPersistence();
+    const dismissed = controller.dismissCompletedSummary();
+
+    expect(dismissed.ok).toBe(true);
+
+    if (!dismissed.ok) {
+      throw new Error("Expected summary dismissal");
+    }
+
+    expect(dismissed.state).toMatchObject({
+      lifecycle: "idle",
+      activeTrip: null,
+      completedSummary: null,
+      completionCleanupPending: false,
+      persistence: { status: "healthy" },
+    });
+    expect(dismissed.state.completedTrips).toHaveLength(1);
+  });
+
+  it("hydrates persisted history without inventing an active or summary trip", () => {
+    const completedResult = reduceTrip(createTrip(5_000, 0), {
+      type: "complete-trip",
+      completedAt: time(NEXT),
+    });
+
+    if (
+      !completedResult.ok ||
+      completedResult.value.status !== "completed"
+    ) {
+      throw new Error("Expected completed fixture");
+    }
+
+    const controller = createShoppingAppController({
+      persistence: createPersistence({
+        ok: true,
+        activeTrip: null,
+        completedTrips: [completedResult.value],
+      }),
+      clock: createClock(LATER),
+      ids,
+    });
+
+    const state = controller.bootstrap();
+
+    expect(state.lifecycle).toBe("idle");
+    expect(state.activeTrip).toBeNull();
+    expect(state.completedSummary).toBeNull();
+    expect(state.completedTrips).toEqual([completedResult.value]);
   });
 });
 

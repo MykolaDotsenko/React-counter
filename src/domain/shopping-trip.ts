@@ -612,6 +612,18 @@ export const nominalOverage = (trip: ShoppingTrip): SignedMinorUnits =>
 export const safeOverage = (trip: ShoppingTrip): SignedMinorUnits =>
   toSignedOrThrow(Math.max(cartTotal(trip) - safeLimit(trip), 0));
 
+export const checkoutDifference = (
+  trip: CompletedTrip,
+): SignedMinorUnits | null => {
+  if (trip.actualCheckoutMinor === undefined) {
+    return null;
+  }
+
+  return toSignedOrThrow(
+    trip.actualCheckoutMinor - cartTotal(trip),
+  );
+};
+
 export const itemCount = (trip: ShoppingTrip): number => {
   let count = 0;
 
