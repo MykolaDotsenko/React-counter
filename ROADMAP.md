@@ -296,6 +296,12 @@ Choose one direction or a deliberately justified hybrid only after this comparis
 
 ## Phase 4 — core Budget Cart UI
 
+Execution contract:
+
+- docs/CORE-UI-EXECUTION-BRIEF.md — Sprint A
+
+Do not implement Phase 4 as one oversized PR. Follow the brief's application-controller → bootstrap → start-flow → remaining-first-screen → persistence-health → hardening sequence.
+
 Suggested PR:
 
 > feat: build remaining-first shopping experience
@@ -320,6 +326,12 @@ Suggested PR:
 - remaining budget has strongest hierarchy
 
 ## Phase 5 — ultra-fast manual price entry
+
+Execution contract:
+
+- docs/CORE-UI-EXECUTION-BRIEF.md — Sprint B
+
+Do not begin Sprint B until the Sprint A stop/go gate passes.
 
 Suggested PR:
 
@@ -463,6 +475,7 @@ Exceptions:
 Full retention contract:
 
 - docs/PRODUCT-SUCCESS-STRATEGY.md
+- docs/CORE-UI-EXECUTION-BRIEF.md
 
 ## Phase 9 — offline PWA
 
