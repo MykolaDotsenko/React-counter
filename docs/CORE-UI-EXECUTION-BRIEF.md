@@ -813,11 +813,15 @@ These are heuristic planning ranges, not measured forecasts.
 
 Current product-success range after Phase 1–3:
 
-> **42–48%**
+> **43–50%**
 
 If Sprint A/B meet their usability targets:
 
-> **52–58%**
+> **52–60%**
+
+If the experimental scanner benchmark demonstrates a material interaction advantage:
+
+> **63–71%** after repeat-trip acceleration, before full retention validation
 
 The next major probability increase should come from:
 
