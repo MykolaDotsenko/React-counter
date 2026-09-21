@@ -87,12 +87,11 @@ Guarded shopping path behind `VITE_SHOPPING_SHELL=1`:
 - Zod-validated active-trip localStorage persistence
 - plain-TypeScript ShoppingAppController + React `useSyncExternalStore`
 - Calm Utility start/active/recovery/persistence-health UI
-- manual price-entry flow, exact consequence projection, one-step Undo, browser/a11y hardening, and the automated/code portion of Phase 5 / B6
+- manual price-entry flow, exact consequence projection, one-step Undo, Phase 6 edit/remove correction and trust metadata, browser/a11y hardening, and the automated/code portion of Phase 5 / B6
 
 Still target-only or incomplete:
 
 - representative human B6 timing, physical one-hand, software-keyboard, and bright-store evidence required before the public-shell switch
-- full edit/remove correction flow beyond the implemented one-step Undo
 - completion/history/reconciliation
 - repeat-trip acceleration and price memory
 - installable offline PWA
