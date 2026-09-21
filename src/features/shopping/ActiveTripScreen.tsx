@@ -11,6 +11,7 @@ import {
   safeLimit,
   safeRemaining,
 } from "../../domain/shopping-trip";
+import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./ActiveTripScreen.module.css";
 
 export interface ActiveTripScreenProps {
@@ -126,6 +127,11 @@ export function ActiveTripScreen({
           <p className={styles.heroLabel}>{heroLabel}</p>
           <p className={styles.heroContext}>{remainingContext}</p>
         </section>
+
+        <PersistenceHealthNotice
+          controller={controller}
+          health={state.persistence}
+        />
 
         <section className={styles.summary} aria-label="Budget summary">
           <div className={styles.summaryRow}>
