@@ -37,6 +37,7 @@ export interface ItemEditSurfaceProps {
   readonly item: CartItem;
   readonly onCancel: () => void;
   readonly onSave: (intent: ItemEditIntent) => boolean | void;
+  readonly onRemove: () => boolean | void;
   readonly locale?: string;
 }
 
@@ -95,6 +96,7 @@ export function ItemEditSurface({
   item,
   onCancel,
   onSave,
+  onRemove,
   locale = "en-FI",
 }: ItemEditSurfaceProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -279,9 +281,17 @@ export function ItemEditSurface({
           <div className={styles.stepper}>
             <button
               type="button"
-              aria-label="Decrease edited quantity"
-              disabled={!canDecreaseQuantity(quantity)}
+              aria-label={
+                quantity === 1
+                  ? "Remove item by decreasing quantity"
+                  : "Decrease edited quantity"
+              }
               onClick={() => {
+                if (quantity === 1) {
+                  onRemove();
+                  return;
+                }
+
                 setQuantity((current) => decreaseQuantity(current));
               }}
             >
