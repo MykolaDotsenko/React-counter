@@ -539,7 +539,7 @@ export const createShoppingAppController = ({
     }
   };
 
-  const retryPersistence = (): AppCommandResult => {
+  const completeTrip = (): AppCommandResult => {
     if (state.lifecycle === "booting") {
       return failure(state, applicationError("not-ready"));
     }
@@ -552,19 +552,138 @@ export const createShoppingAppController = ({
       return failure(state, applicationError("no-active-trip"));
     }
 
-    if (state.persistence.status === "healthy") {
+    const completedAt = clock.now();
+    const tripResult = reduceTrip(state.activeTrip, {
+      type: "complete-trip",
+      completedAt,
+    });
+
+    if (!tripResult.ok) {
+      return failure(state, tripResult.error);
+    }
+
+    if (tripResult.value.status !== "completed") {
+      return failure(state, applicationError("no-completed-summary"));
+    }
+
+    const completedTrip = tripResult.value;
+    const persistenceResult = persistence.complete(
+      completedTrip,
+      completedAt,
+    );
+
+    if (
+      !persistenceResult.ok &&
+      !persistenceResult.historyPersisted
+    ) {
+      const nextState = publish({
+        ...state,
+        persistence: degradedPersistence(
+          persistenceResult.issue,
+          completedAt,
+        ),
+        completionCleanupPending: false,
+      });
+
+      return failure(
+        nextState,
+        applicationError("completion-not-saved"),
+      );
+    }
+
+    const cleanupPending =
+      !persistenceResult.ok &&
+      persistenceResult.stage === "active-clear";
+    const completedTrips = upsertCompletedTrip(
+      state.completedTrips,
+      completedTrip,
+    );
+    const nextState = publish({
+      lifecycle: "completed-summary",
+      activeTrip: null,
+      completedSummary: completedTrip,
+      completedTrips,
+      completionCleanupPending: cleanupPending,
+      persistence: persistenceResult.ok
+        ? HEALTHY_PERSISTENCE
+        : degradedPersistence(
+            persistenceResult.issue,
+            completedAt,
+          ),
+      undo: null,
+      recovery: null,
+    });
+
+    return success(nextState, true, "persisted");
+  };
+
+  const setActualCheckout = (
+    actualCheckoutMinor: MinorUnits,
+  ): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (
+      state.lifecycle !== "completed-summary" ||
+      state.completedSummary === null
+    ) {
+      return failure(state, applicationError("no-completed-summary"));
+    }
+
+    if (
+      state.completedSummary.actualCheckoutMinor ===
+      actualCheckoutMinor
+    ) {
       return success(state, false, "unchanged");
     }
 
-    const since = state.persistence.since;
-    const now = clock.now();
-    const saveResult = persistence.save(state.activeTrip, now);
+    const tripResult = reduceTrip(state.completedSummary, {
+      type: "set-actual-checkout",
+      actualCheckoutMinor,
+    });
 
+    if (!tripResult.ok) {
+      return failure(state, tripResult.error);
+    }
+
+    if (tripResult.value.status !== "completed") {
+      return failure(state, applicationError("no-completed-summary"));
+    }
+
+    const now = clock.now();
+    const saveResult = persistence.saveCompleted(
+      tripResult.value,
+      now,
+    );
+    const completedTrips = upsertCompletedTrip(
+      state.completedTrips,
+      tripResult.value,
+    );
+    const shouldStayDegraded =
+      state.completionCleanupPending || !saveResult.ok;
+    const issue = !saveResult.ok
+      ? saveResult.issue
+      : state.persistence.status === "degraded"
+        ? state.persistence.issue
+        : null;
     const nextState = publish({
       ...state,
-      persistence: saveResult.ok
-        ? HEALTHY_PERSISTENCE
-        : degradedPersistence(saveResult.issue, since),
+      completedSummary: tripResult.value,
+      completedTrips,
+      persistence:
+        shouldStayDegraded && issue !== null
+          ? degradedPersistence(
+              issue,
+              state.persistence.status === "degraded"
+                ? state.persistence.since
+                : now,
+            )
+          : HEALTHY_PERSISTENCE,
     });
 
     return success(
@@ -572,6 +691,138 @@ export const createShoppingAppController = ({
       true,
       saveResult.ok ? "persisted" : "memory-only",
     );
+  };
+
+  const dismissCompletedSummary = (): AppCommandResult => {
+    if (
+      state.lifecycle !== "completed-summary" ||
+      state.completedSummary === null
+    ) {
+      return failure(state, applicationError("no-completed-summary"));
+    }
+
+    if (
+      state.persistence.status === "degraded" ||
+      state.completionCleanupPending
+    ) {
+      return failure(
+        state,
+        applicationError("completion-not-saved"),
+      );
+    }
+
+    const nextState = publish({
+      ...state,
+      lifecycle: "idle",
+      activeTrip: null,
+      completedSummary: null,
+      undo: null,
+      recovery: null,
+    });
+
+    return success(nextState, true, "unchanged");
+  };
+
+  const retryPersistence = (): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (
+      state.persistence.status === "healthy" &&
+      !state.completionCleanupPending
+    ) {
+      return success(state, false, "unchanged");
+    }
+
+    const since =
+      state.persistence.status === "degraded"
+        ? state.persistence.since
+        : clock.now();
+    const now = clock.now();
+
+    if (state.activeTrip !== null) {
+      const saveResult = persistence.save(state.activeTrip, now);
+      const nextState = publish({
+        ...state,
+        persistence: saveResult.ok
+          ? HEALTHY_PERSISTENCE
+          : degradedPersistence(saveResult.issue, since),
+      });
+
+      return success(
+        nextState,
+        true,
+        saveResult.ok ? "persisted" : "memory-only",
+      );
+    }
+
+    if (state.completedSummary !== null) {
+      const historySave = persistence.saveCompleted(
+        state.completedSummary,
+        now,
+      );
+
+      if (!historySave.ok) {
+        const nextState = publish({
+          ...state,
+          persistence: degradedPersistence(
+            historySave.issue,
+            since,
+          ),
+        });
+
+        return success(nextState, true, "memory-only");
+      }
+
+      if (state.completionCleanupPending) {
+        const cleanup = persistence.clearCompletedActive();
+
+        if (!cleanup.ok) {
+          const nextState = publish({
+            ...state,
+            persistence: degradedPersistence(
+              cleanup.issue,
+              since,
+            ),
+            completionCleanupPending: true,
+          });
+
+          return success(nextState, true, "persisted");
+        }
+      }
+
+      const nextState = publish({
+        ...state,
+        persistence: HEALTHY_PERSISTENCE,
+        completionCleanupPending: false,
+      });
+
+      return success(nextState, true, "persisted");
+    }
+
+    if (state.completionCleanupPending) {
+      const cleanup = persistence.clearCompletedActive();
+      const nextState = publish({
+        ...state,
+        persistence: cleanup.ok
+          ? HEALTHY_PERSISTENCE
+          : degradedPersistence(cleanup.issue, since),
+        completionCleanupPending: !cleanup.ok,
+      });
+
+      return success(
+        nextState,
+        true,
+        cleanup.ok ? "persisted" : "memory-only",
+      );
+    }
+
+    return failure(state, applicationError("no-active-trip"));
   };
 
   const dispatch = (command: ActiveTripCommand): AppCommandResult => {
@@ -669,6 +920,9 @@ export const createShoppingAppController = ({
     updateManualItem,
     removeItem,
     undo,
+    completeTrip,
+    setActualCheckout,
+    dismissCompletedSummary,
     retryPersistence,
     dispatch,
   });
