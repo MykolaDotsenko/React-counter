@@ -1131,6 +1131,8 @@ describe("legacy Pulse retirement", () => {
     expect(bootstrap).toEqual({
       health: "healthy",
       activeTrip: null,
+      completedTrips: [],
+      completionCleanupPending: false,
       legacyKeysRetired: true,
     });
     expect(storage.values.has(LEGACY_PULSE_STORAGE_KEYS[0])).toBe(false);
