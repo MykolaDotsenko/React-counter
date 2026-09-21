@@ -272,6 +272,33 @@ describe("ActiveTripScreen", () => {
     expect(screen.getByText("4 items")).not.toBeNull();
   });
 
+  it("keeps Finish trip secondary to Add price and emits an explicit finish intent", async () => {
+    const user = userEvent.setup();
+    const onAddPrice = vi.fn();
+    const onFinishTrip = vi.fn();
+
+    render(
+      <ActiveTripScreen
+        controller={createController(createTrip())}
+        onAddPrice={onAddPrice}
+        onFinishTrip={onFinishTrip}
+        locale="en-IE"
+      />,
+    );
+
+    const addPrice = screen.getByRole("button", { name: "Add price" });
+    const finishTrip = screen.getByRole("button", {
+      name: "Finish trip",
+    });
+
+    expect(addPrice.className).not.toBe(finishTrip.className);
+
+    await user.click(finishTrip);
+
+    expect(onFinishTrip).toHaveBeenCalledTimes(1);
+    expect(onAddPrice).not.toHaveBeenCalled();
+  });
+
   it("exposes edit and remove as secondary correction actions", async () => {
     const user = userEvent.setup();
     const item = createItem({
