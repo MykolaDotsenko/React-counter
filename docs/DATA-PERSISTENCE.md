@@ -18,7 +18,9 @@ Phase 3 implements the shopping active-trip persistence boundary:
 - malformed and unsupported-future data preservation for recovery
 - explicit safe retirement of `pulse-counter:state` and `counter` only after shopping-state bootstrap succeeds
 
-The current Pulse Counter UI is intentionally not wired to the new adapter yet; that user-facing migration belongs to the core shopping UI/application phase.
+The guarded shopping shell is now wired to this adapter through the ShoppingAppController. Start-trip and active-cart mutations attempt persistence synchronously through the application boundary, and degraded writes are surfaced through the Phase 4 persistence-health UX.
+
+The default/public build still remains Pulse Counter until the shopping shell passes Sprint B's final B6 quality gate.
 
 History, settings, completion transactions, and price-memory persistence remain later slices.
 
