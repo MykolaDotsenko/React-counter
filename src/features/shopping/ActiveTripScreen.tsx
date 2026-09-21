@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
-import { formatEur } from "../../domain/money";
+import { formatEur, signedMinorUnits } from "../../domain/money";
 import {
   cartTotal,
   itemCount,
@@ -21,6 +21,19 @@ export interface ActiveTripScreenProps {
 
 const clampPercentage = (value: number): number =>
   Math.min(100, Math.max(0, value));
+
+const formatSignedAmount = (
+  value: number,
+  locale: string,
+): string => {
+  const amount = signedMinorUnits(value);
+
+  if (!amount.ok) {
+    throw new RangeError("Shopping summary amount exceeded safe integer bounds");
+  }
+
+  return formatEur(amount.value, locale);
+};
 
 export function ActiveTripScreen({
   controller,
@@ -72,12 +85,12 @@ export function ActiveTripScreen({
 
   const totalQuantity = itemCount(trip);
   const remainingContext = nominalOverBudget
-    ? `${formatEur(Math.abs(nominalRemaining), locale)} over your budget`
+    ? `${formatSignedAmount(Math.abs(nominalRemaining), locale)} over your budget`
     : reserveInUse
-      ? `${formatEur(nominalRemaining, locale)} still inside your budget`
+      ? `${formatSignedAmount(nominalRemaining, locale)} still inside your budget`
       : hasBuffer
-        ? `${formatEur(protectedRemaining, locale)} available before your reserve`
-        : `${formatEur(nominalRemaining, locale)} available before your limit`;
+        ? `${formatSignedAmount(protectedRemaining, locale)} available before your reserve`
+        : `${formatSignedAmount(nominalRemaining, locale)} available before your limit`;
 
   return (
     <main className={styles.screen}>
@@ -108,7 +121,7 @@ export function ActiveTripScreen({
           }
         >
           <p className={styles.heroAmount}>
-            {formatEur(heroAmount, locale)}
+            {formatSignedAmount(heroAmount, locale)}
           </p>
           <p className={styles.heroLabel}>{heroLabel}</p>
           <p className={styles.heroContext}>{remainingContext}</p>
@@ -153,8 +166,8 @@ export function ActiveTripScreen({
               {formatEur(trip.safetyBufferMinor, locale)} kept in reserve.
               Nominally{" "}
               {nominalRemaining >= 0
-                ? `${formatEur(nominalRemaining, locale)} remains`
-                : `${formatEur(Math.abs(nominalRemaining), locale)} over budget`}.
+                ? `${formatSignedAmount(nominalRemaining, locale)} remains`
+                : `${formatSignedAmount(Math.abs(nominalRemaining), locale)} over budget`}.
             </p>
           ) : null}
         </section>
