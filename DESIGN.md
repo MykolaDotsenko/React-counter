@@ -10,7 +10,7 @@ Decision evidence:
 
 - docs/design/PHASE-4-DESIGN-VALIDATION.md
 
-The default/public build still ships the Pulse Counter interface while the replacement shopping shell remains guarded behind `VITE_SHOPPING_SHELL=1`. Phase 4 and Phase 5 through B5 now implement the selected Calm Utility direction in that guarded shell. The shopping design must not be presented as the public/default product until Sprint B's final B6 quality gate and production-shell switch are complete.
+The default/public build still ships the Pulse Counter interface while the replacement shopping shell remains guarded behind `VITE_SHOPPING_SHELL=1`. Phase 4 and the automated/code portion of Phase 5 through B6 implement the selected Calm Utility direction in that guarded shell, including one-step Undo, exact reserve/over-limit states, mobile/a11y hardening, and the empirical timing harness. The shopping design must not be presented as the public/default product until the representative human B6 timing/one-hand/bright-store gate passes and the production-shell switch is intentionally made.
 
 This document complements:
 
