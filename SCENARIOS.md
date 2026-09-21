@@ -54,7 +54,7 @@ Any score below 90 is a signal to prototype, test, or simplify before implementa
 | # | Scenario | Priority | Proposed UX |
 |---|---|---:|---:|
 | 1 | First launch with a hard budget | 100 | 98 |
-| 2 | Returning user repeats usual budget | 91 | 97 |
+| 2 | Returning user repeats usual budget | 98 | 98 |
 | 3 | Resume interrupted active trip | 100 | 98 |
 | 4 | Basic manual price add | 100 | 99 |
 | 5 | Rapid consecutive manual adds | 96 | 96 |
@@ -146,8 +146,10 @@ Secondary:
 
 Use local recency, not predictive AI.
 
-**Priority:** 91/100  
-**Proposed UX:** 97/100
+This scenario is now part of the primary retention strategy rather than a secondary convenience. The repeated-trip path should be materially lighter than first-use setup.
+
+**Priority:** 98/100  
+**Proposed UX:** 98/100
 
 ### 3. Resume interrupted active trip
 
