@@ -210,6 +210,8 @@ describe("PriceEntrySurface", () => {
     const add = screen.getByRole("button", { name: "Add · €4.79" });
     await user.dblClick(add);
 
-    expect(onValidatedPrice).toHaveBeenCalledTimes(2);
+    expect(onValidatedPrice).toHaveBeenCalledTimes(1);
+    expect(add).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Adding…" })).not.toBeNull();
   });
 });
