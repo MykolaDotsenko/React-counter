@@ -70,16 +70,34 @@ const createClock = (...timestamps: string[]): Clock => {
   };
 };
 
+type BootstrapInput = ActiveTripBootstrapResult extends infer T
+  ? T extends ActiveTripBootstrapResult
+    ? Omit<T, "completedTrips" | "completionCleanupPending"> & {
+        readonly completedTrips?: ActiveTripBootstrapResult["completedTrips"];
+        readonly completionCleanupPending?: boolean;
+      }
+    : never
+  : never;
+
+const normalizeBootstrap = (
+  result: BootstrapInput,
+): ActiveTripBootstrapResult => ({
+  ...result,
+  completedTrips: result.completedTrips ?? [],
+  completionCleanupPending:
+    result.completionCleanupPending ?? false,
+} as ActiveTripBootstrapResult);
+
 interface PersistenceFake extends ActiveTripPersistencePort {
   readonly saveCalls: readonly ActiveTrip[];
-  setBootstrapResult(result: ActiveTripBootstrapResult): void;
+  setBootstrapResult(result: BootstrapInput): void;
   queueSaveResult(result: ActiveTripSaveResult): void;
 }
 
 const createPersistence = (
-  initialBootstrap: ActiveTripBootstrapResult,
+  initialBootstrap: BootstrapInput,
 ): PersistenceFake => {
-  let bootstrapResult = initialBootstrap;
+  let bootstrapResult = normalizeBootstrap(initialBootstrap);
   const saveResults: ActiveTripSaveResult[] = [];
   const saveCalls: ActiveTrip[] = [];
 
@@ -88,7 +106,7 @@ const createPersistence = (
       return saveCalls;
     },
     setBootstrapResult(result) {
-      bootstrapResult = result;
+      bootstrapResult = normalizeBootstrap(result);
     },
     queueSaveResult(result) {
       saveResults.push(result);
@@ -99,6 +117,15 @@ const createPersistence = (
     save(trip) {
       saveCalls.push(trip);
       return saveResults.shift() ?? { ok: true };
+    },
+    complete() {
+      return { ok: true };
+    },
+    saveCompleted() {
+      return { ok: true };
+    },
+    clearCompletedActive() {
+      return { ok: true };
     },
   };
 };
