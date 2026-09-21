@@ -92,7 +92,8 @@ Guarded shopping path behind `VITE_SHOPPING_SHELL=1`:
 Still target-only or incomplete:
 
 - representative human B6 timing, physical one-hand, software-keyboard, and bright-store evidence required before the public-shell switch
-- completion/history/reconciliation
+- repeat-trip acceleration / price memory
+- PWA installability and later scanner/OCR phases
 - repeat-trip acceleration and price memory
 - installable offline PWA
 - production scanner/OCR breadth
