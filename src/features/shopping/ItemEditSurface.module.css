@@ -1,0 +1,249 @@
+.screen {
+  min-height: 100dvh;
+  padding:
+    max(20px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right))
+    max(28px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+  background: var(--shopping-page);
+  color: var(--shopping-text);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+.sheet {
+  width: min(100%, 34rem);
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+  padding: clamp(18px, 5vw, 26px);
+  border: 1px solid var(--shopping-border);
+  border-radius: 26px;
+  background: var(--shopping-panel);
+  box-shadow: 0 18px 48px rgb(31 35 32 / 0.08);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--shopping-accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(1.55rem, 7vw, 2.2rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.cancelButton,
+.stepper button,
+.saveButton {
+  min-height: 48px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cancelButton {
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 1px solid var(--shopping-border);
+  background: var(--shopping-soft);
+  color: var(--shopping-text);
+}
+
+.trust {
+  width: fit-content;
+  margin: -6px 0 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--shopping-soft);
+  color: var(--shopping-muted-strong);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field > span,
+.quantitySection > div:first-child > span {
+  font-weight: 800;
+}
+
+.priceInput {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 1px solid var(--shopping-border);
+  border-radius: 16px;
+  background: var(--shopping-soft);
+}
+
+.priceInput > span {
+  color: var(--shopping-muted);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.priceInput input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--shopping-text);
+  font: inherit;
+  font-size: clamp(1.8rem, 9vw, 2.5rem);
+  font-weight: 780;
+  font-variant-numeric: tabular-nums;
+}
+
+.quantitySection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.quantitySection > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.quantitySection small,
+.guidance {
+  color: var(--shopping-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.stepper {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 48px 50px 48px;
+  align-items: center;
+  gap: 6px;
+}
+
+.stepper button {
+  border: 1px solid var(--shopping-border);
+  background: var(--shopping-soft);
+  color: var(--shopping-text);
+  font-size: 1.35rem;
+}
+
+.stepper button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.stepper output {
+  text-align: center;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.projection {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid var(--shopping-border);
+  border-radius: 16px;
+  background: var(--shopping-soft);
+}
+
+.projection strong {
+  font-size: 0.95rem;
+}
+
+.projection span {
+  color: var(--shopping-muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.guidance {
+  margin: 0;
+}
+
+.error {
+  margin: 0;
+  color: var(--shopping-danger);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.saveButton {
+  min-height: 56px;
+  border: 1px solid transparent;
+  background: var(--shopping-accent);
+  color: var(--shopping-accent-contrast);
+  font-size: 1rem;
+}
+
+.saveButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cancelButton:focus-visible,
+.stepper button:focus-visible,
+.saveButton:focus-visible,
+.priceInput:focus-within {
+  outline: 3px solid var(--shopping-focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .screen {
+    padding-inline:
+      max(12px, env(safe-area-inset-left))
+      max(12px, env(safe-area-inset-right));
+  }
+
+  .header,
+  .quantitySection {
+    flex-wrap: wrap;
+  }
+
+  .stepper {
+    width: 100%;
+    grid-template-columns: 48px 1fr 48px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .screen {
+    color-scheme: dark;
+  }
+}
+
+@media (forced-colors: active) {
+  .sheet,
+  .priceInput,
+  .projection,
+  .cancelButton,
+  .stepper button,
+  .saveButton {
+    border: 1px solid ButtonText;
+  }
+}
