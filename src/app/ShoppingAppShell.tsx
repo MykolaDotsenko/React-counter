@@ -328,6 +328,27 @@ export function ShoppingAppShell({
                 }
               });
             }}
+            onRemove={() => {
+              const result = controller.removeItem(item.id);
+
+              if (
+                !result.ok ||
+                !result.changed ||
+                result.state.activeTrip === null
+              ) {
+                return false;
+              }
+
+              setLastAddedMessage(
+                `Item removed. ${remainingFeedback(
+                  result.state.activeTrip,
+                  "en-FI",
+                )}`,
+              );
+              setOverlay({ kind: "none" });
+              returnFocusToAddPrice();
+              return true;
+            }}
             onSave={(intent: ItemEditIntent) => {
               const result = controller.updateManualItem({
                 itemId: item.id,
