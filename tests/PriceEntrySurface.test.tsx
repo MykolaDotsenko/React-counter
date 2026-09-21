@@ -663,6 +663,32 @@ describe("PriceEntrySurface", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it("remains recoverable when the parent rejects a canonical commit", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={() => false}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "4.79");
+    const add = screen.getByRole("button", { name: "Add · €4.79" });
+
+    await user.click(add);
+
+    expect(
+      screen.getByText(
+        "Could not add this item. Check the trip and try again.",
+      ),
+    ).not.toBeNull();
+    expect((add as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.queryByRole("button", { name: "Adding…" })).toBeNull();
+  });
+
   it("guards the submit callback from re-entry during one commit", async () => {
     const user = userEvent.setup();
     const onValidatedItem = vi.fn();
