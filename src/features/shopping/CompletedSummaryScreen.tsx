@@ -169,6 +169,7 @@ export function CompletedSummaryScreen({
         <PersistenceHealthNotice
           controller={controller}
           health={state.persistence}
+          context="completed"
         />
 
         <section className={styles.hero} aria-label="Completed trip summary">
