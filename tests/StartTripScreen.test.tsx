@@ -69,6 +69,7 @@ describe("StartTripScreen", () => {
     expect(screen.getByRole("button", { name: "€50" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "€75" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "€100" })).toBeInTheDocument();
+    expect(screen.getByText("Add a safety buffer")).toBeInTheDocument();
     expect(screen.getByText("No account. Your active trip stays on this device."))
       .toBeInTheDocument();
   });
@@ -99,6 +100,7 @@ describe("StartTripScreen", () => {
 
     render(<StartTripScreen controller={controller} />);
 
+    await user.click(screen.getByText("Add a safety buffer"));
     await user.type(
       screen.getByRole("textbox", { name: /Safety buffer/i }),
       "2",
@@ -117,6 +119,7 @@ describe("StartTripScreen", () => {
 
     render(<StartTripScreen controller={controller} />);
 
+    await user.click(screen.getByText("Add a safety buffer"));
     await user.type(
       screen.getByRole("textbox", { name: /Safety buffer/i }),
       "60",
