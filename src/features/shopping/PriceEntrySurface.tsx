@@ -473,6 +473,12 @@ export function PriceEntrySurface({
             className={styles.overBudgetConfirmation}
             aria-labelledby="over-budget-title"
             aria-describedby="over-budget-detail"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                cancelOverBudgetConfirmation();
+              }
+            }}
           >
             <div className={styles.confirmationCopy}>
               <p className={styles.confirmationEyebrow}>Over budget</p>
