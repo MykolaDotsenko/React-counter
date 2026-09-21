@@ -36,6 +36,12 @@ jobs:
       - name: Lint, unit/component tests and build
         run: npm run check
 
+      - name: Build guarded shopping timing QA
+        env:
+          VITE_SHOPPING_SHELL: "1"
+          VITE_SHOPPING_QA_TIMING: "1"
+        run: npm run build -- --base=/React-counter/qa/ --outDir=dist-qa
+
   browser:
     needs: quality
     runs-on: ubuntu-latest
