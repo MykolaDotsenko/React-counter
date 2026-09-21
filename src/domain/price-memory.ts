@@ -31,7 +31,7 @@ export interface ProductIdentity {
 export interface PriceMemoryRecord {
   readonly id: PriceMemoryId;
   readonly product: ProductIdentity;
-  readonly unitPriceMinor: number;
+  readonly unitPriceMinor: MinorUnits;
   readonly observedAt: IsoTimestamp;
   readonly store?: StoreContext;
   readonly source: ObservedPriceSource;
@@ -119,7 +119,7 @@ export interface CreatePriceMemoryRecordInput {
   readonly id: string;
   readonly productId: string;
   readonly label: string;
-  readonly unitPriceMinor: MinorUnits;
+  readonly unitPriceMinor: number;
   readonly observedAt: string;
   readonly store?: {
     readonly id: string;
