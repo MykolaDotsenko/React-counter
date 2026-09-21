@@ -308,8 +308,11 @@ const decodePriceConfidence = (
   }
 };
 
+type ActiveTripData = ActiveTripDataV1 | ActiveTripDataV2;
+type CompletedTripData = CompletedTripDataV1 | CompletedTripDataV2;
+
 const decodeActiveTripData = (
-  data: ActiveTripDataV1,
+  data: ActiveTripData,
 ): ActiveTrip | null => {
   const budgetMinor = mvpMinorUnits(data.budgetMinor);
   const safetyBufferMinor = mvpMinorUnits(data.safetyBufferMinor);
@@ -323,6 +326,9 @@ const decodeActiveTripData = (
     currency: data.currency,
     budgetMinor: budgetMinor.value,
     safetyBufferMinor: safetyBufferMinor.value,
+    ...("store" in data && data.store !== undefined
+      ? { store: data.store }
+      : {}),
     startedAt: data.startedAt,
   });
 
@@ -375,12 +381,13 @@ const decodeActiveTripData = (
   return trip;
 };
 
-const toActiveTripDataV1 = (trip: ActiveTrip): ActiveTripDataV1 => ({
+const toActiveTripDataV2 = (trip: ActiveTrip): ActiveTripDataV2 => ({
   id: trip.id,
   status: "active",
   currency: trip.currency,
   budgetMinor: trip.budgetMinor,
   safetyBufferMinor: trip.safetyBufferMinor,
+  ...(trip.store === undefined ? {} : { store: trip.store }),
   startedAt: trip.startedAt,
   items: trip.items.map((item) => ({
     id: item.id,
@@ -396,7 +403,7 @@ const toActiveTripDataV1 = (trip: ActiveTrip): ActiveTripDataV1 => ({
 
 
 const decodeCompletedTripData = (
-  data: CompletedTripDataV1,
+  data: CompletedTripData,
 ): CompletedTrip | null => {
   const active = decodeActiveTripData({
     id: data.id,
@@ -404,6 +411,9 @@ const decodeCompletedTripData = (
     currency: data.currency,
     budgetMinor: data.budgetMinor,
     safetyBufferMinor: data.safetyBufferMinor,
+    ...("store" in data && data.store !== undefined
+      ? { store: data.store }
+      : {}),
     startedAt: data.startedAt,
     items: data.items,
   });
@@ -449,14 +459,15 @@ const decodeCompletedTripData = (
   return reconciled.value;
 };
 
-const toCompletedTripDataV1 = (
+const toCompletedTripDataV2 = (
   trip: CompletedTrip,
-): CompletedTripDataV1 => ({
+): CompletedTripDataV2 => ({
   id: trip.id,
   status: "completed",
   currency: trip.currency,
   budgetMinor: trip.budgetMinor,
   safetyBufferMinor: trip.safetyBufferMinor,
+  ...(trip.store === undefined ? {} : { store: trip.store }),
   startedAt: trip.startedAt,
   completedAt: trip.completedAt,
   ...(trip.actualCheckoutMinor === undefined
@@ -478,8 +489,8 @@ const sameCompletedTrip = (
   left: CompletedTrip,
   right: CompletedTrip,
 ): boolean =>
-  JSON.stringify(toCompletedTripDataV1(left)) ===
-  JSON.stringify(toCompletedTripDataV1(right));
+  JSON.stringify(toCompletedTripDataV2(left)) ===
+  JSON.stringify(toCompletedTripDataV2(right));
 
 const hasDuplicateTripIds = (
   trips: readonly CompletedTrip[],
@@ -622,7 +633,7 @@ export const encodeHistorySnapshot = (
   const encodedTrips: CompletedTripDataV1[] = [];
 
   for (const trip of trips) {
-    const candidate = toCompletedTripDataV1(trip);
+    const candidate = toCompletedTripDataV2(trip);
     const validated = completedTripDataV1Schema.safeParse(candidate);
 
     if (!validated.success || decodeCompletedTripData(candidate) === null) {
