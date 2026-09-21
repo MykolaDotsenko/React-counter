@@ -121,7 +121,7 @@ test("keeps an added item in memory when its persistence write fails", async ({
   await startQuickBudget(page);
 
   await expect(
-    page.queryByText("This trip is not being saved right now"),
+    page.getByText("This trip is not being saved right now"),
   ).toHaveCount(0);
 
   await page.getByRole("button", { name: "Add price" }).click();
