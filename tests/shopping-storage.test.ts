@@ -38,7 +38,6 @@ import {
   retireLegacyPulseKeys,
   updateCompletedTripPersistence,
   writeActiveTrip,
-  writeHistory,
   type StorageLike,
 } from "../src/infrastructure/storage/shopping-storage";
 
