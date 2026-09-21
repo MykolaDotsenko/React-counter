@@ -8,7 +8,7 @@ The product is local-first. Persistence is therefore part of the core user exper
 
 ## Status
 
-Phase 3 implements the shopping active-trip persistence boundary:
+Phase 3 implements the shopping active-trip persistence boundary, and Phase 7 extends the same local-first contract to completed-trip history and loss-safe completion:
 
 - `budget-cart:active-trip` schema version 1
 - strict Zod 4 validation of untrusted persisted DTOs
@@ -17,12 +17,17 @@ Phase 3 implements the shopping active-trip persistence boundary:
 - explicit `healthy` / `degraded` outcomes
 - malformed and unsupported-future data preservation for recovery
 - explicit safe retirement of `pulse-counter:state` and `counter` only after shopping-state bootstrap succeeds
+- strict versioned `budget-cart:history` v1 persistence
+- completed-trip reconstruction through the domain
+- history-before-active-clear completion ordering
+- interrupted-completion startup reconciliation
+- partial invalid-history quarantine without deleting valid completed trips
 
 The guarded shopping shell is now wired to this adapter through the ShoppingAppController. Start-trip and active-cart mutations attempt persistence synchronously through the application boundary, and degraded writes are surfaced through the Phase 4 persistence-health UX.
 
 The default/public build still remains Pulse Counter. The automated/code portion of Sprint B / B6 is implemented; representative human one-hand timing, software-keyboard, and bright-store evidence remain the release gate before switching the public shell.
 
-History, settings, completion transactions, and price-memory persistence remain later slices.
+Settings and price-memory persistence remain later slices. Completed-trip history and completion transactions are implemented in Phase 7.
 
 The old numeric counter value is never interpreted as money.
 
@@ -434,7 +439,9 @@ Required cases:
 
 ### Completion failure
 
-- failed history write does not delete active trip — reserved for the checkout/history persistence phase
+- failed history write does not delete active trip — implemented and tested
+- successful history write plus failed active clear is represented as durable completion with cleanup pending — implemented and tested
+- startup reconciles stale active copies against durable completed history without duplicating trip IDs — implemented and tested
 
 ### Future version
 
