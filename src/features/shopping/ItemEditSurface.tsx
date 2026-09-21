@@ -20,7 +20,6 @@ import {
   type PriceEntryDraft,
 } from "./price-entry-draft";
 import {
-  canDecreaseQuantity,
   canIncreaseQuantity,
   decreaseQuantity,
   increaseQuantity,
