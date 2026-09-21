@@ -525,3 +525,97 @@ When new evidence changes a product decision:
 4. record meaningful architecture decisions separately
 
 Do not let competitor releases silently reshape the product.
+
+
+## 2026 directional evidence — GroceryBudget retention and scanner signals
+
+This section records **developer-reported directional evidence**, not independently audited analytics.
+
+Treat it as hypothesis-strengthening evidence only.
+
+### Reported retention
+
+In April 2026, the GroceryBudget developer reported on Reddit that:
+
+- about 42% of users who completed a first cart returned for another trip
+- users who set a budget were reported as more likely to return
+- camera-scan users were reported at 51.8% return versus 18.6% for non-scan users
+- Price Memory was described as reducing repeated typing after a few trips
+
+Source:
+
+- https://www.reddit.com/r/iOSAppsMarketing/comments/1skm0ia/i_built_an_app_that_tracks_your_grocery_spending/
+- https://www.reddit.com/r/ViralApps/comments/1ss4hs9/i_built_an_app_that_tracks_your_grocery_spending/
+
+### Reported scanner interaction value
+
+Later posts described scanner interaction dropping item-entry time from roughly 15–20 seconds of the developer's previous item+price typing flow to roughly 3–5 seconds in their camera workflow.
+
+This is not directly comparable to our planned price-only manual baseline, which targets roughly 2–3 seconds.
+
+Therefore the correct lesson is **not** “scanner is automatically faster.”
+
+The correct lesson is:
+
+> test scanner against our own optimized manual baseline.
+
+Sources:
+
+- https://www.reddit.com/r/apps/comments/1u2kaob/my_grocery_app_scans_the_shelf_price_tag_with/
+- https://www.reddit.com/r/appledevelopers/comments/1tr1xzd/my_grocery_app_had_a_typing_problem_so_i_added_ai/
+
+### Reported acquisition / monetisation scale
+
+In June 2026, the developer reported approximately:
+
+- 16,800 downloads
+- 159 active subscribers
+- 67 trials
+- USD 154 MRR
+- USD 594 revenue in the prior 28 days
+
+A later June update reported higher active subscriptions and MRR while top-of-funnel growth cooled.
+
+These figures are self-reported and not independently audited.
+
+Lesson:
+
+- meaningful organic download volume is plausible in this niche
+- downloads do not automatically imply strong revenue
+- retention and monetisation must be treated separately from acquisition
+
+Sources:
+
+- https://www.reddit.com/r/ProductHunters/comments/1u9yqg7/just_launched_an_app_called_grocerybudget_on/
+- https://www.reddit.com/r/AppBusiness/comments/1ud3eg6/6_weeks_after_my_440_funnel_post_mrr_tripled_to/
+
+### Mature-category evidence
+
+Total Plus currently shows:
+
+- roughly 2.3K App Store ratings
+- 4.6/5 rating
+- “Trusted by 40,000+ shoppers” in its listing
+- reusable lists/items, quantity/weight, discounts, tax, and previous-price comparison
+
+Source:
+
+- https://apps.apple.com/us/app/total-plus-shopping-calculator/id914553629
+
+### Product consequence
+
+These signals strengthen four hypotheses:
+
+1. pre-checkout spending control solves a real recurring problem
+2. repeated-use acceleration such as Price Memory matters
+3. camera capture may be a strong retention lever for some users
+4. feature breadth alone is not a defensible strategy
+
+They **do not** prove:
+
+- our scanner should ship early
+- scanner causes retention
+- our users will match competitor cohorts
+- our monetisation will resemble competitor monetisation
+
+The roadmap therefore uses an early scanner benchmark without promoting production scanner breadth ahead of retention-first work.
