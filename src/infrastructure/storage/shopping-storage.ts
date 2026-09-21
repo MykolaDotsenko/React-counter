@@ -57,6 +57,8 @@ export type PersistenceIssueCode =
   | "remove-failed"
   | "history-conflict"
   | "invalid-history-entry"
+  | "price-memory-conflict"
+  | "invalid-price-memory-entry"
   | "legacy-retirement-failed";
 
 export interface PersistenceIssue {
