@@ -228,6 +228,40 @@ describe("shopping composition root", () => {
     );
   });
 
+  it("preserves a future-version snapshot as unsupported recovery data", () => {
+    const raw = JSON.stringify({
+      schemaVersion: 99,
+      savedAt: NEXT,
+      data: {
+        id: "future-trip",
+      },
+    });
+    const storage = createStorage({
+      [ACTIVE_TRIP_STORAGE_KEY]: raw,
+    });
+
+    const controller = bootstrapBrowserShoppingAppController({
+      storage,
+      clock: clockAt(START),
+      ids,
+    });
+
+    const state = controller.getSnapshot();
+
+    expect(state.lifecycle).toBe("recovery");
+    expect(state.activeTrip).toBeNull();
+    expect(state.persistence).toMatchObject({
+      status: "degraded",
+      issue: {
+        code: "unsupported-version",
+        storageKey: ACTIVE_TRIP_STORAGE_KEY,
+        schemaVersion: 99,
+      },
+    });
+    expect(state.recovery?.raw).toBe(raw);
+    expect(storage.values.get(ACTIVE_TRIP_STORAGE_KEY)).toBe(raw);
+  });
+
   it("maps unavailable storage to recovery instead of pretending the store is empty", () => {
     const controller = bootstrapBrowserShoppingAppController({
       storage: null,
