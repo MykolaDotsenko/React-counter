@@ -2,9 +2,15 @@ import { useId, useMemo, useRef, useState } from "react";
 
 import {
   formatEur,
+  signedMinorUnits,
   type MinorUnits,
   type MoneyDraftMode,
 } from "../../domain/money";
+import {
+  projectAddItem,
+  type ActiveTrip,
+  type TripProjection,
+} from "../../domain/shopping-trip";
 import {
   appendPriceDigit,
   appendPriceSeparator,
@@ -20,6 +26,7 @@ import {
 import styles from "./PriceEntrySurface.module.css";
 
 export interface PriceEntrySurfaceProps {
+  readonly trip: ActiveTrip;
   readonly onCancel: () => void;
   readonly onValidatedPrice: (price: MinorUnits) => void;
   readonly locale?: string;
@@ -55,7 +62,61 @@ const KEYPAD_ROWS: readonly (readonly string[])[] = [
   [".", "0", "backspace"],
 ] as const;
 
+const formatAbsoluteSigned = (
+  value: number,
+  locale: string,
+): string => {
+  const amount = signedMinorUnits(Math.abs(value));
+
+  if (!amount.ok) {
+    throw new RangeError("Projected shopping amount exceeded safe integer bounds");
+  }
+
+  return formatEur(amount.value, locale);
+};
+
+const projectionCopy = (
+  trip: ActiveTrip,
+  projection: TripProjection,
+  locale: string,
+): {
+  readonly primary: string;
+  readonly secondary: string | null;
+  readonly status: "within" | "reserve" | "over";
+} => {
+  if (projection.crossesNominalBudget) {
+    return {
+      primary: `After adding: ${formatAbsoluteSigned(projection.nominalOverageMinor, locale)} over your limit`,
+      secondary: `Cart would be ${formatAbsoluteSigned(projection.cartTotalMinor, locale)} of ${formatEur(trip.budgetMinor, locale)}.`,
+      status: "over",
+    };
+  }
+
+  if (trip.safetyBufferMinor > 0) {
+    if (projection.safeRemainingMinor >= 0) {
+      return {
+        primary: `After adding: ${formatAbsoluteSigned(projection.safeRemainingMinor, locale)} safe to spend`,
+        secondary: `${formatAbsoluteSigned(projection.remainingMinor, locale)} remains before your nominal limit.`,
+        status: "within",
+      };
+    }
+
+    return {
+      primary: `After adding: ${formatAbsoluteSigned(projection.safeRemainingMinor, locale)} into your reserve`,
+      secondary: `${formatAbsoluteSigned(projection.remainingMinor, locale)} remains before your nominal limit.`,
+      status: "reserve",
+    };
+  }
+
+  return {
+    primary: `After adding: ${formatAbsoluteSigned(projection.remainingMinor, locale)} left`,
+    secondary: null,
+    status: "within",
+  };
+};
+
 export function PriceEntrySurface({
+  trip,
   onCancel,
   onValidatedPrice,
   locale = "en-FI",
@@ -76,6 +137,27 @@ export function PriceEntrySurface({
 
   const validPrice =
     state.kind === "valid" ? state.value : null;
+
+  const projectionResult = useMemo(
+    () =>
+      validPrice === null
+        ? null
+        : projectAddItem(trip, {
+            unitPriceMinor: validPrice,
+            quantity: 1,
+          }),
+    [trip, validPrice],
+  );
+
+  const projection =
+    projectionResult?.ok === true
+      ? projectionResult.value
+      : null;
+
+  const consequence =
+    projection === null
+      ? null
+      : projectionCopy(trip, projection, locale);
 
   const commit = (): void => {
     if (validPrice === null || submittingRef.current) {
@@ -233,6 +315,20 @@ export function PriceEntrySurface({
             )}
           </div>
         </div>
+
+        {consequence ? (
+          <section
+            className={styles.projection}
+            data-status={consequence.status}
+            aria-label="Projected cart result"
+            aria-live="polite"
+          >
+            <strong>{consequence.primary}</strong>
+            {consequence.secondary ? (
+              <span>{consequence.secondary}</span>
+            ) : null}
+          </section>
+        ) : null}
 
         <div className={styles.keypad} aria-label="Price keypad">
           {KEYPAD_ROWS.flat().map((key) => {
