@@ -8,8 +8,10 @@ import {
   loadQaTimingSession,
   qaChecklistComplete,
   resetQaTimingSamples,
+  summarizeQaEmpiricalGate,
   summarizeQaTimingSamples,
   updateQaChecklist,
+  updateQaDeviceLabel,
   type QaTimingEnvironment,
   type QaTimingSample,
 } from "../src/qa/shopping-timing";
@@ -149,6 +151,105 @@ describe("shopping timing QA model", () => {
 
     expect(restored.samples).toHaveLength(0);
     expect(restored.deviceLabel).toBe("");
+  });
+
+  it("keeps the empirical gate pending until timing, device and checklist evidence are complete", () => {
+    let session = createQaTimingSession(environment);
+
+    for (let index = 0; index < 10; index += 1) {
+      session = appendQaTimingSample(
+        session,
+        sample(`479-${index}`, QA_TARGET_PRICE_479, 2_100),
+      );
+      session = appendQaTimingSample(
+        session,
+        sample(`1250-${index}`, QA_TARGET_PRICE_1250, 2_200),
+      );
+    }
+
+    expect(summarizeQaEmpiricalGate(session)).toMatchObject({
+      status: "pending",
+      releaseEligible: false,
+      deviceLabelPresent: false,
+      checklistComplete: false,
+    });
+
+    session = updateQaDeviceLabel(session, "Pixel 8 · Chrome");
+
+    for (const key of Object.keys(session.checklist) as Array<
+      keyof typeof session.checklist
+    >) {
+      session = updateQaChecklist(session, key, true);
+    }
+
+    expect(summarizeQaEmpiricalGate(session)).toMatchObject({
+      status: "target-met",
+      releaseEligible: true,
+      deviceLabelPresent: true,
+      checklistComplete: true,
+      ignoredSampleCount: 0,
+    });
+  });
+
+  it("reports release-floor and failed empirical outcomes without hiding non-target samples", () => {
+    let releaseFloor = createQaTimingSession(environment);
+    releaseFloor = updateQaDeviceLabel(
+      releaseFloor,
+      "Compact phone · Chrome",
+    );
+
+    for (const key of Object.keys(releaseFloor.checklist) as Array<
+      keyof typeof releaseFloor.checklist
+    >) {
+      releaseFloor = updateQaChecklist(releaseFloor, key, true);
+    }
+
+    for (let index = 0; index < 10; index += 1) {
+      releaseFloor = appendQaTimingSample(
+        releaseFloor,
+        sample(`479-${index}`, QA_TARGET_PRICE_479, 2_200),
+      );
+      releaseFloor = appendQaTimingSample(
+        releaseFloor,
+        sample(`1250-${index}`, QA_TARGET_PRICE_1250, 2_750),
+      );
+    }
+
+    releaseFloor = appendQaTimingSample(
+      releaseFloor,
+      sample("other", 999, 2_000),
+    );
+
+    expect(summarizeQaEmpiricalGate(releaseFloor)).toMatchObject({
+      status: "release-floor",
+      releaseEligible: true,
+      ignoredSampleCount: 1,
+    });
+
+    let failed = createQaTimingSession(environment);
+    failed = updateQaDeviceLabel(failed, "Compact phone · Chrome");
+
+    for (const key of Object.keys(failed.checklist) as Array<
+      keyof typeof failed.checklist
+    >) {
+      failed = updateQaChecklist(failed, key, true);
+    }
+
+    for (let index = 0; index < 10; index += 1) {
+      failed = appendQaTimingSample(
+        failed,
+        sample(`479-${index}`, QA_TARGET_PRICE_479, 3_200),
+      );
+      failed = appendQaTimingSample(
+        failed,
+        sample(`1250-${index}`, QA_TARGET_PRICE_1250, 2_200),
+      );
+    }
+
+    expect(summarizeQaEmpiricalGate(failed)).toMatchObject({
+      status: "fail",
+      releaseEligible: false,
+    });
   });
 
   it("tracks the manual checklist independently from timing samples", () => {
