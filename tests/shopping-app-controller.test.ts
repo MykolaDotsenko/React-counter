@@ -562,6 +562,153 @@ describe("ShoppingAppController startTrip", () => {
   });
 });
 
+describe("ShoppingAppController retryPersistence", () => {
+  it("retries the exact canonical active trip and heals degraded persistence", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    persistence.queueSaveResult({
+      ok: false,
+      issue: writeFailure,
+    });
+    persistence.queueSaveResult({ ok: true });
+
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const degraded = controller.dispatch({
+      type: "set-buffer",
+      safetyBufferMinor: money(500),
+    });
+
+    expect(degraded.ok).toBe(true);
+    expect(controller.getSnapshot().persistence.status).toBe("degraded");
+
+    const canonicalBeforeRetry = controller.getSnapshot().activeTrip;
+    const retried = controller.retryPersistence();
+
+    expect(retried.ok).toBe(true);
+
+    if (!retried.ok) {
+      throw new Error("Expected retry success");
+    }
+
+    expect(retried.changed).toBe(true);
+    expect(retried.durability).toBe("persisted");
+    expect(retried.state.persistence).toEqual({ status: "healthy" });
+    expect(retried.state.activeTrip).toBe(canonicalBeforeRetry);
+    expect(persistence.saveCalls).toHaveLength(2);
+    expect(persistence.saveCalls[1]?.trip).toBe(canonicalBeforeRetry);
+    expect(persistence.saveCalls[1]?.savedAt).toBe(LATER);
+  });
+
+  it("keeps degraded state and original since timestamp when retry fails", () => {
+    const secondFailure: PersistenceProblem = {
+      code: "quota-exceeded",
+      storageKey: "budget-cart:active-trip",
+    };
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    persistence.queueSaveResult({
+      ok: false,
+      issue: writeFailure,
+    });
+    persistence.queueSaveResult({
+      ok: false,
+      issue: secondFailure,
+    });
+
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    controller.dispatch({
+      type: "set-buffer",
+      safetyBufferMinor: money(500),
+    });
+
+    const retried = controller.retryPersistence();
+
+    expect(retried.ok).toBe(true);
+
+    if (!retried.ok) {
+      throw new Error("Expected retry attempt result");
+    }
+
+    expect(retried.changed).toBe(true);
+    expect(retried.durability).toBe("memory-only");
+    expect(retried.state.persistence).toEqual({
+      status: "degraded",
+      issue: secondFailure,
+      since: NEXT,
+    });
+  });
+
+  it("is a no-op when persistence is already healthy", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(START),
+      ids,
+    });
+    controller.bootstrap();
+
+    const before = controller.getSnapshot();
+    const retried = controller.retryPersistence();
+
+    expect(retried).toEqual({
+      ok: true,
+      changed: false,
+      durability: "unchanged",
+      state: before,
+    });
+    expect(persistence.saveCalls).toHaveLength(0);
+  });
+
+  it("does not use retryPersistence to overwrite recovery data", () => {
+    const persistence = createPersistence({
+      ok: false,
+      activeTrip: null,
+      issue: {
+        code: "unsupported-version",
+        storageKey: "budget-cart:active-trip",
+        schemaVersion: 99,
+      },
+      recoveryRequired: true,
+      recoveryRaw: '{"schemaVersion":99}',
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(START),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.retryPersistence();
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        kind: "application",
+        code: "recovery-required",
+      },
+    });
+    expect(persistence.saveCalls).toHaveLength(0);
+  });
+});
+
 describe("ShoppingAppController dispatch", () => {
   it("persists and publishes a successful active-trip command once", () => {
     const persistence = createPersistence({
