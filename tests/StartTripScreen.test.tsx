@@ -70,8 +70,9 @@ describe("StartTripScreen", () => {
     expect(screen.getByRole("button", { name: "€75" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "€100" })).not.toBeNull();
     expect(screen.getByText("Add a safety buffer")).not.toBeNull();
-    expect(screen.getByText("No account. Your active trip stays on this device."))
-      .toBeInTheDocument();
+    expect(
+      screen.getByText("No account. Your active trip stays on this device."),
+    ).not.toBeNull();
   });
 
   it("starts a €50 trip in one action", async () => {
