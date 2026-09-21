@@ -514,6 +514,8 @@ B6 Correction minimum + timing/a11y/E2E
 
 ## B0 — Price-entry interaction contract
 
+Status: **complete via PR #22**
+
 Priority: **100/100**
 
 Before implementation, lock:
@@ -539,6 +541,8 @@ No UI-specific parser fork.
 Every keypad/input state maps to one documented money-draft state.
 
 ## B1 — One-hand price-entry surface
+
+Status: **complete via PR #22**
 
 Priority: **100/100**
 
