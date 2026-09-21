@@ -38,6 +38,15 @@ Preferred stronger signal:
 
 - users voluntarily return for a second trip
 
+Retention interpretation should follow docs/PRODUCT-SUCCESS-STRATEGY.md.
+
+Provisional decision bands:
+
+- 35% or higher second-trip rate — very strong early signal
+- 25–35% — promising; improve recurring friction before broadening
+- 15–25% — material retention problem; freeze non-critical expansion
+- below 15% — revisit the core interaction/job before scanner/OCR or acquisition scaling
+
 ## Gate 3 — Brand
 
 Before public naming lock:
@@ -201,7 +210,9 @@ Learn:
 - first-trip activation
 - median items per real trip
 - trip completion
-- second-trip rate
+- second-trip rate at 7/14/30 days
+- repeated-budget usage
+- Recent Items / remembered-price usage when available
 - common correction type
 - top acquisition source
 - support complaints
@@ -240,6 +251,8 @@ Meaningful paid acquisition should require:
 - enough data to estimate whether acquisition economics are sensible
 
 Until then, organic learning is higher ROI.
+
+A weak second-trip rate is a product signal, not permission to compensate with more acquisition or scanner features.
 
 ## Launch readiness score
 
