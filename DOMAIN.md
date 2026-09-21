@@ -4,7 +4,7 @@
 
 This document defines the target business rules for the shopping budget companion.
 
-The repository still retains the legacy Pulse Counter compatibility path, but the guarded shopping path already implements the exact EUR money model, ShoppingTrip / CartItem domain, price source/confidence semantics, projections, active-trip commands, manual-cart behaviour through Phase 5 / B6, and Phase 6 price/quantity edit plus remove/Undo correction flows. Completion/history/reconciliation, price memory, and scanner-backed sources remain later target slices. Each rule below must be read with its explicit MVP/later-phase status rather than assumed shipped merely because it is specified.
+The repository still retains the legacy Pulse Counter compatibility path, but the guarded shopping path already implements the exact EUR money model, ShoppingTrip / CartItem domain, price source/confidence semantics, projections, active-trip commands, manual-cart behaviour through Phase 5 / B6, and Phase 6 price/quantity edit plus remove/Undo correction flows. Completion/history/reconciliation is implemented through Phase 7. Price memory and scanner-backed sources remain later target slices. Each rule below must be read with its explicit MVP/later-phase status rather than assumed shipped merely because it is specified.
 
 ## Domain goals
 
