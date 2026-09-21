@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, Ref } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
@@ -17,6 +17,8 @@ import styles from "./ActiveTripScreen.module.css";
 export interface ActiveTripScreenProps {
   readonly controller: ShoppingAppController;
   readonly onAddPrice: () => void;
+  readonly addPriceButtonRef?: Ref<HTMLButtonElement>;
+  readonly feedbackMessage?: string;
   readonly locale?: string;
 }
 
@@ -39,6 +41,8 @@ const formatSignedAmount = (
 export function ActiveTripScreen({
   controller,
   onAddPrice,
+  addPriceButtonRef,
+  feedbackMessage,
   locale = "en-FI",
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
@@ -178,7 +182,14 @@ export function ActiveTripScreen({
           ) : null}
         </section>
 
+        {feedbackMessage ? (
+          <p className={styles.feedback} role="status" aria-live="polite">
+            {feedbackMessage}
+          </p>
+        ) : null}
+
         <button
+          ref={addPriceButtonRef}
           type="button"
           className={styles.addButton}
           onClick={onAddPrice}
