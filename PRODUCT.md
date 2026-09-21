@@ -347,12 +347,15 @@ The highest-value early signal is second-trip rate.
 
 Provisional interpretation:
 
-- >=35% — very strong early signal
-- 25–35% — promising; optimise recurring friction
-- 15–25% — material retention problem
-- <15% — revisit the core interaction/job before expanding features
+- >=45% — exceptional early signal; validate third-trip behaviour
+- 35–45% — strong
+- 25–35% — viable/promising; optimise recurring friction
+- 15–25% — problematic; freeze non-critical feature expansion
+- <15% — revisit the core interaction/job before expanding production features
 
 These thresholds are decision heuristics, not established benchmarks. Real cohort evidence overrides them.
+
+Healthy third-trip behaviour is required before treating early retention as strongly validated.
 
 The common manual price-only flow should target a median of <=2.5 seconds in representative one-hand testing, with approximately 3 seconds or less as a minimum release-quality expectation.
 
