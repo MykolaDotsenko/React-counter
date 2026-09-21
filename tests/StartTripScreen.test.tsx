@@ -59,17 +59,17 @@ describe("StartTripScreen", () => {
       screen.getByRole("heading", {
         name: "How much can you spend today?",
       }),
-    ).toBeInTheDocument();
+    ).not.toBeNull();
     expect(
       screen.getByText(
         "Set your limit. Add prices. Always know what's left.",
       ),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "€25" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "€50" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "€75" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "€100" })).toBeInTheDocument();
-    expect(screen.getByText("Add a safety buffer")).toBeInTheDocument();
+    ).not.toBeNull();
+    expect(screen.getByRole("button", { name: "€25" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "€50" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "€75" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "€100" })).not.toBeNull();
+    expect(screen.getByText("Add a safety buffer")).not.toBeNull();
     expect(screen.getByText("No account. Your active trip stays on this device."))
       .toBeInTheDocument();
   });
@@ -127,9 +127,9 @@ describe("StartTripScreen", () => {
     await user.click(screen.getByRole("button", { name: "€50" }));
 
     expect(controller.getSnapshot().lifecycle).toBe("idle");
-    expect(
-      screen.getByRole("alert"),
-    ).toHaveTextContent("Keep the safety buffer within your budget.");
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Keep the safety buffer within your budget.",
+    );
   });
 
   it("accepts a locale-friendly custom decimal budget", async () => {
@@ -146,7 +146,7 @@ describe("StartTripScreen", () => {
       name: "Custom budget",
     });
 
-    expect(customInput).toHaveFocus();
+    expect(document.activeElement).toBe(customInput);
 
     await user.type(customInput, "37,50");
     await user.click(
@@ -174,7 +174,7 @@ describe("StartTripScreen", () => {
     );
 
     expect(controller.getSnapshot().lifecycle).toBe("idle");
-    expect(screen.getByRole("alert")).toHaveTextContent(
+    expect(screen.getByRole("alert").textContent).toContain(
       "Use no more than two decimal places.",
     );
   });
@@ -197,7 +197,7 @@ describe("StartTripScreen", () => {
     );
 
     expect(controller.getSnapshot().lifecycle).toBe("idle");
-    expect(screen.getByRole("alert")).toHaveTextContent(
+    expect(screen.getByRole("alert").textContent).toContain(
       "Set a budget above €0.",
     );
   });
