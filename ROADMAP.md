@@ -338,7 +338,8 @@ Suggested PR:
 ### Acceptance criteria
 
 - manual entry works fully offline
-- normal item can be added in roughly three seconds in usability testing/manual timing
+- common price-only item targets a median <=2.5 seconds in representative one-hand testing
+- approximately 3 seconds or less remains the minimum release-quality expectation
 - keypad does not remain dangerously active after commit
 - no item name/category required
 
