@@ -30,6 +30,7 @@ import {
   updateQaTimingNotes,
   type QaTimingSession,
 } from "../qa/shopping-timing";
+import "./shopping-theme.css";
 import styles from "./ShoppingAppShell.module.css";
 
 export interface ShoppingAppShellProps {
