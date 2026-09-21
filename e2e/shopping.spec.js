@@ -81,7 +81,7 @@ test("starts with a safety buffer and makes safe remaining unambiguous", async (
     page.getByText("safe to spend", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText(/€2.00 kept in reserve/),
+    page.getByText(/^€2\.00 kept in reserve\./),
   ).toBeVisible();
 
   const capacity = page.getByRole("progressbar", {
