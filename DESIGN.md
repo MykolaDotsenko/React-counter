@@ -4,7 +4,13 @@
 
 This document defines the target visual design system for the shopping budget companion.
 
-The current repository still ships the Pulse Counter interface. The design described here is the direction for the product migration and must not be presented as already implemented.
+Phase 4 A0 design validation is complete. **Calm Utility** is the selected production direction for the core shopping UI.
+
+Decision evidence:
+
+- docs/design/PHASE-4-DESIGN-VALIDATION.md
+
+The current repository still ships the Pulse Counter interface until the Phase 4 UI PRs land. The design described here must not be presented as already implemented.
 
 This document complements:
 
@@ -135,11 +141,21 @@ Working phrase:
 
 ## Visual hierarchy
 
-The active-trip screen has one dominant object:
+The active-trip screen has one dominant object.
+
+When no safety buffer is active:
 
 > **EUR 18.58 left**
 
-Everything else supports that answer.
+When a safety buffer is active, the hero represents safe remaining:
+
+> **EUR 16.58 safe to spend**
+
+for the canonical EUR 50 / EUR 31.42 cart / EUR 2 reserve fixture.
+
+Nominal remaining stays secondary when a reserve exists.
+
+Everything else supports the safe shopping decision.
 
 Hierarchy:
 
@@ -247,6 +263,8 @@ Preferred order for prototyping:
 
 ### Option A — quiet linear capacity bar
 
+**Selected for Phase 4 production direction.**
+
 Advantages:
 
 - instantly familiar
@@ -256,6 +274,8 @@ Advantages:
 - does not compete with hero amount
 
 ### Option B — partial radial ring around the hero
+
+**Rejected as the default Phase 4 production visual.** It remains a historical/prototype reference only.
 
 Advantages:
 
@@ -270,13 +290,13 @@ Risks:
 - can reduce number legibility
 - can be harder at large text sizes
 
-Decision rule:
+Decision result:
 
-Prototype both.
-
-Choose the one that lets users answer “how much room is left?” faster.
+The Phase 4 design validation selected the quiet linear capacity bar because it has lower comprehension, large-text, bright-store, and accessibility risk.
 
 Do not keep the radial ring merely because the old counter already contains one.
+
+See docs/design/PHASE-4-DESIGN-VALIDATION.md.
 
 ## Brand expression
 
@@ -921,9 +941,9 @@ Secondary screenshot:
 
 Avoid screenshots that primarily showcase decorative effects.
 
-## Prototype variants to test
+## Prototype variants evaluated
 
-Before locking the visual system, create at least three intentionally different prototypes:
+Phase 4 A0 evaluated three intentionally different directions using the same canonical fixture. The selected direction is documented in docs/design/PHASE-4-DESIGN-VALIDATION.md:
 
 ### A. Calm utility
 
