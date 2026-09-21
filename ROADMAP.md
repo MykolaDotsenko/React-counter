@@ -484,9 +484,25 @@ If scanner is slower, fragile, or confusing:
 
 ## Phase 6 — correction and confidence
 
-Suggested PR:
+**Status: complete — delivered via PR #37.**
 
-> feat: add undo, editing and price confidence states
+Implementation evidence:
+
+- one-action Undo covers add, edit, and remove
+- item price and quantity can be corrected without restarting the trip
+- decrementing quantity 1 to zero is an explicit remove path with Undo
+- manual price correction explicitly refreshes source/confidence to manual + confirmed
+- quantity-only correction preserves existing price provenance/confidence
+- confidence and source remain independent dimensions in cart presentation
+- ordinary correction does not introduce a destructive confirmation modal
+- edit/remove mutations persist immediately and remain recoverable through one-level Undo
+- add/edit primary overlays use one discriminated UI state rather than independent booleans
+- edit cancel/save restores predictable keyboard focus
+- correction surface is covered by component, controller, E2E, axe, and cross-browser tests
+
+PR:
+
+> feat: add Phase 6 item correction and confidence UX
 
 ### Scope
 
@@ -856,9 +872,11 @@ Phase 5 / Sprint B has completed B0–B5 and the automated/code portion of B6; o
 
 The B6 empirical validation remains a release-quality debt under D-039 rather than the active implementation blocker.
 
+Phase 6 correction/confidence is implemented via PR #37.
+
 The next implementation step is:
 
-> **Phase 6 — correction and confidence**
+> **Phase 7 — trip completion and reconciliation**
 
 PR #28 implements the B6 code/automated portion:
 
