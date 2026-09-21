@@ -406,9 +406,15 @@ const decodeCompletedTripData = (
     return null;
   }
 
+  const completedAt = isoTimestamp(data.completedAt);
+
+  if (!completedAt.ok) {
+    return null;
+  }
+
   const completed = reduceTrip(active, {
     type: "complete-trip",
-    completedAt: data.completedAt,
+    completedAt: completedAt.value,
   });
 
   if (!completed.ok || completed.value.status !== "completed") {
