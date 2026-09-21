@@ -175,6 +175,70 @@ describe("ShoppingAppController snapshot contract", () => {
     expect(controller.getSnapshot()).toBe(after);
   });
 
+  it("does not reread storage over a live application state", () => {
+    const persistence = createPersistence();
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(START),
+      ids,
+    });
+
+    controller.bootstrap();
+    controller.startTrip({
+      budgetMinor: money(5_000),
+    });
+
+    persistence.setBootstrapResult({
+      ok: true,
+      activeTrip: createTrip(1_000, 0),
+    });
+
+    let notifications = 0;
+    controller.subscribe(() => {
+      notifications += 1;
+    });
+
+    const before = controller.getSnapshot();
+    const after = controller.bootstrap();
+
+    expect(after).toBe(before);
+    expect(after.activeTrip?.budgetMinor).toBe(5_000);
+    expect(persistence.bootstrapCalls).toBe(1);
+    expect(notifications).toBe(0);
+  });
+
+  it("can retry bootstrap from recovery without inventing a new path", () => {
+    const persistence = createPersistence({
+      ok: false,
+      activeTrip: null,
+      issue: {
+        code: "read-failed",
+        storageKey: "budget-cart:active-trip",
+      },
+      recoveryRequired: true,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(START),
+      ids,
+    });
+
+    expect(controller.bootstrap().lifecycle).toBe("recovery");
+
+    const restoredTrip = createTrip();
+    persistence.setBootstrapResult({
+      ok: true,
+      activeTrip: restoredTrip,
+    });
+
+    const retried = controller.bootstrap();
+
+    expect(retried.lifecycle).toBe("active");
+    expect(retried.activeTrip).toBe(restoredTrip);
+    expect(retried.persistence).toEqual({ status: "healthy" });
+    expect(persistence.bootstrapCalls).toBe(2);
+  });
+
   it("unsubscribe stops later notifications", () => {
     const controller = createShoppingAppController({
       persistence: createPersistence(),
