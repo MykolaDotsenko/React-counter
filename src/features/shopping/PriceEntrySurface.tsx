@@ -451,9 +451,9 @@ export function PriceEntrySurface({
           </div>
         </section>
 
-        {projection !== null && quantity > 1 ? (
+        {projection !== null && validPrice !== null && quantity > 1 ? (
           <p className={styles.lineTotal} aria-live="polite">
-            {formatEur(validPrice!, locale)} × {quantity} ={" "}
+            {formatEur(validPrice, locale)} × {quantity} ={" "}
             {formatAbsoluteSigned(projection.lineTotalMinor, locale)}
           </p>
         ) : null}
