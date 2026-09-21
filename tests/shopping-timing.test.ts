@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  QA_FIXTURE_BUDGET_MINOR,
+  QA_FIXTURE_BUFFER_MINOR,
   QA_TARGET_PRICE_1250,
   QA_TARGET_PRICE_479,
+  QA_TIMING_STORAGE_KEY,
   appendQaTimingSample,
   createQaTimingSession,
   loadQaTimingSession,
@@ -11,6 +14,7 @@ import {
   summarizeQaEmpiricalGate,
   summarizeQaTimingSamples,
   updateQaChecklist,
+  updateQaCompactDeviceLabel,
   updateQaDeviceLabel,
   type QaTimingEnvironment,
   type QaTimingSample,
@@ -31,13 +35,17 @@ const sample = (
   id: string,
   lineTotalMinor: number,
   durationMs: number,
+  overrides: Partial<QaTimingSample> = {},
 ): QaTimingSample => ({
   id,
   durationMs,
   unitPriceMinor: lineTotalMinor,
   quantity: 1,
   lineTotalMinor,
+  budgetMinor: QA_FIXTURE_BUDGET_MINOR,
+  safetyBufferMinor: QA_FIXTURE_BUFFER_MINOR,
   completedAt: "2026-09-21T12:00:00.000Z",
+  ...overrides,
 });
 
 describe("shopping timing QA model", () => {
@@ -127,11 +135,12 @@ describe("shopping timing QA model", () => {
 
   it("discards malformed stored evidence instead of trusting it", () => {
     sessionStorage.setItem(
-      "budget-cart:qa:timing-v1",
+      QA_TIMING_STORAGE_KEY,
       JSON.stringify({
-        version: 1,
+        version: 2,
         environment,
         deviceLabel: "fake",
+        compactDeviceLabel: "",
         notes: "",
         checklist: {},
         samples: [
@@ -141,6 +150,8 @@ describe("shopping timing QA model", () => {
             unitPriceMinor: 479,
             quantity: 1,
             lineTotalMinor: 479,
+            budgetMinor: QA_FIXTURE_BUDGET_MINOR,
+            safetyBufferMinor: QA_FIXTURE_BUFFER_MINOR,
             completedAt: "not-a-real-sample",
           },
         ],
@@ -175,6 +186,10 @@ describe("shopping timing QA model", () => {
     });
 
     session = updateQaDeviceLabel(session, "Pixel 8 · Chrome");
+    session = updateQaCompactDeviceLabel(
+      session,
+      "iPhone SE · Safari",
+    );
 
     for (const key of Object.keys(session.checklist) as Array<
       keyof typeof session.checklist
@@ -186,6 +201,9 @@ describe("shopping timing QA model", () => {
       status: "target-met",
       releaseEligible: true,
       deviceLabelPresent: true,
+      compactDeviceLabelPresent: true,
+      lightAppearanceRecorded: true,
+      phonePortraitViewport: true,
       checklistComplete: true,
       ignoredSampleCount: 0,
     });
@@ -194,6 +212,10 @@ describe("shopping timing QA model", () => {
   it("reports release-floor and failed empirical outcomes without hiding non-target samples", () => {
     let releaseFloor = createQaTimingSession(environment);
     releaseFloor = updateQaDeviceLabel(
+      releaseFloor,
+      "Pixel 8 · Chrome",
+    );
+    releaseFloor = updateQaCompactDeviceLabel(
       releaseFloor,
       "Compact phone · Chrome",
     );
@@ -227,7 +249,11 @@ describe("shopping timing QA model", () => {
     });
 
     let failed = createQaTimingSession(environment);
-    failed = updateQaDeviceLabel(failed, "Compact phone · Chrome");
+    failed = updateQaDeviceLabel(failed, "Pixel 8 · Chrome");
+    failed = updateQaCompactDeviceLabel(
+      failed,
+      "Compact phone · Chrome",
+    );
 
     for (const key of Object.keys(failed.checklist) as Array<
       keyof typeof failed.checklist
@@ -250,6 +276,99 @@ describe("shopping timing QA model", () => {
       status: "fail",
       releaseEligible: false,
     });
+  });
+
+  it("excludes timing samples captured outside the neutral €500 no-buffer fixture", () => {
+    const samples = [
+      sample("valid", QA_TARGET_PRICE_479, 2_100),
+      sample("wrong-budget", QA_TARGET_PRICE_479, 2_100, {
+        budgetMinor: 5_000,
+      }),
+      sample("with-buffer", QA_TARGET_PRICE_479, 2_100, {
+        safetyBufferMinor: 200,
+      }),
+    ];
+
+    const summary = summarizeQaTimingSamples(
+      samples,
+      QA_TARGET_PRICE_479,
+    );
+
+    expect(summary.count).toBe(1);
+  });
+
+  it("keeps release eligibility pending for dark or non-phone timing environments", () => {
+    const completeSession = (
+      candidateEnvironment: QaTimingEnvironment,
+    ) => {
+      let session = createQaTimingSession(candidateEnvironment);
+      session = updateQaDeviceLabel(session, "Pixel 8 · Chrome");
+      session = updateQaCompactDeviceLabel(
+        session,
+        "Compact phone · Chrome",
+      );
+
+      for (const key of Object.keys(session.checklist) as Array<
+        keyof typeof session.checklist
+      >) {
+        session = updateQaChecklist(session, key, true);
+      }
+
+      for (let index = 0; index < 10; index += 1) {
+        session = appendQaTimingSample(
+          session,
+          sample(`479-${index}`, QA_TARGET_PRICE_479, 2_100),
+        );
+        session = appendQaTimingSample(
+          session,
+          sample(`1250-${index}`, QA_TARGET_PRICE_1250, 2_200),
+        );
+      }
+
+      return session;
+    };
+
+    const dark = summarizeQaEmpiricalGate(
+      completeSession({ ...environment, colorScheme: "dark" }),
+    );
+    expect(dark.releaseEligible).toBe(false);
+    expect(dark.lightAppearanceRecorded).toBe(false);
+
+    const desktop = summarizeQaEmpiricalGate(
+      completeSession({
+        ...environment,
+        viewportWidth: 1_280,
+        viewportHeight: 800,
+      }),
+    );
+    expect(desktop.releaseEligible).toBe(false);
+    expect(desktop.phonePortraitViewport).toBe(false);
+  });
+
+  it("requires a compact phone or equivalent spot-check label", () => {
+    let session = createQaTimingSession(environment);
+    session = updateQaDeviceLabel(session, "Pixel 8 · Chrome");
+
+    for (const key of Object.keys(session.checklist) as Array<
+      keyof typeof session.checklist
+    >) {
+      session = updateQaChecklist(session, key, true);
+    }
+
+    for (let index = 0; index < 10; index += 1) {
+      session = appendQaTimingSample(
+        session,
+        sample(`479-${index}`, QA_TARGET_PRICE_479, 2_100),
+      );
+      session = appendQaTimingSample(
+        session,
+        sample(`1250-${index}`, QA_TARGET_PRICE_1250, 2_200),
+      );
+    }
+
+    const gate = summarizeQaEmpiricalGate(session);
+    expect(gate.compactDeviceLabelPresent).toBe(false);
+    expect(gate.releaseEligible).toBe(false);
   });
 
   it("tracks the manual checklist independently from timing samples", () => {
