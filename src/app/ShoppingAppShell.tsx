@@ -9,8 +9,13 @@ import {
   safeRemaining,
   type ActiveTrip,
   type CartItem,
+  type ItemId,
 } from "../domain/shopping-trip";
 import { ActiveTripScreen } from "../features/shopping/ActiveTripScreen";
+import {
+  ItemEditSurface,
+  type ItemEditIntent,
+} from "../features/shopping/ItemEditSurface";
 import {
   PriceEntrySurface,
   type ValidatedItemIntent,
@@ -40,6 +45,11 @@ export interface ShoppingAppShellProps {
 
 const qaTimingEnabled =
   import.meta.env.VITE_SHOPPING_QA_TIMING === "1";
+
+type OverlayState =
+  | { readonly kind: "none" }
+  | { readonly kind: "add-price" }
+  | { readonly kind: "edit-item"; readonly itemId: ItemId };
 
 interface PendingQaSample {
   readonly unitPriceMinor: number;
@@ -93,7 +103,7 @@ export function ShoppingAppShell({
   const addPriceButtonRef = useRef<HTMLButtonElement>(null);
   const qaStartedAtRef = useRef<number | null>(null);
   const qaPendingSampleRef = useRef<PendingQaSample | null>(null);
-  const [priceEntryOpen, setPriceEntryOpen] = useState(false);
+  const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
   const [lastAddedMessage, setLastAddedMessage] = useState("");
   const [qaSession, setQaSession] = useState<QaTimingSession | null>(() => {
     if (!qaTimingEnabled) {
@@ -138,7 +148,7 @@ export function ShoppingAppShell({
   useEffect(() => {
     if (
       !qaTimingEnabled ||
-      priceEntryOpen ||
+      overlay.kind === "add-price" ||
       qaPendingSampleRef.current === null ||
       qaStartedAtRef.current === null
     ) {
@@ -175,7 +185,7 @@ export function ShoppingAppShell({
 
       return next;
     });
-  }, [priceEntryOpen]);
+  }, [overlay.kind]);
 
   const qaPanel =
     qaSession === null ? null : (
@@ -236,7 +246,7 @@ export function ShoppingAppShell({
     );
   }
 
-  if (priceEntryOpen && state.activeTrip !== null) {
+  if (overlay.kind === "add-price" && state.activeTrip !== null) {
     return (
       <>
         <PriceEntrySurface
@@ -245,7 +255,7 @@ export function ShoppingAppShell({
           onCancel={() => {
             qaStartedAtRef.current = null;
             qaPendingSampleRef.current = null;
-            setPriceEntryOpen(false);
+            setOverlay({ kind: "none" });
             returnFocusToAddPrice();
           }}
           onValidatedItem={(intent: ValidatedItemIntent) => {
@@ -280,7 +290,7 @@ export function ShoppingAppShell({
               };
             }
 
-            setPriceEntryOpen(false);
+            setOverlay({ kind: "none" });
             returnFocusToAddPrice();
             return true;
           }}
@@ -288,6 +298,79 @@ export function ShoppingAppShell({
         {qaPanel}
       </>
     );
+  }
+
+  if (overlay.kind === "edit-item" && state.activeTrip !== null) {
+    const item = state.activeTrip.items.find(
+      (candidate) => candidate.id === overlay.itemId,
+    );
+
+    if (item !== undefined) {
+      return (
+        <>
+          <ItemEditSurface
+            trip={state.activeTrip}
+            item={item}
+            locale="en-FI"
+            onCancel={() => {
+              const itemId = item.id;
+              setOverlay({ kind: "none" });
+              queueMicrotask(() => {
+                const buttons = document.querySelectorAll<HTMLButtonElement>(
+                  "[data-edit-item-id]",
+                );
+
+                for (const button of buttons) {
+                  if (button.dataset.editItemId === itemId) {
+                    button.focus();
+                    break;
+                  }
+                }
+              });
+            }}
+            onSave={(intent: ItemEditIntent) => {
+              const result = controller.updateManualItem({
+                itemId: item.id,
+                unitPriceMinor: intent.unitPriceMinor,
+                quantity: intent.quantity,
+              });
+
+              if (
+                !result.ok ||
+                !result.changed ||
+                result.state.activeTrip === null
+              ) {
+                return false;
+              }
+
+              setLastAddedMessage(
+                `Item corrected. ${remainingFeedback(
+                  result.state.activeTrip,
+                  "en-FI",
+                )}`,
+              );
+              setOverlay({ kind: "none" });
+
+              queueMicrotask(() => {
+                const buttons = document.querySelectorAll<HTMLButtonElement>(
+                  "[data-edit-item-id]",
+                );
+
+                for (const button of buttons) {
+                  if (button.dataset.editItemId === item.id) {
+                    button.focus();
+                    break;
+                  }
+                }
+              });
+
+              return true;
+            }}
+          />
+          {qaPanel}
+        </>
+      );
+    }
   }
 
   return (
@@ -321,7 +404,32 @@ export function ShoppingAppShell({
             qaPendingSampleRef.current = null;
           }
 
-          setPriceEntryOpen(true);
+          setOverlay({ kind: "add-price" });
+        }}
+        onEditItem={(item) => {
+          qaStartedAtRef.current = null;
+          qaPendingSampleRef.current = null;
+          setLastAddedMessage("");
+          setOverlay({ kind: "edit-item", itemId: item.id });
+        }}
+        onRemoveItem={(item) => {
+          qaStartedAtRef.current = null;
+          qaPendingSampleRef.current = null;
+          const result = controller.removeItem(item.id);
+
+          if (
+            result.ok &&
+            result.changed &&
+            result.state.activeTrip !== null
+          ) {
+            setLastAddedMessage(
+              `Item removed. ${remainingFeedback(
+                result.state.activeTrip,
+                "en-FI",
+              )}`,
+            );
+            returnFocusToAddPrice();
+          }
         }}
       />
       {qaPanel}
