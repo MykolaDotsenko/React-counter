@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 
 import {
   formatEur,
-  signedMinorUnits,
+  mvpMinorUnits,
   type MinorUnits,
 } from "../../domain/money";
 import {
@@ -46,13 +46,13 @@ const rawPrice = (minor: MinorUnits): string => {
 };
 
 const absoluteMoney = (value: number): MinorUnits => {
-  const result = signedMinorUnits(Math.abs(value));
+  const result = mvpMinorUnits(Math.abs(value));
 
   if (!result.ok) {
-    throw new RangeError("Edited shopping amount exceeded safe integer bounds");
+    throw new RangeError("Edited shopping amount exceeded MVP money bounds");
   }
 
-  return result.value as MinorUnits;
+  return result.value;
 };
 
 const confidenceLabel = (item: CartItem): string => {
