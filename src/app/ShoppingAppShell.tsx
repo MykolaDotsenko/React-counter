@@ -45,7 +45,6 @@ interface PendingQaSample {
   readonly lineTotalMinor: number;
 }
 
-
 const formatAbsoluteEur = (value: number, locale: string): string => {
   const amount = signedMinorUnits(Math.abs(value));
 
@@ -125,7 +124,7 @@ export function ShoppingAppShell({
       try {
         persistQaTimingSession(sessionStorage, next);
       } catch {
-        // QA persistence must never change the shopping product behavior.
+        // QA persistence must never change shopping product behavior.
       }
 
       return next;
@@ -148,16 +147,28 @@ export function ShoppingAppShell({
     qaPendingSampleRef.current = null;
     qaStartedAtRef.current = null;
 
-    updateQaSessionState((current) =>
-      appendQaTimingSample(current, {
+    setQaSession((current) => {
+      if (current === null) {
+        return null;
+      }
+
+      const next = appendQaTimingSample(current, {
         id: crypto.randomUUID(),
         durationMs,
         unitPriceMinor: pending.unitPriceMinor,
         quantity: pending.quantity,
         lineTotalMinor: pending.lineTotalMinor,
         completedAt: new Date().toISOString(),
-      }),
-    );
+      });
+
+      try {
+        persistQaTimingSession(sessionStorage, next);
+      } catch {
+        // Timing evidence still remains visible in memory.
+      }
+
+      return next;
+    });
   }, [priceEntryOpen]);
 
   const qaPanel =
@@ -182,9 +193,7 @@ export function ShoppingAppShell({
         onResetSamples={() => {
           updateQaSessionState(resetQaTimingSamples);
         }}
-        />
-        {qaPanel}
-      </>
+      />
     );
 
   if (state.lifecycle === "booting") {
@@ -228,40 +237,42 @@ export function ShoppingAppShell({
             setPriceEntryOpen(false);
             returnFocusToAddPrice();
           }}
-        onValidatedItem={(intent: ValidatedItemIntent) => {
-          const result = controller.addManualItem(intent);
+          onValidatedItem={(intent: ValidatedItemIntent) => {
+            const result = controller.addManualItem(intent);
 
-          if (
-            !result.ok ||
-            !result.changed ||
-            result.state.activeTrip === null
-          ) {
-            return false;
-          }
+            if (
+              !result.ok ||
+              !result.changed ||
+              result.state.activeTrip === null
+            ) {
+              return false;
+            }
 
-          const addedItem = result.state.activeTrip.items.at(-1);
+            const addedItem = result.state.activeTrip.items.at(-1);
 
-          if (addedItem === undefined) {
-            return false;
-          }
+            if (addedItem === undefined) {
+              return false;
+            }
 
-          setLastAddedMessage(
-            addedFeedback(result.state.activeTrip, addedItem, "en-FI"),
-          );
+            setLastAddedMessage(
+              addedFeedback(result.state.activeTrip, addedItem, "en-FI"),
+            );
 
-          if (qaTimingEnabled && qaStartedAtRef.current !== null) {
-            qaPendingSampleRef.current = {
-              unitPriceMinor: intent.unitPriceMinor,
-              quantity: intent.quantity,
-              lineTotalMinor: lineTotal(addedItem),
-            };
-          }
+            if (qaTimingEnabled && qaStartedAtRef.current !== null) {
+              qaPendingSampleRef.current = {
+                unitPriceMinor: intent.unitPriceMinor,
+                quantity: intent.quantity,
+                lineTotalMinor: lineTotal(addedItem),
+              };
+            }
 
-          setPriceEntryOpen(false);
-          returnFocusToAddPrice();
-          return true;
-        }}
-      />
+            setPriceEntryOpen(false);
+            returnFocusToAddPrice();
+            return true;
+          }}
+        />
+        {qaPanel}
+      </>
     );
   }
 
