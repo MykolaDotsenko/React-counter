@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import {
   formatEur,
@@ -86,7 +86,7 @@ const projectionCopy = (
 } => {
   if (projection.crossesNominalBudget) {
     return {
-      primary: `After adding: ${formatAbsoluteSigned(projection.nominalOverageMinor, locale)} over your limit`,
+      primary: `This puts you ${formatAbsoluteSigned(projection.nominalOverageMinor, locale)} over your limit.`,
       secondary: `Cart would be ${formatAbsoluteSigned(projection.cartTotalMinor, locale)} of ${formatEur(trip.budgetMinor, locale)}.`,
       status: "over",
     };
@@ -102,7 +102,7 @@ const projectionCopy = (
     }
 
     return {
-      primary: `After adding: ${formatAbsoluteSigned(projection.safeRemainingMinor, locale)} into your reserve`,
+      primary: `This item uses ${formatAbsoluteSigned(projection.safeRemainingMinor, locale)} of your safety buffer.`,
       secondary: `${formatAbsoluteSigned(projection.remainingMinor, locale)} remains before your nominal limit.`,
       status: "reserve",
     };
@@ -115,6 +115,12 @@ const projectionCopy = (
   };
 };
 
+interface OverBudgetConfirmation {
+  readonly price: MinorUnits;
+  readonly projection: TripProjection;
+  readonly sourceTrip: ActiveTrip;
+}
+
 export function PriceEntrySurface({
   trip,
   onCancel,
@@ -124,8 +130,11 @@ export function PriceEntrySurface({
   const amountInputId = useId();
   const statusId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const confirmationCancelRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
   const [submitted, setSubmitted] = useState(false);
+  const [overBudgetConfirmation, setOverBudgetConfirmation] =
+    useState<OverBudgetConfirmation | null>(null);
   const [draft, setDraft] = useState<PriceEntryDraft>(
     initialPriceEntryDraft,
   );
@@ -159,14 +168,61 @@ export function PriceEntrySurface({
       ? null
       : projectionCopy(trip, projection, locale);
 
-  const commit = (): void => {
-    if (validPrice === null || submittingRef.current) {
+  const activeConfirmation =
+    overBudgetConfirmation?.sourceTrip === trip
+      ? overBudgetConfirmation
+      : null;
+
+  useEffect(() => {
+    if (activeConfirmation !== null) {
+      confirmationCancelRef.current?.focus();
+    }
+  }, [activeConfirmation]);
+
+  const submitValidatedPrice = (price: MinorUnits): void => {
+    if (submittingRef.current) {
       return;
     }
 
     submittingRef.current = true;
     setSubmitted(true);
-    onValidatedPrice(validPrice);
+    onValidatedPrice(price);
+  };
+
+  const commit = (): void => {
+    if (
+      validPrice === null ||
+      submittingRef.current ||
+      activeConfirmation !== null
+    ) {
+      return;
+    }
+
+    if (projection?.crossesNominalBudget === true) {
+      setOverBudgetConfirmation({
+        price: validPrice,
+        projection,
+        sourceTrip: trip,
+      });
+      return;
+    }
+
+    submitValidatedPrice(validPrice);
+  };
+
+  const cancelOverBudgetConfirmation = (): void => {
+    setOverBudgetConfirmation(null);
+    queueMicrotask(() => {
+      inputRef.current?.focus();
+    });
+  };
+
+  const confirmOverBudget = (): void => {
+    if (activeConfirmation === null) {
+      return;
+    }
+
+    submitValidatedPrice(activeConfirmation.price);
   };
 
   const updateMode = (mode: MoneyDraftMode): void => {
@@ -225,7 +281,7 @@ export function PriceEntrySurface({
               type="button"
               className={styles.modeButton}
               aria-pressed={draft.mode === "decimal"}
-              disabled={draft.raw !== ""}
+              disabled={draft.raw !== "" || activeConfirmation !== null}
               onClick={() => {
                 updateMode("decimal");
               }}
@@ -236,7 +292,7 @@ export function PriceEntrySurface({
               type="button"
               className={styles.modeButton}
               aria-pressed={draft.mode === "auto-cents"}
-              disabled={draft.raw !== ""}
+              disabled={draft.raw !== "" || activeConfirmation !== null}
               onClick={() => {
                 updateMode("auto-cents");
               }}
@@ -268,6 +324,7 @@ export function PriceEntrySurface({
                   : "numeric"
               }
               autoFocus
+              readOnly={activeConfirmation !== null}
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
@@ -286,12 +343,20 @@ export function PriceEntrySurface({
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
-                  commit();
+
+                  if (activeConfirmation === null) {
+                    commit();
+                  }
                 }
 
                 if (event.key === "Escape") {
                   event.preventDefault();
-                  onCancel();
+
+                  if (activeConfirmation !== null) {
+                    cancelOverBudgetConfirmation();
+                  } else {
+                    onCancel();
+                  }
                 }
               }}
             />
@@ -330,76 +395,127 @@ export function PriceEntrySurface({
           </section>
         ) : null}
 
-        <div className={styles.keypad} aria-label="Price keypad">
-          {KEYPAD_ROWS.flat().map((key) => {
-            const isSeparator = key === ".";
-            const isBackspace = key === "backspace";
-
-            if (isSeparator && draft.mode === "auto-cents") {
+        {activeConfirmation === null ? (
+          <>
+          <div className={styles.keypad} aria-label="Price keypad">
+            {KEYPAD_ROWS.flat().map((key) => {
+              const isSeparator = key === ".";
+              const isBackspace = key === "backspace";
+  
+              if (isSeparator && draft.mode === "auto-cents") {
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={styles.key}
+                    disabled
+                    aria-label="Decimal separator unavailable in cents mode"
+                  >
+                    .
+                  </button>
+                );
+              }
+  
               return (
                 <button
                   key={key}
                   type="button"
                   className={styles.key}
-                  disabled
-                  aria-label="Decimal separator unavailable in cents mode"
+                  aria-label={
+                    isBackspace
+                      ? "Backspace"
+                      : isSeparator
+                        ? "Decimal separator"
+                        : `Digit ${key}`
+                  }
+                  onClick={() => {
+                    pressKey(key);
+                  }}
                 >
-                  .
+                  {isBackspace ? "⌫" : key}
                 </button>
               );
-            }
-
-            return (
-              <button
-                key={key}
-                type="button"
-                className={styles.key}
-                aria-label={
-                  isBackspace
-                    ? "Backspace"
-                    : isSeparator
-                      ? "Decimal separator"
-                      : `Digit ${key}`
-                }
-                onClick={() => {
-                  pressKey(key);
-                }}
-              >
-                {isBackspace ? "⌫" : key}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className={styles.utilityRow}>
+            })}
+          </div>
+  
+          <div className={styles.utilityRow}>
+            <button
+              type="button"
+              className={styles.clearButton}
+              disabled={draft.raw === ""}
+              onClick={() => {
+                setDraft((current) => clearPriceEntry(current));
+                inputRef.current?.focus();
+              }}
+            >
+              Clear
+            </button>
+            <p>
+              {draft.raw === ""
+                ? "Start with the price."
+                : "Mode is locked until you clear the draft."}
+            </p>
+          </div>
+  
           <button
             type="button"
-            className={styles.clearButton}
-            disabled={draft.raw === ""}
-            onClick={() => {
-              setDraft((current) => clearPriceEntry(current));
-              inputRef.current?.focus();
-            }}
+            className={styles.addButton}
+            disabled={validPrice === null || submitted}
+            onClick={commit}
           >
-            Clear
+            {submitted
+              ? "Adding…"
+              : `Add${validPrice === null ? "" : ` · ${formatEur(validPrice, locale)}`}`}
           </button>
-          <p>
-            {draft.raw === ""
-              ? "Start with the price."
-              : "Mode is locked until you clear the draft."}
-          </p>
-        </div>
+          </>
+        ) : (
+          <section
+            className={styles.overBudgetConfirmation}
+            aria-labelledby="over-budget-title"
+            aria-describedby="over-budget-detail"
+          >
+            <div className={styles.confirmationCopy}>
+              <p className={styles.confirmationEyebrow}>Over budget</p>
+              <h2 id="over-budget-title">
+                Add this price anyway?
+              </h2>
+              <p id="over-budget-detail">
+                This puts you{" "}
+                <strong>
+                  {formatAbsoluteSigned(
+                    activeConfirmation.projection.nominalOverageMinor,
+                    locale,
+                  )}
+                </strong>{" "}
+                over your limit. Your current trip has not changed.
+              </p>
+            </div>
 
-        <button
-          type="button"
-          className={styles.addButton}
-          disabled={validPrice === null || submitted}
-          onClick={commit}
-        >
-          {submitted
-            ? "Adding…"
-            : `Add${validPrice === null ? "" : ` · ${formatEur(validPrice, locale)}`}`}
-        </button>
+            <div className={styles.confirmationActions}>
+              <button
+                ref={confirmationCancelRef}
+                type="button"
+                className={styles.confirmationCancel}
+                onClick={cancelOverBudgetConfirmation}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles.addAnywayButton}
+                disabled={submitted}
+                onClick={confirmOverBudget}
+              >
+                {submitted
+                  ? "Adding…"
+                  : `Add anyway · ${formatEur(
+                      activeConfirmation.price,
+                      locale,
+                    )}`}
+              </button>
+            </div>
+          </section>
+        )}
       </div>
     </section>
   );
