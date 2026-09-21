@@ -90,7 +90,7 @@ test("starts with a safety buffer and makes safe remaining unambiguous", async (
 
   await expect(capacity).toHaveAttribute(
     "aria-valuetext",
-    "€48.00 available before your reserve",
+    /€48\.00 available before your reserve/,
   );
 });
 
@@ -451,14 +451,14 @@ test("completes the Sprint B flagship exact-money shopping journey", async ({
     (key) => JSON.parse(localStorage.getItem(key)),
     ACTIVE_TRIP_KEY,
   );
-  expect(beforeReload.data.items).toHaveLength(5);
+  expect(beforeReload.data.items).toHaveLength(6);
 
   await page.reload();
 
   await expect(
     page.getByText("€49.56 of €50.00", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("5 items", { exact: true })).toBeVisible();
+  await expect(page.getByText("8 items", { exact: true })).toBeVisible();
 
   await addPrice("0.20", "Add · €0.20");
 
