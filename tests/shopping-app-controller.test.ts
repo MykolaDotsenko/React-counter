@@ -732,6 +732,158 @@ describe("ShoppingAppController addManualItem", () => {
   });
 });
 
+describe("ShoppingAppController undo", () => {
+  it("restores and persists the exact canonical snapshot before the last add", () => {
+    const initialTrip = createTrip(5_000, 0);
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: initialTrip,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER, LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const added = controller.addManualItem({
+      unitPriceMinor: money(479),
+      quantity: 1,
+    });
+
+    expect(added.ok).toBe(true);
+
+    if (!added.ok) {
+      throw new Error("Expected add before undo");
+    }
+
+    expect(added.state.undo).toEqual({
+      previousTrip: initialTrip,
+      description: "add",
+    });
+
+    let notifications = 0;
+    controller.subscribe(() => {
+      notifications += 1;
+    });
+
+    const undone = controller.undo();
+
+    expect(undone.ok).toBe(true);
+
+    if (!undone.ok) {
+      throw new Error("Expected undo success");
+    }
+
+    expect(undone.changed).toBe(true);
+    expect(undone.durability).toBe("persisted");
+    expect(undone.state.activeTrip).toBe(initialTrip);
+    expect(undone.state.activeTrip?.items).toHaveLength(0);
+    expect(undone.state.undo).toBeNull();
+    expect(persistence.saveCalls).toHaveLength(2);
+    expect(persistence.saveCalls[1]?.trip).toBe(initialTrip);
+    expect(notifications).toBe(1);
+  });
+
+  it("keeps the restored snapshot in memory when undo persistence fails", () => {
+    const initialTrip = createTrip(5_000, 0);
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: initialTrip,
+    });
+    persistence.queueSaveResult({ ok: true });
+    persistence.queueSaveResult({
+      ok: false,
+      issue: writeFailure,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    controller.addManualItem({
+      unitPriceMinor: money(479),
+      quantity: 1,
+    });
+
+    const undone = controller.undo();
+
+    expect(undone.ok).toBe(true);
+
+    if (!undone.ok) {
+      throw new Error("Expected memory-only undo");
+    }
+
+    expect(undone.durability).toBe("memory-only");
+    expect(undone.state.activeTrip).toBe(initialTrip);
+    expect(undone.state.activeTrip?.items).toHaveLength(0);
+    expect(undone.state.undo).toBeNull();
+    expect(undone.state.persistence).toEqual({
+      status: "degraded",
+      issue: writeFailure,
+      since: LATER,
+    });
+  });
+
+  it("is a no-op when no undoable cart mutation exists", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT),
+      ids,
+    });
+    controller.bootstrap();
+
+    const before = controller.getSnapshot();
+    const result = controller.undo();
+
+    expect(result).toEqual({
+      ok: true,
+      changed: false,
+      durability: "unchanged",
+      state: before,
+    });
+    expect(persistence.saveCalls).toHaveLength(0);
+  });
+
+  it("clears stale cart undo when a later non-cart canonical mutation occurs", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER, LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    controller.addManualItem({
+      unitPriceMinor: money(479),
+      quantity: 1,
+    });
+    expect(controller.getSnapshot().undo?.description).toBe("add");
+
+    controller.dispatch({
+      type: "set-buffer",
+      safetyBufferMinor: money(200),
+    });
+
+    expect(controller.getSnapshot().undo).toBeNull();
+    const beforeUndo = controller.getSnapshot();
+    expect(controller.undo()).toEqual({
+      ok: true,
+      changed: false,
+      durability: "unchanged",
+      state: beforeUndo,
+    });
+  });
+});
+
 describe("ShoppingAppController retryPersistence", () => {
   it("retries the exact canonical active trip and heals degraded persistence", () => {
     const persistence = createPersistence({
