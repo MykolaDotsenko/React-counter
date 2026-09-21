@@ -4,18 +4,20 @@
 
 This repository is in transition.
 
-Current implementation:
+Current repository reality:
 
-- React 19.3
-- Vite 8
-- JavaScript
-- one counter domain
-- versioned localStorage persistence
-- native typed View Transitions
-- pointer-rendering adapter
-- Vitest + Playwright + axe
+- the default/public shell is still Pulse Counter until Sprint B's final quality gate passes
+- the guarded shopping shell is implemented behind `VITE_SHOPPING_SHELL=1`
+- React 19.3 + Vite 8 remain the runtime/build foundation
+- strict TypeScript 6 now covers the shopping money, domain, application, persistence, and shopping feature layers
+- exact EUR money and ShoppingTrip / CartItem domain are implemented
+- the plain-TypeScript ShoppingAppController + `useSyncExternalStore` bridge are implemented
+- versioned Zod-validated active-trip localStorage persistence is implemented
+- Calm Utility start, active-trip, persistence-health, recovery, and manual price-entry flows through Phase 5 / B5 are implemented in the guarded shell
+- the legacy Pulse Counter UI, native typed View Transitions, and pointer-rendering adapter remain only on the default compatibility path
+- Vitest + React Testing Library + Playwright + axe remain the quality foundation
 
-Target product:
+Target product still requires:
 
 - mobile-first shopping budget companion
 - React 19.3 + Vite 8 static SPA/PWA
