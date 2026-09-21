@@ -64,6 +64,7 @@ export function PriceEntrySurface({
   const statusId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const submittingRef = useRef(false);
+  const [submitted, setSubmitted] = useState(false);
   const [draft, setDraft] = useState<PriceEntryDraft>(
     initialPriceEntryDraft,
   );
@@ -82,12 +83,8 @@ export function PriceEntrySurface({
     }
 
     submittingRef.current = true;
-
-    try {
-      onValidatedPrice(validPrice);
-    } finally {
-      submittingRef.current = false;
-    }
+    setSubmitted(true);
+    onValidatedPrice(validPrice);
   };
 
   const updateMode = (mode: MoneyDraftMode): void => {
@@ -188,6 +185,7 @@ export function PriceEntrySurface({
                   ? "decimal"
                   : "numeric"
               }
+              autoFocus
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
@@ -300,13 +298,12 @@ export function PriceEntrySurface({
         <button
           type="button"
           className={styles.addButton}
-          disabled={validPrice === null}
+          disabled={validPrice === null || submitted}
           onClick={commit}
         >
-          Add
-          {validPrice === null
-            ? ""
-            : ` · ${formatEur(validPrice, locale)}`}
+          {submitted
+            ? "Adding…"
+            : `Add${validPrice === null ? "" : ` · ${formatEur(validPrice, locale)}`}`}
         </button>
       </div>
     </section>
