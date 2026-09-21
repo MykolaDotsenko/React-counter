@@ -24,7 +24,7 @@ describe("PriceEntrySurface", () => {
     await user.click(screen.getByRole("button", { name: "Digit 7" }));
     await user.click(screen.getByRole("button", { name: "Digit 9" }));
 
-    expect(screen.getByLabelText("Price")).toHaveValue("4.79");
+    expect((screen.getByLabelText("Price") as HTMLInputElement).value).toBe("4.79");
     expect(screen.getByText("€4.79")).not.toBeNull();
 
     await user.click(
@@ -51,7 +51,7 @@ describe("PriceEntrySurface", () => {
     await user.click(input);
     await user.paste("4,79");
 
-    expect(input).toHaveValue("4,79");
+    expect((input as HTMLInputElement).value).toBe("4,79");
     expect(screen.getByText("€4.79")).not.toBeNull();
 
     await user.keyboard("{Enter}");
@@ -73,9 +73,9 @@ describe("PriceEntrySurface", () => {
     const input = screen.getByLabelText("Price");
     await user.type(input, "4.");
 
-    expect(input).toHaveValue("4.");
+    expect((input as HTMLInputElement).value).toBe("4.");
     expect(screen.getByText("Finish the amount.")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Add" })).toBeDisabled();
+    expect((screen.getByRole("button", { name: "Add" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("shows concise invalid copy and keeps Add disabled", async () => {
@@ -94,7 +94,7 @@ describe("PriceEntrySurface", () => {
     expect(
       screen.getByText("Use no more than two decimal places."),
     ).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Add" })).toBeDisabled();
+    expect((screen.getByRole("button", { name: "Add" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("does not allow zero-priced items to become a valid intent", async () => {
@@ -111,7 +111,7 @@ describe("PriceEntrySurface", () => {
     await user.type(screen.getByLabelText("Price"), "0");
 
     expect(screen.getByText("Enter a price above €0.")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Add" })).toBeDisabled();
+    expect((screen.getByRole("button", { name: "Add" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("supports backspace and one-action clear", async () => {
@@ -129,10 +129,10 @@ describe("PriceEntrySurface", () => {
     await user.type(input, "12.50");
 
     await user.click(screen.getByRole("button", { name: "Backspace" }));
-    expect(input).toHaveValue("12.5");
+    expect((input as HTMLInputElement).value).toBe("12.5");
 
     await user.click(screen.getByRole("button", { name: "Clear" }));
-    expect(input).toHaveValue("");
+    expect((input as HTMLInputElement).value).toBe("");
   });
 
   it("makes auto-cents explicit and prevents mid-draft reinterpretation", async () => {
@@ -153,7 +153,7 @@ describe("PriceEntrySurface", () => {
 
     await user.click(centsMode);
 
-    expect(centsMode).toHaveAttribute("aria-pressed", "true");
+    expect(centsMode.getAttribute("aria-pressed")).toBe("true");
     expect(
       screen.getByText("Fast entry: 479 becomes €4.79."),
     ).not.toBeNull();
@@ -163,10 +163,8 @@ describe("PriceEntrySurface", () => {
     await user.click(screen.getByRole("button", { name: "Digit 9" }));
 
     expect(screen.getByText("€4.79")).not.toBeNull();
-    expect(
-      screen.getByRole("button", { name: "Euros" }),
-    ).toBeDisabled();
-    expect(centsMode).toBeDisabled();
+    expect((screen.getByRole("button", { name: "Euros" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((centsMode as HTMLButtonElement).disabled).toBe(true);
 
     await user.click(
       screen.getByRole("button", { name: "Add · €4.79" }),
@@ -211,7 +209,7 @@ describe("PriceEntrySurface", () => {
     await user.dblClick(add);
 
     expect(onValidatedPrice).toHaveBeenCalledTimes(1);
-    expect(add).toBeDisabled();
+    expect((add as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole("button", { name: "Adding…" })).not.toBeNull();
   });
 });
