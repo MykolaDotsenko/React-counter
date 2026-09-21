@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  QA_TARGET_PRICE_1250,
-  QA_TARGET_PRICE_479,
   QA_TARGET_SAMPLE_COUNT,
   summarizeQaEmpiricalGate,
   summarizeQaTimingSamples,
