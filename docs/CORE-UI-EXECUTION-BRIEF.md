@@ -75,6 +75,12 @@ Do not rename the public product while the final brand-name gate remains unresol
 
 # Sprint A — Phase 4: Core Budget Cart UI
 
+Current progress:
+
+- A0 — **complete**, Calm Utility selected
+- A1 — **complete via PR #15**
+- A2 — next
+
 ## Sprint objective
 
 A first-time user can:
@@ -119,6 +125,16 @@ A6 Mobile/a11y/E2E hardening
 A0 and A1 may be developed in parallel only if the UI prototype does not require changing domain/application contracts.
 
 ## A0 — Design validation and final direction
+
+Status: **complete**
+
+Selected:
+
+> **Calm Utility**
+
+Decision record:
+
+- docs/design/PHASE-4-DESIGN-VALIDATION.md
 
 Priority: **100/100**
 
@@ -169,6 +185,24 @@ Do not choose based on visual novelty.
 - no unresolved ambiguity remains about the hero number
 
 ## A1 — Shopping application controller
+
+Status: **complete via PR #15**
+
+Implementation evidence:
+
+- plain TypeScript ShoppingAppController
+- immutable/cached application snapshot
+- useSyncExternalStore React bridge
+- booting / idle / active / recovery lifecycle
+- healthy / degraded persistence health
+- injected persistence / clock / id ports
+- rejected/no-op commands do not persist or notify
+- failed writes keep committed in-memory state
+- later canonical writes can heal degraded persistence
+- live state cannot be clobbered by repeated bootstrap
+- 21 controller tests + 2 React-bridge tests
+- full PR suite: 151 tests
+- Chromium / Firefox / WebKit / accessibility green
 
 Priority: **100/100**
 
