@@ -19,6 +19,14 @@ The first expanded B6 browser run exposed a real 360×800 price-entry overflow: 
 
 The empirical human timing/device section below is still pending and remains a production-switch blocker.
 
+The QA evidence recorder now treats empirical evidence as a strict contract rather than a free-form note:
+- only EUR 4.79 / EUR 12.50 quantity-1 samples captured under the documented EUR 500, zero-buffer fixture count toward timing
+- the timing viewport must be phone-like portrait width
+- the captured appearance must be light for the bright-store primary pass
+- both the primary timing device/browser and compact-phone/equivalent spot-check are named
+- typo correction, five consecutive adds, consistent input method, and compact spot-check are structured checklist requirements
+- samples outside the fixture remain visible as excluded evidence rather than silently contaminating the KPI
+
 This document separates:
 
 - automated product/engineering evidence
@@ -135,10 +143,10 @@ The QA build:
 
 - is not the public/default product
 - injects `noindex,nofollow,noarchive`
-- stores timing evidence only in tab-scoped `sessionStorage`
+- stores timing evidence only in tab-scoped `sessionStorage` under a versioned QA-only key
 - never writes timing evidence into ShoppingTrip or production persistence DTOs
 - records a sample from intentional **Add price** activation until the canonical summary has rendered again
-- automatically calculates median, P75 and maximum for the two required ordinary price-only tasks
+- automatically calculates median, P75 and maximum for the two required ordinary price-only tasks using only the documented EUR 500 / zero-buffer measurement fixture
 - provides a manual one-hand/bright-store checklist
 - can copy the raw evidence as JSON
 
@@ -157,7 +165,10 @@ For the 20 ordinary speed samples:
 7. perform 10 ordinary adds of EUR 12.50
 8. use the same input method for all comparable samples
 9. do not intentionally trigger nominal over-budget confirmation in the timing set
-10. open the QA panel and record/copy the results
+10. complete one obvious typo-correction check and five consecutive ordinary adds
+11. record the compact-phone / equivalent spot-check label
+12. confirm all one-hand, bright-store, software-keyboard and input-method checklist items
+13. open the QA panel and record/copy the results
 
 EUR 500 is a measurement fixture, not a product recommendation. It prevents threshold confirmation from contaminating the ordinary price-entry timing sample while preserving the real production interaction path.
 
@@ -229,7 +240,10 @@ Report:
 - P75
 - slowest observed attempt
 - device/browser
-- input method used
+- input method used consistently across comparable samples
+- primary timing device/browser label
+- compact-phone / equivalent spot-check label
+- phone-like portrait viewport and light appearance evidence
 
 ### Decision thresholds
 
@@ -261,6 +275,10 @@ Record pass/fail for:
 - summary is readable in bright light
 - no essential control is obscured by the mobile software keyboard
 - repeated add flow does not require scrolling in the ordinary price-only case
+- one obvious typo can be corrected before commit
+- five consecutive ordinary adds remain stable and understandable
+- the same input method is used for comparable timing samples
+- the compact ~360 × 800 phone/equivalent spot-check is recorded
 
 ## B6 exit rule
 

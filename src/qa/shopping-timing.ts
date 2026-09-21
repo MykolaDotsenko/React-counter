@@ -1,8 +1,10 @@
-export const QA_TIMING_STORAGE_KEY = "budget-cart:qa:timing-v1";
+export const QA_TIMING_STORAGE_KEY = "budget-cart:qa:timing-v2";
 
 export const QA_TARGET_PRICE_479 = 479;
 export const QA_TARGET_PRICE_1250 = 1_250;
 export const QA_TARGET_SAMPLE_COUNT = 10;
+export const QA_FIXTURE_BUDGET_MINOR = 50_000;
+export const QA_FIXTURE_BUFFER_MINOR = 0;
 
 export type QaChecklistKey =
   | "addPriceReachable"
@@ -14,7 +16,11 @@ export type QaChecklistKey =
   | "keypadCloses"
   | "brightSummaryReadable"
   | "softwareKeyboardClear"
-  | "repeatedAddNoScroll";
+  | "repeatedAddNoScroll"
+  | "typoCorrectionWorks"
+  | "fiveConsecutiveAddsSmooth"
+  | "consistentInputMethod"
+  | "compactSpotCheckRecorded";
 
 export interface QaTimingEnvironment {
   readonly userAgent: string;
@@ -33,6 +39,8 @@ export interface QaTimingSample {
   readonly unitPriceMinor: number;
   readonly quantity: number;
   readonly lineTotalMinor: number;
+  readonly budgetMinor: number;
+  readonly safetyBufferMinor: number;
   readonly completedAt: string;
 }
 
@@ -47,12 +55,17 @@ export interface QaTimingChecklist {
   readonly brightSummaryReadable: boolean;
   readonly softwareKeyboardClear: boolean;
   readonly repeatedAddNoScroll: boolean;
+  readonly typoCorrectionWorks: boolean;
+  readonly fiveConsecutiveAddsSmooth: boolean;
+  readonly consistentInputMethod: boolean;
+  readonly compactSpotCheckRecorded: boolean;
 }
 
 export interface QaTimingSession {
-  readonly version: 1;
+  readonly version: 2;
   readonly environment: QaTimingEnvironment;
   readonly deviceLabel: string;
+  readonly compactDeviceLabel: string;
   readonly notes: string;
   readonly checklist: QaTimingChecklist;
   readonly samples: readonly QaTimingSample[];
@@ -71,6 +84,9 @@ export interface QaEmpiricalGateSummary {
   readonly eur1250: QaTimingSummary;
   readonly checklistComplete: boolean;
   readonly deviceLabelPresent: boolean;
+  readonly compactDeviceLabelPresent: boolean;
+  readonly lightAppearanceRecorded: boolean;
+  readonly phonePortraitViewport: boolean;
   readonly ignoredSampleCount: number;
   readonly status: "pending" | "target-met" | "release-floor" | "fail";
   readonly releaseEligible: boolean;
@@ -87,6 +103,10 @@ const emptyChecklist = (): QaTimingChecklist => ({
   brightSummaryReadable: false,
   softwareKeyboardClear: false,
   repeatedAddNoScroll: false,
+  typoCorrectionWorks: false,
+  fiveConsecutiveAddsSmooth: false,
+  consistentInputMethod: false,
+  compactSpotCheckRecorded: false,
 });
 
 export const captureQaTimingEnvironment = (): QaTimingEnvironment => ({
@@ -105,9 +125,10 @@ export const captureQaTimingEnvironment = (): QaTimingEnvironment => ({
 export const createQaTimingSession = (
   environment: QaTimingEnvironment,
 ): QaTimingSession => ({
-  version: 1,
+  version: 2,
   environment,
   deviceLabel: "",
+  compactDeviceLabel: "",
   notes: "",
   checklist: emptyChecklist(),
   samples: [],
@@ -157,7 +178,11 @@ const isQaTimingChecklist = (
     typeof candidate.keypadCloses === "boolean" &&
     typeof candidate.brightSummaryReadable === "boolean" &&
     typeof candidate.softwareKeyboardClear === "boolean" &&
-    typeof candidate.repeatedAddNoScroll === "boolean"
+    typeof candidate.repeatedAddNoScroll === "boolean" &&
+    typeof candidate.typoCorrectionWorks === "boolean" &&
+    typeof candidate.fiveConsecutiveAddsSmooth === "boolean" &&
+    typeof candidate.consistentInputMethod === "boolean" &&
+    typeof candidate.compactSpotCheckRecorded === "boolean"
   );
 };
 
@@ -179,6 +204,12 @@ const isQaTimingSample = (value: unknown): value is QaTimingSample => {
     candidate.quantity >= 1 &&
     isFiniteNumber(candidate.lineTotalMinor) &&
     Number.isSafeInteger(candidate.lineTotalMinor) &&
+    isFiniteNumber(candidate.budgetMinor) &&
+    Number.isSafeInteger(candidate.budgetMinor) &&
+    candidate.budgetMinor > 0 &&
+    isFiniteNumber(candidate.safetyBufferMinor) &&
+    Number.isSafeInteger(candidate.safetyBufferMinor) &&
+    candidate.safetyBufferMinor >= 0 &&
     typeof candidate.completedAt === "string"
   );
 };
@@ -191,9 +222,10 @@ const isQaTimingSession = (value: unknown): value is QaTimingSession => {
   const candidate = value as Partial<QaTimingSession>;
 
   return (
-    candidate.version === 1 &&
+    candidate.version === 2 &&
     isQaTimingEnvironment(candidate.environment) &&
     typeof candidate.deviceLabel === "string" &&
+    typeof candidate.compactDeviceLabel === "string" &&
     typeof candidate.notes === "string" &&
     isQaTimingChecklist(candidate.checklist) &&
     Array.isArray(candidate.samples) &&
@@ -264,6 +296,14 @@ export const updateQaDeviceLabel = (
   deviceLabel,
 });
 
+export const updateQaCompactDeviceLabel = (
+  session: QaTimingSession,
+  compactDeviceLabel: string,
+): QaTimingSession => ({
+  ...session,
+  compactDeviceLabel,
+});
+
 export const resetQaTimingSamples = (
   session: QaTimingSession,
 ): QaTimingSession => ({
@@ -308,15 +348,21 @@ const median = (values: readonly number[]): number | null => {
     : (lower + upper) / 2;
 };
 
+const isRepresentativeTimingSample = (
+  sample: QaTimingSample,
+  lineTotalMinor?: number,
+): boolean =>
+  sample.quantity === 1 &&
+  sample.budgetMinor === QA_FIXTURE_BUDGET_MINOR &&
+  sample.safetyBufferMinor === QA_FIXTURE_BUFFER_MINOR &&
+  (lineTotalMinor === undefined || sample.lineTotalMinor === lineTotalMinor);
+
 export const summarizeQaTimingSamples = (
   samples: readonly QaTimingSample[],
   lineTotalMinor: number,
 ): QaTimingSummary => {
   const durations = samples
-    .filter(
-      (sample) =>
-        sample.lineTotalMinor === lineTotalMinor && sample.quantity === 1,
-    )
+    .filter((sample) => isRepresentativeTimingSample(sample, lineTotalMinor))
     .map((sample) => sample.durationMs);
 
   const medianMs = median(durations);
@@ -351,10 +397,17 @@ const targetSampleCount = (
 ): number =>
   samples.filter(
     (sample) =>
-      sample.quantity === 1 &&
+      isRepresentativeTimingSample(sample) &&
       (sample.lineTotalMinor === QA_TARGET_PRICE_479 ||
         sample.lineTotalMinor === QA_TARGET_PRICE_1250),
   ).length;
+
+const isPhonePortraitEnvironment = (
+  environment: QaTimingEnvironment,
+): boolean =>
+  environment.viewportWidth >= 340 &&
+  environment.viewportWidth <= 430 &&
+  environment.viewportHeight > environment.viewportWidth;
 
 export const summarizeQaEmpiricalGate = (
   session: QaTimingSession,
@@ -369,6 +422,12 @@ export const summarizeQaEmpiricalGate = (
   );
   const checklistComplete = qaChecklistComplete(session.checklist);
   const deviceLabelPresent = session.deviceLabel.trim().length > 0;
+  const compactDeviceLabelPresent =
+    session.compactDeviceLabel.trim().length > 0;
+  const lightAppearanceRecorded = session.environment.colorScheme === "light";
+  const phonePortraitViewport = isPhonePortraitEnvironment(
+    session.environment,
+  );
   const ignoredSampleCount =
     session.samples.length - targetSampleCount(session.samples);
 
@@ -376,7 +435,10 @@ export const summarizeQaEmpiricalGate = (
     eur479.count >= QA_TARGET_SAMPLE_COUNT &&
     eur1250.count >= QA_TARGET_SAMPLE_COUNT &&
     checklistComplete &&
-    deviceLabelPresent;
+    deviceLabelPresent &&
+    compactDeviceLabelPresent &&
+    lightAppearanceRecorded &&
+    phonePortraitViewport;
 
   let status: QaEmpiricalGateSummary["status"] = "pending";
 
@@ -401,6 +463,9 @@ export const summarizeQaEmpiricalGate = (
     eur1250,
     checklistComplete,
     deviceLabelPresent,
+    compactDeviceLabelPresent,
+    lightAppearanceRecorded,
+    phonePortraitViewport,
     ignoredSampleCount,
     status,
     releaseEligible:

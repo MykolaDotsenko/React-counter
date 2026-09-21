@@ -16,6 +16,7 @@ export interface ShoppingTimingQaPanelProps {
     value: boolean,
   ) => void;
   readonly onDeviceLabelChange: (value: string) => void;
+  readonly onCompactDeviceLabelChange: (value: string) => void;
   readonly onNotesChange: (value: string) => void;
   readonly onResetSamples: () => void;
 }
@@ -64,6 +65,22 @@ const CHECKLIST: readonly {
     key: "repeatedAddNoScroll",
     label: "Ordinary repeated add does not require scrolling",
   },
+  {
+    key: "typoCorrectionWorks",
+    label: "One obvious typo can be corrected before commit",
+  },
+  {
+    key: "fiveConsecutiveAddsSmooth",
+    label: "Five consecutive ordinary adds stay stable and understandable",
+  },
+  {
+    key: "consistentInputMethod",
+    label: "The same input method was used for comparable timing samples",
+  },
+  {
+    key: "compactSpotCheckRecorded",
+    label: "Compact ~360×800 phone/equivalent spot-check was completed",
+  },
 ] as const;
 
 const seconds = (value: number | null): string =>
@@ -92,6 +109,7 @@ export function ShoppingTimingQaPanel({
   session,
   onChecklistChange,
   onDeviceLabelChange,
+  onCompactDeviceLabelChange,
   onNotesChange,
   onResetSamples,
 }: ShoppingTimingQaPanelProps) {
@@ -139,10 +157,16 @@ export function ShoppingTimingQaPanel({
       : summary1250.count < QA_TARGET_SAMPLE_COUNT
         ? `Next: €12.50 sample ${summary1250.count + 1}/${QA_TARGET_SAMPLE_COUNT}`
         : !gate.deviceLabelPresent
-          ? "Add the device/browser label."
-          : !gate.checklistComplete
-            ? "Complete the one-hand / bright-store checklist."
-            : gate.status === "target-met"
+          ? "Add the primary device/browser label."
+          : !gate.compactDeviceLabelPresent
+            ? "Record the compact phone / equivalent spot-check label."
+            : !gate.phonePortraitViewport
+              ? "Run the timing set in a representative phone-like portrait viewport."
+              : !gate.lightAppearanceRecorded
+                ? "Switch to system light appearance and reopen the QA build."
+                : !gate.checklistComplete
+                  ? "Complete every empirical checklist item."
+                  : gate.status === "target-met"
               ? "Empirical target met."
               : gate.status === "release-floor"
                 ? "Release floor met; speed target still missed."
@@ -154,6 +178,7 @@ export function ShoppingTimingQaPanel({
       generatedAt: new Date().toISOString(),
       environment: session.environment,
       deviceLabel: session.deviceLabel,
+      compactDeviceLabel: session.compactDeviceLabel,
       notes: session.notes,
       checklist: session.checklist,
       gate,
@@ -204,7 +229,9 @@ export function ShoppingTimingQaPanel({
 
           <p className={styles.warning}>
             This panel is not part of the product UI. Measure one-handed on a
-            real phone. Automation cannot prove the ≤2.5 s KPI.
+            real phone using the documented €500 budget with no safety buffer.
+            Only matching fixture samples count. Automation cannot prove the
+            ≤2.5 s KPI.
           </p>
 
           <section
@@ -224,9 +251,12 @@ export function ShoppingTimingQaPanel({
             <span>{nextStep}</span>
             <small>
               Checklist {gate.checklistComplete ? "complete" : "incomplete"} ·
-              Device label {gate.deviceLabelPresent ? "set" : "missing"}
+              Primary device {gate.deviceLabelPresent ? "set" : "missing"} ·
+              Compact check {gate.compactDeviceLabelPresent ? "set" : "missing"} ·
+              Phone portrait {gate.phonePortraitViewport ? "yes" : "no"} ·
+              Light appearance {gate.lightAppearanceRecorded ? "yes" : "no"}
               {gate.ignoredSampleCount > 0
-                ? ` · ${gate.ignoredSampleCount} non-target sample(s) ignored`
+                ? ` · ${gate.ignoredSampleCount} excluded sample(s)`
                 : ""}
             </small>
           </section>
@@ -237,12 +267,23 @@ export function ShoppingTimingQaPanel({
           </div>
 
           <label className={styles.field}>
-            <span>Device / browser label</span>
+            <span>Primary timing device / browser</span>
             <input
               value={session.deviceLabel}
               placeholder="Pixel 8 · Chrome"
               onChange={(event) => {
                 onDeviceLabelChange(event.currentTarget.value);
+              }}
+            />
+          </label>
+
+          <label className={styles.field}>
+            <span>Compact phone / equivalent spot-check</span>
+            <input
+              value={session.compactDeviceLabel}
+              placeholder="iPhone SE · Safari / 360×800 equivalent"
+              onChange={(event) => {
+                onCompactDeviceLabelChange(event.currentTarget.value);
               }}
             />
           </label>
@@ -269,6 +310,10 @@ export function ShoppingTimingQaPanel({
             <div>
               <dt>Appearance</dt>
               <dd>{session.environment.colorScheme}</dd>
+            </div>
+            <div>
+              <dt>Timing fixture</dt>
+              <dd>€500 · no buffer</dd>
             </div>
           </dl>
 

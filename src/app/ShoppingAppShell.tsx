@@ -26,6 +26,7 @@ import {
   persistQaTimingSession,
   resetQaTimingSamples,
   updateQaChecklist,
+  updateQaCompactDeviceLabel,
   updateQaDeviceLabel,
   updateQaTimingNotes,
   type QaTimingSession,
@@ -44,6 +45,8 @@ interface PendingQaSample {
   readonly unitPriceMinor: number;
   readonly quantity: number;
   readonly lineTotalMinor: number;
+  readonly budgetMinor: number;
+  readonly safetyBufferMinor: number;
 }
 
 const formatAbsoluteEur = (value: number, locale: string): string => {
@@ -159,6 +162,8 @@ export function ShoppingAppShell({
         unitPriceMinor: pending.unitPriceMinor,
         quantity: pending.quantity,
         lineTotalMinor: pending.lineTotalMinor,
+        budgetMinor: pending.budgetMinor,
+        safetyBufferMinor: pending.safetyBufferMinor,
         completedAt: new Date().toISOString(),
       });
 
@@ -184,6 +189,11 @@ export function ShoppingAppShell({
         onDeviceLabelChange={(value) => {
           updateQaSessionState((current) =>
             updateQaDeviceLabel(current, value),
+          );
+        }}
+        onCompactDeviceLabelChange={(value) => {
+          updateQaSessionState((current) =>
+            updateQaCompactDeviceLabel(current, value),
           );
         }}
         onNotesChange={(value) => {
@@ -264,6 +274,9 @@ export function ShoppingAppShell({
                 unitPriceMinor: intent.unitPriceMinor,
                 quantity: intent.quantity,
                 lineTotalMinor: lineTotal(addedItem),
+                budgetMinor: result.state.activeTrip.budgetMinor,
+                safetyBufferMinor:
+                  result.state.activeTrip.safetyBufferMinor,
               };
             }
 
