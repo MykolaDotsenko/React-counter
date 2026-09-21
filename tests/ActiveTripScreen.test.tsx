@@ -113,8 +113,13 @@ const createController = (trip: ActiveTrip) => {
       bootstrap: () => ({
         ok: true,
         activeTrip: trip,
+        completedTrips: [],
+        completionCleanupPending: false,
       }),
       save: () => ({ ok: true }),
+      complete: () => ({ ok: true }),
+      saveCompleted: () => ({ ok: true }),
+      clearCompletedActive: () => ({ ok: true }),
     },
     clock,
     ids,
