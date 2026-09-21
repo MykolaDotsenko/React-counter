@@ -79,6 +79,174 @@ describe("PriceEntrySurface", () => {
     ).not.toBeNull();
   });
 
+  it("distinguishes safety-buffer use without adding a confirmation step", async () => {
+    const user = userEvent.setup();
+    const onValidatedPrice = vi.fn();
+    const trip = createTrip(5_000, 200);
+
+    render(
+      <PriceEntrySurface
+        trip={trip}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedPrice={onValidatedPrice}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "49.00");
+
+    expect(
+      screen.getByText("This item uses €1.00 of your safety buffer."),
+    ).not.toBeNull();
+    expect(
+      screen.getByText("€1.00 remains before your nominal limit."),
+    ).not.toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Add this price anyway?" }),
+    ).toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: "Add · €49.00" }),
+    );
+
+    expect(onValidatedPrice).toHaveBeenCalledTimes(1);
+    expect(onValidatedPrice).toHaveBeenCalledWith(4_900);
+    expect(trip.items).toHaveLength(0);
+  });
+
+  it("requires explicit Add anyway before emitting a nominal over-budget intent", async () => {
+    const user = userEvent.setup();
+    const onValidatedPrice = vi.fn();
+    const trip = createTrip();
+
+    render(
+      <PriceEntrySurface
+        trip={trip}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedPrice={onValidatedPrice}
+      />,
+    );
+
+    const input = screen.getByLabelText("Price") as HTMLInputElement;
+    await user.type(input, "53.41");
+
+    expect(
+      screen.getByText("This puts you €3.41 over your limit."),
+    ).not.toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: "Add · €53.41" }),
+    );
+
+    expect(onValidatedPrice).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("heading", { name: "Add this price anyway?" }),
+    ).not.toBeNull();
+    expect(input.readOnly).toBe(true);
+    expect(trip.items).toHaveLength(0);
+
+    await user.click(
+      screen.getByRole("button", { name: "Add anyway · €53.41" }),
+    );
+
+    expect(onValidatedPrice).toHaveBeenCalledTimes(1);
+    expect(onValidatedPrice).toHaveBeenCalledWith(5_341);
+    expect(trip.items).toHaveLength(0);
+  });
+
+  it("cancels over-budget review without changing the trip or draft", async () => {
+    const user = userEvent.setup();
+    const onValidatedPrice = vi.fn();
+    const onCancel = vi.fn();
+    const trip = createTrip();
+
+    render(
+      <PriceEntrySurface
+        trip={trip}
+        locale="en-IE"
+        onCancel={onCancel}
+        onValidatedPrice={onValidatedPrice}
+      />,
+    );
+
+    const input = screen.getByLabelText("Price") as HTMLInputElement;
+    await user.type(input, "53.41");
+    await user.click(
+      screen.getByRole("button", { name: "Add · €53.41" }),
+    );
+
+    await user.click(
+      screen.getAllByRole("button", { name: "Cancel" }).at(-1)!,
+    );
+
+    expect(onValidatedPrice).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(input.value).toBe("53.41");
+    expect(input.readOnly).toBe(false);
+    expect(trip.items).toHaveLength(0);
+    expect(
+      screen.queryByRole("heading", { name: "Add this price anyway?" }),
+    ).toBeNull();
+  });
+
+  it("lets Escape dismiss only the over-budget review", async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={onCancel}
+        onValidatedPrice={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "53.41");
+    await user.click(
+      screen.getByRole("button", { name: "Add · €53.41" }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Add this price anyway?" }),
+    ).not.toBeNull();
+
+    await user.keyboard("{Escape}");
+
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("heading", { name: "Add this price anyway?" }),
+    ).toBeNull();
+  });
+
+  it("guards Add anyway from rapid duplicate submission", async () => {
+    const user = userEvent.setup();
+    const onValidatedPrice = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedPrice={onValidatedPrice}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "53.41");
+    await user.click(
+      screen.getByRole("button", { name: "Add · €53.41" }),
+    );
+
+    const addAnyway = screen.getByRole("button", {
+      name: "Add anyway · €53.41",
+    });
+
+    await user.dblClick(addAnyway);
+
+    expect(onValidatedPrice).toHaveBeenCalledTimes(1);
+  });
+
   it("shows no fake projection for an incomplete or invalid draft", async () => {
     const user = userEvent.setup();
 
