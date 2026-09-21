@@ -377,6 +377,16 @@ Suggested PR:
 
 ## Phase 5 — ultra-fast manual price entry
 
+Progress:
+
+- B0 Price-entry interaction contract — **complete via PR #22**
+- B1 One-hand price-entry surface — **complete via PR #22**
+- B2 Live projected remaining — next
+- B3 Buffer / over-budget consequence states — pending
+- B4 Quantity — pending
+- B5 Commit / persist / return — pending
+- B6 Correction minimum + quality gate — pending
+
 Execution contract:
 
 - docs/CORE-UI-EXECUTION-BRIEF.md — Sprint B
