@@ -2,15 +2,111 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { mvpMinorUnits, type Result } from "../src/domain/money";
+import {
+  createActiveTrip,
+  type ActiveTrip,
+} from "../src/domain/shopping-trip";
 import { PriceEntrySurface } from "../src/features/shopping/PriceEntrySurface";
 
+const unwrap = <T, E>(result: Result<T, E>): T => {
+  expect(result.ok).toBe(true);
+
+  if (!result.ok) {
+    throw new Error("Expected successful Result");
+  }
+
+  return result.value;
+};
+
+const money = (value: number) => unwrap(mvpMinorUnits(value));
+
+const createTrip = (
+  budget = 5_000,
+  buffer = 0,
+): ActiveTrip =>
+  unwrap(
+    createActiveTrip({
+      id: "trip-price-entry",
+      budgetMinor: money(budget),
+      safetyBufferMinor: money(buffer),
+      startedAt: "2026-09-21T09:00:00.000Z",
+    }),
+  );
+
 describe("PriceEntrySurface", () => {
+  it("previews exact remaining without mutating the active trip", async () => {
+    const user = userEvent.setup();
+    const trip = createTrip();
+
+    render(
+      <PriceEntrySurface
+        trip={trip}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedPrice={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "4.79");
+
+    expect(
+      screen.getByText("After adding: €45.21 left"),
+    ).not.toBeNull();
+    expect(screen.getByLabelText("Projected cart result")).not.toBeNull();
+    expect(trip.items).toHaveLength(0);
+  });
+
+  it("previews safe remaining first when a safety buffer exists", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip(5_000, 200)}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedPrice={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "4.79");
+
+    expect(
+      screen.getByText("After adding: €43.21 safe to spend"),
+    ).not.toBeNull();
+    expect(
+      screen.getByText("€45.21 remains before your nominal limit."),
+    ).not.toBeNull();
+  });
+
+  it("shows no fake projection for an incomplete or invalid draft", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedPrice={vi.fn()}
+      />,
+    );
+
+    const input = screen.getByLabelText("Price");
+    await user.type(input, "4.");
+
+    expect(screen.queryByLabelText("Projected cart result")).toBeNull();
+
+    await user.type(input, "790");
+
+    expect(screen.queryByLabelText("Projected cart result")).toBeNull();
+  });
   it("enters a basic EUR 4.79 price with the one-hand keypad", async () => {
     const user = userEvent.setup();
     const onValidatedPrice = vi.fn();
 
     render(
       <PriceEntrySurface
+        trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
         onValidatedPrice={onValidatedPrice}
@@ -41,6 +137,7 @@ describe("PriceEntrySurface", () => {
 
     render(
       <PriceEntrySurface
+        trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
         onValidatedPrice={onValidatedPrice}
@@ -64,6 +161,7 @@ describe("PriceEntrySurface", () => {
 
     render(
       <PriceEntrySurface
+        trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
         onValidatedPrice={vi.fn()}
@@ -83,6 +181,7 @@ describe("PriceEntrySurface", () => {
 
     render(
       <PriceEntrySurface
+        trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
         onValidatedPrice={vi.fn()}
@@ -102,6 +201,7 @@ describe("PriceEntrySurface", () => {
 
     render(
       <PriceEntrySurface
+        trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
         onValidatedPrice={vi.fn()}
@@ -119,6 +219,7 @@ describe("PriceEntrySurface", () => {
 
     render(
       <PriceEntrySurface
+        trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
         onValidatedPrice={vi.fn()}
@@ -141,6 +242,7 @@ describe("PriceEntrySurface", () => {
 
     render(
       <PriceEntrySurface
+        trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
         onValidatedPrice={onValidatedPrice}
@@ -179,6 +281,7 @@ describe("PriceEntrySurface", () => {
 
     render(
       <PriceEntrySurface
+        trip={createTrip()}
         locale="en-IE"
         onCancel={onCancel}
         onValidatedPrice={vi.fn()}
@@ -197,6 +300,7 @@ describe("PriceEntrySurface", () => {
 
     render(
       <PriceEntrySurface
+        trip={createTrip()}
         locale="en-IE"
         onCancel={vi.fn()}
         onValidatedPrice={onValidatedPrice}
