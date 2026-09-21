@@ -2,6 +2,7 @@ import type {
   ActiveTripBootstrapResult,
   ActiveTripPersistencePort,
   ActiveTripSaveResult,
+  CompletionSaveResult,
   PersistenceProblem,
 } from "../../application/shopping-app-controller";
 import type {
