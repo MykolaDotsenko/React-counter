@@ -8,6 +8,7 @@ import {
   itemId as parseItemId,
   reduceTrip,
   type ActiveTrip,
+  type CompletedTrip,
   type IsoTimestamp,
 } from "../src/domain/shopping-trip";
 import {
@@ -16,6 +17,7 @@ import {
   type ActiveTripPersistencePort,
   type ActiveTripSaveResult,
   type Clock,
+  type CompletionSaveResult,
   type IdGenerator,
   type PersistenceProblem,
 } from "../src/application/shopping-app-controller";
@@ -50,29 +52,71 @@ const createTrip = (
     }),
   );
 
+type BootstrapInput = ActiveTripBootstrapResult extends infer T
+  ? T extends ActiveTripBootstrapResult
+    ? Omit<T, "completedTrips" | "completionCleanupPending"> & {
+        readonly completedTrips?: readonly CompletedTrip[];
+        readonly completionCleanupPending?: boolean;
+      }
+    : never
+  : never;
+
+const normalizeBootstrap = (
+  result: BootstrapInput,
+): ActiveTripBootstrapResult => ({
+  ...result,
+  completedTrips: result.completedTrips ?? [],
+  completionCleanupPending:
+    result.completionCleanupPending ?? false,
+} as ActiveTripBootstrapResult);
+
 interface PersistenceFake extends ActiveTripPersistencePort {
   readonly bootstrapCalls: number;
   readonly saveCalls: readonly {
     trip: ActiveTrip;
     savedAt: IsoTimestamp;
   }[];
-  setBootstrapResult(result: ActiveTripBootstrapResult): void;
+  readonly completeCalls: readonly {
+    trip: CompletedTrip;
+    savedAt: IsoTimestamp;
+  }[];
+  readonly saveCompletedCalls: readonly {
+    trip: CompletedTrip;
+    savedAt: IsoTimestamp;
+  }[];
+  readonly clearCompletedActiveCalls: number;
+  setBootstrapResult(result: BootstrapInput): void;
   queueSaveResult(result: ActiveTripSaveResult): void;
+  queueCompleteResult(result: CompletionSaveResult): void;
+  queueCompletedSaveResult(result: ActiveTripSaveResult): void;
+  queueClearResult(result: ActiveTripSaveResult): void;
 }
 
 const createPersistence = (
-  initialBootstrap: ActiveTripBootstrapResult = {
+  initialBootstrap: BootstrapInput = {
     ok: true,
     activeTrip: null,
   },
 ): PersistenceFake => {
-  let bootstrapResult = initialBootstrap;
+  let bootstrapResult = normalizeBootstrap(initialBootstrap);
   let bootstrapCalls = 0;
+  let clearCompletedActiveCalls = 0;
   const saveCalls: Array<{
     trip: ActiveTrip;
     savedAt: IsoTimestamp;
   }> = [];
+  const completeCalls: Array<{
+    trip: CompletedTrip;
+    savedAt: IsoTimestamp;
+  }> = [];
+  const saveCompletedCalls: Array<{
+    trip: CompletedTrip;
+    savedAt: IsoTimestamp;
+  }> = [];
   const saveResults: ActiveTripSaveResult[] = [];
+  const completeResults: CompletionSaveResult[] = [];
+  const completedSaveResults: ActiveTripSaveResult[] = [];
+  const clearResults: ActiveTripSaveResult[] = [];
 
   return {
     get bootstrapCalls() {
@@ -81,11 +125,29 @@ const createPersistence = (
     get saveCalls() {
       return saveCalls;
     },
+    get completeCalls() {
+      return completeCalls;
+    },
+    get saveCompletedCalls() {
+      return saveCompletedCalls;
+    },
+    get clearCompletedActiveCalls() {
+      return clearCompletedActiveCalls;
+    },
     setBootstrapResult(result) {
-      bootstrapResult = result;
+      bootstrapResult = normalizeBootstrap(result);
     },
     queueSaveResult(result) {
       saveResults.push(result);
+    },
+    queueCompleteResult(result) {
+      completeResults.push(result);
+    },
+    queueCompletedSaveResult(result) {
+      completedSaveResults.push(result);
+    },
+    queueClearResult(result) {
+      clearResults.push(result);
     },
     bootstrap() {
       bootstrapCalls += 1;
@@ -99,6 +161,20 @@ const createPersistence = (
           ok: true,
         }
       );
+    },
+    complete(trip, savedAt) {
+      completeCalls.push({ trip, savedAt });
+
+      return completeResults.shift() ?? { ok: true };
+    },
+    saveCompleted(trip, savedAt) {
+      saveCompletedCalls.push({ trip, savedAt });
+
+      return completedSaveResults.shift() ?? { ok: true };
+    },
+    clearCompletedActive() {
+      clearCompletedActiveCalls += 1;
+      return clearResults.shift() ?? { ok: true };
     },
   };
 };
@@ -147,7 +223,9 @@ describe("ShoppingAppController snapshot contract", () => {
     expect(first).toEqual({
       lifecycle: "booting",
       activeTrip: null,
+      completedSummary: null,
       completedTrips: [],
+      completionCleanupPending: false,
       persistence: { status: "healthy" },
       undo: null,
       recovery: null,
