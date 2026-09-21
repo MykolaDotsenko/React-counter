@@ -15,27 +15,38 @@ import {
   remaining,
   safeRemaining,
   type ActiveTrip,
+  type CompletedTrip,
   type IsoTimestamp,
 } from "../src/domain/shopping-trip";
 import {
   ACTIVE_TRIP_STORAGE_KEY,
   CURRENT_ACTIVE_TRIP_SCHEMA_VERSION,
+  CURRENT_HISTORY_SCHEMA_VERSION,
+  HISTORY_STORAGE_KEY,
   LEGACY_PULSE_STORAGE_KEYS,
 } from "../src/infrastructure/storage/shopping-storage-schema";
 import {
   bootstrapShoppingPersistence,
   clearActiveTrip,
+  completeTripPersistence,
   decodeActiveTripSnapshot,
+  decodeHistorySnapshot,
   encodeActiveTripSnapshot,
+  encodeHistorySnapshot,
   restoreActiveTrip,
+  restoreHistory,
   retireLegacyPulseKeys,
+  updateCompletedTripPersistence,
   writeActiveTrip,
+  writeHistory,
   type StorageLike,
 } from "../src/infrastructure/storage/shopping-storage";
 
 const START = "2026-09-21T09:00:00.000Z";
 const ADD_TIME = "2026-09-21T09:05:00.000Z";
 const SAVE_TIME = "2026-09-21T09:06:00.000Z";
+const COMPLETE_TIME = "2026-09-21T09:10:00.000Z";
+const RECONCILE_TIME = "2026-09-21T09:12:00.000Z";
 
 const unwrap = <T, E>(result: Result<T, E>): T => {
   expect(result.ok).toBe(true);
@@ -91,9 +102,42 @@ const createTrip = (): ActiveTrip => {
   return next;
 };
 
+const createCompletedTrip = (
+  actualCheckoutMinor?: number,
+): CompletedTrip => {
+  const completed = unwrap(
+    reduceTrip(createTrip(), {
+      type: "complete-trip",
+      completedAt: time(COMPLETE_TIME),
+    }),
+  );
+
+  if (completed.status !== "completed") {
+    throw new Error("Expected completed trip");
+  }
+
+  if (actualCheckoutMinor === undefined) {
+    return completed;
+  }
+
+  const reconciled = unwrap(
+    reduceTrip(completed, {
+      type: "set-actual-checkout",
+      actualCheckoutMinor: money(actualCheckoutMinor),
+    }),
+  );
+
+  if (reconciled.status !== "completed") {
+    throw new Error("Expected reconciled completed trip");
+  }
+
+  return reconciled;
+};
+
 interface MemoryStorageOptions {
   readonly failGet?: boolean;
   readonly failSet?: boolean;
+  readonly failSetKeys?: readonly string[];
   readonly failRemoveKeys?: readonly string[];
 }
 
@@ -104,10 +148,13 @@ const createStorage = (
   readonly values: Map<string, string>;
   readonly writes: Array<{ readonly key: string; readonly value: string }>;
   readonly removals: string[];
+  readonly events: readonly string[];
 } => {
   const values = new Map(Object.entries(entries));
   const writes: Array<{ key: string; value: string }> = [];
   const removals: string[] = [];
+  const events: string[] = [];
+  const failedSetKeys = new Set(options.failSetKeys ?? []);
   const failedRemoveKeys = new Set(options.failRemoveKeys ?? []);
 
   return {
@@ -119,7 +166,9 @@ const createStorage = (
       return values.get(key) ?? null;
     },
     setItem(key, value) {
-      if (options.failSet) {
+      events.push(`set:${key}`);
+
+      if (options.failSet || failedSetKeys.has(key)) {
         throw new Error("write blocked");
       }
 
@@ -127,6 +176,7 @@ const createStorage = (
       values.set(key, value);
     },
     removeItem(key) {
+      events.push(`remove:${key}`);
       removals.push(key);
 
       if (failedRemoveKeys.has(key)) {
@@ -138,6 +188,7 @@ const createStorage = (
     values,
     writes,
     removals,
+    events,
   };
 };
 
