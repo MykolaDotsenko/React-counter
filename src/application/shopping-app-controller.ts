@@ -31,6 +31,7 @@ import type {
   ShoppingAppControllerDependencies,
   ShoppingAppState,
   StartTripInput,
+  UndoState,
   UpdateManualItemInput,
   UpdateSpendingPlanInput,
 } from "./shopping-app-contracts";
