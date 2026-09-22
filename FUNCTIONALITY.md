@@ -4,7 +4,7 @@
 
 This document defines the functional behaviour of the shopping budget companion.
 
-The public/default build is still Pulse Counter until the guarded replacement passes its empirical release gate. In the guarded shopping shell, the core flow through Phase 7 is implemented: start/restore, exact manual entry, edit/remove/Undo, active-trip budget and safety-buffer adjustment, loss-safe completion, optional checkout reconciliation, and lightweight history. Later sections such as price memory, installed PWA support, and scanning remain target behaviour until their roadmap phases land.
+The public/default build is still Pulse Counter until the guarded replacement passes its empirical release gate. In the guarded shopping shell, the core flow through Phase 8 engineering is implemented: start/restore, exact manual entry, edit/remove/Undo, active-trip budget and safety-buffer adjustment, loss-safe completion, optional checkout reconciliation, lightweight history, Shop again / repeat-budget acceleration, Recent Items, and local Price Memory. Real-user retention validation remains pending. Installed PWA support and scanning remain target behaviour until their evidence-gated roadmap phases land.
 
 This document answers:
 
@@ -935,16 +935,25 @@ Repeated trips should feel materially lighter than the first trip, especially wh
 
 This reduces setup without hiding user control.
 
-## History deletion
+## History and local-data controls
 
 Users should be able to:
 
+- inspect item-level details for a completed trip without entering a finance-dashboard flow
+- start a similar trip directly from any valid completed trip
 - delete one completed trip
-- clear all history
+- clear all completed-trip history
+- clear remembered item prices independently
 
-Destructive history clearing should require confirmation because Undo may not be durable across reload.
+Completed-trip history and Price Memory are separate durable records.
 
-Deleting a single trip may use Undo if technically reliable.
+Therefore the UI must not imply that deleting trip history also deletes remembered item names/prices, or vice versa. Each destructive action must state exactly which local record it affects.
+
+Deleting a single trip and clearing all history use explicit inline confirmation. These are rare destructive actions, and the product does not offer a fake or non-durable Undo.
+
+A history deletion is committed only after the replacement history snapshot is persisted successfully. If persistence fails, the visible history remains unchanged and the user is told that nothing was removed.
+
+Clearing Price Memory writes an empty, versioned Price Memory snapshot. This control may also be used to recover from a degraded Price Memory record without affecting healthy trip history.
 
 ## Settings
 
