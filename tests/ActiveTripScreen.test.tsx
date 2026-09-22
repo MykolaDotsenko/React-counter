@@ -119,6 +119,7 @@ const createController = (trip: ActiveTrip) => {
       save: () => ({ ok: true }),
       complete: () => ({ ok: true }),
       saveCompleted: () => ({ ok: true }),
+      replaceCompletedHistory: () => ({ ok: true }),
       clearCompletedActive: () => ({ ok: true }),
     },
     clock,
