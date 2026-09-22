@@ -78,7 +78,7 @@ Primary areas:
 - completed-trip restore
 - malformed JSON
 - missing fields
-- legacy Pulse Counter keys
+- historical non-shopping storage keys
 - supported schema migration
 - unsupported future version
 - storage unavailable
@@ -277,7 +277,7 @@ Expected behaviour:
 - core arithmetic remains correct
 - no false “saved” status appears
 
-The current Pulse Counter silently falls back to memory. Shopping behaviour must explicitly test the new visible-failure contract.
+Historical prototype state tolerated silent in-memory fallback. Shopping behavior must explicitly test the visible persistence-failure contract.
 
 ## Price-origin tests
 
@@ -373,7 +373,7 @@ Phase 3 implements this boundary. Tests must continue to prove:
 - unsupported versions fail before domain reconstruction
 - malformed/future raw active-trip data is preserved rather than overwritten
 - schema validation and domain invariant validation remain separate test concerns
-- legacy Pulse values are never converted into shopping money
+- historical non-shopping values are never converted into shopping money
 
 ### PWA
 
@@ -463,7 +463,7 @@ Test that:
 - no financial commit depends on View Transition callback
 - animation failure does not duplicate or drop a mutation
 
-The strongest lesson from the existing Pulse Counter remains: decorative capability failure must not alter domain correctness.
+A standing reliability rule remains: decorative capability failure must not alter domain correctness.
 
 ## Mobile/browser matrix
 
