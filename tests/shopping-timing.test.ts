@@ -5,6 +5,7 @@ import {
   QA_FIXTURE_BUFFER_MINOR,
   QA_TARGET_PRICE_1250,
   QA_TARGET_PRICE_479,
+  LEGACY_QA_TIMING_STORAGE_KEY,
   QA_TIMING_STORAGE_KEY,
   appendQaTimingSample,
   createQaTimingSession,
@@ -16,6 +17,9 @@ import {
   updateQaChecklist,
   updateQaCompactDeviceLabel,
   updateQaDeviceLabel,
+  updateQaInputMethodLabel,
+  updateQaPhysicalContext,
+  updateQaSpotCheck,
   type QaTimingEnvironment,
   type QaTimingSample,
 } from "../src/qa/shopping-timing";
@@ -29,6 +33,31 @@ const environment: QaTimingEnvironment = {
   devicePixelRatio: 3,
   colorScheme: "light",
   reducedMotion: false,
+};
+
+const completeRequiredPhysicalEvidence = <T extends {
+  physicalContext: {
+    oneHanded: boolean;
+    brightStoreLikeLighting: boolean;
+    defaultTextSize: boolean;
+  };
+}>(
+  session: T,
+) => {
+  let next = updateQaInputMethodLabel(
+    session as never,
+    "On-screen custom keypad · one thumb",
+  );
+
+  next = updateQaPhysicalContext(next, "oneHanded", true);
+  next = updateQaPhysicalContext(
+    next,
+    "brightStoreLikeLighting",
+    true,
+  );
+  next = updateQaPhysicalContext(next, "defaultTextSize", true);
+
+  return next;
 };
 
 const sample = (
@@ -164,6 +193,148 @@ describe("shopping timing QA model", () => {
     expect(restored.deviceLabel).toBe("");
   });
 
+  it("migrates v2 timing evidence without losing samples or device labels", () => {
+    sessionStorage.setItem(
+      LEGACY_QA_TIMING_STORAGE_KEY,
+      JSON.stringify({
+        version: 2,
+        environment,
+        deviceLabel: "Pixel 8 · Chrome",
+        compactDeviceLabel: "iPhone SE · Safari",
+        notes: "Existing human evidence",
+        checklist: {
+          addPriceReachable: true,
+          numericKeysReachable: true,
+          cancelReachable: true,
+          projectionReadable: true,
+          reserveWithoutColour: true,
+          addPlacementStable: true,
+          keypadCloses: true,
+          brightSummaryReadable: true,
+          softwareKeyboardClear: true,
+          repeatedAddNoScroll: true,
+          typoCorrectionWorks: true,
+          fiveConsecutiveAddsSmooth: true,
+          consistentInputMethod: true,
+          compactSpotCheckRecorded: true,
+        },
+        samples: [
+          sample("legacy", QA_TARGET_PRICE_479, 2_100),
+        ],
+      }),
+    );
+
+    const restored = loadQaTimingSession(sessionStorage, environment);
+
+    expect(restored.version).toBe(3);
+    expect(restored.deviceLabel).toBe("Pixel 8 · Chrome");
+    expect(restored.compactDeviceLabel).toBe("iPhone SE · Safari");
+    expect(restored.notes).toBe("Existing human evidence");
+    expect(restored.samples).toHaveLength(1);
+    expect(restored.inputMethodLabel).toBe("");
+    expect(restored.physicalContext).toEqual({
+      oneHanded: false,
+      brightStoreLikeLighting: false,
+      defaultTextSize: false,
+    });
+    expect(restored.spotChecks).toEqual({
+      darkAppearance: "not-run",
+      largeText200: "not-run",
+      reducedMotion: "not-run",
+    });
+  });
+
+  it("requires explicit input method and primary physical context for release eligibility", () => {
+    let session = createQaTimingSession(environment);
+    session = updateQaDeviceLabel(session, "Pixel 8 · Chrome");
+    session = updateQaCompactDeviceLabel(
+      session,
+      "iPhone SE · Safari",
+    );
+    session = completeRequiredPhysicalEvidence(session);
+
+    for (const key of Object.keys(session.checklist) as Array<
+      keyof typeof session.checklist
+    >) {
+      session = updateQaChecklist(session, key, true);
+    }
+
+    for (let index = 0; index < 10; index += 1) {
+      session = appendQaTimingSample(
+        session,
+        sample(`479-${index}`, QA_TARGET_PRICE_479, 2_100),
+      );
+      session = appendQaTimingSample(
+        session,
+        sample(`1250-${index}`, QA_TARGET_PRICE_1250, 2_200),
+      );
+    }
+
+    expect(summarizeQaEmpiricalGate(session)).toMatchObject({
+      status: "pending",
+      releaseEligible: false,
+      inputMethodPresent: false,
+      physicalContextComplete: false,
+    });
+
+    session = completeRequiredPhysicalEvidence(session);
+
+    expect(summarizeQaEmpiricalGate(session)).toMatchObject({
+      status: "target-met",
+      releaseEligible: true,
+      inputMethodPresent: true,
+      physicalContextComplete: true,
+      secondarySpotChecksRecorded: 0,
+      secondarySpotCheckFailures: 0,
+    });
+  });
+
+  it("does not require optional secondary spot-checks, but a recorded failure blocks release", () => {
+    let session = createQaTimingSession(environment);
+    session = updateQaDeviceLabel(session, "Pixel 8 · Chrome");
+    session = updateQaCompactDeviceLabel(
+      session,
+      "iPhone SE · Safari",
+    );
+    session = completeRequiredPhysicalEvidence(session);
+
+    for (const key of Object.keys(session.checklist) as Array<
+      keyof typeof session.checklist
+    >) {
+      session = updateQaChecklist(session, key, true);
+    }
+
+    for (let index = 0; index < 10; index += 1) {
+      session = appendQaTimingSample(
+        session,
+        sample(`479-spot-${index}`, QA_TARGET_PRICE_479, 2_100),
+      );
+      session = appendQaTimingSample(
+        session,
+        sample(`1250-spot-${index}`, QA_TARGET_PRICE_1250, 2_200),
+      );
+    }
+
+    expect(summarizeQaEmpiricalGate(session)).toMatchObject({
+      status: "target-met",
+      releaseEligible: true,
+      secondarySpotChecksRecorded: 0,
+    });
+
+    session = updateQaSpotCheck(
+      session,
+      "darkAppearance",
+      "fail",
+    );
+
+    expect(summarizeQaEmpiricalGate(session)).toMatchObject({
+      status: "fail",
+      releaseEligible: false,
+      secondarySpotChecksRecorded: 1,
+      secondarySpotCheckFailures: 1,
+    });
+  });
+
   it("keeps the empirical gate pending until timing, device and checklist evidence are complete", () => {
     let session = createQaTimingSession(environment);
 
@@ -219,6 +390,7 @@ describe("shopping timing QA model", () => {
       releaseFloor,
       "Compact phone · Chrome",
     );
+    releaseFloor = completeRequiredPhysicalEvidence(releaseFloor);
 
     for (const key of Object.keys(releaseFloor.checklist) as Array<
       keyof typeof releaseFloor.checklist
@@ -254,6 +426,7 @@ describe("shopping timing QA model", () => {
       failed,
       "Compact phone · Chrome",
     );
+    failed = completeRequiredPhysicalEvidence(failed);
 
     for (const key of Object.keys(failed.checklist) as Array<
       keyof typeof failed.checklist
@@ -307,6 +480,7 @@ describe("shopping timing QA model", () => {
         session,
         "Compact phone · Chrome",
       );
+      session = completeRequiredPhysicalEvidence(session);
 
       for (const key of Object.keys(session.checklist) as Array<
         keyof typeof session.checklist
@@ -348,6 +522,7 @@ describe("shopping timing QA model", () => {
   it("requires a compact phone or equivalent spot-check label", () => {
     let session = createQaTimingSession(environment);
     session = updateQaDeviceLabel(session, "Pixel 8 · Chrome");
+    session = completeRequiredPhysicalEvidence(session);
 
     for (const key of Object.keys(session.checklist) as Array<
       keyof typeof session.checklist
