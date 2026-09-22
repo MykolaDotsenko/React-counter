@@ -172,6 +172,7 @@
 }
 
 .saveButton,
+.repeatButton,
 .historyButton,
 .doneButton {
   min-height: 52px;
@@ -211,10 +212,12 @@
 
 .actions {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: 1fr 1fr 1.15fr;
   gap: 10px;
 }
 
+.repeatButton,
+.repeatButton,
 .historyButton {
   border: 1px solid var(--shopping-border);
   background: var(--shopping-panel);
@@ -229,6 +232,7 @@
 
 .inputShell:focus-within,
 .saveButton:focus-visible,
+.repeatButton:focus-visible,
 .historyButton:focus-visible,
 .doneButton:focus-visible {
   outline: 3px solid var(--shopping-focus);
@@ -253,6 +257,7 @@
   .reconciliation,
   .inputShell,
   .saveButton,
+  .repeatButton,
   .historyButton,
   .doneButton {
     border: 1px solid ButtonText;
