@@ -1526,3 +1526,38 @@ Retaining the old UI therefore adds noise without adding meaningful release safe
 ### Revisit when
 
 Only if a genuinely separate product shell becomes a validated product requirement. A demo or migration convenience is not sufficient reason to reintroduce one.
+
+---
+
+## D-046 — Make documentation authority explicit and keep the repository root small
+
+**Status:** Accepted  
+**Date:** 2026-09-22
+
+### Context
+
+The repository accumulated several high-quality documents that overlapped in product scope, UX, design, functionality, scenarios, technology, and execution planning. The content was useful, but the repository no longer made it obvious which documents were current sources of truth versus supporting reference or completed execution material.
+
+This created two risks:
+
+1. a reviewer or contributor could treat multiple planning documents as equally authoritative;
+2. a stale detailed document could silently contradict a newer product or architecture contract.
+
+### Decision
+
+- Keep the repository root focused on code/configuration entry points, `README.md`, `AGENTS.md`, and `LICENSE`.
+- Move the long-form product/engineering Markdown set under `docs/`.
+- Use `docs/README.md` as the documentation map and authority model.
+- Treat `PRODUCT.md`, `ARCHITECTURE.md`, `DOMAIN.md`, `DESIGN.md`, `ROADMAP.md`, and `TESTING.md` as the current high-level authoritative documents.
+- Treat `FUNCTIONALITY.md`, `UX.md`, `BRAND.md`, `SCENARIOS.md`, `TECH-STACK.md`, and `MARKETING.md` as supporting reference. They may add context but must not independently redefine current implementation status.
+- Keep detailed contracts under `docs/specs/` and specialized contracts such as persistence/accessibility alongside the current docs.
+- Move completed sprint decomposition such as `CORE-UI-EXECUTION-BRIEF.md` under `docs/archive/` instead of leaving it mixed with current contracts.
+- Avoid duplicating current-status checklists across multiple documents. Update the smallest owning authoritative document and reconcile supporting reference only where it would otherwise mislead.
+
+### Consequences
+
+- Repository browsing becomes faster for reviewers and contributors.
+- Existing historical detail is preserved instead of deleted.
+- Documentation conflicts have an explicit resolution path.
+- Future planning documents do not automatically become permanent sources of truth.
+
