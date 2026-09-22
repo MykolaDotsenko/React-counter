@@ -25,6 +25,7 @@ export interface RecentItemsSectionProps {
   ) => void;
   readonly locale?: string;
   readonly limit?: number;
+  readonly persistenceDegraded?: boolean;
 }
 
 const ageLabel = (
@@ -65,6 +66,7 @@ export function RecentItemsSection({
   onEnterCurrentPrice,
   locale = "en-FI",
   limit = 4,
+  persistenceDegraded = false,
 }: RecentItemsSectionProps) {
   const recent = useMemo(
     () => recentPriceMemories(records, { limit }),
@@ -91,6 +93,13 @@ export function RecentItemsSection({
         These are old observed prices, not live store prices. Use one only
         when it still looks right, or enter the current price instead.
       </p>
+
+      {persistenceDegraded ? (
+        <p className={styles.memoryWarning} role="status">
+          Recent Items are available now, but price-memory changes are not
+          safely saving. Your active cart is still saved independently.
+        </p>
+      ) : null}
 
       {errorMessage ? (
         <p className={styles.error} role="alert">
