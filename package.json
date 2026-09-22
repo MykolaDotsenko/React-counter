@@ -11,10 +11,11 @@
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "check": "npm run docs:check && npm run lint && npm run typecheck && npm test && npm run build",
     "typecheck": "tsc --noEmit",
     "qa:prepare-index": "node scripts/prepare-qa-index.mjs",
-    "beta:prepare-index": "node scripts/prepare-beta-index.mjs"
+    "beta:prepare-index": "node scripts/prepare-beta-index.mjs",
+    "docs:check": "node scripts/validate-docs.mjs"
   },
   "dependencies": {
     "react": "19.3.0",

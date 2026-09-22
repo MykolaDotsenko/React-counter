@@ -1,183 +1,190 @@
 # Price Entry Interaction Contract
 
-Status: **Phase 5 / B0 locked**
+## Status
 
-This contract defines the manual price-entry draft behavior before the UI is allowed to commit shopping data.
+**IMPLEMENTED current interaction contract.**
 
-It complements:
+Money grammar is owned by [MONEY-SPEC.md](./MONEY-SPEC.md). This document owns only the user interaction around entering an item price.
 
-- `docs/specs/MONEY-SPEC.md`
-- `FUNCTIONALITY.md`
-- `docs/archive/CORE-UI-EXECUTION-BRIEF.md`
+## Goals
 
-The Phase 1 money parser remains authoritative. The price-entry UI must not implement a second money parser.
+The common add-price flow must be:
 
-## Default mode
+- fast one-handed;
+- exact;
+- predictable;
+- easy to correct;
+- usable without a product label;
+- explicit about projected budget consequence.
 
-Default:
+## Modes
 
-> **decimal**
+The UI supports the current money-draft modes implemented by the price-entry draft model.
 
-Reason:
-
-A raw `479` must mean **EUR 479.00** unless the user explicitly opts into auto-cents.
-
-The app must never silently guess whether `479` means EUR 479.00 or EUR 4.79.
-
-## Decimal mode
+### Decimal mode
 
 Examples:
 
-- `4` → EUR 4.00
-- `4.7` → EUR 4.70
-- `4.79` → EUR 4.79
-- `4,79` → EUR 4.79
-- `.79` → EUR 0.79
-- `,79` → EUR 0.79
+```text
+4.79
+4,79
+```
 
-The on-screen keypad inserts `.` as its separator.
+Rules follow MONEY-SPEC.
 
-Hardware keyboard and paste may use either `.` or `,`.
+### Auto-cents mode
 
-## Auto-cents mode
+Digit entry represents cents according to the implemented draft rules.
 
-Auto-cents is an **explicit opt-in accelerator**.
-
-Examples:
-
-- `4` → EUR 0.04
-- `47` → EUR 0.47
-- `479` → EUR 4.79
-- `1250` → EUR 12.50
-
-Rules:
-
-- digits only
-- no decimal separator
-- the mode control is available only while the draft is empty
-- switching modes never reinterprets a non-empty draft
-- the mode label must explain the example before the user starts typing
+The mode is explicit and must not silently change while a non-empty draft is being edited.
 
 ## Draft states
 
-Every raw draft maps to exactly one UI state:
+### Empty
 
-### empty
+No committed price candidate.
 
-Examples:
+UI may prompt the user to start entering a price.
 
-- `""`
-- whitespace-only paste after parser trimming
+### Incomplete
 
-Behavior:
+Syntactically unfinished input that may become valid with more input.
 
-- Add disabled
-- no error message
+Do not show a destructive error prematurely.
 
-### incomplete
+### Valid
 
-Examples:
+Parser succeeds and item-context rules allow the value.
 
-- `.`
-- `,`
-- `4.`
-- `4,`
+The UI may calculate projected line/cart/remaining state.
 
-Behavior:
+### Invalid
 
-- Add disabled
-- draft stays visible
-- no aggressive error message
+Show concise corrective feedback.
 
-### valid
+Do not mutate the active trip.
 
-The Phase 1 parser succeeds and the parsed item price is greater than zero.
+## Item-context rule
 
-Behavior:
+A parser-valid money amount is not automatically a valid item price.
 
-- Add enabled
-- formatted preview may be shown
+Current item price must be greater than zero and satisfy product bounds.
 
-### invalid
+This rule lives above the generic parser rather than changing parser semantics.
 
-Examples:
+## Keypad
 
-- mixed separators
-- more than two fraction digits in decimal mode
-- negative values
-- unsupported symbols/text
-- value above product limit
-- zero item price
+The custom keypad must:
 
-Behavior:
+- provide digits;
+- provide decimal separator where the active mode permits it;
+- provide backspace;
+- keep frequent targets comfortably tappable;
+- preserve mode predictability;
+- avoid accidental duplicate commits.
 
-- Add disabled
-- concise corrective copy is shown
-
-Zero is a parser-valid money amount but is not a valid MVP item price. Price entry therefore applies the existing item-context rule after parsing without changing the money parser.
-
-## Keypad contract
-
-Digits:
-
-- append one digit to the raw draft
-- leading zeroes are allowed
-- no canonical normalization occurs while typing
-
-Decimal separator:
-
-- available only in decimal mode
-- inserts `0.` when the draft is empty
-- inserts nothing if the draft already contains `.` or `,`
-
-Backspace:
-
-- removes exactly one final Unicode code point
-- empty remains empty
-
-Clear:
-
-- resets raw draft to empty in one action
+The keypad is presentation/input infrastructure, not a second money parser.
 
 ## Native input / paste
 
-The visible amount is also a real text input.
+Where native input or paste is available:
 
-Required:
+- pass raw text through the same money draft/parser contract;
+- do not add an alternate parsing implementation;
+- preserve locale/separator rules from MONEY-SPEC.
 
-- decimal or numeric `inputMode` appropriate to the selected mode
-- hardware keyboard support
-- paste support
-- comma support in decimal mode
-- no required euro symbol
-- no blocking of intermediate invalid/incomplete text before parsing
+## Quantity
 
-The UI stores the raw text. Canonical money exists only after `parseEurDraft()` succeeds.
+Quantity is optional interaction beyond the default quantity of 1.
 
-## Add rules
+Changes must:
 
-Add is enabled only when:
+- respect domain bounds;
+- update projected line/cart consequences before commit;
+- never introduce floating-point financial arithmetic.
 
-1. the Phase 1 parser succeeds
-2. parsed value is greater than zero
-3. parsed value remains within the existing product limit
+## Optional label
 
-B1 may emit a validated price intent to a parent callback.
+Item label is optional.
 
-Canonical cart mutation remains owned by later Sprint B application/commit work.
+The user must be able to add a price without naming the item.
+
+If a remembered-item/current-price flow pre-fills a label, the label must remain editable according to the feature contract.
+
+## Projection
+
+For a valid draft, show the consequence before commit when useful:
+
+- line total;
+- safe remaining;
+- nominal remaining;
+- reserve use;
+- nominal overage.
+
+Projection never mutates canonical state.
+
+## Over-budget confirmation
+
+Crossing nominal budget requires an explicit intentional commit path.
+
+The UI must show the overage clearly and allow cancel/correction.
+
+Over-budget is a valid domain state, not an error condition.
+
+## Commit
+
+A successful Add action:
+
+1. submits a validated intent to the application controller;
+2. creates/persists the item through normal application/domain rules;
+3. closes the entry surface when the command succeeds;
+4. provides clear feedback;
+5. returns focus/orientation sensibly.
+
+The entry component must not directly mutate canonical trip state.
+
+## Failure
+
+If application commit fails:
+
+- keep enough user context to recover/retry;
+- do not falsely show the item as durably added;
+- preserve persistence/degraded semantics from application state.
 
 ## Accessibility
 
-- keypad digit targets >= 48 CSS px
-- Clear and Backspace have text/accessible names
-- Add has a stable location
-- Cancel is always available
-- focus-visible styles remain present
-- hardware keyboard use must not be blocked
-- status/error copy must not rely on colour alone
+Requirements:
 
-## B0 decision
+- labelled input;
+- semantic buttons;
+- predictable focus;
+- keyboard-equivalent completion;
+- no colour-only validation;
+- large touch targets for frequent keys;
+- large-text support;
+- reduced-motion equivalence;
+- projected consequence readable by assistive technology where relevant.
 
-**Locked and ready for B1.**
+## Premium quality
 
-No unresolved parsing rule remains before implementing the one-hand surface.
+The surface should feel precise and deliberate through:
+
+- stable numeric typography;
+- clear hierarchy;
+- responsive key feedback;
+- good spacing;
+- polished validation/confirmation states.
+
+Do not add decorative motion or visual treatment that slows entry.
+
+## Acceptance checklist
+
+- Same parser as the domain money boundary?
+- Price can be added without metadata?
+- Mode never changes unexpectedly?
+- Invalid input cannot commit?
+- Quantity projection remains exact?
+- Reserve/overage consequence appears before intentional commit?
+- Keyboard and touch paths both work?
+- Focus returns sensibly after cancel/commit?
+- Interaction remains fast and visually polished?

@@ -2,502 +2,294 @@
 
 ## Purpose
 
-This file is the operating contract for AI-assisted work in this repository.
+This file is the routing contract for AI-assisted work.
 
-The repository ships a focused Shopping Budget Companion. Implementation and documentation must stay aligned; future capabilities remain phase-gated until they are implemented and validated.
-
-An agent must distinguish:
-
-- what is already implemented
-- what is target design
-- what is explicitly out of scope
-
-Never present target documentation as shipped functionality.
-
-## Required reading order
-
-Before changing code, read:
-
-1. AGENTS.md
-2. docs/README.md to identify the owning source of truth
-3. docs/PRODUCT.md
-4. docs/DOMAIN.md and relevant docs/specs/* contracts
-5. docs/ARCHITECTURE.md
-6. docs/ROADMAP.md for the current phase and evidence gates
-7. docs/TESTING.md for the applicable quality contract
-8. docs/DESIGN.md for user-facing visual/interaction-system work
-9. relevant supporting reference under docs/reference/* when deeper UX, scenario, technology, brand, or marketing context is needed
-10. relevant specialized contracts such as docs/architecture/DATA-PERSISTENCE.md or docs/quality/ACCESSIBILITY.md
-11. docs/research/* only when the change depends on research, alternatives, product strategy, or platform evidence
-12. docs/archive/* only for historical traceability; archived execution plans are not current instructions
-
-For a narrow change, do not reread every long document once the relevant contract is known. Never skip docs/PRODUCT.md, the relevant domain/spec contract, docs/ARCHITECTURE.md, and the current docs/ROADMAP.md phase. Use docs/README.md to resolve documentation authority.
+The repository ships one focused product: **Shopping Budget Companion**. AI changes must improve or preserve user value, premium quality, competitive differentiation, reliability, and development clarity without adding speculative complexity.
 
 ## Product in one sentence
 
 Help a shopper with a hard spending limit know how much they can still safely spend before checkout.
 
-Primary product promise:
+Primary promise:
 
 > Set your limit. Add prices. Always know what is left.
 
-## Core product rules
+## Source-of-truth order
 
-MUST:
+When sources disagree:
 
-- keep remaining budget as the primary active-trip metric
-- preserve fast manual price entry
-- keep the core workflow usable offline
-- persist committed shopping changes promptly
-- represent canonical money in integer minor units
-- keep price source and price confidence explicit and separate
-- keep optional smart features recoverable to manual entry
-- surface persistence failure
-- keep tone non-judgmental
+1. current code and green executable tests establish what is implemented;
+2. authoritative documents under `docs/` establish intended current behaviour;
+3. accepted decisions in `docs/DECISIONS.md` explain durable choices;
+4. supporting reference/research explains rationale;
+5. `docs/archive/` is historical only.
 
-MUST NOT:
+If code and an authoritative contract disagree, treat that as drift and reconcile both in the same change.
 
-- require an account for the core workflow
-- connect to a bank for the core workflow
-- treat barcode identity as current price
-- treat remembered price as current without confirmation
-- commit OCR/scanner candidates without confirmation
-- use floating-point money as canonical financial state
-- put financial calculations in React components
-- make animation callbacks responsible for money commits
-- silently lose shopping-trip data
-- turn the product into a general finance, grocery, meal-planning, or household platform
+Never use archive material as current implementation instruction.
+
+## Load only the context the task needs
+
+Always read:
+
+- this file;
+- `docs/README.md`;
+- affected code and tests.
+
+Then load only the owning contract:
+
+| Change | Required context |
+| --- | --- |
+| product scope / release behaviour | `PRODUCT.md`, `specs/RELEASE-SPEC.md` when acceptance detail matters |
+| money / trip rules | `DOMAIN.md`, relevant money/state spec |
+| controller / lifecycle | `ARCHITECTURE.md`, `specs/STATE-MACHINES.md` |
+| persistence / recovery | `ARCHITECTURE.md`, `architecture/DATA-PERSISTENCE.md`, `specs/STORAGE-SCHEMA.md` |
+| UI / interaction | `PRODUCT.md`, `DESIGN.md`, `quality/ACCESSIBILITY.md`, relevant interaction spec |
+| architecture refactor / ownership | `ARCHITECTURE.md`, `reference/CODE-OWNERSHIP.md` |
+| tests / CI | `TESTING.md` |
+| new capability / sequencing | `ROADMAP.md`, relevant decision/research |
+| brand / marketing | `PRODUCT.md` first, then brand/marketing reference |
+
+Do not load research, archive or long rationale unless the task needs it.
 
 ## Current repository reality
 
-The repository ships one product: Shopping Budget Companion.
+Implemented:
 
-Implemented product and engineering scope includes:
+- exact EUR money in integer minor units;
+- ShoppingTrip / CartItem domain rules and projections;
+- local-first active-trip and completed-history persistence;
+- degraded persistence and recovery UX;
+- start, active trip, edit/remove/Undo, budget adjustment, completion and history;
+- Shop again, Recent Items and local Price Memory;
+- independent local-data controls;
+- timing QA and retention-beta evidence tooling;
+- Chromium / Firefox / WebKit browser and accessibility coverage.
 
-- strict TypeScript EUR money domain
-- ShoppingTrip / CartItem domain and projections
-- Zod-validated local-first persistence and recovery
-- plain-TypeScript ShoppingAppController + React `useSyncExternalStore`
-- Calm Utility start, active-trip, completion, history, and recovery UI
-- fast manual price entry, exact consequence projection, Undo, edit/remove, and budget adjustment
-- Shop again, Recent Items, and local Price Memory
-- independent local-data controls for history and remembered prices
-- privacy-safe timing and retention evidence tooling
-- cohort-level retention analysis
-- browser/a11y hardening across Chromium, Firefox, and WebKit
+Gated / not implemented:
 
-Internal QA/beta routes use the same shopping product with evidence-only feature flags. They are not alternate product shells and must not own canonical product state.
+- installable offline PWA shell;
+- production barcode identification;
+- production shelf-label OCR;
+- representative human one-hand/timing/bright-store validation;
+- real-shopper second-/third-trip retention validation.
 
-Evidence or later-phase work still pending:
+Internal `/qa/` and `/beta/` routes are evidence surfaces for the same product, not alternate product shells.
 
-- representative human B6 timing, physical one-hand, software-keyboard, and bright-store evidence
-- 20–50 real-shopper retention validation and observed second-/third-trip behaviour
-- installable offline PWA
-- production barcode/OCR breadth, which remains evidence-gated
+## Product decision rule
 
-The historical prototype UI/domain has been retired. Keep only the narrow storage-compatibility safeguard that prevents unrelated historical values from being interpreted as shopping money.
+For any meaningful user-facing change, evaluate all five dimensions:
 
-When modifying any area, inspect actual current code and the current roadmap slice. Never infer implementation solely from a target or archived document.
+1. **User usefulness** — does it help the shopper complete the core job?
+2. **Interaction friction** — does it reduce taps, typing, waiting, recall or correction cost?
+3. **Premium quality** — does it improve precision, hierarchy, polish, feedback, consistency or perceived quality without harming clarity?
+4. **Competitive differentiation** — does it strengthen a reason to choose this product over a calculator, notes app or competing shopping-budget tool?
+5. **Reliability / accessibility** — does it preserve correctness, durability, privacy, performance and inclusive use?
 
-## Architecture principles
+Prefer the option that improves the combined product outcome, not the option with the most technology or the fewest lines of code.
 
-### Proportionality
+A visually impressive change that slows the aisle workflow is not premium.
 
-Choose the smallest architecture that protects real behaviour.
+A frictionless change that makes the product generic or visually cheap is also incomplete.
 
-Do not add libraries, layers, services, or patterns merely because they sound production-grade.
+## Non-negotiable product rules
 
-### Domain independence
+MUST:
 
-Business rules belong in pure domain modules.
+- keep remaining safe spending as the primary active-trip metric;
+- preserve fast manual price entry;
+- keep the core business flow usable without accounts or mandatory external services;
+- persist committed financial mutations promptly;
+- surface degraded durability honestly;
+- keep price source and confidence explicit;
+- keep optional smart features recoverable to manual entry;
+- keep tone calm and non-judgmental;
+- preserve a polished, coherent and distinctive product experience.
 
-The domain must not depend on React, DOM, storage, camera, OCR, network, or animation.
+MUST NOT:
 
-### Exact money
+- use binary floating point as canonical money;
+- put financial mutation rules in React components;
+- treat barcode identity as authoritative current price;
+- treat remembered/OCR/scanned values as current without confirmation;
+- make animation or evidence callbacks responsible for financial mutations;
+- silently discard malformed/future persisted data;
+- let QA evidence become canonical product state;
+- expand into general finance, meal planning, grocery delivery, banking or household management without a product decision.
 
-MVP supports EUR only.
+## Architecture boundary
 
-All canonical monetary arithmetic uses integer cents.
+Dependency direction:
 
-Example:
+```text
+React feature UI
+      ↓
+application controller / use cases / contracts
+      ↓
+pure domain rules
+      ↓
+application ports
+      ↓
+browser infrastructure adapters
+```
 
-- EUR 4.79 → 479
-- EUR 50.00 → 5000
+Rules:
 
-Do not widen currency support without an explicit documented decision and complete MONEY-SPEC coverage.
+- `domain/` is pure and browser/framework independent;
+- `application/` owns lifecycle, orchestration and persistence ordering;
+- `infrastructure/` owns runtime validation and browser/storage adapters;
+- `features/` owns rendering, drafts, focus and interaction feedback;
+- `qa/` records evidence only;
+- the composition root wires adapters to the application layer.
 
-Formatting is presentation. Arithmetic is domain.
+Extract by **reason to change**, not line count.
 
-### Canonical state
+Do not introduce a framework, service layer or state library unless the product needs it.
 
-Persist canonical inputs, not redundant derived totals.
+## Money rules
 
-Derive:
+Current currency scope is EUR.
 
-- cart total
-- remaining
-- safe remaining
-- progress
-- over-budget flags
-
-from canonical trip/item state.
-
-### Local-first
-
-Core shopping state belongs on device for MVP.
-
-Do not introduce a backend until a user requirement such as multi-device sync or cloud collaboration justifies it.
-
-## UX rules
-
-Frequent interactions happen in a supermarket aisle with limited attention.
-
-Optimise for:
-
-- one hand
-- few taps
-- large targets
-- immediate feedback
-- easy correction
-- compact mobile screens
-- poor network
-
-Do not require product name/category/store for a simple price add.
-
-Do not leave the numeric keypad unnecessarily active after commit.
-
-Do not crowd the main screen with every capture method.
-
-## Scanner rules
-
-Barcode and price-tag scanning are optional accelerators.
-
-### Barcode
-
-Barcode identifies a product.
-
-It normally does not provide an authoritative current store price.
-
-A known barcode may surface a remembered price with date/store context, but the user must retain control over current-price confirmation.
-
-### Price-tag scan
-
-OCR output is candidate data.
-
-Never mutate cart state before explicit confirmation.
-
-Ambiguous labels must present candidates or fall back to manual entry.
-
-### Failure
-
-Scanner failure must never block:
-
-- manual add
-- cart view
-- budget calculations
-- undo
-- trip completion
+- canonical money uses safe integer minor units;
+- formatting/parsing are boundaries;
+- derived totals are recalculated from canonical state;
+- redundant derived financial totals are not persisted.
 
 ## Persistence rules
 
-Every committed cart mutation should be persisted promptly.
+Core durability outranks convenience state.
 
-Storage failure is a user-facing reliability condition, not a silent implementation detail.
+- history must be durable before active-trip cleanup on completion;
+- a failed history write must not erase the active trip;
+- stale active copies of completed trips must reconcile safely;
+- malformed/future data must not be guessed into validity;
+- Price Memory is advisory and independently durable;
+- Price Memory failure must not invalidate a durably completed trip;
+- deletion controls remain explicit.
 
-If persistence is degraded:
+## UI / design rules
 
-- keep valid in-memory state usable
-- mark degraded state
-- tell the user clearly
-- provide recovery/export if available
+Optimise the aisle workflow for:
 
-Do not claim data is saved when persistence failed.
+- one hand;
+- few taps;
+- large touch targets;
+- immediate consequence feedback;
+- easy correction;
+- compact mobile screens;
+- poor or absent network after initial load.
 
-## Motion rules
+Premium means:
 
-Preserve high-quality motion where it adds comprehension and delight.
+- precise visual hierarchy;
+- stable typography and money layout;
+- restrained, purposeful motion;
+- polished states and transitions;
+- strong spacing and surface consistency;
+- clear affordances;
+- trustworthy feedback;
+- distinctive but restrained brand expression.
 
-Correct order:
+Premium does **not** mean ornamental complexity, hidden controls, animation delays, glass effects everywhere or decorative dashboards.
 
-1. user intent
-2. domain commit
-3. persistence attempt
-4. render
-5. optional visual feedback
+Manual entry is always the fallback.
 
-Never delay or duplicate a financial mutation because of a View Transition.
+Accessibility is release quality, not optional polish.
 
-Respect reduced motion.
+## Testing contract
 
-## Accessibility rules
+During iteration run the smallest useful test set; before merge run the full repository gate:
 
-For the primary flow:
+```bash
+npm ci
+npm run check
+npm run test:e2e
+```
 
-- frequent touch targets at least 48px
-- keyboard operability
-- visible focus
-- no colour-only state
-- meaningful screen-reader labels
-- currency announced clearly
-- 200% zoom resilience
-- reduced-motion support
-- forced-colours resilience
+`npm run check` covers documentation validation, lint, strict TypeScript, unit/component tests and production build.
 
-Automated axe success is necessary but not sufficient.
+Add regression coverage when changing:
 
-## Testing rules
+- money/domain invariants;
+- lifecycle/persistence ordering;
+- recovery;
+- UI financial consequences;
+- history/Price Memory semantics;
+- evidence-integrity logic.
 
-Before finishing a change, run the strongest currently available quality gates.
+Money, persistence, recovery and evidence-integrity bug fixes are incomplete without regression tests.
 
-Baseline:
+## Documentation maintenance
 
-- `npm run check` — ESLint, strict TypeScript, unit/component tests, production build
-- relevant Playwright tests for browser-visible behaviour
-- full Chromium / Firefox / WebKit matrix for changes that affect shared UI, persistence, accessibility, build routing, or critical shopping flows
-- guarded QA and retention-beta builds when evidence tooling or build metadata changes
-
-Every confirmed bug should gain a regression test at the lowest useful layer.
-
-Money, persistence, recovery, and evidence-integrity bugs require tests before the fix is considered complete.
-
-Do not replace required human evidence with automated timing or synthetic retention data.
-
-## Documentation rules
-
-Documentation is a contract.
+Current authoritative docs contain current contracts and current decisions, not chronological implementation narration.
 
 When behaviour changes:
 
-- update the smallest authoritative document
-- do not duplicate detailed rules across many files
-- keep current vs target status explicit
-- update README only for shipped behaviour
+1. update code/tests;
+2. update the smallest owning authoritative document;
+3. update detailed specs only when their contract changed;
+4. add a decision only for cross-cutting/reversibility-sensitive choices;
+5. move useful historical rationale to reference/archive;
+6. delete duplicated status narration;
+7. before creating a new Markdown file, apply the placement/new-document rules in `docs/README.md`.
 
-Documentation roles:
+Use only these status words for current docs:
 
-Current authority is defined in docs/README.md.
+- **IMPLEMENTED**
+- **VALIDATED**
+- **PLANNED / GATED**
+- **HISTORICAL**
 
-Authoritative current contracts:
+Do not infer human validation from automation.
 
-- docs/PRODUCT.md — product thesis, scope, principles, and success criteria
-- docs/DESIGN.md — current visual and interaction-system direction
-- docs/DOMAIN.md — business rules and invariants
-- docs/ARCHITECTURE.md — software boundaries and trade-offs
-- docs/TESTING.md — quality contract
-- docs/ROADMAP.md — delivery order and evidence gates
-- docs/specs/MVP-SPEC.md — executable MVP requirements
-- docs/specs/CONTRACTS.md — implementation contracts and ports
-- docs/specs/STATE-MACHINES.md — valid transitions and forbidden states
-- docs/specs/STORAGE-SCHEMA.md — exact persisted schema and completion recovery
-- docs/specs/MONEY-SPEC.md — EUR-only parsing, formatting, arithmetic, limits, and money tests
-- docs/architecture/DATA-PERSISTENCE.md — specialized storage contract
-- docs/quality/ACCESSIBILITY.md — specialized accessibility contract
-- docs/DECISIONS.md — accepted product/architecture decisions
+## Change workflow
 
-Supporting reference:
+Before editing:
 
-- docs/reference/FUNCTIONALITY.md — extended functional catalogue and fallbacks
-- docs/reference/SCENARIOS.md — scenario matrix, edge cases, and risk analysis
-- docs/reference/UX.md — detailed interaction heuristics
-- docs/reference/TECH-STACK.md — technology rationale and future candidates
-- docs/reference/BRAND.md — positioning, naming, voice, identity, and trust system
-- docs/reference/MARKETING.md — acquisition, ASO, content, launch, pricing, and experimentation strategy
-- docs/research/* — external evidence, alternatives, and strategic research
-- docs/marketing/* — store and launch material
-- docs/archive/* — historical execution context only
+1. inspect current code/tests;
+2. identify the owning contract;
+3. state the invariant and user outcome to preserve.
 
-Supporting/reference material must not independently redefine current implementation status or override an authoritative contract.
+While editing:
 
-## Scope-control questions
+1. make the smallest coherent change;
+2. protect layer boundaries and durability semantics;
+3. avoid unrelated dependency/style churn;
+4. update tests with behaviour;
+5. prefer solutions that improve convenience and premium quality together.
 
-Before adding a feature ask:
+Before declaring complete:
 
-1. Does this help the shopper stay under the trip limit before checkout?
-2. Does it reduce friction or increase confidence?
-3. Can the simple manual workflow remain intact?
-4. Does the core still work offline?
-5. Is the feature proportionate to the problem?
-6. Is this already scheduled later in docs/ROADMAP.md?
-
-If the answer to question 1 is no, stop and justify the feature before implementing it.
-
-## Prohibited opportunistic expansion
-
-Do not add, unless docs/PRODUCT.md is intentionally revised with evidence:
-
-- bank sync
-- income tracking
-- bill tracking
-- investments
-- net worth
-- savings dashboards
-- meal planning
-- recipes
-- nutrition
-- grocery delivery
-- coupon marketplace
-- loyalty platform
-- social feed
-- AI financial advice
-- generic chatbot
-- mandatory cloud backend
+1. verify code ↔ docs ↔ tests;
+2. run quality gates, including documentation validation;
+3. inspect changed-file scope;
+4. confirm no generated/build artifacts entered the repo;
+5. disclose any unverified human/evidence gate.
 
 ## Dependency policy
 
-docs/reference/TECH-STACK.md is supporting technology rationale. Current dependency reality is defined by package.json/package-lock.json, current architecture decisions, and the applicable authoritative contracts.
+Runtime dependencies must earn product value.
 
-Prefer native platform capabilities and existing dependencies when they satisfy requirements cleanly.
+Prefer native Web APIs and existing abstractions. Do not add state libraries, routers, backends, analytics SDKs, scanner/OCR SDKs, PWA tooling or UI frameworks without a validated requirement.
 
-Before adding any dependency, answer:
+## Git discipline
 
-1. Which documented requirement does it protect?
-2. Can a platform API solve the problem cleanly?
-3. Is the dependency allowed in the current roadmap phase?
-4. What does it add to the initial bundle?
-5. Does it work offline?
-6. Does it add network/privacy/runtime requirements?
-7. Can it be lazy-loaded?
-8. What is its maintenance/security surface?
-9. What is the removal/migration cost?
-10. Does its benefit exceed its architectural surface?
+- focused commits;
+- no unrelated refactor + feature bundles;
+- preserve accepted decision history;
+- prefer PRs for multi-file architecture/documentation changes;
+- never claim CI is green until the run is green.
 
-Do not add these in MVP without a new documented decision:
+## Review questions
 
-- Redux Toolkit
-- Zustand
-- XState runtime
-- React Router
-- Tailwind
-- CSS-in-JS runtime
-- React Hook Form
-- Motion/Framer Motion
-- GSAP
-- Axios
-- TanStack Query
-- Dexie
-- date-fns/dayjs
-- UUID packages
-- backend/auth/database
+Before merge:
 
-Scanner/OCR dependencies are phase-gated and must stay out of the initial critical bundle.
-
-Exception: after Phase 5, an isolated experimental scanner benchmark may be built exactly as defined by docs/ROADMAP.md and D-037. That experiment must not become a required production path or justify shipping scanner breadth without evidence.
-
-## Code review checklist for AI
-
-Before presenting work as complete verify:
-
-### Product
-
-- still solves the documented core job
-- no accidental scope expansion
-
-### Domain
-
-- canonical/derived state remains clear
-- money remains exact
-- price source and confidence remain separate
-- uncertainty remains explicit
-
-### Specs
-
-- numbered requirements affected by the change are identified
-- state-machine transitions remain valid
-- storage schema changes include migration/recovery
-- application/adapter contract changes are deliberate
-- money changes comply with docs/specs/MONEY-SPEC.md
-- no parseFloat-based canonical money path is introduced
-- EUR-only scope is preserved unless deliberately revised
-
-### Technology
-
-- change is compatible with the actual package/runtime configuration and docs/reference/TECH-STACK.md rationale
-- new dependency has a documented requirement and current-phase justification
-- native/platform alternative was considered
-- scanner/OCR code is lazy and optional
-- no backend/state/router/UI framework is added opportunistically
-
-### Functionality
-
-- feature behaviour matches docs/PRODUCT.md, applicable specs, and relevant docs/reference/FUNCTIONALITY.md reference
-- relevant scenarios in docs/reference/SCENARIOS.md are covered
-- Tier 0 scenarios are not weakened
-- optional services have a manual fallback
-- no new metadata is required without clear value
-- P0/P1/P2 scope is respected
-- repeat-trip work follows docs/research/PRODUCT-SUCCESS-STRATEGY.md
-- scanner/OCR production work does not bypass the retention validation gate
-- any early scanner work is limited to the D-037 benchmark contract
-
-### UX
-
-- remaining amount remains obvious
-- common path did not gain unnecessary taps
-- errors are recoverable
-
-### Design
-
-- product purpose is obvious without explanation
-- one primary visual action remains dominant
-- secondary controls are progressively disclosed
-- brand styling does not overpower shopping information
-- light/dark/large-text states remain coherent
-
-### Brand / marketing
-
-- message leads with pre-checkout remaining control, not generic finance or AI
-- CartRoom is not treated as a final public name
-- no marketing copy claims unshipped features
-- store assets match STORE-LISTING-SPEC.md
-- monetization does not contradict D-023
-- material paid acquisition is not treated as required before retention evidence
-
-### Reliability
-
-- persistence path considered
-- offline path considered
-- optional capability failure considered
-
-### Accessibility
-
-- keyboard/focus semantics considered
-- no colour-only state
-- reduced motion preserved
-
-### Quality
-
-- tests updated
-- relevant commands pass
-- docs match shipped behaviour
-
-## Commit discipline
-
-Prefer small, meaningful commits that describe one logical change.
-
-Do not mix:
-
-- broad formatting cleanup
-- architecture migration
-- new feature behaviour
-- unrelated documentation
-
-in one commit unless inseparable.
-
-Good examples:
-
-- refactor: introduce exact money domain
-- feat: add shopping trip selectors
-- test: cover safe-limit boundaries
-- docs: document price confidence rules
-
-## Working style
-
-When uncertain:
-
-1. inspect current code
-2. consult authoritative docs
-3. preserve simpler behaviour
-4. choose the reversible option
-5. add evidence before expanding scope
-
-The goal is not maximum code. The goal is a small product that feels unusually clear, reliable, and deliberate.
+- Is the user-facing behaviour intentionally better or unchanged?
+- Is the common workflow still fast and obvious?
+- Does the product still feel polished and distinctive rather than generic?
+- Are money and derived values exact?
+- Can a failed write lose or misrepresent a trip?
+- Did convenience state become coupled to core durability?
+- Did React gain business logic?
+- Did documentation become more current and less duplicated?
+- Did the change reduce or increase future AI context cost?

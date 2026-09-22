@@ -1,528 +1,307 @@
 # Data and Persistence Contract
 
-## Purpose
-
-This document defines how local shopping data is stored, restored, migrated, and reported as healthy or degraded.
-
-The product is local-first. Persistence is therefore part of the core user experience, not an implementation detail.
-
 ## Status
 
-Phase 3 implements the shopping active-trip persistence boundary, and Phase 7 extends the same local-first contract to completed-trip history and loss-safe completion:
+**IMPLEMENTED current persistence contract.**
 
-- `budget-cart:active-trip` schema version 1
-- strict Zod 4 validation of untrusted persisted DTOs
-- validated DTO → Phase 2 domain reconstruction
-- complete active-trip snapshot writes
-- explicit `healthy` / `degraded` outcomes
-- malformed and unsupported-future data preservation for recovery
-- explicit safe retirement of historical non-shopping storage keys only after shopping-state bootstrap succeeds
-- strict versioned `budget-cart:history` v1 persistence
-- completed-trip reconstruction through the domain
-- history-before-active-clear completion ordering
-- interrupted-completion startup reconciliation
-- partial invalid-history quarantine without deleting valid completed trips
+This document owns durability, recovery and transaction semantics.
 
-The shopping product is wired to this adapter through the ShoppingAppController. Start-trip and active-cart mutations attempt persistence synchronously through the application boundary, and degraded writes are surfaced through the Phase 4 persistence-health UX.
+Storage shape/version detail lives in [../specs/STORAGE-SCHEMA.md](../specs/STORAGE-SCHEMA.md). Do not duplicate schema definitions here.
 
-The public build is Shopping Budget Companion. The automated/code portion of Sprint B / B6 is implemented; representative human one-hand timing, software-keyboard, and bright-store evidence remain unverified release-quality evidence.
+## Goals
 
-Settings remain a later slice. Phase 8 now implements independent versioned `budget-cart:price-memory` persistence; completed-trip history and completion transactions remain the Phase 7 durable core.
+Persistence must:
 
-Historical non-shopping numeric state is never interpreted as money.
+- preserve committed shopping state;
+- fail visibly;
+- avoid data loss during completion;
+- reject malformed/unsupported data safely;
+- keep core durability separate from advisory convenience data;
+- remain local-first in the current product.
 
-## Persistence goals
+## Storage technology
 
-The persistence layer must provide:
+Current persistence uses `localStorage`.
 
-- immediate recovery after reload
-- versioned schema
-- deterministic validation/migration
-- explicit failure reporting
-- no false “saved” state
-- offline operation
-- simple inspectable data
+This is proportionate because:
 
-## Storage technology decision
+- state is small;
+- access patterns are simple;
+- synchronous writes fit the current single-user workflow;
+- storage is easy to inspect/test.
 
-### MVP
-
-Use localStorage for small structured shopping data.
-
-Why:
-
-- active cart data is small
-- writes are simple
-- synchronous restore is easy
-- migrations are inspectable
-- current project already has tested storage-adapter patterns
-
-### Upgrade trigger for IndexedDB
-
-Move selected data to IndexedDB only when requirements justify it, for example:
-
-- receipt or product images
-- large price-history datasets
-- large OCR metadata
-- large offline catalogues
-
-Do not migrate storage merely because IndexedDB sounds more advanced.
+Move to IndexedDB only for a demonstrated size/query/concurrency requirement.
 
 ## Storage boundaries
 
-Only the persistence adapter may read/write browser storage.
+Current durable subsystems:
 
-React components and pure domain modules must not access localStorage directly.
+1. active trip;
+2. completed history;
+3. Price Memory.
 
-Recommended logical records:
-
-- active trip
-- completed-trip history
-- user settings
-- price memory
-
-Exact physical keys may evolve, but critical records must remain independently recoverable and versioned.
-
-## Suggested keys
-
-Names are provisional until implementation, but a consistent namespace is required.
-
-Suggested:
-
-- budget-cart:active-trip
-- budget-cart:history
-- budget-cart:settings
-- budget-cart:price-memory
-
-Every stored document carries its own schema version.
-
-## Snapshot envelope
-
-Every persisted document should have an explicit envelope conceptually equivalent to:
-
-~~~text
-{
-  version: 1,
-  data: ...
-}
-~~~
-
-Optional metadata such as savedAt may be included if it has a real diagnostic or UX use.
-
-Do not make timestamps authoritative for money calculations.
+QA/retention evidence uses separate storage and is never canonical shopping state.
 
 ## Active-trip durability
 
-The active trip is the highest-priority record.
+A committed active-trip mutation:
 
-Every committed mutation should trigger persistence promptly:
+1. applies through domain/application rules;
+2. updates in-memory application state;
+3. attempts persistence immediately;
+4. exposes degraded health if the write fails.
 
-- add item
-- remove item
-- edit item
-- change quantity
-- change budget
-- change safety buffer
-- undo
+A failed write must not be presented as durable success.
 
-A mutation is considered durable only after the persistence adapter reports success.
-
-The UI may update optimistically, but it must know when durability failed.
+The in-memory state may remain usable, but the user must be able to understand that reload safety is degraded.
 
 ## Persistence health
 
-Application state should distinguish at least:
-
-- healthy
-- degraded
-
-Potential future states:
-
-- unavailable
-- recovering
-
 ### Healthy
 
-Latest committed canonical state was stored successfully.
+The latest required durable operation succeeded.
 
 ### Degraded
 
-Current in-memory state is valid, but the latest persistence attempt failed.
+A required persistence operation failed or persisted data requires recovery/cleanup.
 
-User-facing behaviour:
+Degraded state should include enough structured issue information for:
 
-- continue calculations
-- show clear warning
-- do not show a “saved” indicator
-- keep retry/recovery path available
+- user-facing warning/retry;
+- deterministic tests;
+- diagnostics.
 
-## Failure message
+Do not leak raw implementation detail into user copy.
 
-Persistence failure is a serious state.
+## Read / bootstrap
 
-Recommended tone:
+Bootstrap reads and validates persisted state before reconstructing domain objects.
 
-> This trip cannot be saved right now. Keep this page open until checkout.
+Rules:
 
-No humour.
+- malformed JSON is not accepted;
+- unsupported future versions are not guessed into compatibility;
+- invalid DTOs do not become domain objects;
+- domain invariants still run after DTO validation;
+- raw recovery material is preserved where the recovery contract requires it;
+- historical non-shopping values are never interpreted as shopping money.
 
-If available, offer:
+## Active-trip restore
 
-- retry
-- copy summary
-- export
+Valid active state restores to the active lifecycle.
 
-## Write strategy
+No active snapshot restores to idle.
 
-Prefer writing complete validated snapshots for each logical record rather than patching nested storage values.
+Malformed/unsupported active state enters explicit recovery/degraded behaviour rather than being silently replaced.
 
-Advantages:
+## Completed history restore
 
-- simpler migrations
-- easier corruption handling
-- fewer partial-shape states
+History restore validates:
 
-For active trip, one complete snapshot per committed mutation is acceptable at expected data sizes.
+- envelope/version;
+- individual completed entries;
+- domain reconstruction;
+- duplicate/conflicting trip ids.
 
-## Completion transaction strategy
+A valid subset may be retained only where the schema/persistence contract explicitly supports partial recovery.
 
-Completing a trip touches active state and history.
+## Completion transaction
 
-localStorage does not provide a multi-key transaction.
+Completion has the highest durability sensitivity.
 
-Therefore use a loss-avoiding sequence:
+Required ordering:
 
-1. validate completed trip
-2. write completed history record/snapshot
-3. verify write success through adapter result
-4. clear/replace active-trip record
+1. create a valid completed-domain trip;
+2. restore/validate current completed history;
+3. append completed trip idempotently;
+4. persist updated history;
+5. only after history is durable, clear active-trip storage.
 
-If step 2 fails, keep the active trip intact.
+### History write fails
 
-Prefer temporary duplication over data loss.
+Then:
 
-## User-controlled deletion
+- active trip must remain durable/current;
+- the app must not claim safe completion;
+- persistence becomes degraded;
+- completion can be retried.
 
-Local-first storage must also be user-controllable.
+### History succeeds, active clear fails
 
-Completed-trip history and Price Memory are independent durable records.
+Then:
 
-### Delete one trip / clear trip history
+- completion is durable;
+- completed summary/history remain authoritative;
+- cleanup is marked pending/degraded;
+- startup reconciliation attempts to clear the stale active copy.
 
-History deletion rewrites the complete validated history snapshot.
+Never reverse the write order.
 
-Ordering:
+## Idempotent completion
 
-1. derive the intended replacement history in memory
-2. encode and validate the complete versioned snapshot
-3. attempt the history write
-4. publish the replacement history only after the write succeeds
+If history already contains the same completed trip id with the same canonical content:
 
-If the write fails:
+- treat append as already durable;
+- do not duplicate the trip.
 
-- keep the previous visible history unchanged
-- preserve the previous persistence-health state because the canonical durable snapshot did not change
-- tell the user that nothing was removed
-- let the user retry the explicit deletion action rather than exposing a generic persistence retry that cannot reconstruct the rejected intent
-- do not fake a successful deletion or non-durable Undo
+If the same id has conflicting canonical content:
 
-### Clear Price Memory
+- degrade with a history conflict;
+- do not silently choose one value.
 
-Clearing Price Memory writes an empty valid Price Memory snapshot through the independent Price Memory port.
+## Startup reconciliation
 
-This may repair a degraded Price Memory record when storage itself is writable.
+If an active snapshot has an id already present as the same completed trip in durable history:
 
-A failed clear attempt keeps the previous Price Memory records and their prior durability status unchanged; the failed intent is reported locally. Price Memory failure must remain isolated from healthy active-trip/completed-history durability.
+- history is completion authority;
+- active state is treated as stale cleanup;
+- attempt to clear active storage;
+- do not duplicate history;
+- expose cleanup failure if removal fails.
 
-### Disclosure rule
+## Checkout reconciliation
 
-Deleting completed-trip history does not automatically delete Price Memory because Price Memory is an independent advisory record and does not retain reliable per-trip lineage.
+Updating optional actual checkout total:
 
-The UI must state this boundary explicitly.
+- requires the matching completed trip to exist;
+- writes a replacement completed snapshot safely;
+- does not create a new unrelated history entry;
+- does not alter item prices.
 
-Likewise, clearing remembered prices must not imply that completed-trip history was removed.
+Missing/conflicting history degrades rather than inventing state.
 
-## Canonical storage
+## Price Memory persistence
 
-Persist canonical inputs only.
+Price Memory is advisory and independently durable.
 
-Persist:
+Rules:
 
-- budget
-- safety buffer
-- cart items
-- item unit prices
-- quantities
-- price origins
-- trip currency
-- lifecycle timestamps
-- optional store
-- optional checkout total
+- completion durability does not depend on Price Memory;
+- Price Memory write failure does not invalidate a completed trip;
+- clearing Price Memory does not clear history;
+- clearing history does not implicitly clear Price Memory;
+- malformed Price Memory data cannot corrupt active/history state.
 
-Do not persist as authoritative:
+## Historical non-shopping data
 
-- cart total
-- remaining
-- safe remaining
-- progress percentage
-- over-budget flag
+Old counter/prototype keys are compatibility hazards only.
 
-Those values are derived after restore.
+Rules:
 
-## Validation on read
+- never reinterpret them as shopping money;
+- retire them intentionally after shopping bootstrap is safe;
+- key-removal failure is explicit where it affects cleanup status.
 
-Never trust stored JSON merely because this application wrote it previously.
-
-Restore pipeline:
-
-1. read raw value
-2. parse JSON safely
-3. validate envelope/version
-4. validate required domain fields
-5. migrate supported old version if necessary
-6. rebuild domain state
-7. derive totals fresh
-
-If validation fails, do not partially guess values into existence.
-
-## Schema migrations
-
-Migrations must be:
-
-- explicit
-- one-directional
-- deterministic
-- tested with fixtures
-
-Example conceptual flow:
-
-~~~text
-v1 → v2 → current
-~~~
-
-Do not maintain arbitrary backward-write compatibility.
+Do not keep compatibility UI/domain behaviour for the retired product.
 
 ## Unsupported future versions
 
-If stored version is newer than the running application understands:
+An older app encountering a newer schema must:
 
-- do not downgrade/overwrite it
-- do not guess the schema
-- surface a safe recovery state
-
-This protects data if a user opens an older cached application build.
-
-## Historical non-shopping state retirement
-
-Old keys:
-
-- historical versioned counter key
-- historical unversioned counter key
-
-Policy:
-
-- do not transform count into money
-- do not create a shopping trip from old count
-- after shopping migration is safely established, legacy keys may be removed intentionally
-- migration/removal must be tested
-
-Historical counter data and shopping data represent different domains.
+- reject unsupported interpretation;
+- avoid overwriting the newer raw value;
+- surface recovery/degraded semantics;
+- wait for an explicit migration/compatibility rule.
 
 ## Malformed data
 
-Malformed active-trip data must not crash application startup.
+Do not “repair” money or lifecycle facts by guessing.
 
-Recovery hierarchy:
+Recovery may:
 
-1. preserve raw data where practical for diagnostics/export
-2. refuse to treat invalid data as a valid cart
-3. offer fresh-trip recovery
+- preserve raw data for diagnostics;
+- isolate invalid entries where contractually supported;
+- allow explicit reset/recovery action.
 
-Never silently reinterpret malformed cents, quantities, or currency.
+It must not silently fabricate canonical financial state.
 
-## Price-memory persistence
+## User-controlled deletion
 
-**Status: implemented in Phase 8.**
+### Completed history
 
-Key:
+Delete one trip or clear history only through an explicit user action and safe history write.
 
-~~~text
-budget-cart:price-memory
-~~~
+### Price Memory
 
-Schema version:
+Clear independently through explicit user action.
 
-~~~text
-1
-~~~
+### Active trip
 
-Price memory is advisory and independent from active-trip durability.
-
-A record may include:
-
-- product identity
-- store identity
-- currency
-- price in minor units
-- observedAt
-- source
-
-If price-memory persistence fails, the active cart must remain usable.
-
-## Price-memory freshness
-
-Persistence must retain observation time.
-
-Freshness is a presentation/domain input, not inferred from write order alone.
-
-A remembered price without a trustworthy observed date should be treated conservatively.
-
-## History retention
-
-MVP can retain a bounded or simple list of completed trips.
-
-Before unbounded history growth, define:
-
-- retention expectations
-- size limits
-- export/delete UX
-
-Do not silently delete history merely to stay under storage limits.
-
-## Settings persistence
-
-Suitable local settings include:
-
-- preferred currency
-- preferred quick budgets
-- auto-cents preference
-- default safety buffer
-- appearance preferences
-- optional last-used store
-
-Settings must not be required to decode canonical historical money data.
+Any future reset/discard action must clearly communicate data loss before destructive removal.
 
 ## Privacy
 
-Local-first means shopping data stays on device by default.
+Current shopping persistence is local.
 
-Do not add telemetry containing:
+Do not place analytics/evidence metadata into shopping schemas.
 
-- full item lists
-- prices
-- budget values
-- store shopping history
+Do not add remote persistence without an explicit product/privacy decision.
 
-without an explicit documented reason and privacy review.
+## Service-worker boundary
 
-## Export / backup
+A future PWA service worker may cache application assets.
 
-Export is P1 rather than required for the first cart implementation, but the schema should make export straightforward.
-
-Export should use a documented, portable representation.
-
-Do not expose internal implementation-only fields unless needed for round-trip restore.
-
-## Service worker boundary
-
-Service-worker caches are for application assets, not canonical shopping data.
-
-Never use cache storage as the source of truth for active trips.
+It must never own canonical shopping state or financial mutation ordering.
 
 ## Multiple tabs
 
-MVP may initially support last-writer-wins local persistence, but cross-tab behaviour must be tested if multiple tabs can edit the same active trip.
+Current product does not silently merge concurrent financial edits.
 
-Before adding BroadcastChannel or locking machinery, confirm the real user need.
+If multi-tab synchronization becomes a feature, define conflict ownership first.
 
-A future cross-tab feature should detect conflicting active edits rather than silently merging money state.
+## Write strategy
 
-## Storage quota
+Prefer simple explicit snapshot writes over speculative queues/event logs.
 
-Expected MVP data is small.
+Requirements:
 
-Nevertheless tests should simulate setItem failure because:
-
-- private/restricted environments can block storage
-- quota may be exhausted by unrelated origin data
-- browser behaviour can vary
-
-The application contract is based on explicit failure handling, not an assumption that writes always succeed.
-
-## Persistence test matrix
-
-Required cases:
-
-### Fresh start
-
-- no keys
-- creates no fake historical trip
-
-### Normal restore
-
-- active trip restores exactly
-- derived totals recompute correctly
-
-### Reload after mutation
-
-- add survives
-- edit survives
-- remove survives
-- undo survives
-
-### Legacy data
-
-- historical non-shopping state present
-- no conversion to money
-
-### Malformed JSON
-
-- startup survives
-- invalid data not accepted as cart
-
-### Invalid business values
-
-- negative quantity rejected
-- invalid currency rejected
-- non-safe-integer money rejected
-
-### Write failure
-
-- in-memory state correct — implemented and tested
-- persistence health degraded — implemented and tested
-- UI warned — pending shopping UI/application wiring
-
-### Completion failure
-
-- failed history write does not delete active trip — implemented and tested
-- successful history write plus failed active clear is represented as durable completion with cleanup pending — implemented and tested
-- startup reconciles stale active copies against durable completed history without duplicating trip IDs — implemented and tested
-
-### Future version
-
-- data not overwritten by older schema handler
+- deterministic serialization;
+- versioned envelopes;
+- no persisted derived totals;
+- no hidden retry loop that makes UI durability status inaccurate.
 
 ## Migration discipline
 
-Every schema change should include in one logical PR:
+A real storage schema change requires:
 
-- schema/type change
-- migration
-- migration fixture/tests
-- persistence docs update
-- recovery behaviour review
+1. schema update;
+2. migration/compatibility logic;
+3. domain reconstruction update if needed;
+4. old/current/future-version tests;
+5. documentation update.
 
-Do not merge a schema change without its migration story.
+Refactors that preserve storage shape do not need version bumps.
 
-## Persistence review checklist
+## Required failure tests
 
-1. What is canonical?
-2. Which key owns it?
-3. Is this write required for active-trip durability?
-4. What happens if the write throws?
-5. What happens after reload?
-6. Can an older schema migrate deterministically?
-7. Could an old app overwrite a future version?
-8. Are derived totals being duplicated unnecessarily?
-9. Is any scanner/network state accidentally becoming canonical?
-10. Is user-facing save status truthful?
+At minimum:
+
+- storage unavailable;
+- read throws;
+- malformed JSON;
+- invalid envelope/data;
+- unsupported future version;
+- serialization failure;
+- write failure;
+- remove failure;
+- history conflict;
+- invalid history entry;
+- completion history-write failure;
+- completion active-clear failure;
+- startup stale-active reconciliation;
+- legacy key retirement failure;
+- Price Memory failure independence.
+
+## Review checklist
+
+Before changing persistence:
+
+- Can any committed trip be lost?
+- Is history durable before active cleanup?
+- Can malformed/future data be overwritten?
+- Are schema and domain validation both applied?
+- Is advisory state isolated from core durability?
+- Is degraded state visible and retryable where meaningful?
+- Does a new storage field represent canonical state?
+- Is a version bump truly required?
+- Did the change duplicate schema rules already owned by STORAGE-SCHEMA?

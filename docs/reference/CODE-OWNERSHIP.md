@@ -1,0 +1,159 @@
+# Code Ownership and Contract Map
+
+## Status
+
+**SUPPORTING REFERENCE.**
+
+Current executable contracts live in TypeScript source, tests, and the authoritative documentation set. This file is intentionally a map, not a second copy of interfaces that can drift.
+
+Use it when you need to locate code/contract ownership quickly.
+
+## Contract ownership
+
+| Concern | Source |
+| --- | --- |
+| public application state/results/ports | `src/application/shopping-app-contracts.ts` |
+| controller orchestration | `src/application/shopping-app-controller.ts` |
+| completion use cases | `src/application/shopping-app-completion.ts` |
+| controller helpers | `src/application/shopping-app-support.ts` |
+| Price Memory port | `src/application/price-memory-port.ts` |
+| exact money | `src/domain/money.ts` + `MONEY-SPEC.md` |
+| trip commands/selectors | `src/domain/shopping-trip.ts` + `STATE-MACHINES.md` |
+| Price Memory domain | `src/domain/price-memory.ts` |
+| storage transactions | `src/infrastructure/storage/shopping-storage.ts` |
+| storage codec/reconstruction | `src/infrastructure/storage/shopping-storage-codec.ts` |
+| storage schemas | `src/infrastructure/storage/shopping-storage-schema.ts` + `STORAGE-SCHEMA.md` |
+| Price Memory storage | corresponding infrastructure storage modules |
+| browser composition | `src/app/composition-root.ts` |
+| React subscription bridge | `src/application/react/use-shopping-app-state.ts` |
+| price-entry interaction | `PRICE-ENTRY-CONTRACT.md` + feature tests |
+
+## Public application boundary
+
+The application layer exposes:
+
+- immutable snapshot state;
+- subscription;
+- bootstrap;
+- start/repeat trip;
+- active-trip mutations;
+- completion;
+- checkout reconciliation;
+- history/local-data controls;
+- persistence retry.
+
+Consumers should depend on public application contracts rather than controller implementation details.
+
+## Domain boundary
+
+Domain types/functions own:
+
+- exact money;
+- ShoppingTrip / CartItem invariants;
+- projections/selectors;
+- lifecycle-safe trip commands;
+- provenance/confidence semantics;
+- Price Memory learning/ranking rules.
+
+Domain code must not depend on:
+
+- React;
+- DOM;
+- storage;
+- network;
+- OCR/barcode SDKs;
+- analytics/evidence;
+- animation.
+
+## Persistence boundary
+
+Application ports express persistence needs.
+
+Infrastructure implements:
+
+- read/write/remove;
+- DTO validation;
+- domain reconstruction;
+- loss-safe completion ordering;
+- reconciliation;
+- recovery/degraded issue mapping.
+
+Storage DTOs are not domain types.
+
+## Error ownership
+
+### Domain errors
+
+Represent invalid business/domain operations.
+
+### Application errors
+
+Represent invalid lifecycle/use-case operations.
+
+### Persistence errors
+
+Represent storage/durability failure.
+
+### Capability/provider errors
+
+Represent optional external capability failure.
+
+Do not collapse these into one generic error that loses recovery meaning.
+
+## Money boundary
+
+Canonical money:
+
+- integer EUR minor units;
+- safe/product bounded;
+- formatted only at presentation boundaries.
+
+Never introduce a parallel decimal-money model.
+
+## Price trust boundary
+
+Price source and price confidence/currentness are independent.
+
+Technology origin must never imply currentness automatically.
+
+## React boundary
+
+React owns:
+
+- rendering;
+- drafts;
+- focus;
+- overlays;
+- interaction feedback.
+
+React does not own canonical financial mutation rules.
+
+## Composition boundary
+
+Browser adapter construction belongs in the composition root.
+
+Do not construct storage/provider singletons inside feature components.
+
+## Future capability rule
+
+A future barcode/OCR/PWA/backend contract is not current product behaviour merely because a type or extension point exists.
+
+Before adding an adapter:
+
+1. the product/roadmap gate must permit it;
+2. runtime payloads must be validated;
+3. manual/local-first fallback must remain complete;
+4. failure semantics must be explicit;
+5. tests must protect the boundary.
+
+## Review checklist
+
+- Am I editing the true owning module?
+- Am I duplicating an existing interface in documentation?
+- Did domain code remain pure?
+- Did React gain business-state authority?
+- Did an infrastructure DTO bypass reconstruction?
+- Did an optional provider become required for the core job?
+- Did a future extension get mistaken for implemented capability?
+
+If exact signatures are needed, read the current source instead of extending this document with copied TypeScript.

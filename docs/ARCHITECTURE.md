@@ -2,829 +2,384 @@
 
 ## Status
 
-This repository is in transition.
+This document describes the **current** architecture of the public Shopping Budget Companion.
 
-Current repository reality:
+The repository no longer contains an alternate prototype product shell. The public root, timing QA route and retention-beta route all compose the same shopping product; QA/beta flags add evidence tooling only.
 
-- the public/default shell is Shopping Budget Companion
-- QA and retention-beta builds use the same product shell with evidence-only flags
-- React 19.3 + Vite 8 remain the runtime/build foundation
-- strict TypeScript 6 now covers the shopping money, domain, application, persistence, and shopping feature layers
-- exact EUR money and ShoppingTrip / CartItem domain are implemented
-- the plain-TypeScript ShoppingAppController + `useSyncExternalStore` bridge are implemented
-- versioned Zod-validated active-trip and completed-history localStorage persistence are implemented
-- loss-safe completion, startup stale-active reconciliation, optional checkout reconciliation, and lightweight history are implemented
-- Calm Utility start, active-trip, persistence-health, recovery, manual price-entry, one-step Undo, Phase 6 edit/remove correction, atomic active-trip budget/buffer adjustment, and Phase 8 repeat-budget flows are implemented in the guarded shell
-- the first Phase 8 slice derives the repeat candidate from validated completed history; it does not introduce a duplicate recent-budget/settings persistence record
-- legacy prototype UI/rendering code has been retired; only shopping product code remains
-- Vitest + React Testing Library + Playwright + axe remain the quality foundation
-
-Remaining target areas before the documented MVP is complete:
-
-- optional user-facing store context and real-user Phase 8 retention validation
-- Phase 9 vite-plugin-pwa + Workbox generateSW and offline installed-shell validation
-- optional scanning adapters only in their evidence-gated later phases
-- empirical timing and retention gates remain evidence requirements, not alternate product shells
-
-This document describes both implemented shopping foundations and later target boundaries. Each section must be read together with its explicit phase/status language; target-only capabilities are not shipped merely because their architecture is documented.
+Human timing and retention gates remain unverified. PWA, barcode and OCR capabilities are future/gated work, not current architecture.
 
 ## Architectural goal
 
-Keep interaction quality proportional to the product while the shopping domain remains the source of truth.
+Protect financial correctness and local durability while keeping the product small enough to understand, test and change quickly.
 
-The architecture should make the critical path:
+The architecture should make the common path obvious:
 
-- exact
-- testable
-- offline-capable
-- resilient to storage failure
-- independent of optional scanners and network services
-- simple enough to understand from the repository structure
+```text
+React feature UI
+      ↓
+ShoppingAppController + application contracts
+      ↓
+pure shopping domain / selectors
+      ↓
+application ports
+      ↓
+browser infrastructure adapters
+```
 
-Complexity is accepted only when it protects money correctness, user data, or interaction quality.
+## Source shape
 
-## Core dependency rule
-
-Target dependency direction:
-
-~~~text
-React UI / feature components
-          ↓
-Application commands / orchestration
-          ↓
-Pure domain model + selectors
-
-Application layer → repository/capability ports ← infrastructure adapters
-~~~
-
-The important distinction is that infrastructure does not sit “under” domain as a dependency. Domain knows nothing about repositories. The application layer owns orchestration and depends on abstract ports; infrastructure implements those ports.
-
-The domain owns business truth.
-
-React renders and dispatches intent.
-
-Adapters translate browser or external capabilities into validated data.
-
-No scanner, storage API, animation API, or React component may become a source of financial truth.
-
-## Current source shape and intended boundaries
-
-The repository deliberately keeps the implementation smaller than the earlier aspirational folder sketch. Responsibilities matter more than manufacturing one directory per concept.
-
-Current shopping structure:
-
-~~~text
+```text
 src/
-├── app/
-│   ├── ShoppingAppShell.tsx
-│   ├── composition-root.ts
-│   └── shopping-theme.css
-├── application/
-│   ├── shopping-app-controller.ts
-│   ├── price-memory-port.ts
-│   └── react/
-│       └── use-shopping-app-state.ts
-├── domain/
-│   ├── money.ts
-│   ├── shopping-trip.ts
-│   └── price-memory.ts
+├── app/             composition root + product shell
+├── application/     public contracts, controller, React state bridge, ports
+├── domain/          exact money, ShoppingTrip, Price Memory rules
 ├── features/
-│   └── shopping/
-│       ├── StartTripScreen.tsx
-│       ├── ActiveTripScreen.tsx
-│       ├── PriceEntrySurface.tsx
-│       ├── ItemEditSurface.tsx
-│       ├── BudgetSettingsSurface.tsx
-│       ├── FinishTripSurface.tsx
-│       ├── CompletedSummaryScreen.tsx
-│       ├── HistoryScreen.tsx
-│       ├── HistoryTripCard.tsx
-│       ├── HistoryDataControls.tsx
-│       ├── RecentItemsSection.tsx
-│       └── PersistenceHealthNotice.tsx
-├── infrastructure/
-│   ├── runtime/
-│   │   └── browser-boundaries.ts
-│   └── storage/
-│       ├── shopping-storage-schema.ts
-│       ├── shopping-storage.ts
-│       ├── active-trip-persistence-port.ts
-│       ├── price-memory-storage-schema.ts
-│       ├── price-memory-storage.ts
-│       └── price-memory-persistence-port.ts
-└── qa/
-    ├── use-shopping-evidence.tsx
-    ├── use-shopping-timing-evidence.tsx
-    ├── use-retention-beta-evidence.tsx
-    ├── shopping-timing.ts
-    ├── ShoppingTimingQaPanel.tsx
-    ├── retention-beta.ts
-    └── RetentionBetaPanel.tsx
-~~~
+│   └── shopping/    product UI and ephemeral interaction drafts
+├── infrastructure/  runtime/storage adapters and validation
+└── qa/              timing/retention evidence only
+```
 
-Architectural rules for growth:
+Entry points are TypeScript/TSX. Runtime business code should not require JavaScript escape hatches.
 
-- split by responsibility only when a file has a stable boundary worth naming
-- do not create empty history, settings, scanning, or pwa folders merely to resemble a diagram
-- completed history currently shares the versioned shopping-storage adapter because active/completed reconciliation is one durability concern
-- Price Memory remains a separate persistence port because advisory-memory failure must not downgrade a healthy cart/history write
-- feature screens may own transient form/focus/confirmation state, while canonical shopping state stays in ShoppingAppController
-- ShoppingAppShell owns cross-screen product orchestration, while useShoppingEvidence is a thin facade over separate timing-QA and retention-beta hooks so measurement state cannot become a second product-state owner
-- feature-specific commands should move down into the relevant feature when this reduces prop plumbing without duplicating canonical state
-- optional scanning and PWA adapters should be added only after their roadmap gates justify concrete interfaces
-
-This is a responsibility map, not scaffolding theatre.
-## Layer responsibilities
+## Dependency rules
 
 ### Domain
 
-Pure TypeScript.
+`src/domain/` owns deterministic business rules.
 
-Owns:
+It may depend on other domain modules. It must not depend on:
 
-- exact money invariants
-- ShoppingTrip and CartItem rules
-- projections
-- selectors
-- pure trip commands
-- price provenance semantics
+- React
+- DOM/browser globals
+- storage
+- network
+- camera/OCR
+- analytics/evidence
+- animation
 
-Does not perform I/O.
+Canonical money is integer minor units. Derived totals are selectors/calculations, never separately persisted authority.
 
 ### Application
 
-Plain TypeScript orchestration.
+`src/application/` owns use-case orchestration:
 
-Owns:
-
-- bootstrap from repositories
-- application lifecycle state
-- invoking domain transitions
+- lifecycle
+- commands
+- Undo semantics
 - persistence ordering
-- persistence-health state
-- one-step undo
-- completion transaction
-- dependency ports
-- mapping domain/persistence failures into application outcomes
+- recovery/degraded-durability behaviour
+- coordination between completed history and Price Memory
 
-This layer should be testable without React.
+Public application interfaces and state/result types live in `shopping-app-contracts.ts`.
+
+`shopping-app-controller.ts` contains controller behaviour, not public contract declarations. Consumers may continue importing re-exported types from the controller where compatibility matters, but new application-level types should be owned by the contracts module.
+
+The application layer must not render UI or reach directly into `localStorage`.
 
 ### Infrastructure
 
-Implements application ports.
+`src/infrastructure/` implements ports and runtime boundaries.
 
-MVP infrastructure target includes:
+It owns:
 
-- versioned localStorage active-trip + completed-history persistence — implemented through Phases 3 and 7
-- independent versioned localStorage Price Memory persistence — implemented in Phase 8
-- localStorage settings repository — later settings phase only if settings earn persistent state
-- production clock
-- UUID generator
-- service worker/PWA setup — Phase 9 target
+- versioned storage envelopes
+- Zod validation
+- DTO ↔ domain reconstruction
+- browser storage access
+- explicit persistence failure mapping
+- safe retirement of historical non-shopping keys
 
-Future P1 infrastructure includes barcode/product/OCR adapters.
+Infrastructure must reconstruct domain objects through domain validation rather than trusting raw persisted JSON.
 
-### React/features
+### React / features
 
-Owns:
+`src/features/` owns:
 
-- views
-- forms/drafts
-- focus
-- sheets/dialogs
-- transient feedback
-- calling application commands
-- rendering derived state
+- rendering
+- local drafts
+- focus management
+- disclosure/overlays
+- accessibility semantics
+- interaction feedback
 
-React does not perform business arithmetic or storage writes.
+React components may call domain selectors for display, but financial mutation rules belong in domain/application code.
 
 ### Composition root
 
-`app/composition-root.ts` is the only place that wires concrete infrastructure to application ports.
+`src/app/composition-root.ts` is the wiring boundary between browser adapters and the application controller.
 
-This keeps tests free to inject memory repositories, fixed clocks, and deterministic ids.
+Keep environment-specific construction here instead of scattering singleton creation through features.
 
-## Application state ownership
+### QA
 
-MVP does not use Redux, Zustand, or XState runtime.
+`src/qa/` records validation evidence only.
 
-Selected model:
+QA data:
 
-1. a small plain-TypeScript ShoppingAppController owns one immutable ShoppingAppState snapshot
-2. the controller exposes getSnapshot() and subscribe()
-3. React reads it through useSyncExternalStore
-4. UI sends typed application commands
-5. application orchestration computes valid next state and attempts persistence
-6. selectors derive display values from canonical trip
+- must be separate from shopping persistence
+- must not change financial outcomes
+- must not become a required runtime dependency
+- must not transmit shopping content unless a future privacy/consent decision explicitly allows it
 
-Do not mirror the same cart state across controller, context, reducer, localStorage, and component state.
+## State ownership
 
-Only one in-memory canonical application state should exist.
+### Canonical product state
 
-## Persistence timing
+The controller owns the in-memory application snapshot:
 
-Do not rely on a passive `useEffect` as the only persistence mechanism for committed shopping mutations.
+- lifecycle
+- active trip
+- completed summary/history
+- durability health
+- completion-cleanup state
+- Price Memory snapshot/health
+- Undo snapshot
+- recovery state
 
-Reason:
+React subscribes through `useSyncExternalStore`.
 
-A committed add followed immediately by tab close or process suspension could occur before an effect runs.
+Do not duplicate controller-owned business state into component state.
 
-For MVP localStorage is synchronous, so the application command path should:
+### Ephemeral UI state
 
-1. compute valid next domain state
-2. write the canonical snapshot
-3. report healthy/degraded durability
-4. publish next React state
-5. run optional visual feedback
+Components may own temporary values such as:
 
-If storage fails, valid in-memory state still becomes visible with degraded persistence status.
+- input drafts
+- open/closed overlays
+- focus targets
+- confirmation UI
+- transient feedback
 
-## Price provenance architecture
+Ephemeral UI state must not become a second source of truth for committed money.
 
-Replace the earlier overloaded “price origin” concept with two independent fields:
+## Exact-money architecture
 
-### Source
+EUR is the current currency scope.
 
-Where did the numeric value come from?
+Canonical values use safe integer cents.
 
-- manual
-- price-memory
-- shelf-scan
-- encoded-barcode
-- retailer-feed
+```text
+"3.79" input
+   ↓ parse/validate
+379 MinorUnits
+   ↓ domain command
+CartItem
+   ↓ selector
+cart total / remaining / safe remaining
+   ↓ format
+"€3.79"
+```
 
-### Confidence
+Never use `parseFloat` + multiplication as a financial authority.
 
-What does the product claim about the value?
+## ShoppingTrip domain
 
-- confirmed
-- remembered
-- estimated
+`shopping-trip.ts` owns:
 
-This allows a shelf-scanned value to remain traceable to the scanner while becoming user-confirmed.
+- trip/item validation
+- lifecycle-safe commands
+- item identity and timestamps
+- cart and line totals
+- budget/safety-buffer projections
+- remaining/overage selectors
+- completion and checkout reconciliation
 
-See `docs/specs/CONTRACTS.md`.
+`reduceTrip()` is the central transition boundary for committed trip mutations.
 
-## Specs as executable architecture
+UI-specific labels, focus and modal state do not belong here.
 
-The detailed technical contracts are split by concern:
+## Persistence architecture
 
-- `docs/specs/MVP-SPEC.md` — numbered MVP requirements and release acceptance
-- `docs/specs/CONTRACTS.md` — TypeScript/domain/application/adapter contracts
-- `docs/specs/STATE-MACHINES.md` — lifecycle and ephemeral state transitions
-- `docs/specs/STORAGE-SCHEMA.md` — exact local persistence schema and completion recovery
-- `docs/specs/MONEY-SPEC.md` — EUR-only parsing, formatting, arithmetic, limits, and money tests
-- `docs/reference/TECH-STACK.md` — supporting technology rationale and dependency candidates
-- `docs/research/TECHNOLOGY-RESEARCH.md` — alternatives, scoring, and research evidence
+Current durable stores are local-first and versioned.
 
-When this architecture document and a detailed spec differ, stop implementation and reconcile the documentation rather than choosing one silently.
+Core durability is stronger than convenience durability.
 
-## Domain boundary
+### Active trip and completed history
 
-The domain is pure TypeScript and has no dependency on:
+Completion ordering is intentionally loss-safe:
 
-- React
-- DOM
-- CSS
-- localStorage
-- IndexedDB
-- Service Workers
-- camera APIs
-- barcode APIs
-- OCR providers
-- animation
-- network requests
+1. validate/restore completed history
+2. persist the completed trip into history
+3. only after history is durable, clear the active-trip snapshot
+4. if active clear fails, expose cleanup pending/degraded state
+5. on startup, reconcile a stale active copy whose trip id already exists in durable history
 
-Domain responsibilities include:
+A failed history write must never delete the active trip.
 
-- money representation
-- budget validation
-- safety-buffer rules
-- item line totals
-- cart totals
-- remaining values
-- over-budget state
-- price-origin rules
-- checkout reconciliation math
-
-See DOMAIN.md for canonical business rules.
-
-## Money architecture
-
-Money correctness is the highest-value technical boundary introduced by the product pivot.
-
-Canonical money uses integer minor units.
-
-Example:
+### Read failure
 
-~~~text
-EUR 4.79 → 479
-EUR 50.00 → 5000
-~~~
-
-React components must never independently sum decimal prices.
+Malformed, invalid-business-value, conflicting or unsupported-future persisted data is not silently coerced.
 
-Formatting is presentation.
+Recovery surfaces preserve raw material where the contract allows it.
 
-Arithmetic is domain logic.
+### Price Memory
 
-This separation prevents floating-point drift and makes all money calculations deterministic in unit tests.
+Price Memory is an independent advisory subsystem.
 
-## Canonical state
+It may improve repeated use, but:
 
-Target canonical active-trip state contains:
-
-- currency
-- budget
-- safety buffer
-- items
-- item unit prices
-- item quantities
-- item price sources
-- item price confidence states
-- optional store context
-- trip lifecycle timestamps
-- optional actual checkout total
-
-Derived values are not authoritative persisted state:
-
-- cart total
-- remaining
-- safe remaining
-- progress
-- over-budget flags
-
-Selectors derive these values from canonical data.
-
-## Application layer
-
-The application layer coordinates domain intent with adapters.
-
-Examples:
-
-### Add price
-
-~~~text
-user input
-  ↓
-parse + validate
-  ↓
-domain command / reducer
-  ↓
-canonical state commit
-  ↓
-persist
-  ↓
-derive remaining
-  ↓
-render + optional motion
-~~~
-
-### Barcode flow
-
-~~~text
-camera / detector
-  ↓
-barcode adapter
-  ↓
-product identity candidate
-  ↓
-price-memory lookup
-  ↓
-user confirmation / current-price entry
-  ↓
-domain item commit
-~~~
-
-Barcode lookup does not bypass price confirmation rules.
-
-### Shelf-label scan
-
-~~~text
-camera
-  ↓
-OCR / scanning adapter
-  ↓
-price candidate(s)
-  ↓
-user confirmation
-  ↓
-domain item commit
-~~~
-
-Scanner output never mutates canonical cart state directly.
-
-## Runtime validation
-
-Use Zod 4 at untrusted boundaries only:
-
-- localStorage DTOs
-- migrations
-- remote provider responses
-- future scanner/provider payloads
-
-Pure domain modules do not import Zod.
-
-Infrastructure validates unknown data and maps it into domain constructors.
-
-## Persistence
-
-### MVP decision
-
-Use versioned localStorage while the canonical dataset remains small and text-only. Validate storage envelopes with Zod before domain reconstruction.
-
-This is intentionally conservative.
-
-IndexedDB is not automatically “more production-grade.” It becomes justified if the product later stores:
-
-- images
-- large receipt data
-- large price history
-- larger structured offline datasets
-
-### Persistence rules
-
-- every committed cart mutation is persisted promptly
-- persistence schema is versioned
-- malformed state fails safely
-- future unsupported schema versions do not get guessed into compatibility
-- storage errors are observable by the application
-- UI must surface inability to save an active trip
-
-### Legacy non-shopping state
-
-Legacy counter values must not be reinterpreted as money.
-
-Bootstrap deliberately retires the historical counter storage keys rather than inventing financial meaning for unrelated data.
-
-## Persistence failure semantics
-
-The retired counter tolerated silent in-memory fallback because its data was low impact. Shopping state uses an explicit persistence-health contract instead.
-
-That behaviour is no longer sufficient for a shopping trip.
-
-Phase 3 infrastructure behaviour:
-
-1. keep the valid in-memory state usable
-2. return persistence health as degraded after the latest failed write/read/remove
-3. preserve malformed/future raw active-trip data instead of overwriting it
-4. never reinterpret legacy counter values as shopping money
-
-The guarded shopping UI now surfaces persistence-health warnings and Retry where meaningful. Raw recovery data is preserved for explicit diagnostics; broader export tooling remains a later capability.
-
-No silent data-loss risk.
-
-## Undo architecture
-
-Do not introduce event sourcing for appearance.
-
-MVP only needs reliable recovery of recent mutations.
-
-Acceptable approaches:
-
-- bounded previous-state snapshot
-- command stack
-- reducer-level undo state
-
-Choose the smallest approach that supports the UX contract.
-
-## Price memory boundary
-
-Phase 8 now implements Price Memory as a separate advisory subsystem.
-
-The application composition root provides two independent persistence ports:
-
-~~~text
-ShoppingAppController
-  ├─ core shopping persistence → active trip + completed history
-  └─ advisory price-memory persistence → recent product/price observations
-~~~
-
-A price-memory failure must not downgrade a healthy active-cart write.
-
-Memories are learned only from confirmed named items after completed history is durable. This prevents undone, removed, cancelled, or failed-completion items from becoming future suggestions.
-
-The initial manual/offline product identity is deterministic and label-derived. It is intentionally modest: enough to recognize a user-named familiar product without requiring network lookup or barcode infrastructure.
-
-## Scanner technology
-
-Selected P1 direction:
-
-- native BarcodeDetector where supported
-- lazy BarcodeDetector-compatible ZXing-C++ WASM fallback
-- self-hosted WASM for offline operation
-- Open Food Facts as an optional ProductLookup provider
-- ShelfPriceScanner remains provider-agnostic
-- Tesseract.js is the first OCR benchmark candidate, not a locked production dependency
-
-## Scanner architecture
-
-Scanning is progressive enhancement.
-
-Manual price entry is the permanent fallback.
-
-### Barcode detection
-
-The browser Barcode Detection API cannot be assumed available across all target browsers.
-
-Architecture should support:
-
-- capability detection
-- a library-based or alternate implementation if justified
-- graceful fallback to manual entry
-
-Avoid coupling the domain to one scanner implementation.
-
-### Product lookup
-
-If a remote product database is introduced:
-
-- it is optional
-- timeouts/failure do not block manual input
-- product identity and current price remain separate concepts
-
-### Price-tag OCR
-
-OCR is an untrusted candidate producer.
-
-The adapter may return:
-
-- candidate price
-- multiple candidates
-- optional product text
-- optional unit text
-
-The application requires confirmation before domain commit.
-
-## Network architecture
-
-Core product must not need a backend.
-
-A future backend is justified only by a real feature such as:
-
-- multi-device household sync
-- cloud backup
-- retailer integration
-- shared price memory
-
-Do not create authentication, server APIs, or databases pre-emptively.
-
-## PWA and offline
-
-Selected tooling:
-
-- vite-plugin-pwa
-- Workbox generateSW
-- prompt-based update flow
-
-PWA support is product-relevant because stores can have poor connectivity and the app benefits from home-screen launch.
-
-Target PWA responsibilities:
-
-- application shell availability
-- static asset caching
-- offline startup
-- safe update behaviour
-
-Business data remains owned by the persistence layer, not the service worker cache.
-
-## UI technology
-
-MVP uses:
-
-- CSS Modules
-- CSS custom properties/design tokens
-- native semantic HTML
-- native dialog wrappers
-- React 19.3 ViewTransition + CSS motion
-- no Tailwind
-- no CSS-in-JS runtime
-- no full UI kit
-- no router until meaningful deep links exist
+- a Price Memory write failure cannot invalidate a completed trip
+- remembered prices remain explicitly remembered
+- reuse does not refresh observation age unless a current price is actually confirmed
+- deletion semantics remain independent from completed-trip history
 
 ## React boundary
 
-React is an adapter around application state, not the application layer itself.
+The product does not require Redux/Zustand/XState/router infrastructure for its current state model.
 
-React components should:
+The controller + `useSyncExternalStore` boundary is sufficient because:
 
-- render state
-- collect intent
-- call application/domain actions
-- manage local ephemeral UI state
+- there is one product shell
+- state transitions are centralized
+- domain rules are already pure
+- persistence ordering lives outside React
 
-React components should not:
+Add a state library only when measured complexity cannot be handled cleanly by the current controller/contract boundary.
 
-- calculate financial totals ad hoc
-- read localStorage directly
-- call OCR or barcode APIs directly from business components
-- silently reconcile scanner data
-- encode currency rules in JSX
+## Complexity management
 
-## Motion architecture
+Large files are a signal to inspect responsibilities, not an automatic refactor trigger.
 
-The current project contains sophisticated View Transition handling, including reduced-motion gates and failure recovery.
+Prefer extraction when one file owns multiple reasons to change, for example:
 
-The product pivot changes one critical rule:
+- public contracts + implementation
+- serialization + storage transactions
+- rendering + business orchestration
+- product state + evidence collection
 
-> Business state commits must never wait on decorative motion.
+Do not introduce micro-files that make a single use case harder to trace.
 
-Target order:
+Current structure:
 
-~~~text
-intent
-  ↓
-domain commit
-  ↓
-persistence attempt
-  ↓
-render
-  ↓
-optional visual transition / feedback
-~~~
+- public application contracts are separated from controller implementation
+- completion / checkout reconciliation is a cohesive application use-case module rather than part of the central controller body
+- controller-wide state/result helpers live in a small support module and remain presentation-agnostic
+- storage codec/schema reconstruction is separated from transactional persistence/recovery while preserving the existing public storage exports
+- shell focus restoration is isolated from product orchestration
+- price-entry presentation copy/calculation and the dumb keypad are separated from the stateful price-entry flow
 
-View Transitions remain valuable for:
+Future extraction should continue by cohesive use-case boundary (for example history or recovery), not arbitrary line counts.
 
-- remaining-number changes
-- start/finish transitions
-- panel/layout changes
+## UI architecture
 
-They are not part of the correctness path.
+The active-trip hierarchy remains:
 
-## Pointer effects
+1. remaining / over-budget amount
+2. budget context
+3. capacity/status visual
+4. primary add action
+5. cart details
+6. secondary tools
 
-The current requestAnimationFrame-based pointer adapter is a good example of keeping high-frequency rendering outside React state.
+Manual price entry is the baseline interaction.
 
-Preserve the technique only where visual value remains after the product redesign.
+Remembered/scanned/estimated values are accelerators and must never remove the explicit current-price path.
 
-Do not preserve visual complexity solely because it already exists.
+## Motion
 
-## TypeScript migration
+Motion is progressive enhancement.
 
-The original decision to stay in JavaScript was proportionate for a tiny counter.
+No committed financial mutation may depend on animation or View Transition completion. The current product does not require View Transition orchestration as an architectural dependency.
 
-The new domain changes that trade-off.
+Reduced-motion behaviour must preserve the same information and controls.
 
-Strict TypeScript is justified by:
+## Network and backend
 
-- branded or constrained money values
-- currency boundaries
-- independent price source and confidence types
-- persistence schemas
-- scanner result unions
-- optional metadata
-- trip lifecycle
+No backend is required for the current product.
 
-Migration strategy:
+A backend becomes justified only by a validated requirement such as:
 
-1. add TypeScript configuration and typed domain first
-2. migrate application adapters around the domain
-3. migrate feature components incrementally
-4. remove obsolete counter modules after equivalent behaviour is replaced
-5. avoid simultaneous full visual redesign + full type migration + new scanners in one change
+- multi-device sync
+- household collaboration
+- server-side OCR/product lookup
+- cross-device history/Price Memory
+- aggregate telemetry with explicit privacy/consent design
+
+Do not introduce remote state pre-emptively.
+
+## PWA / offline
+
+The shopping logic and local data path do not require network access once the application is loaded.
+
+An installable/offline shell is **not yet implemented**. Service-worker/PWA tooling remains roadmap-gated.
+
+When implemented, the service worker must cache application assets only and must never become an owner of canonical shopping state.
+
+## Scanner extension points
+
+Barcode/OCR are not current production capabilities.
+
+Future adapters must preserve these boundaries:
+
+- barcode → identity candidate, not current price authority
+- OCR → price candidate, not committed cart mutation
+- user confirmation → domain/application command
+- failure → manual entry remains available
+
+Provider payloads must be runtime validated before entering domain/application logic.
 
 ## Testing architecture
 
-Quality remains layered.
+### Domain
 
-### Pure domain tests
+Pure tests cover exact money, trip invariants, projections and Price Memory rules.
 
-Fast and exhaustive for:
+### Application
 
-- money
-- selectors
-- buffers
-- quantities
-- edge cases
+Controller tests cover lifecycle, Undo, persistence ordering, completion, history, recovery and Price Memory coordination.
 
-### Component tests
+### Infrastructure
 
-Interaction semantics for:
+Storage tests cover schemas, malformed/future data, write failures, completion transactions and reconciliation.
 
-- price entry
-- warnings
-- undo
-- edits
+### Components
 
-### Browser tests
+Testing Library verifies user-visible interaction and accessibility semantics.
 
-Real flow for:
+### Browser
 
-- active-trip persistence
-- offline shell
-- mobile layout
-- accessibility
-- browser compatibility
+Playwright runs Chromium, Firefox and WebKit journeys including accessibility and responsive/recovery cases.
 
-Scanner integrations need adapter-contract tests and deterministic fixtures before camera-driven E2E is considered.
-
-See TESTING.md for the quality contract.
+Human physical/timing evidence remains a separate gate and must not be inferred from automation.
 
 ## Security and privacy posture
 
-MVP handles shopping data locally.
+Current core data stays local.
 
-Do not collect data merely because analytics are easy to add.
+The product does not require:
 
-If telemetry is added later, it must be:
+- authentication
+- bank access
+- remote shopping-content telemetry
+- third-party financial APIs
 
-- purposeful
-- minimal
-- documented
-- non-blocking
-- respectful of financial sensitivity
-
-No bank credentials or financial-account access belong in this product.
-
-## Architecture trade-offs
-
-### Why no global state library initially?
-
-One active trip plus small local feature state is manageable with React and a clear domain reducer/application boundary.
-
-Add a library only when actual cross-feature state complexity justifies it.
-
-### Why no backend initially?
-
-The core job is single-user, device-local, and offline-friendly.
-
-A backend increases operational and privacy cost without improving the primary job.
-
-### Why localStorage before IndexedDB?
-
-Canonical MVP state is small and structured.
-
-The simpler storage API is easier to reason about, migrate, and test.
-
-Upgrade storage when the data shape requires it.
-
-### Why strict TypeScript now?
-
-The domain now contains meaningfully different numeric/data concepts. Type safety reduces real risk rather than adding decorative ceremony.
-
-### Why keep native motion?
-
-The existing native-CSS approach provides visual quality without a large animation runtime. It remains appropriate when motion supports comprehension and does not own correctness.
+Evidence tooling is intentionally content-minimized and separate from business persistence.
 
 ## Architectural invariants
 
-MUST:
+A change is architecturally acceptable only if all relevant invariants remain true:
 
-- represent canonical money in integer minor units
-- keep domain logic independent of React/browser APIs
-- derive totals from canonical items
-- preserve manual offline input
-- validate scanner output before commit
-- surface persistence failure
+1. canonical money is exact integer minor units
+2. domain remains framework/browser independent
+3. React does not become financial authority
+4. committed mutations go through domain/application rules
+5. persistence failure is visible and cannot silently masquerade as durable success
+6. completed-history durability is protected before active-trip cleanup
+7. Price Memory remains advisory and independently durable
+8. QA evidence remains separate from product state
+9. manual entry remains available
+10. future external payloads are validated at boundaries
+11. current docs describe current code; historical phase narration belongs in archive
 
-MUST NOT:
+## Review checklist
 
-- use floating-point money as source of truth
-- read/write storage from arbitrary components
-- let animation callbacks own financial commits
-- treat barcode identity as a current price
-- treat remembered price as live price
-- require network for the critical shopping flow
-- add a backend without a product requirement
+Before merging architecture-affecting work:
 
-SHOULD:
-
-- keep modules small and responsibility-focused
-- prefer browser/platform primitives over broad runtime dependencies
-- keep optional smart features behind adapters
-- make each migration step independently testable
-
-## Architecture readiness score
-
-Current target architecture: **98/100**
-
-Strengths:
-
-- clean domain/application/infrastructure split
-- deterministic test seams
-- exact-money boundary
-- local-first durability model
-- no backend/global-state overengineering
-- optional capabilities isolated from core
-- formal state/storage/contracts now specified
-
-Remaining design decisions before 100:
-
-- final immediate Continue shopping semantics after completion
-- exact PWA update/reload policy during an active trip
-- application-layer orchestration wiring for the shipped active-trip persistence boundary
-
-None block Phase 1 money/domain implementation.
-
-## Architecture review checklist
-
-Before approving a structural change ask:
-
-1. Does it protect a documented domain or UX requirement?
-2. Is there a simpler boundary that would work?
-3. Does the domain remain browser-independent?
-4. Does the core workflow still work offline?
-5. Did optional scanning/network code leak into the critical path?
-6. Is canonical state still unambiguous?
-7. Can failure be surfaced and recovered from?
-8. Is this architecture implemented now, or clearly labelled as target state?
+- What layer owns the behaviour?
+- Is there a new source of truth?
+- Did any derived value become persisted unnecessarily?
+- Can any failure path lose or misrepresent a committed trip?
+- Did convenience state become coupled to core durability?
+- Did React gain domain/application responsibility?
+- Is a new dependency justified by current product value?
+- Are code, tests and the smallest owning document updated together?

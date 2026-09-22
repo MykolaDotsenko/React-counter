@@ -2,9 +2,9 @@
 
 ## Status
 
-Target MVP contract for monetary parsing, validation, arithmetic, projection, formatting, and testing.
+**IMPLEMENTED current exact-money contract** for parsing, validation, arithmetic, projection, formatting, and testing.
 
-The MVP supports EUR only.
+The current product supports EUR only.
 
 ## Goals
 
@@ -17,7 +17,7 @@ The MVP supports EUR only.
 - accessible output
 - safe future currency extension
 
-## MVP currency scope
+## Current currency scope
 
 Supported currency:
 
@@ -382,11 +382,11 @@ Requirements:
 - quantity is within product bound
 - multiplication result remains a safe integer
 
-## No division in MVP core
+## No generic division in current core
 
 The MVP does not need division.
 
-Do not add generic percentage or decimal arithmetic during Phase 1.
+Do not add generic percentage or decimal arithmetic without an explicit product/domain requirement and rounding contract.
 
 Future features that require rounding include:
 
@@ -714,20 +714,16 @@ Do not add generic ISO currency acceptance first and correctness later.
 9. Are negative derived values modelled explicitly?
 10. Are tests exact rather than tolerance-based?
 
-## MVP money readiness score
+## Review summary
 
-**99/100**
+The implemented model is intentionally narrow:
 
-The remaining point is implementation evidence.
+- EUR only;
+- integer cents;
+- no FX;
+- no generic percentage arithmetic;
+- no decimal dependency;
+- explicit input grammar;
+- explicit product bounds.
 
-The narrow model is intentional:
-
-- EUR only
-- integer cents
-- no FX
-- no percentage arithmetic
-- no decimal dependency
-- explicit input grammar
-- explicit product bounds
-
-That narrowness is a reliability advantage.
+That narrowness is a reliability advantage. Future currency or advanced-price mechanics require an explicit contract extension rather than genericising the current money model pre-emptively.

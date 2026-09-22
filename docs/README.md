@@ -1,74 +1,179 @@
 # Documentation map
 
-This directory contains product contracts, implementation contracts, evidence protocols, research, and historical execution material.
+The documentation is organized to minimize AI/contributor context while keeping current contracts explicit.
 
-The purpose of this index is to make **authority explicit**. A document being detailed does not make it a competing source of truth.
+## Authority
 
-## Current authoritative documents
+Current implementation truth:
 
-These define the current product and implementation direction:
+1. code + green executable tests.
 
-| Document | Authority |
+Current intended behaviour:
+
+2. authoritative documents listed below.
+
+Rationale/history:
+
+3. decisions, reference, research and archive.
+
+If code and an authoritative contract disagree, reconcile the drift in the same change.
+
+## Information architecture
+
+Each location has one purpose:
+
+| Location | Put here | Do not put here |
+| --- | --- | --- |
+| `docs/*.md` | small set of current cross-cutting authoritative contracts | research snapshots, completed plans, provider notes |
+| `docs/specs/` | executable behavioural/data interaction specifications | copied TypeScript interfaces, product strategy |
+| `docs/architecture/` | specialized engineering contracts that refine ARCHITECTURE | generic tech research |
+| `docs/quality/` | cross-cutting release-quality contracts | feature roadmap ideas |
+| `docs/decisions/` | accepted ADR rationale grouped by topic | current implementation-status checklists |
+| `docs/reference/` | useful heuristics, ownership maps and non-authoritative guidance | rules that redefine current behaviour |
+| `docs/evidence/` | protocols/results that support validation claims | product requirements |
+| `docs/research/` | dated/external evidence and hypotheses | shipped capability claims |
+| `docs/marketing/` | launch/store operational material | core product contracts |
+| `docs/archive/` | completed/historical execution material | anything an implementation agent should follow today |
+
+### New-document rule
+
+Prefer editing an existing owner over creating a new file.
+
+Create a new document only when:
+
+1. no current document clearly owns the concern;
+2. the content has a distinct lifecycle or audience;
+3. putting it in the existing owner would materially increase context cost;
+4. its authority level and directory are unambiguous.
+
+Do **not** create a second product, architecture, UX, functionality, testing or roadmap contract under a different name.
+
+### Navigation invariant
+
+A normal engineering task should usually need:
+
+```text
+AGENTS.md
+  → docs/README.md
+  → one primary owning contract
+  → at most one or two detailed specs/references
+  → affected code/tests
+```
+
+Use ADR/research/evidence only when the task requires rationale, external evidence or validation status.
+
+Avoid dense cross-link meshes. `docs/README.md` is the hub; domain-specific documents may link to the exact refinement they depend on.
+
+## Authoritative documents
+
+| Document | Owns |
 | --- | --- |
-| [PRODUCT.md](./PRODUCT.md) | product thesis, scope, principles, success criteria |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | dependency boundaries, ownership, architectural invariants |
-| [DOMAIN.md](./DOMAIN.md) | business concepts, money rules, domain invariants |
-| [DESIGN.md](./DESIGN.md) | current visual and interaction-system direction |
-| [ROADMAP.md](./ROADMAP.md) | sequencing, evidence gates, future breadth |
-| [TESTING.md](./TESTING.md) | quality strategy and release verification |
+| [PRODUCT.md](./PRODUCT.md) | product job, principles, competitive strategy, feature decision rule |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | dependency boundaries, state ownership, architectural invariants |
+| [DOMAIN.md](./DOMAIN.md) | current business concepts and invariants |
+| [DESIGN.md](./DESIGN.md) | current production visual/interaction contract |
+| [ROADMAP.md](./ROADMAP.md) | current evidence gates and future sequencing |
+| [TESTING.md](./TESTING.md) | current quality/release contract |
 
-Detailed executable contracts live in [specs/](./specs/). Specialized contracts such as [DATA-PERSISTENCE.md](./architecture/DATA-PERSISTENCE.md) and [ACCESSIBILITY.md](./quality/ACCESSIBILITY.md) refine the authoritative documents; they do not replace them.
+Detailed executable specs:
 
-Architecture and product decisions that materially change these contracts belong in [DECISIONS.md](./DECISIONS.md).
+- [specs/MONEY-SPEC.md](./specs/MONEY-SPEC.md)
+- [specs/RELEASE-SPEC.md](./specs/RELEASE-SPEC.md)
+- [specs/STATE-MACHINES.md](./specs/STATE-MACHINES.md)
+- [specs/STORAGE-SCHEMA.md](./specs/STORAGE-SCHEMA.md)
+- [specs/PRICE-ENTRY-CONTRACT.md](./specs/PRICE-ENTRY-CONTRACT.md)
+
+Specialized contracts:
+
+- [architecture/DATA-PERSISTENCE.md](./architecture/DATA-PERSISTENCE.md)
+- [quality/ACCESSIBILITY.md](./quality/ACCESSIBILITY.md) — current accessibility/release-quality contract
+
+Cross-cutting durable decisions:
+
+- [DECISIONS.md](./DECISIONS.md) — short ADR index; open only the relevant category file
+
+## Read by task
+
+| Task | Read |
+| --- | --- |
+| release behaviour / acceptance | PRODUCT → RELEASE-SPEC → affected domain/design/test contract |
+| money/parser | PRODUCT → DOMAIN → MONEY-SPEC → affected tests |
+| trip command/selector | PRODUCT → DOMAIN → STATE-MACHINES where relevant → tests |
+| controller/lifecycle | ARCHITECTURE → STATE-MACHINES → controller tests |
+| architecture refactor / file ownership | ARCHITECTURE → CODE-OWNERSHIP → affected tests |
+| persistence/recovery | ARCHITECTURE → DATA-PERSISTENCE → STORAGE-SCHEMA → tests |
+| UI/interaction | PRODUCT → DESIGN → ACCESSIBILITY → component/E2E tests |
+| tests/CI | TESTING → workflow/config |
+| new capability | PRODUCT → ROADMAP → relevant decision/research |
+| premium/brand polish | PRODUCT → DESIGN → BRAND reference only if identity work |
+| historical rationale | relevant DECISIONS/reference/archive only |
+
+Do not read all docs for a narrow change.
 
 ## Supporting reference
 
-These documents preserve useful detail, scenario reasoning, language, or research context, but **must not independently redefine current product status**:
+Reference adds rationale or future planning; it does not redefine current implementation status.
 
-- [FUNCTIONALITY.md](./reference/FUNCTIONALITY.md) — extended functional catalogue and edge-case reference
-- [UX.md](./reference/UX.md) — detailed UX heuristics and interaction reference
-- [BRAND.md](./reference/BRAND.md) — brand, voice, naming, and messaging reference
-- [SCENARIOS.md](./reference/SCENARIOS.md) — scenario inventory and risk analysis
-- [TECH-STACK.md](./reference/TECH-STACK.md) — technology rationale and future candidates
-- [MARKETING.md](./reference/MARKETING.md) — acquisition/positioning strategy, not implementation status
+- [reference/UX.md](./reference/UX.md) — practical interaction heuristics
+- [reference/CODE-OWNERSHIP.md](./reference/CODE-OWNERSHIP.md) — source/module ownership map for refactors
+- [reference/BRAND.md](./reference/BRAND.md) — brand positioning/voice/identity
+- [reference/SCENARIOS.md](./reference/SCENARIOS.md) — compact product/UX challenge matrix
+- [reference/TECH-STACK.md](./reference/TECH-STACK.md) — current stack intent and dependency admission
+- [reference/MARKETING.md](./reference/MARKETING.md) — evidence-aware go-to-market guidance
+- [reference/DESIGN-RATIONALE.md](./reference/DESIGN-RATIONALE.md)
+- [reference/FUTURE-QUALITY-PLANS.md](./reference/FUTURE-QUALITY-PLANS.md)
 
-If a supporting document conflicts with a current authoritative contract, the authoritative contract wins and the reference document should be reconciled.
+## Evidence
 
-## Evidence and validation
+Evidence documents define how claims become validated:
 
-- [SPRINT-B-QUALITY-GATE.md](./evidence/SPRINT-B-QUALITY-GATE.md) — physical timing and one-hand evidence contract
-- [RETENTION-BETA.md](./evidence/RETENTION-BETA.md) — retention instrumentation contract
-- [RETENTION-BETA-PLAYBOOK.md](./evidence/RETENTION-BETA-PLAYBOOK.md) — real-store retention study protocol
-- [BRAND-IMPLEMENTATION-AUDIT.md](./evidence/BRAND-IMPLEMENTATION-AUDIT.md) — implementation audit evidence
-- [PHASE-4-DESIGN-VALIDATION.md](./evidence/PHASE-4-DESIGN-VALIDATION.md) — design validation evidence
+- [evidence/SPRINT-B-QUALITY-GATE.md](./evidence/SPRINT-B-QUALITY-GATE.md)
+- [evidence/RETENTION-BETA.md](./evidence/RETENTION-BETA.md)
+- [evidence/RETENTION-BETA-PLAYBOOK.md](./evidence/RETENTION-BETA-PLAYBOOK.md)
+- [evidence/PHASE-4-DESIGN-VALIDATION.md](./evidence/PHASE-4-DESIGN-VALIDATION.md)
+- [evidence/BRAND-IMPLEMENTATION-AUDIT.md](./evidence/BRAND-IMPLEMENTATION-AUDIT.md)
 
-Automated tests are evidence of implementation behavior; they are not substitutes for explicitly required human/device evidence.
+Automation does not substitute for explicitly required human/device evidence.
 
-## Research and launch material
+## Research / launch
 
-- [COMPETITIVE-RESEARCH.md](./research/COMPETITIVE-RESEARCH.md)
-- [PRODUCT-SUCCESS-STRATEGY.md](./research/PRODUCT-SUCCESS-STRATEGY.md)
-- [TECHNOLOGY-RESEARCH.md](./research/TECHNOLOGY-RESEARCH.md)
-- [MARKETING-RESEARCH.md](./research/MARKETING-RESEARCH.md)
+Use only when the task depends on market evidence, alternatives or launch strategy:
+
+- [research/COMPETITIVE-RESEARCH.md](./research/COMPETITIVE-RESEARCH.md)
+- [research/PRODUCT-SUCCESS-STRATEGY.md](./research/PRODUCT-SUCCESS-STRATEGY.md)
+- [research/TECHNOLOGY-RESEARCH.md](./research/TECHNOLOGY-RESEARCH.md)
+- [research/MARKETING-RESEARCH.md](./research/MARKETING-RESEARCH.md)
 - [marketing/LAUNCH-CHECKLIST.md](./marketing/LAUNCH-CHECKLIST.md)
 - [marketing/STORE-LISTING-SPEC.md](./marketing/STORE-LISTING-SPEC.md)
 
-Research informs decisions; it does not silently override current contracts.
+## Historical material
 
-## Historical execution material
+[archive/](./archive/) is traceability only.
 
-Completed sprint/task decomposition belongs under [archive/](./archive/).
+Archived files are never current instructions.
 
-Historical documents remain available for traceability, but they are not current implementation instructions.
+## Maintenance
 
-## Maintenance rule
+When behaviour changes:
 
-When a behavior changes:
+1. update code/tests;
+2. update the smallest owning authoritative contract;
+3. update a detailed spec only if its executable contract changed;
+4. add a decision only for durable cross-cutting choices;
+5. move useful rationale out of current contracts;
+6. delete duplicated status narration.
 
-1. update the smallest authoritative document that owns the rule;
-2. update the corresponding detailed spec/test if applicable;
-3. record a material architectural/product decision in `DECISIONS.md`;
-4. reconcile supporting reference only where it would otherwise become misleading;
-5. do not duplicate current-status checklists across multiple documents.
+Documentation structure is enforced by:
 
-This authority model is intended to keep the documentation useful as the repository grows instead of turning every planning document into a permanent source of truth.
+```bash
+npm run docs:check
+```
+
+The validator checks required contract paths, retired legacy paths, docs-root classification, and relative Markdown links. It runs inside `npm run check`.
+
+Current docs use only:
+
+- **IMPLEMENTED**
+- **VALIDATED**
+- **PLANNED / GATED**
+- **HISTORICAL**

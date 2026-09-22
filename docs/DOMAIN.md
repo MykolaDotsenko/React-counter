@@ -2,603 +2,345 @@
 
 ## Status
 
-This document defines the target business rules for the shopping budget companion.
+**IMPLEMENTED current business contract.**
 
-The repository implements the shopping domain through Phase 8 engineering: exact EUR money, ShoppingTrip / CartItem rules, price source/confidence semantics, projections, active-trip commands, correction/Undo, completion/history/reconciliation, local product identity, and Price Memory. Scanner-backed sources remain later evidence-gated slices.
+This document owns shopping-domain concepts and invariants. Parsing detail lives in `specs/MONEY-SPEC.md`; lifecycle detail lives in `specs/STATE-MACHINES.md`.
 
-## Domain goals
+## Goals
 
-The domain model must make shopping-budget calculations exact, deterministic, framework-independent, easy to test, explicit about uncertainty, and proportionate to the problem.
+The domain must be:
 
-React, browser APIs, OCR, barcode libraries, and persistence must not own money rules.
+- exact;
+- deterministic;
+- framework independent;
+- easy to test;
+- explicit about uncertainty;
+- proportionate to the product.
+
+React, storage, OCR, barcode providers, network and animation must not own financial rules.
 
 ## Core concepts
 
 ### ShoppingTrip
 
-One active or completed shopping session with one currency and one spending limit.
+One active or completed shopping session.
 
-A trip contains:
+Canonical fields include:
 
-- id
-- currency
-- budget
-- optional safety buffer
-- items
-- status
-- started time
-- optional completed time
-- optional actual checkout total
-- optional store reference
+- id;
+- currency;
+- budget;
+- safety buffer;
+- items;
+- status;
+- timestamps;
+- optional actual checkout total;
+- optional store context.
 
-Only one active trip is required for MVP.
+Current product supports one active trip.
 
 ### Budget
 
-The maximum nominal amount the user intends to spend during the trip.
-
-MVP rules:
-
-- budget must be greater than EUR 0
-- budget must not exceed EUR 999,999.99
-
-### SafetyBuffer
-
-An optional amount intentionally reserved inside the nominal budget.
+Nominal spending limit.
 
 Rules:
 
-- buffer is never negative
-- buffer cannot exceed budget
-- safe limit equals budget minus buffer
+- > EUR 0;
+- within product maximum defined by MONEY-SPEC.
+
+### SafetyBuffer
+
+Optional reserved amount inside the budget.
+
+Rules:
+
+- >= 0;
+- <= budget.
+
+```text
+safe limit = budget - buffer
+```
 
 ### CartItem
 
-One line in the active cart.
+Canonical item fields:
 
-Required:
-
-- id
-- unit price
-- quantity
-- price source
-- price confidence
-- created time
+- id;
+- unit price;
+- quantity;
+- price source;
+- price confidence;
+- created/updated timestamps.
 
 Optional:
 
-- label
-- store or product identity
-- note
-- unit or weight metadata
+- label;
+- product/store identity where supported by the model.
 
-### Price provenance
+A label is not required for a valid item.
 
-Price metadata is split into two independent dimensions.
+## Money
 
-#### Price source
+Canonical financial state uses integer EUR minor units.
 
-Where the numeric value came from.
+Never use binary floating point as authority.
 
-Target values:
-
-- manual
-- price-memory
-- shelf-scan
-- encoded-barcode
-- retailer-feed
-
-MVP only requires manual.
-
-#### Price confidence
-
-What the product claims about the value.
-
-Target values:
-
-- confirmed
-- remembered
-- estimated
-
-Examples:
-
-- a shelf-scanned value accepted by the user: source = shelf-scan, confidence = confirmed
-- a reused old price: source = price-memory, confidence = remembered
-- an approximate fruit price entered manually: source = manual, confidence = estimated
-
-Do not collapse source and confidence into one enum.
-
-### Store
-
-Store context is optional.
-
-It exists primarily to improve price-memory relevance and must never be required to start a trip.
-
-## Money representation
-
-MVP money behaviour is fully specified in docs/specs/MONEY-SPEC.md.
-
-### Rule: never use binary floating point as canonical money
-
-Represent money in integer minor units.
-
-For EUR:
-
-- EUR 1.00 = 100
-- EUR 4.79 = 479
-- EUR 50.00 = 5000
-
-All canonical arithmetic uses integers.
-
-Formatting into decimal currency strings belongs at a boundary or helper layer.
-
-### Money type
-
-Implementation should introduce a strong TypeScript boundary for:
-
-- amount in minor units
-- currency code
-
-The exact shape can be decided during implementation, but raw unvalidated numbers must not spread through components.
-
-### Currency
-
-A trip has exactly one currency.
-
-MVP supports EUR only.
-
-Therefore:
-
-- SupportedCurrency is EUR
-- canonical EUR values use integer cents
-- no currency switcher is shown in MVP
-- no FX conversion exists
-- persisted unsupported currency codes are rejected
-
-The domain remains structured so additional currencies can be added deliberately later, but generic ISO-code acceptance is not part of MVP.
-
-All parsing, formatting, limits, and arithmetic details are governed by docs/specs/MONEY-SPEC.md.
+Derived totals are recalculated from canonical state.
 
 ## Quantity
 
-MVP quantity is an integer from 1 through 999.
+Quantity is a positive bounded integer.
 
-MVP item unit price is greater than EUR 0 and no more than EUR 999,999.99.
+```text
+line total = unit price × quantity
+```
 
-Weighted goods should not overload ordinary integer quantity.
-
-Weighted goods should not overload ordinary integer quantity. They need explicit weight or unit semantics, or an estimated direct line price.
-
-### Line total
-
-For integer quantity:
-
-lineTotal = unitPriceMinor × quantity
-
-The result must remain a safe integer.
+Multiplication must remain within safe/product limits.
 
 ## Derived values
 
-Derived values are calculated from canonical trip state.
+Never persist as authority:
 
-### Cart total
+- line total;
+- cart total;
+- remaining;
+- safe remaining;
+- progress percentage;
+- item count;
+- over-budget flags;
+- checkout difference.
 
-cartTotal = sum of all item line totals
+```text
+cart total = sum(line totals)
+remaining = budget - cart total
+safe remaining = budget - buffer - cart total
+```
 
-### Nominal remaining
-
-remaining = budget - cartTotal
-
-Remaining may be negative.
-
-### Safe limit
-
-safeLimit = budget - safetyBuffer
-
-### Safe remaining
-
-safeRemaining = safeLimit - cartTotal
-
-Safe remaining may be negative.
-
-### Progress
-
-Progress derives from cart total and the relevant limit.
-
-UI may clamp visual percentages as needed, but the domain calculation must preserve real overage.
-
-## Canonical vs derived state
-
-Canonical:
-
-- budget
-- safety buffer
-- items
-- item prices
-- quantities
-- price sources
-- price confidence states
-- optional actual checkout total
-- trip status
-- timestamps
-- optional store context
-
-Derived and never authoritative:
-
-- cart total
-- remaining
-- safe remaining
-- progress percentage
-- item count
-- over-budget flag
-- estimated checkout difference
-
-Do not persist derived totals as source of truth.
+Negative remaining values are valid and represent overage.
 
 ## Trip states
 
-Minimal target state model:
+**IMPLEMENTED**
 
-- active
-- completed
-
-Potential future state:
-
-- abandoned
-
-MVP does not need a workflow engine.
+- active;
+- completed.
 
 ### Active
 
-Items and limits can be edited.
+Budget/buffer/items may change through valid commands.
 
 ### Completed
 
-Trip is retained as history.
+Retained as history.
 
-Edits after completion should either reopen explicitly or follow a clearly defined correction rule later. Do not silently mutate historical trips.
+Do not silently mutate a completed trip back into an active trip.
 
-## Budget changes
-
-The user owns the budget.
-
-An active-trip budget may be changed intentionally.
-
-If the new budget is below current cart total:
-
-- allow the change
-- show over-budget state
-
-Do not block the user.
-
-## Safety-buffer changes
-
-May be changed during an active trip.
-
-Safe remaining recalculates immediately.
-
-Buffer changes do not alter item totals.
+Historical reopen remains **PLANNED / GATED** until a loss-safe two-record contract exists.
 
 ## Adding an item
 
 Before commit:
 
-1. validate price
-2. validate quantity
-3. calculate pending line total
-4. calculate projected remaining state
-5. present relevant warning if the projected total crosses a limit
+1. validate price;
+2. validate quantity;
+3. project line/cart/remaining state;
+4. surface relevant reserve/over-budget consequence.
 
 On commit:
 
-1. create the item
-2. update canonical trip state
-3. persist immediately through the application/persistence boundary
-4. derive new totals
+1. create item;
+2. apply domain transition;
+3. application layer attempts persistence;
+4. selectors derive totals.
 
-The domain commit must not depend on animation or network activity.
+Domain mutation never depends on animation/network.
 
-## Removing an item
+## Editing / removing / Undo
 
-Removing an item deletes it from the active trip's canonical item collection.
+Editing may change:
 
-The UI should make ordinary removal recoverable through undo where practical.
+- price;
+- quantity;
+- label;
+- provenance/confidence when semantically required.
 
-## Undo
+Removal deletes the canonical item from the active trip.
 
-MVP does not require full event sourcing.
+Undo is bounded; full event sourcing is not required.
 
-A bounded command or snapshot approach is sufficient.
+## Budget / buffer changes
 
-At minimum, the most recent destructive or additive cart mutation should be recoverable.
+Users may intentionally change the active budget or buffer.
 
-Do not introduce an immutable event ledger solely for architectural appearance.
+If the new budget is below cart total:
 
-## Editing an item
+- allow it;
+- expose over-budget state.
 
-Editable fields may include:
+Do not reject user intent merely because it creates overage.
 
-- unit price
-- quantity
-- label
-- price source/confidence metadata when appropriate
+## Over-budget semantics
 
-Editing a remembered or estimated value into a user-confirmed current price should update confidence intentionally while preserving the true source where useful.
+```text
+nominal over-budget: cartTotal > budget
+safe over-budget: cartTotal > safeLimit
+```
 
-## Over-budget rules
+Over-budget is a valid state, not a domain error.
 
-Over-budget is a valid state.
+## Price provenance
 
-Nominal over-budget:
+Source and confidence are independent dimensions.
 
-cartTotal > budget
+### Implemented sources
 
-Safe over-budget:
+- manual;
+- price-memory.
 
-cartTotal > safeLimit
+### Reserved/gated sources supported by the model
 
-The domain must not reject an item solely because it causes overage.
+- shelf-scan;
+- encoded-barcode / external identity;
+- retailer/external feed where a future provider contract justifies it.
 
-The application should preview the overage and request clear confirmation.
+Presence in the type model does not mean the feature is shipped.
 
-## Price memory
+## Price confidence
 
-Price Memory is implemented as a separate advisory domain from the active cart.
+Examples include:
 
-A remembered-price record contains:
+- confirmed current observation;
+- remembered/stale observation;
+- candidate/estimated states where future capabilities need them.
 
-- deterministic product identity
-- display label
-- optional store identity
-- exact EUR minor-unit price
-- observation timestamp
-- observation provenance
+The model must not collapse “where the number came from” and “how trustworthy/current it is” into one enum.
 
-The first manual/offline product identity is derived from the normalized user label. This is intentionally a local recognition key, not a claim that two globally distinct products with the same label are universally identical.
+## Price Memory
 
-### Learning rule
+**IMPLEMENTED advisory subsystem.**
 
-Memory is created or refreshed only when a named item:
+Rules:
 
-1. has confirmed price confidence
-2. belongs to a trip whose completed history write succeeded
+- learned only from eligible durably completed confirmed items;
+- remembers historical observation, not authoritative current price;
+- reuse preserves remembered provenance;
+- old memory does not become “fresh” merely because it was reused;
+- store/freshness context may affect ranking;
+- deletion is independent from completed history.
 
-This excludes undone, removed, cancelled, failed-completion, and unchanged remembered observations.
-
-### Freshness
-
-Remembered prices retain their original observation timestamp.
-
-No rule may reinterpret a remembered price as a live current price.
-
-Using an unchanged remembered value in a later trip does not refresh its age.
-
-### Store-aware lookup
-
-When store context exists, selection prefers:
-
-1. product + exact store + currency
-2. product + store-neutral + currency
-
-A price observed only at a different known store is not silently suggested as if it were the current store price.
-
-User-facing store capture remains optional until real-user evidence shows that the extra setup friction is justified.
-
-### Cart reuse rule
-
-Adding a remembered value creates a normal cart item with:
-
-- `priceSource.kind = 'price-memory'`
-- `priceConfidence.kind = 'remembered'`
-- the original `observedAt`
-
-The UI always offers **Enter current price** as an alternative.
-
-If reuse would cross the nominal budget, it requires explicit second-step confirmation rather than bypassing the ordinary over-budget safety rule.
+Price Memory failure must never invalidate a durably completed trip.
 
 ## Barcode identity
 
-Barcode is an identifier, not a trusted price source.
+**PLANNED / GATED.**
 
-A barcode record may map to product identity, label, and previous price memories.
+Barcode identifies a product, not a guaranteed current shelf price.
 
-A successful scan does not by itself create an item with a current price unless the price comes from a trusted current source and the user confirms it.
+Any future barcode adapter must keep manual current-price entry available.
 
 ## Shelf-price scanning
 
-OCR or scanning output is candidate data.
+**PLANNED / GATED.**
 
-Rule:
+OCR output is candidate data.
 
-- candidate price cannot affect cart totals until confirmed
+No candidate becomes committed money without explicit confirmation where ambiguity/currentness requires it.
 
-If multiple candidate prices exist, the application resolves them before commit.
+## Discounts / weighted goods / tax mechanics
 
-## Estimated prices
+**PLANNED / GATED.**
 
-Estimated prices are allowed.
-
-Examples:
-
-- weighted goods before exact weighing
-- approximate bundle price
-
-Estimated status remains attached to the cart item.
-
-The UI may derive an uncertainty summary from price origins.
-
-## Discounts
-
-Discounts must ultimately resolve to an exact effective item price in minor units before cart commit.
-
-For percentage discounts, define deterministic rounding rules before implementation.
-
-Do not scatter percentage arithmetic through React components.
-
-## Tax
-
-Tax mode is optional and region-dependent.
-
-Potential modes:
-
-- shelf price is final
-- tax added at checkout
-
-Tax implementation must define rounding and per-item versus total behaviour before coding.
-
-Do not infer tax rules from location without explicit product requirements.
+Do not implement percentage/weight mechanics without an explicit exact-money/rounding contract.
 
 ## Checkout reconciliation
 
-Actual checkout total is optional.
+**IMPLEMENTED.**
 
-When present:
+A completed trip may store an optional actual checkout total.
 
-difference = actualCheckoutTotal - estimatedCartTotalAtCompletion
+```text
+difference = actual checkout - estimated cart total
+```
 
-This metric is informational.
-
-A future buffer-suggestion system may use historical differences, but it must remain transparent and deterministic.
-
-## Suggested safety buffer
-
-Future rule, not an MVP requirement.
-
-A deterministic strategy may consider previous reconciliation error.
-
-Requirements:
-
-- explain the basis
-- allow user override
-- never silently change the nominal budget
-- do not claim statistical certainty from tiny history
+Reconciliation does not retroactively rewrite item prices.
 
 ## Validation invariants
 
-At all times:
+At minimum:
 
-- budgetMinor is a safe integer greater than zero and within the MVP product maximum
-- safetyBufferMinor is a safe integer from zero through budgetMinor
-- item unit prices are safe integers greater than zero and within the MVP product maximum
-- actual checkout total is a safe integer from zero through the MVP product maximum
-- every canonical money amount is a safe integer
-- standard item quantity is an integer from 1 through 999
-- trip currency is consistent
-- item IDs are unique inside a trip
-- cart total equals the sum of canonical item line totals
-- derived remaining values are reproducible from canonical state
+- one supported currency per trip;
+- safe integer money;
+- product bounds;
+- buffer <= budget;
+- positive bounded quantity;
+- unique ids;
+- valid timestamps/order;
+- no invalid lifecycle mutation;
+- completed state has completion timestamp;
+- canonical data reconstructs through domain validation.
 
 ## Domain boundaries
 
-The domain must not know about:
+### Domain owns
 
-- React
-- DOM
-- localStorage
-- IndexedDB
-- Service Workers
-- camera APIs
-- OCR providers
-- barcode libraries
-- CSS
-- animation
-- network requests
+- money/trip invariants;
+- projections/selectors;
+- lifecycle-safe commands;
+- provenance/confidence semantics;
+- Price Memory selection/learning rules.
 
-Adapters translate external input into validated domain commands and data.
+### Application owns
+
+- orchestration;
+- Undo snapshot coordination;
+- persistence ordering;
+- recovery;
+- cross-subsystem coordination.
+
+### Infrastructure owns
+
+- storage/browser APIs;
+- DTO validation;
+- serialization;
+- provider/network adapters.
+
+### UI owns
+
+- drafts;
+- overlays;
+- focus;
+- copy;
+- presentation;
+- interaction feedback.
 
 ## Error classes
 
-### Validation error
+Keep errors explicit by layer:
 
-Input violates a business rule.
+- validation/domain;
+- application/lifecycle;
+- persistence/capability;
+- external provider.
 
-Examples:
+Do not surface provider implementation detail as financial truth.
 
-- negative price
-- zero budget
-- invalid quantity
-
-### Capability failure
-
-Optional feature is unavailable.
-
-Examples:
-
-- camera permission denied
-- barcode API unsupported
-
-Core manual workflow remains usable.
-
-### Persistence failure
-
-Valid domain change cannot be stored reliably.
-
-This must be surfaced by the application.
-
-### External lookup failure
-
-Barcode or product service is unavailable.
-
-This must not block manual entry.
-
-## Legacy non-shopping data
-
-Do not reinterpret historical non-shopping counter values as money.
-
-Historical counter state has a different meaning and must not be silently migrated into a shopping trip.
-
-Safe migration policy:
-
-- preserve no old count as financial data
-- retire historical counter-specific storage keys only after shopping bootstrap is safe
-- document the migration version
-- test fresh, legacy, malformed, and future-version storage
-
-## TypeScript migration
-
-The shopping domain is intentionally strict-TypeScript because money, persistence, and lifecycle invariants justify the stronger contract.
-
-The shopping domain introduces distinct money concepts, multiple price origins, optional metadata, persistence evolution, scanner boundary data, and a trip lifecycle.
-
-Strict TypeScript is now justified.
-
-Migration should be incremental and should not mix broad type conversion with unrelated UI redesign when avoidable.
-
-## Domain anti-patterns
+## Anti-patterns
 
 Do not:
 
-- store formatted currency strings as canonical money
-- use floating-point totals as source of truth
-- persist cartTotal as authoritative alongside items
-- let React components calculate business totals independently
-- treat remembered confidence as confirmed current price
-- treat barcode as price
-- let OCR results mutate cart before confirmation
-- add event sourcing without a user or reliability need
-- create a generic financial ledger
-- introduce backend entities before cloud collaboration is required
+- persist derived totals;
+- put money arithmetic in components;
+- let storage DTOs become branded domain values without reconstruction;
+- use an event ledger for architectural appearance;
+- treat a remembered/scanned/external value as authoritative solely because it came from technology;
+- expand the domain for speculative features.
 
-## Detailed technical contract
+## Review checklist
 
-Exact target TypeScript shapes and adapter contracts are specified in:
-
-- `docs/specs/CONTRACTS.md`
-- `docs/specs/MVP-SPEC.md`
-- `docs/specs/STATE-MACHINES.md`
-- `docs/specs/STORAGE-SCHEMA.md`
-
-If this domain document and those executable specs diverge, reconcile the documents before implementation.
-
-## Domain review checklist
-
-For every domain change ask:
-
-1. What is canonical?
-2. What is derived?
-3. Are all money operations exact?
-4. Is uncertainty preserved?
-5. Can this rule be unit-tested without React?
-6. Does the rule still work offline?
-7. Does this accidentally expand the product into general finance?
-8. Is the abstraction proportionate to the business rule?
+- Is canonical money still exact?
+- Is new state truly canonical rather than derived?
+- Is the rule domain logic or application orchestration?
+- Does the model distinguish source from confidence?
+- Can the state survive serialize/restore without ambiguity?
+- Did a future capability accidentally become claimed as current?
+- Is the abstraction justified by a real product need?

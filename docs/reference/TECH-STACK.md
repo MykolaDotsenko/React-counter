@@ -1,774 +1,197 @@
-# Technology Stack
-
-> [!NOTE]
-> **Documentation role: supporting reference.** Use [../README.md](../README.md) for the authority model. This file records technology rationale and candidate sequencing; actual dependency/runtime state is defined by the codebase, package metadata, architecture decisions, and current authoritative contracts.
+# Technology Stack Reference
 
 ## Status
 
-Authoritative target technology stack for the shopping-budget product.
+**SUPPORTING REFERENCE.**
 
-The repository ships Shopping Budget Companion. Dependencies described for later phases are target choices and should be added only when the roadmap phase that needs them begins.
+Actual runtime/dependency truth comes from `package.json`, source code, CI and current architecture decisions.
 
-Detailed evaluation and alternatives live in:
+This file records current stack intent and dependency admission rules. It does not pre-authorize future dependencies.
 
-- docs/research/TECHNOLOGY-RESEARCH.md
+## Current core stack
 
-## Stack philosophy
+### Runtime / UI
 
-The product should be implemented with the smallest mature stack that protects:
+- React 19
+- React DOM 19
+- Vite 8
+- strict TypeScript 6
+- native semantic HTML
+- CSS Modules / existing CSS architecture
 
-- exact money correctness
-- offline reliability
-- accessibility
-- one-hand mobile UX
-- progressive scanning
-- testability
+### Validation
 
-Do not add a framework or library merely because it is popular.
+- Zod at untrusted/runtime boundaries
 
-## Core runtime
+### Persistence
 
-### React 19.3
+- localStorage through explicit infrastructure adapters
 
-Decision: keep.
+### Testing
 
-Role:
+- Vitest
+- React Testing Library
+- Playwright
+- axe integration
+- fast-check where property-style coverage adds value
 
-- component rendering
-- local ephemeral UI state
-- context boundary
-- React ViewTransition integration
+### Hosting
 
-Score: **99/100**
+- static GitHub Pages deployment
 
-### Vite 8.x
+## State management
 
-Decision: keep.
+Current application state uses:
 
-Role:
+- explicit application controller;
+- immutable snapshots;
+- `useSyncExternalStore` bridge;
+- pure domain state/transitions.
 
-- dev server
-- build
-- code splitting
-- asset pipeline
-- PWA plugin integration
-
-Score: **99/100**
-
-### TypeScript 6.0.x, strict
-
-Decision: add incrementally starting with domain/application code.
-
-Required compiler posture:
-
-- strict
-- noUncheckedIndexedAccess
-- exactOptionalPropertyTypes
-- noImplicitReturns
-- noFallthroughCasesInSwitch
-- useUnknownInCatchVariables
-- isolatedModules
-- verbatimModuleSyntax
-
-TypeScript 7 upgrade is deliberately deferred until the product migration is green.
-
-Score: **99/100**
-
-## Target production dependencies
-
-MVP should stay close to:
-
-~~~text
-react
-react-dom
-zod
-vite-plugin-pwa
-~~~
-
-Workbox dependencies may be pulled transitively/generated through the PWA tooling.
-
-Do not add production dependencies for:
-
-- global state
-- routing
-- forms
-- animation
-- dates
-- HTTP client
-- IndexedDB
-- barcode
-- OCR
-
-until their phase requires them.
-
-## Application state
-
-Use a small application controller outside React.
-
-Concept:
-
-~~~ts
-interface ShoppingAppController {
-  getSnapshot(): ShoppingAppState
-  subscribe(listener: () => void): () => void
-
-  startTrip(input: StartTripInput): AppCommandResult
-  dispatch(command: TripCommand): AppCommandResult
-  undo(): AppCommandResult
-  finishTrip(): AppCommandResult
-}
-~~~
-
-React adapter:
-
-~~~ts
-useSyncExternalStore(
-  controller.subscribe,
-  controller.getSnapshot,
-)
-~~~
-
-Benefits:
-
-- application orchestration remains plain TypeScript
-- no persistence in React effects
-- deterministic tests
-- one canonical application state
-- no third-party state library
-
-Do not add Redux, Zustand, or XState unless actual complexity changes the trade-off.
-
-Score: **98/100**
-
-## Runtime validation
-
-Use **Zod 4** only at untrusted boundaries.
-
-Allowed:
-
-- localStorage envelope validation
-- schema migrations
-- remote API responses
-- future scanner/provider DTOs
-
-Not allowed:
-
-- pure domain depending on Zod
-- using Zod as the domain model itself
-
-Flow:
-
-~~~text
-unknown JSON
-   ↓
-Zod DTO schema
-   ↓
-validated DTO
-   ↓
-domain constructor
-   ↓
-branded domain state
-~~~
-
-Score: **98/100**
-
-## Persistence
-
-MVP:
-
-> versioned localStorage adapters
-
-Why:
-
-- tiny text dataset
-- synchronous durability path
-- widely supported
-- easy to inspect/test/migrate
-
-Use:
-
-- ActiveTripRepository
-- HistoryRepository
-- SettingsRepository
-
-Validation:
-
-- Zod at read boundary
-- domain invariant validation after DTO parsing
-
-Do not introduce IndexedDB/Dexie in MVP.
-
-Upgrade only if the product begins storing:
-
-- images
-- large price histories
-- large offline catalogues
-- data requiring indexed queries
-
-Score: **98/100**
-
-## PWA / offline
-
-Use:
-
-> vite-plugin-pwa + Workbox generateSW
-
-Initial strategy:
-
-- generated service worker
-- app-shell precache
-- prompt-based update
-- no forced reload during active shopping
-- static assets available offline
-- business data remains in localStorage
-
-Do not use service-worker Cache Storage as shopping-state persistence.
-
-Move to injectManifest only when custom service-worker behavior has a demonstrated requirement.
-
-Score: **98/100**
+Do not add Redux/Zustand/XState/another global store unless measured complexity makes the current architecture insufficient.
 
 ## Routing
 
-MVP:
+No client router is required for the current public product.
 
-> no router
-
-Application lifecycle and overlays are not URLs.
-
-Do not add React Router just for:
-
-- history panel
-- settings
-- add price
-- checkout summary
-
-Revisit if meaningful deep links appear.
-
-Preferred future router if needed:
-
-> React Router Declarative Mode
-
-Score now: **99/100**
+Add routing only when independent URLs/navigation states provide real product value.
 
 ## Styling
 
-Use:
+Keep the current lightweight styling approach.
 
-- CSS Modules for feature/component styles
-- global CSS custom properties for design tokens
-- native CSS layers/features
-- OKLCH where appropriate
-- container queries
-- logical properties
-- clamp()
-- forced-colors support
-- prefers-reduced-motion
-- prefers-contrast
+Do not add Tailwind/CSS-in-JS/UI framework solely for developer preference.
 
-Do not introduce Tailwind or CSS-in-JS for MVP.
+A design-system dependency must improve delivery/product quality enough to justify bundle, conventions and migration cost.
 
-Score: **99/100**
+## Forms
 
-## UI primitives
+The product does not need a general form library for its current small interaction model.
 
-Native semantic HTML first.
-
-Use:
-
-- button
-- form
-- label
-- output
-- progress where semantically correct
-- dialog
-- list semantics
-- native input
-
-Build small internal wrappers for:
-
-- modal/bottom sheet
-- alert/confirmation
-- visually hidden text
-- focus restoration where needed
-
-Do not introduce a full component kit.
-
-Radix may be added later only if native primitives fail a verified accessibility/browser requirement.
-
-Score: **98/100**
-
-## Forms and keypad
-
-Use controlled React input/draft state.
-
-Do not use React Hook Form.
-
-Money entry is specialized enough that a generic form abstraction would hide important behavior.
-
-Use:
-
-- inputMode
-- product-specific keypad
-- inline validation
-- MONEY-SPEC parser
-- ephemeral draft state
-
-Score: **99/100**
+Use focused controlled/uncontrolled React patterns plus domain/application validation boundaries.
 
 ## Motion
 
-Use:
+Prefer native CSS/platform capabilities for current needs.
 
-- React 19.3 ViewTransition
-- CSS transitions/animations
+Do not add a motion framework unless interaction requirements exceed the current approach and performance/accessibility remain strong.
 
-Do not add Motion/Framer Motion or GSAP for MVP.
+## Time / IDs / formatting
 
-Rules:
+Prefer platform APIs and explicit wrappers where testability matters.
 
-1. domain commit
-2. persistence attempt
-3. render
-4. optional motion
-
-Motion never owns correctness.
-
-Score: **99/100**
-
-## IDs, dates and formatting
-
-Use platform APIs.
-
-### IDs
-
-~~~ts
-crypto.randomUUID()
-~~~
-
-### Time
-
-~~~ts
-new Date().toISOString()
-~~~
-
-behind the Clock adapter.
-
-### Date display
-
-~~~ts
-Intl.DateTimeFormat
-~~~
-
-### Currency display
-
-~~~ts
-Intl.NumberFormat
-~~~
-
-No uuid/date-fns/dayjs dependency.
-
-Score: **99/100**
-
-## Network requests
-
-For optional provider adapters use:
-
-- fetch
-- AbortController
-- explicit timeout
-- Zod validation
-- Result error types
-
-Do not add Axios.
-
-Do not add TanStack Query until remote server state becomes a meaningful subsystem.
-
-Score: **98/100**
-
-## Barcode scanning — P1
-
-Architecture:
-
-~~~text
-camera
- ↓
-BarcodeScanner port
- ↓
-native BarcodeDetector if supported
- ↓ otherwise
-lazy WASM ponyfill
- ↓
-BarcodeCandidate
- ↓
-application review / product lookup
-~~~
-
-Preferred fallback candidate:
-
-> barcode-detector ponyfill backed by ZXing-C++ WebAssembly
-
-Requirements:
-
-- self-host WASM
-- lazy import
-- do not add to initial bundle
-- support EAN/UPC retail codes
-- detect capability at runtime
-- manual price path always available
-
-Native BarcodeDetector alone is not sufficient because browser support remains incomplete.
-
-Score: **97/100**
-
-## Product identity lookup — P1
-
-Preferred first provider:
-
-> Open Food Facts
-
-Architecture:
-
-~~~text
-ProductLookup port
- ↓
-OpenFoodFactsProductLookup
-~~~
-
-Use only for product identity.
-
-Never treat product database metadata as current shelf price.
-
-Rules:
-
-- narrow requested fields
-- timeout
-- not-found is normal
-- validate response
-- provider failure does not block manual entry
-- resolve API-identification/User-Agent policy before production launch
-
-Do not let provider-specific response shapes enter the domain.
-
-Score: **93/100**
-
-## Shelf-price OCR — P1/P2
-
-Do not lock a production OCR vendor yet.
-
-Architecture:
-
-~~~text
-ShelfPriceScanner port
- ↓
-provider adapter
- ↓
-PriceCandidate[]
- ↓
-explicit user confirmation
-~~~
-
-First benchmark candidate:
-
-> Tesseract.js in a Web Worker
-
-Implementation experiment:
-
-- lazy-loaded worker
-- crop before recognition
-- lightweight Canvas preprocessing
-- character restriction where useful
-- numeric candidate extraction
-- no automatic cart commit
-
-Release rule:
-
-> Keep Tesseract.js only if real mobile benchmark data shows acceptable speed/accuracy and a user-value improvement over manual entry.
-
-If local OCR fails the benchmark, evaluate a cloud provider behind the same port.
-
-Cloud OCR must not leak into domain/application contracts.
-
-Architecture decision score: **90/100**
-
-## Testing
-
-Keep:
-
-- Vitest 5
-- React Testing Library
-- @testing-library/user-event
-- Playwright
-- @axe-core/playwright
-
-Add:
-
-> fast-check
-
-Use fast-check for property-style domain invariants.
-
-Target test layers:
-
-### Domain
-
-- money
-- cart selectors
-- projections
-- trip commands
-- invariants
-
-### Application
-
-- controller commands
-- persistence ordering
-- undo
-- degraded persistence
-- completion transaction
-
-### Infrastructure
-
-- Zod schema parsing
-- migrations
-- localStorage errors
-- provider adapters
-
-### Component
-
-- keypad
-- warnings
-- focus
-- editing
-- undo feedback
-
-### E2E
-
-- Tier 0 scenarios
-- offline
-- reload
-- mobile
-- reduced motion
-- accessibility
-- browser matrix
-
-Score: **99/100**
-
-## Tooling / CI
-
-Runtime:
-
-- Node 24
-
-Quality:
-
-- ESLint 10
-- compatible typescript-eslint
-- TypeScript compiler
-- Vitest
-- Playwright
-- axe
-
-Required CI:
-
-~~~text
-npm run lint
-npm run typecheck
-npm test
-npm run build
-npm run test:e2e
-~~~
-
-Do not require a pre-commit framework.
-
-CI is authoritative.
+Financial formatting follows the money contract.
 
 ## Backend
 
-MVP decision:
+None required for current product.
 
-> none
+A backend becomes justified only by a validated need such as:
 
-No:
+- multi-device sync;
+- collaboration;
+- server-side OCR/provider proxy;
+- account-owned remote history;
+- privacy-reviewed aggregate telemetry requiring server ingestion.
 
-- authentication
-- database
-- API server
-- cloud session
-- user account
-
-Reasons:
-
-- offline-first
-- local-first privacy
-- lower failure surface
-- lower cost
-- no feature requires one
-
-Score: **100/100**
-
-Future backend is selected only after a concrete requirement appears.
-
-Possible future triggers:
-
-- cloud OCR
-- API-secret proxy
-- sync
-- family sharing
-- retailer integration
-
-Do not choose the future backend platform before the trigger exists.
-
-## Hosting
-
-Current:
-
-> GitHub Pages + GitHub Actions
-
-Score: **97/100**
-
-Fits the static PWA.
-
-Production considerations:
-
-- Vite base must match deployment path
-- PWA scope/base must match
-- WASM assets later must be self-hosted under correct base
-- E2E should test production-like subpath
-
-Possible future upgrade:
-
-> Cloudflare Pages/Workers if edge functions, custom headers or API proxy become necessary.
-
-Do not migrate hosting for prestige.
+Choose a backend only after the requirement exists.
 
 ## Analytics
 
-MVP/private beta:
+No remote analytics SDK is required for current evidence work.
 
-> none
+Retention/timing evidence remains local/content-minimized under the current contract.
 
-Do not add telemetry until public product measurement is required.
+## Future PWA
 
-If introduced later:
+**PLANNED / GATED.**
 
-- separate architecture/privacy decision
-- no budget amounts
-- no item prices
-- no item names
-- no store history by default
+When approved, select the smallest reliable Vite-compatible service-worker/PWA solution.
+
+Requirements:
+
+- app-shell caching only;
+- correct GitHub Pages scope/base;
+- no canonical business state in Cache Storage/service worker;
+- safe update/reload behaviour.
+
+Do not add PWA tooling before the roadmap gate.
+
+## Future barcode
+
+**PLANNED / GATED.**
+
+Provider/decoder selection must be based on:
+
+- browser/device coverage;
+- latency;
+- bundle cost;
+- failure behaviour;
+- real interaction savings.
+
+Barcode remains identity, not price authority.
+
+## Future OCR
+
+**PLANNED / GATED.**
+
+Provider choice remains benchmark-driven.
+
+Measure:
+
+- fixture accuracy;
+- mobile latency;
+- bundle/network cost;
+- permission/camera friction;
+- correction burden.
+
+Do not lock a provider based on popularity alone.
 
 ## Dependency admission rule
 
-Before adding any dependency, answer:
+Before adding a runtime dependency, answer:
 
-1. Which documented requirement does it protect?
-2. Can a platform API solve it cleanly?
-3. Is it needed now or in a later roadmap phase?
-4. What does it add to the initial bundle?
-5. Does it work offline?
-6. Does it add a privacy/network dependency?
-7. Does it complicate testing/migrations?
-8. Can it be lazy-loaded?
-9. What is the removal/migration cost?
-10. Is its value greater than its maintenance surface?
+1. What current user/product requirement needs it?
+2. Can native APIs/current abstractions solve the problem cleanly?
+3. What bundle/runtime/security/maintenance cost does it add?
+4. Does it weaken offline/local-first behaviour?
+5. Does it improve UX/premium quality enough to justify the cost?
+6. Is the capability approved by the roadmap/decision contract?
 
-If the requirement can be solved clearly with a small amount of native code, prefer native code.
-
-## Target dependency phases
-
-### Phase 1
-
-Add:
-
-- typescript 6.0.x
-- typescript-eslint tooling as required
-- fast-check
-
-No runtime production dependency is required for the pure money/domain foundation.
-
-### Phase 3 persistence
-
-**Implemented.**
-
-Runtime dependency:
-
-- zod 4.6.5
-
-Zod is confined to the untrusted storage DTO boundary. The pure money and shopping-trip domain modules remain Zod-free.
-
-### Core UI / PWA phase
-
-Add:
-
-- vite-plugin-pwa
-
-### Barcode P1
-
-Add only after benchmark:
-
-- barcode-detector or selected WASM fallback
-
-### OCR P1/P2
-
-Add only after benchmark:
-
-- tesseract.js or selected provider adapter
+If the requirement is hypothetical, do not add the dependency.
 
 ## Explicit non-selections
 
-Not part of MVP stack:
+Current architecture intentionally does not require:
 
-- Next.js
-- Preact
-- Vue
-- Svelte
-- Redux Toolkit
-- Zustand
-- XState runtime
-- Tailwind
-- styled-components/emotion
-- React Hook Form
-- Motion/Framer Motion
-- GSAP
-- React Router
-- TanStack Router
-- Axios
-- TanStack Query
-- Dexie
-- date-fns/dayjs
-- uuid package
-- backend/auth/database
-- cloud OCR
+- Redux/Zustand/XState;
+- React Router;
+- Tailwind;
+- component UI frameworks;
+- IndexedDB/Dexie;
+- backend/auth;
+- remote analytics SDK;
+- scanner/OCR SDK;
+- PWA/service-worker tooling.
 
-These are not “bad technologies.”
+These are not banned forever; they are simply unjustified today.
 
-They are currently lower-fit technologies for this product.
+## Upgrade policy
 
-## Final stack score
+Upgrade core dependencies when:
 
-| Layer | Selection | Score |
-|---|---|---:|
-| UI | React 19.3 | 99 |
-| Build | Vite 8 | 99 |
-| Language | TypeScript 6 strict | 99 |
-| App state | controller + useSyncExternalStore | 98 |
-| Validation | Zod 4 | 98 |
-| Persistence | localStorage | 98 |
-| PWA | vite-plugin-pwa + Workbox | 98 |
-| Routing | none | 99 |
-| CSS | CSS Modules + tokens | 99 |
-| Primitives | native HTML/dialog | 98 |
-| Motion | ViewTransition + CSS | 99 |
-| Forms | native/custom | 99 |
-| Data fetch | fetch + AbortController | 98 |
-| Tests | Vitest/RTL/Playwright/axe/fast-check | 99 |
-| Barcode | native + lazy WASM fallback | 97 |
-| Product lookup | Open Food Facts adapter | 93 |
-| OCR | adapter + benchmark-gated Tesseract candidate | 90 |
-| Backend | none | 100 |
-| Hosting | GitHub Pages | 97 |
+- security requires it;
+- supported versions materially improve reliability;
+- developer experience materially improves without destabilising product behaviour;
+- migration cost is proportionate.
 
-Overall technology architecture:
+Do not upgrade major technology merely to make the stack look newer.
 
-> **98/100**
+## Review checklist
 
-The stack intentionally leaves OCR with the lowest score because recognition quality must be proven empirically.
+- Does code/package metadata still match this reference?
+- Is a proposed dependency solving a real problem?
+- Is it loaded on the critical manual-entry path unnecessarily?
+- Does it add a second source of state/validation?
+- Does it improve the user experience or only architecture aesthetics?
+- Will it make future AI/contributor reasoning harder?

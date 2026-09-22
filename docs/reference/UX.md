@@ -1,543 +1,291 @@
-# UX
-
-> [!NOTE]
-> **Documentation role: supporting reference.** Use [../README.md](../README.md) for the authority model. This file preserves detailed UX heuristics and edge-case guidance; current authoritative product/design/spec contracts take precedence if wording diverges.
+# UX Reference
 
 ## Status
 
-This document defines the target user experience for the shopping budget companion.
+**SUPPORTING REFERENCE.**
 
-The current interface is a task-focused shopping product. Preserve tactile feedback, accessibility, motion discipline, and responsive craft only where they improve the shopping workflow.
+Current product/design contracts live in [../PRODUCT.md](../PRODUCT.md) and [../DESIGN.md](../DESIGN.md). This file preserves practical interaction heuristics and edge cases that are useful during UI work.
+
+If wording conflicts, authoritative current contracts win.
 
 ## UX north star
 
-A shopper should understand the current budget situation at a glance while holding a basket, walking, and paying partial attention to the phone.
+A distracted shopper holding a basket should understand the budget situation and next action almost immediately.
 
 Optimise for:
 
-- one hand
-- short interactions
-- imperfect connectivity
-- distraction
-- repeated use
-- immediate recovery from mistakes
+- recognition over recall;
+- one-hand use;
+- low typing burden;
+- cheap correction;
+- stable context;
+- trustworthy feedback.
 
-## First-impression test
+## First use
 
-Within 3–5 seconds of opening the active shopping view, a new user should understand:
+The first screen should let a new user start without onboarding.
 
-1. this helps keep a shopping trip under a limit
-2. the large number shows how much money remains
-3. the primary action adds a price
+Required understanding:
 
-If explanatory text is required to understand those three things, the screen is too complex.
+- what the app does;
+- what value to enter;
+- how to begin.
 
-## First-use flow
+Avoid:
 
-Do not show onboarding slides.
+- account creation;
+- feature tour;
+- marketing carousel;
+- permission prompts unrelated to immediate value.
 
-First useful question:
+## Active trip
 
-> How much can you spend today?
+The hierarchy should answer:
 
-Offer optional quick values plus a custom amount.
+1. what is safely left?
+2. what is the nominal context?
+3. what action adds another price?
+4. what was already added?
+5. what secondary tools are available?
 
-After selection, immediately create the trip and open the active-shopping view.
-
-Do not require an account, email, store, item categories, shopping list, tutorial, notification permission, or financial profile.
-
-## Active-trip information hierarchy
-
-### Level 1 — remaining amount
-
-The dominant visual element.
-
-Example:
-
-> EUR 18.58 LEFT
-
-### Level 2 — cart total and limit
-
-Example:
-
-> EUR 31.42 of EUR 50.00
-
-### Level 3 — progress
-
-A simple linear or radial representation gives peripheral awareness without requiring arithmetic.
-
-### Level 4 — primary action
-
-> ADD PRICE
-
-Large, thumb-reachable, visually obvious.
-
-### Level 5 — recent activity
-
-Enough information to correct errors quickly without visually competing with the remaining amount.
-
-## Remaining-first design
-
-Do not design the active screen like an expense report.
-
-The shopper's active question is not “How much have I spent?” It is “What can I still put in the cart?”
-
-Cart total remains visible because it builds trust, but remaining amount gets the strongest hierarchy.
+Do not make cart total more visually dominant than remaining safe spending.
 
 ## One-hand ergonomics
 
-Guidelines:
+Frequent controls should be:
 
-- minimum frequent-action target: 48 by 48 CSS pixels
-- primary add control near the lower reachable region
-- avoid frequent actions in top corners
-- avoid tiny inline edit icons as the only edit path
-- support portrait first
-- no hover-only interaction
+- thumb reachable where practical;
+- at least the product touch-target standard;
+- separated enough to avoid accidental taps;
+- usable with software keyboard visible.
 
-The target context is a phone around 390 by 844 CSS pixels, while remaining robust at narrower widths and increased text size.
+Do not put essential controls behind swipe-only gestures.
 
 ## Manual price entry
 
-Manual entry is the reference-quality interaction.
+Manual entry is the baseline.
 
-It must be offline, fast, deterministic, and usable without product metadata.
+The fastest path should normally be:
 
-### Keypad
+```text
+Add price → enter price → Add
+```
 
-Requirements:
+Optional quantity/label should not obstruct this path.
 
-- prominent current value
-- clear currency
-- obvious backspace
-- explicit commit
-- quantity defaults to 1
-- preview result before commit
+Detailed interaction contract: [../specs/PRICE-ENTRY-CONTRACT.md](../specs/PRICE-ENTRY-CONTRACT.md).
 
-Example:
+## Correction
 
-> Price EUR 4.79
-> After adding: EUR 13.79 left
+Distracted mistakes are normal.
 
-### Auto-cents
+Prioritise:
 
-For currencies with two fractional digits, an optional fast-entry mode may interpret 479 as EUR 4.79.
+- Undo for the latest supported mutation;
+- direct edit;
+- direct remove;
+- clear feedback after correction;
+- sensible focus restoration.
 
-It must be consistent and obvious. Never introduce ambiguous automatic formatting silently.
-
-### After commit
-
-Close the keypad and return to the summary view.
-
-Competitive reviews show that leaving a calculator surface active while walking can cause accidental taps. The resting screen should be summary-first and safe from unintended numeric entry.
-
-## Add-price sheet
-
-The primary Add action opens the preferred capture method.
-
-Default:
-
-> Price
-
-Secondary capture methods can remain available without crowding the main screen:
-
-- price
-- barcode
-- price tag
-- voice
-
-Do not put four equally dominant capture buttons on the active-trip screen.
-
-## Quantity
-
-Quantity is core arithmetic, not a premium convenience.
-
-Default is 1.
-
-Example:
-
-> EUR 1.29
-> Quantity: minus 3 plus
-> Line total: EUR 3.87
-
-Quantity changes update the remaining preview immediately.
-
-## Weighted items
-
-Weighted goods introduce uncertainty.
-
-Target interaction may support unit price, known or estimated weight, calculated line total, and visible estimated state.
-
-If the exact weight is unknown, allow an approximate direct price instead.
-
-Never imply exactness when the value is estimated.
-
-## Discounts
-
-Discounts should be accessible but not permanently visible.
-
-Useful quick actions may include 10%, 20%, 30%, and custom.
-
-Show the effective price before commit.
-
-Avoid turning every item entry into a pricing form.
-
-## Tax modes
-
-Default regional behaviour should minimise friction.
-
-In VAT-inclusive contexts, shelf price is normally the consumer-facing final price.
-
-For tax-exclusive contexts, support optional tax settings without forcing those controls into the core screen.
+Avoid confirmation dialogs for ordinary reversible edits.
 
 ## Safety buffer
 
-Safety buffer should feel protective, not punitive.
+The buffer should feel like protected room, not a second confusing budget.
 
-Example:
+When entering reserve:
 
-> Budget EUR 50
-> Buffer EUR 2
-> Safe limit EUR 48
+- explain the consequence;
+- avoid alarmist copy;
+- keep nominal remaining understandable.
 
-When active, the primary hero should prefer safe remaining. Nominal remaining can remain available in secondary detail.
+## Over-budget
 
-After the safe limit is crossed but the nominal budget is still intact, the safe-spend hero should floor at EUR 0.00 rather than show a negative “safe to spend” amount. Secondary copy should say that the safety buffer has been reached and show the exact nominal amount still available.
+Over-budget is valid.
 
-## Threshold states
+The UI should:
 
-Use progressive attention, not alarm fatigue.
+- show exact overage;
+- preserve correction;
+- avoid shame;
+- allow intentional continuation where the contract permits it.
 
-Conceptual states:
+## Remembered prices
 
-- comfortable
-- getting close
-- at safe limit
-- over safe limit
-- over nominal budget
+A remembered value accelerates repeat use but is not current shelf truth.
 
-Do not rely on colour alone. Use copy, iconography, shape, and accessible text.
+Useful UI context may include:
 
-## Over-budget behaviour
+- label;
+- remembered amount;
+- freshness;
+- store context where available.
 
-If a pending item would exceed the limit, show that before commit.
+Always preserve an explicit current-price path.
 
-Example:
+## Recent Items
 
-> This puts you EUR 3.41 over your limit.
+Recent Items should reduce repeated identification/typing.
 
-Actions:
+Do not turn it into a catalogue-management feature.
 
-- Add anyway
-- Cancel
+## Shop again
 
-Do not block the user absolutely. The budget belongs to the user.
+Shop again creates a fresh empty trip using appropriate prior spending-plan context.
 
-## Undo and correction
+It is not historical reopen.
 
-Undo is first-class.
+Make the distinction clear in UI/copy.
 
-After add:
+## History
 
-> EUR 4.79 added · Undo
+History is lightweight context, not expense analytics.
 
-Requirements:
+Prioritise:
 
-- one-action undo
-- edit quantity
-- edit price
-- remove item
-- confirmation only for destructive trip reset
+- date/time;
+- budget;
+- estimated total;
+- actual total if entered;
+- remaining/overage;
+- item count;
+- repeat-trip action.
 
-Avoid modal confirmation for ordinary corrections that are easy to undo.
-
-## Cart list
-
-The list is operational, not archival.
-
-Each row prioritises:
-
-- price or line total
-- quantity when above 1
-- optional item name
-- price-confidence cue when not confirmed
-
-Optional metadata stays visually secondary.
-
-## Price-confidence UI
-
-The user must distinguish price origins.
-
-Suggested language:
-
-- Confirmed now
-- Last paid 8 days ago
-- Shelf scan — confirm
-- Estimated
-
-Do not use vague AI-confidence percentages unless a meaningful calibrated model exists.
-
-Remembered prices always show age and, when known, store context.
-
-## Barcode UX
-
-Barcode scan is a product-identity shortcut.
-
-Good flow:
-
-1. scan
-2. identify product if possible
-3. show current-trip or remembered price context
-4. confirm or enter current price
-5. add
-
-Bad flow:
-
-1. scan
-2. ask for name
-3. ask for category
-4. ask for store
-5. ask for price
-6. save
-
-A scan that increases interaction has failed.
-
-## Shelf-label scan UX
-
-The goal is current-price capture.
-
-Example:
-
-> Detected EUR 3.79
-> Add EUR 3.79
-
-Product name is optional supplementary output.
-
-Every detected price must be confirmed before it affects the cart.
-
-If multiple candidate prices appear, present candidates rather than guessing silently.
-
-## Price memory
-
-Price memory exists to reduce repeated typing.
-
-Useful suggestion:
-
-> Milk 1L
-> Last paid EUR 1.39 at Prisma · 8 days ago
-
-Primary action:
-
-> Use EUR 1.39
-
-Secondary:
-
-> Enter current price
-
-Remembered prices must never look identical to prices confirmed on the current shelf.
-
-## Store context
-
-Store is optional.
-
-Do not require store selection to start a trip.
-
-If the user chooses a store, price memory may become store-aware.
-
-Store context should improve suggestions, not become setup overhead.
+Avoid finance-dashboard expansion.
 
 ## Checkout reconciliation
 
-Finishing a trip should be lightweight.
+Actual checkout is optional.
 
-Primary completion:
+Its purpose is:
 
-> Finish trip
+- confidence;
+- discrepancy visibility;
+- future evidence for product improvement.
 
-Optional actual checkout total may then produce:
+Do not turn reconciliation into bookkeeping.
 
-> Estimated EUR 46.37
-> Actual EUR 46.72
-> Difference +EUR 0.35
+## Persistence degradation
 
-Use reconciliation to improve confidence and future buffer suggestions, not to build a finance dashboard.
+A durability failure must be understandable without technical jargon.
 
-## Trip history
+The UI should communicate:
 
-History should answer practical questions:
+- current trip is still visible;
+- saving/reload safety needs attention;
+- retry/recovery action when meaningful.
 
-- What was the last trip total?
-- What did I pay for this item last time?
-- How accurate are my estimates?
-- Can I start a similar trip without re-entering the same spending plan?
+Avoid implying data is safely stored when it is not.
 
-History is a repeat-shopping accelerator, not a reporting dashboard.
+## Recovery
 
-A completed-trip card should prioritise:
+Recovery UI should:
 
-1. completion time
-2. tracked total and budget outcome
-3. lightweight checkout comparison when available
-4. one-action **Shop again**
-5. progressive-disclosure item details
-6. quiet destructive controls
-
-Item details should expand inline rather than opening a new navigation layer when the information is small.
-
-Local-data controls must distinguish completed-trip history from Price Memory. Clearing one must never visually imply that the other was deleted. Rare destructive actions use explicit inline confirmation with factual consequence copy.
-
-Reachability is part of this contract: if trip history becomes empty while remembered prices remain, the start screen keeps a quiet **Manage remembered prices** entry point. If Price Memory is degraded with no valid records, that entry point becomes **Repair remembered prices** instead of disappearing. A destructive action or recovery state must not strand local data behind a navigation condition that no longer exists.
-
-Avoid monthly cash-flow dashboards, category-budget systems, income tracking, net worth, financial scoring, or a persistent history tab.
+- explain that saved data could not be trusted/read;
+- avoid silently discarding raw state;
+- offer only actions that are safe under the persistence contract.
 
 ## Empty states
 
-Teach by invitation, not documentation.
-
-Example:
-
-> EUR 50.00 left
-> Your cart is empty. Add the first price when you pick something up.
-
-## Loading
-
-Core local interactions should not display loading states.
-
-Network-dependent helpers may load independently without blocking manual add, cart view, calculations, undo, or completion.
-
-## Offline behaviour
-
-Offline is a normal mode, not an error mode.
-
-Core experience remains unchanged.
-
-Network-dependent helpers should degrade locally and explain only the affected capability.
-
-## Persistence failure
-
-Data-integrity failures are serious. Do not use humour.
-
-Example:
-
-> This trip cannot be saved right now. Keep this page open until checkout.
-
-Offer retry and recovery actions when possible.
-
-## Motion
-
-Motion communicates state change; it never owns state change.
-
-Critical rule:
-
-> State commit first, decorative feedback second.
-
-Use View Transitions for remaining-number changes, trip start/finish, layout changes, or secondary panels.
-
-Do not make a budget mutation depend on an animation callback.
-
-Respect reduced motion.
-
-## Visual direction
-
-Preserve the strongest interaction qualities:
-
-- tactile depth
-- polished typography
-- restrained spectral accents
-- excellent dark-mode contrast
-- high-quality motion
-- responsive layout
-
-Reduce decorative elements that compete with the remaining number, constant ambient motion, and effects without product meaning.
-
-The visual metaphor should communicate remaining room or available capacity.
-
-## Tone
-
-Voice is concise, supportive, calm, and lightly witty.
-
-Never shame, lecture, congratulate spending, or joke about data loss or financial distress.
+Keep them useful and restrained.
 
 Examples:
 
-Comfortable:
+- no active trip → start;
+- empty cart → Add price;
+- no history → explain briefly, not as marketing;
+- no memories → nothing special required in core flow.
 
-> EUR 22 left. Plenty of room.
+## Loading
 
-Near the limit:
+Core local actions should not need loading states.
 
-> EUR 2.20 left. We have entered the snack-decision zone.
+Async optional capability loading must never block manual shopping.
 
-Precisely on target:
+## Offline / network
 
-> Perfect landing. EUR 0.00 left.
+Current core logic is local-first after the page is loaded.
 
-Over:
+Do not claim installable PWA/offline-shell capability until it ships.
 
-> EUR 2.14 over your limit.
+Network-dependent future features should explain unavailability and return to manual flow.
 
-The over-budget state should not hide the factual message behind humour.
+## Motion
 
-## Accessibility
+Use motion to preserve orientation and communicate consequence.
 
-Minimum requirements:
+Avoid:
 
-- 48px frequent-action targets
-- full keyboard operability
-- logical focus order
-- visible focus
-- screen-reader-friendly currency
-- no colour-only states
-- reduced-motion support
-- forced-colours resilience
-- 200% text zoom without loss of core actions
-- accessible labels for edit/remove controls
+- delayed commits;
+- long celebratory transitions;
+- motion-only state changes;
+- animation that blocks correction.
 
-Announcements should report committed remaining amounts, not animation frames.
+## Tone
+
+Prefer factual, calm copy.
+
+Good:
+
+- “€12.40 safe to spend”
+- “Uses €1.20 of your safety buffer”
+- “€2.10 over your limit”
+
+Avoid moral judgement or panic language.
 
 ## Performance perception
 
-The app should feel instant.
+Users should feel that:
 
-Critical local interactions — start trip, add price, edit item, undo, remove item, update remaining — must not wait on external APIs.
+- Add reacts immediately;
+- Undo is immediate;
+- sheets/overlays open without lag;
+- totals update without visible jitter;
+- optional async features do not stall local actions.
 
-## UX performance targets
+Premium quality includes responsiveness.
 
-Internal targets until measured:
+## Common edge cases
 
-- first useful trip setup: under 10 seconds
-- manual price addition: roughly 3 seconds
-- remembered-price addition: one or two actions
-- undo: one action
-- remaining amount: zero navigation
-- resume active trip: immediate local restore
+### Keyboard remains open
 
-## UX anti-patterns
+Important budget context and commit/cancel controls should remain reachable.
 
-Do not introduce:
+### Large text
 
-- onboarding carousels
-- mandatory account walls
-- persistent numeric keypad
-- required item names
-- required categories
-- required store selection
-- full-screen paywall before first value
-- scanner-only workflows
-- AI-generated advice in the critical path
-- dashboard-first home screen
-- excessive modal confirmation
-- hidden current budget
+Avoid layouts that assume one-line financial labels.
 
-## Review checklist for every UI PR
+### Very long label
 
-1. Is remaining budget still visually dominant?
-2. Did the common path gain an extra tap?
-3. Can the task be completed one-handed?
-4. Does it work offline?
-5. Is manual entry still available?
-6. Can a distracted user recover from a mistake quickly?
-7. Is uncertainty communicated honestly?
-8. Does motion remain non-blocking?
-9. Is the screen understandable at first glance?
-10. Would this still be useful if every optional smart feature were unavailable?
+Truncate/wrap without displacing the primary money hierarchy.
+
+### Empty label
+
+Valid item.
+
+### Repeated item
+
+Do not silently merge unless the product explicitly defines that behaviour.
+
+### Budget reduced below cart total
+
+Show valid over-budget state.
+
+### Buffer greater than new budget
+
+Require explicit correction rather than silently rewriting user intent.
+
+### Price-memory current-price override
+
+Preserve item identity/label where useful but treat newly confirmed current price as a new observation only according to domain rules.
+
+## UI review questions
+
+- Is remaining obvious?
+- Is next action obvious?
+- Did this change remove or add recurring work?
+- Can a distracted user undo/correct safely?
+- Is remembered/uncertain data honest?
+- Is the UI still one-hand friendly?
+- Does premium polish improve perceived quality without adding cognitive load?
+- Does this interaction create a reason to prefer the product over a calculator?

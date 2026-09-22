@@ -1,20 +1,14 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { useShoppingAppState } from "../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../application/shopping-app-controller";
-import { formatEur, signedMinorUnits } from "../domain/money";
 import type {
   PriceMemoryId,
   PriceMemoryRecord,
 } from "../domain/price-memory";
 import {
   itemCount,
-  lineTotal,
   mostRecentCompletedTrip,
-  remaining,
-  safeRemaining,
-  type ActiveTrip,
-  type CartItem,
   type ItemId,
 } from "../domain/shopping-trip";
 import { ActiveTripScreen } from "../features/shopping/ActiveTripScreen";
@@ -36,6 +30,8 @@ import {
 import { RecoveryScreen } from "../features/shopping/RecoveryScreen";
 import { StartTripScreen } from "../features/shopping/StartTripScreen";
 import { useShoppingEvidence } from "../qa/use-shopping-evidence";
+import { addedFeedback, remainingFeedback } from "../features/shopping/shopping-feedback";
+import { useShoppingShellFocus } from "./use-shopping-shell-focus";
 import "./shopping-theme.css";
 import styles from "./ShoppingAppShell.module.css";
 
@@ -55,50 +51,20 @@ type OverlayState =
   | { readonly kind: "finish-trip" }
   | { readonly kind: "history" };
 
-const formatAbsoluteEur = (value: number, locale: string): string => {
-  const amount = signedMinorUnits(Math.abs(value));
-
-  if (!amount.ok) {
-    throw new RangeError("Shopping feedback amount exceeded safe integer bounds");
-  }
-
-  return formatEur(amount.value, locale);
-};
-
-const remainingFeedback = (trip: ActiveTrip, locale: string): string => {
-  const nominalRemaining = remaining(trip);
-
-  if (nominalRemaining < 0) {
-    return `${formatAbsoluteEur(nominalRemaining, locale)} over your limit.`;
-  }
-
-  if (trip.safetyBufferMinor > 0) {
-    const protectedRemaining = safeRemaining(trip);
-
-    if (protectedRemaining >= 0) {
-      return `${formatEur(protectedRemaining, locale)} safe to spend.`;
-    }
-
-    return `${formatEur(nominalRemaining, locale)} remains before your nominal limit.`;
-  }
-
-  return `${formatEur(nominalRemaining, locale)} remaining.`;
-};
-
-const addedFeedback = (
-  trip: ActiveTrip,
-  item: CartItem,
-  locale: string,
-): string =>
-  `${formatEur(lineTotal(item), locale)} added. ${remainingFeedback(trip, locale)}`;
-
 export function ShoppingAppShell({
   controller,
 }: ShoppingAppShellProps) {
   const state = useShoppingAppState(controller);
-  const addPriceButtonRef = useRef<HTMLButtonElement>(null);
-  const finishTripButtonRef = useRef<HTMLButtonElement>(null);
-  const adjustBudgetButtonRef = useRef<HTMLButtonElement>(null);
+  const {
+    addPriceButtonRef,
+    finishTripButtonRef,
+    adjustBudgetButtonRef,
+    returnFocusToAddPrice,
+    returnFocusToPriceTrigger,
+    returnFocusToFinishTrip,
+    returnFocusToAdjustBudget,
+    returnFocusToEditItem,
+  } = useShoppingShellFocus();
   const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
   const [lastAddedMessage, setLastAddedMessage] = useState("");
   const recentCompletedTrip = mostRecentCompletedTrip(
@@ -112,49 +78,6 @@ export function ShoppingAppShell({
       state.activeTrip === null && overlay.kind === "none",
   });
   const qaPanel = evidence.panel;
-
-  const returnFocusToAddPrice = (): void => {
-    queueMicrotask(() => {
-      addPriceButtonRef.current?.focus();
-    });
-  };
-
-  const returnFocusToPriceTrigger = (
-    sourceMemoryId: PriceMemoryId | undefined,
-  ): void => {
-    if (sourceMemoryId === undefined) {
-      returnFocusToAddPrice();
-      return;
-    }
-
-    queueMicrotask(() => {
-      const buttons = document.querySelectorAll<HTMLButtonElement>(
-        "[data-current-price-memory-id]",
-      );
-
-      for (const button of buttons) {
-        if (button.dataset.currentPriceMemoryId === sourceMemoryId) {
-          button.focus();
-          return;
-        }
-      }
-
-      addPriceButtonRef.current?.focus();
-    });
-  };
-
-
-  const returnFocusToFinishTrip = (): void => {
-    queueMicrotask(() => {
-      finishTripButtonRef.current?.focus();
-    });
-  };
-
-  const returnFocusToAdjustBudget = (): void => {
-    queueMicrotask(() => {
-      adjustBudgetButtonRef.current?.focus();
-    });
-  };
 
   if (state.lifecycle === "booting") {
     return (
@@ -404,18 +327,7 @@ export function ShoppingAppShell({
             onCancel={() => {
               const itemId = item.id;
               setOverlay({ kind: "none" });
-              queueMicrotask(() => {
-                const buttons = document.querySelectorAll<HTMLButtonElement>(
-                  "[data-edit-item-id]",
-                );
-
-                for (const button of buttons) {
-                  if (button.dataset.editItemId === itemId) {
-                    button.focus();
-                    break;
-                  }
-                }
-              });
+              returnFocusToEditItem(itemId);
             }}
             onRemove={() => {
               const result = controller.removeItem(item.id);
@@ -464,18 +376,7 @@ export function ShoppingAppShell({
               );
               setOverlay({ kind: "none" });
 
-              queueMicrotask(() => {
-                const buttons = document.querySelectorAll<HTMLButtonElement>(
-                  "[data-edit-item-id]",
-                );
-
-                for (const button of buttons) {
-                  if (button.dataset.editItemId === item.id) {
-                    button.focus();
-                    break;
-                  }
-                }
-              });
+              returnFocusToEditItem(item.id);
 
               return true;
             }}

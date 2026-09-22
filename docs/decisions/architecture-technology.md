@@ -1,0 +1,327 @@
+# Architecture and Technology Decisions
+
+## Status
+
+Accepted decision records. These explain durable choices but do not override current code/tests or authoritative current contracts.
+
+Use [../DECISIONS.md](../DECISIONS.md) as the retrieval index.
+
+## D-006 — Strict TypeScript becomes justified by the pivot
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Migrate incrementally from JavaScript to strict TypeScript as the shopping domain is introduced.
+
+### Rationale
+
+The original counter was too small for a TypeScript migration to provide much risk reduction. The target domain adds money, currencies, multiple price origins, persistence schemas, scanner result types, and trip lifecycle.
+
+### Consequence
+
+TypeScript migration should begin with the domain and proceed incrementally rather than as a cosmetic whole-repo rewrite.
+
+### Revisit when
+
+Not expected unless implementation evidence shows an unacceptable migration cost.
+
+## D-013 — State commits precede decorative motion
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Business-state mutation must not depend on View Transition callbacks or decorative animation completion.
+
+### Rationale
+
+The existing counter used advanced transition orchestration safely, but shopping data has higher correctness stakes. Motion remains a progressive enhancement.
+
+### Consequence
+
+Order is:
+
+1. user intent
+2. domain commit
+3. persistence attempt
+4. render
+5. optional visual feedback
+
+### Revisit when
+
+Never for financial correctness; implementation details can evolve.
+
+## D-024 — Core runtime remains React 19.3 + Vite 8
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Keep the existing React/Vite SPA foundation.
+
+Target core:
+
+- React 19.3
+- React DOM
+- Vite 8.x
+- Node 24 tooling/runtime for CI
+
+Do not migrate to Next.js, Preact, Vue, or Svelte for the shopping-product pivot.
+
+### Rationale
+
+The product is a local-first static PWA with no SSR or mandatory server requirement.
+
+React 19.3 and Vite already satisfy the UI, code-splitting, testing, browser-API, and PWA integration needs. Rewriting the UI framework would add migration risk without changing the user outcome.
+
+### Consequence
+
+Architecture work focuses on domain/application/persistence quality rather than framework migration.
+
+### Revisit when
+
+A future requirement materially depends on a capability that the current static React/Vite architecture cannot reasonably provide.
+
+## D-025 — Begin migration on strict TypeScript 6.0.x
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Use strict TypeScript 6.0.x for the first shopping-product migration.
+
+Do not adopt TypeScript 7 in the same change that introduces the new domain/application architecture.
+
+### Rationale
+
+TypeScript 7 is current and materially faster, but the repository is small enough that compiler speed is not a bottleneck.
+
+The first migration already changes:
+
+- money representation
+- persistence schemas
+- application boundaries
+- domain types
+
+Keeping the compiler/tooling transition separate reduces simultaneous risk.
+
+### Consequence
+
+After Phase 1–3 are green, create a focused TypeScript 7 compatibility upgrade.
+
+### Revisit when
+
+The initial TypeScript migration is complete and the current lint/testing ecosystem has verified TS7 compatibility.
+
+## D-026 — No third-party global state library in MVP
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Use a small plain-TypeScript application controller/store and React useSyncExternalStore.
+
+Do not add:
+
+- Redux Toolkit
+- Zustand
+- XState runtime
+
+for MVP.
+
+### Rationale
+
+The app has one small canonical application state, but persistence orchestration should remain outside React.
+
+A custom controller provides:
+
+- deterministic commands
+- one canonical snapshot
+- subscription to React
+- clean dependency injection
+- no library-specific domain model
+
+### Consequence
+
+Application state APIs must remain deliberately small and immutable at the snapshot boundary.
+
+### Revisit when
+
+State complexity or collaboration requirements grow enough that the custom solution becomes harder to reason about than a library.
+
+## D-029 — MVP uses native semantic UI and CSS Modules, not a UI framework
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Use:
+
+- semantic HTML
+- native dialog
+- CSS Modules
+- CSS custom properties
+- React ViewTransition + CSS
+
+Do not add Tailwind, a full component library, CSS-in-JS, or a general animation runtime for MVP.
+
+### Rationale
+
+The product has a small, custom, accessibility-sensitive interface.
+
+Native primitives now cover the required modal/dialog semantics, while CSS Modules preserve strong custom design control with no runtime styling dependency.
+
+### Consequence
+
+Any later Radix/UI-library addition must solve a verified accessibility/browser problem rather than convenience alone.
+
+### Revisit when
+
+Native primitives fail a documented interaction/accessibility requirement.
+
+## D-030 — No router until URLs have real product value
+
+Date: 2026-09-21
+
+Status: accepted
+
+### Decision
+
+Do not add React Router or another router to MVP.
+
+Use application/UI state for:
+
+- active trip
+- add-price overlay
+- history
+- settings
+- completed summary
+
+### Rationale
+
+The core product is one task surface.
+
+Routing would add URL/state synchronization complexity without a deep-link requirement.
+
+### Consequence
+
+If future history/shared/public pages require durable URLs, prefer React Router Declarative Mode as the first option.
+
+### Revisit when
+
+A real deep-link/navigation requirement appears.
+
+## D-046 — Make documentation authority explicit and keep the repository root small
+
+**Status:** Accepted  
+**Date:** 2026-09-22
+
+### Context
+
+The repository accumulated several high-quality documents that overlapped in product scope, UX, design, functionality, scenarios, technology, and execution planning. The content was useful, but the repository no longer made it obvious which documents were current sources of truth versus supporting reference or completed execution material.
+
+This created two risks:
+
+1. a reviewer or contributor could treat multiple planning documents as equally authoritative;
+2. a stale detailed document could silently contradict a newer product or architecture contract.
+
+### Decision
+
+- Keep the repository root focused on code/configuration entry points, `README.md`, `AGENTS.md`, and `LICENSE`.
+- Move the long-form product/engineering Markdown set under `docs/`.
+- Use `docs/README.md` as the documentation map and authority model.
+- Treat `PRODUCT.md`, `ARCHITECTURE.md`, `DOMAIN.md`, `DESIGN.md`, `ROADMAP.md`, and `TESTING.md` as the current high-level authoritative documents.
+- Treat `docs/reference/UX.md`, `docs/reference/BRAND.md`, `docs/reference/SCENARIOS.md`, `docs/reference/TECH-STACK.md`, `docs/reference/CODE-OWNERSHIP.md`, and `docs/reference/MARKETING.md` as supporting reference. They may add context but must not independently redefine current implementation status.
+- Keep detailed contracts under `docs/specs/` and specialized contracts such as persistence/accessibility alongside the current docs.
+- Move completed sprint decomposition such as `CORE-UI-EXECUTION-BRIEF.md` under `docs/archive/` instead of leaving it mixed with current contracts.
+- Avoid duplicating current-status checklists across multiple documents. Update the smallest owning authoritative document and reconcile supporting reference only where it would otherwise mislead.
+
+### Consequences
+
+- Repository browsing becomes faster for reviewers and contributors.
+- Existing historical detail is preserved instead of deleted.
+- Documentation conflicts have an explicit resolution path.
+- Future planning documents do not automatically become permanent sources of truth.
+
+---
+
+## D-048 — Separate application contracts and compress current AI context surfaces
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+Reduce reasoning cost without changing product behaviour by:
+
+- moving public ShoppingAppController state/result/port contracts into `src/application/shopping-app-contracts.ts`
+- keeping `shopping-app-controller.ts` focused on orchestration while re-exporting the existing public types for compatibility
+- converting application entry points from JSX to strict TSX
+- treating `AGENTS.md` as a concise context router rather than a duplicate product/architecture specification
+- keeping `ARCHITECTURE.md` focused on current boundaries and invariants
+- keeping `ROADMAP.md` focused on current evidence gates and future sequencing
+- archiving completed phase-by-phase roadmap narration instead of carrying it in the active context set
+
+### Rationale
+
+The repository had strong contracts but increasingly high context cost:
+
+- controller implementation and public type contracts occupied one large file
+- current architecture documentation still contained migration-era language after the legacy shell had been removed
+- the active roadmap mixed completed execution history with current priorities
+- AI instructions duplicated stable rules from several authoritative documents
+
+This made it easier for a contributor or AI agent to load stale or redundant context and harder to distinguish current behaviour from historical sequencing.
+
+### Consequence
+
+- application consumers have a dedicated contracts module
+- existing controller type imports remain compatible through re-exports
+- current documentation is shorter and more present-tense
+- historical execution detail remains available in `docs/archive/`
+- AI contributors are instructed to load task-specific authoritative context rather than the entire documentation tree
+- future refactors should be driven by cohesive responsibility boundaries, not line-count targets
+
+### Revisit when
+
+The controller requires another cohesive use-case extraction, documentation authority changes, or measured contributor/AI workflows show that a different context-routing model is more effective.
+
+## D-049 — Decompose architectural hotspots by reason to change
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+Reduce the largest current implementation hotspots only where a cohesive responsibility boundary already exists:
+
+- separate shopping storage codec/domain reconstruction from storage transactions, reconciliation and recovery;
+- move completion, checkout reconciliation and completed-summary dismissal into one application use-case module;
+- move controller state/result helpers into a small application support module;
+- isolate shell focus restoration from product orchestration;
+- separate price-entry presentation calculations/copy and the dumb keypad from the stateful entry/confirmation flow.
+
+Keep backward-compatible exports at existing storage/controller boundaries where changing imports would add migration churn without product value.
+
+### Rationale
+
+The previous large files were still correct, but several contained multiple independent reasons to change. Extracting by responsibility reduces review and AI context cost without introducing speculative service layers or a state-management framework.
+
+### Consequence
+
+The remaining large modules stay intentionally cohesive. Further splitting requires a clear behavioural or ownership boundary; line count alone is not sufficient justification.
