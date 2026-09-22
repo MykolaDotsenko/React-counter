@@ -73,6 +73,50 @@ test("has no detectable WCAG A/AA violations on the price-entry surface", async 
   expect(results.violations).toEqual([]);
 });
 
+test("has no detectable WCAG A/AA violations on Recent Items and restores current-price trigger focus", async ({
+  page,
+  browserName,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("1.39");
+  await page.getByText("Name for next time", { exact: false }).click();
+  await page.getByRole("textbox", { name: "Item name" }).fill("Milk 1L");
+  await page.getByRole("button", { name: "Add · €1.39" }).click();
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Shop again" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Recent Items" }),
+  ).toBeVisible();
+
+  if (browserName === "chromium") {
+    const results = await scan(page);
+    expect(results.violations).toEqual([]);
+  }
+
+  const currentPrice = page.getByRole("button", {
+    name: "Enter current price",
+  });
+  await currentPrice.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(
+    page.getByRole("heading", { name: "What does this item cost?" }),
+  ).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Price" })).toHaveValue("");
+
+  await page.keyboard.press("Escape");
+
+  await expect(
+    page.getByRole("button", { name: "Enter current price" }),
+  ).toBeFocused();
+});
+
 test("has no detectable WCAG A/AA violations on budget adjustment and restores focus", async ({
   page,
   browserName,
