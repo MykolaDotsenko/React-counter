@@ -510,6 +510,9 @@ export function ShoppingAppShell({
         <>
           <HistoryScreen
             controller={controller}
+            onTripStarted={() => {
+              recordTripStarted("repeat");
+            }}
             onBack={() => {
               setOverlay({ kind: "none" });
             }}
@@ -545,6 +548,9 @@ export function ShoppingAppShell({
         <>
           <HistoryScreen
             controller={controller}
+            onTripStarted={() => {
+              recordTripStarted("repeat");
+            }}
             onBack={() => {
               setOverlay({ kind: "none" });
             }}
