@@ -141,6 +141,8 @@ export function ShoppingAppShell({
   const qaStartedAtRef = useRef<number | null>(null);
   const qaPendingSampleRef = useRef<PendingQaSample | null>(null);
   const betaManualStartedAtRef = useRef<number | null>(null);
+  const betaRestoreRecordedRef = useRef(false);
+  const betaInitialActiveTripRef = useRef(state.activeTrip !== null);
   const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
   const [lastAddedMessage, setLastAddedMessage] = useState("");
   const recentCompletedTrip = mostRecentCompletedTrip(
@@ -315,6 +317,39 @@ export function ShoppingAppShell({
 
   useEffect(() => {
     if (
+      !betaEvidenceEnabled ||
+      betaRestoreRecordedRef.current ||
+      !betaInitialActiveTripRef.current ||
+      betaSession === null ||
+      state.activeTrip === null
+    ) {
+      return;
+    }
+
+    const observedOrdinal = currentRetentionTripOrdinal(betaSession);
+    const tripOrdinal =
+      observedOrdinal ?? nextRetentionTripOrdinal(betaSession);
+
+    betaRestoreRecordedRef.current = true;
+
+    if (observedOrdinal === null) {
+      recordBetaEvent({
+        type: "trip_started",
+        at: new Date().toISOString(),
+        tripOrdinal,
+        source: "resume",
+      });
+    }
+
+    recordBetaEvent({
+      type: "trip_restored",
+      at: new Date().toISOString(),
+      tripOrdinal,
+    });
+  }, [betaSession, state.activeTrip]);
+
+  useEffect(() => {
+    if (
       !qaTimingEnabled ||
       overlay.kind === "add-price" ||
       qaPendingSampleRef.current === null ||
@@ -385,7 +420,9 @@ export function ShoppingAppShell({
         }}
       />
       )}
-      {betaSession === null ? null : (
+      {betaSession === null ||
+      state.activeTrip !== null ||
+      overlay.kind !== "none" ? null : (
         <RetentionBetaPanel
           session={betaSession}
           onReset={() => {
