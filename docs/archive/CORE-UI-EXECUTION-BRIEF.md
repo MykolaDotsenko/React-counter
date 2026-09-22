@@ -12,7 +12,7 @@ Scope:
 This brief operationalizes:
 
 - PRODUCT.md
-- FUNCTIONALITY.md
+- ../specs/RELEASE-SPEC.md
 - SCENARIOS.md
 - UX.md
 - DESIGN.md
