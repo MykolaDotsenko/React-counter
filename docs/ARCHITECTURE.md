@@ -274,8 +274,8 @@ The detailed technical contracts are split by concern:
 - `docs/specs/STATE-MACHINES.md` — lifecycle and ephemeral state transitions
 - `docs/specs/STORAGE-SCHEMA.md` — exact local persistence schema and completion recovery
 - `docs/specs/MONEY-SPEC.md` — EUR-only parsing, formatting, arithmetic, limits, and money tests
-- `TECH-STACK.md` — authoritative technology selections and dependency budget
-- `docs/tech/TECHNOLOGY-RESEARCH.md` — alternatives, scoring, and research evidence
+- `docs/reference/TECH-STACK.md` — supporting technology rationale and dependency candidates
+- `docs/research/TECHNOLOGY-RESEARCH.md` — alternatives, scoring, and research evidence
 
 When this architecture document and a detailed spec differ, stop implementation and reconcile the documentation rather than choosing one silently.
 
