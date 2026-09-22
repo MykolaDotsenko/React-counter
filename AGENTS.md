@@ -95,7 +95,7 @@ Evidence or later-phase work still pending:
 - installable offline PWA
 - production barcode/OCR breadth, which remains evidence-gated
 
-The historical counter UI/domain has been retired. Keep only the narrow storage-compatibility safeguard that prevents unrelated historical values from being interpreted as shopping money.
+The historical prototype UI/domain has been retired. Keep only the narrow storage-compatibility safeguard that prevents unrelated historical values from being interpreted as shopping money.
 
 When modifying any area, inspect actual current code and the current roadmap slice. Never infer implementation solely from a target or archived document.
 
