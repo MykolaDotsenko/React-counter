@@ -1652,3 +1652,29 @@ This made it easier for a contributor or AI agent to load stale or redundant con
 
 The controller requires another cohesive use-case extraction, documentation authority changes, or measured contributor/AI workflows show that a different context-routing model is more effective.
 
+## D-049 — Decompose architectural hotspots by reason to change
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+Reduce the largest current implementation hotspots only where a cohesive responsibility boundary already exists:
+
+- separate shopping storage codec/domain reconstruction from storage transactions, reconciliation and recovery;
+- move completion, checkout reconciliation and completed-summary dismissal into one application use-case module;
+- move controller state/result helpers into a small application support module;
+- isolate shell focus restoration from product orchestration;
+- separate price-entry presentation calculations/copy and the dumb keypad from the stateful entry/confirmation flow.
+
+Keep backward-compatible exports at existing storage/controller boundaries where changing imports would add migration churn without product value.
+
+### Rationale
+
+The previous large files were still correct, but several contained multiple independent reasons to change. Extracting by responsibility reduces review and AI context cost without introducing speculative service layers or a state-management framework.
+
+### Consequence
+
+The remaining large modules stay intentionally cohesive. Further splitting requires a clear behavioural or ownership boundary; line count alone is not sufficient justification.
+
