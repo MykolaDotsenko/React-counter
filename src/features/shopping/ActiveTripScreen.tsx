@@ -19,8 +19,10 @@ export interface ActiveTripScreenProps {
   readonly controller: ShoppingAppController;
   readonly onAddPrice: () => void;
   readonly onFinishTrip?: () => void;
+  readonly onAdjustBudget?: () => void;
   readonly addPriceButtonRef?: Ref<HTMLButtonElement>;
   readonly finishTripButtonRef?: Ref<HTMLButtonElement>;
+  readonly adjustBudgetButtonRef?: Ref<HTMLButtonElement>;
   readonly feedbackMessage?: string;
   readonly onUndo?: () => void;
   readonly onEditItem?: (item: CartItem) => void;
@@ -82,8 +84,10 @@ export function ActiveTripScreen({
   controller,
   onAddPrice,
   onFinishTrip,
+  onAdjustBudget,
   addPriceButtonRef,
   finishTripButtonRef,
+  adjustBudgetButtonRef,
   feedbackMessage,
   onUndo,
   onEditItem,
@@ -248,6 +252,17 @@ export function ActiveTripScreen({
                 : `${formatSignedAmount(Math.abs(nominalRemaining), locale)} over budget`}.
             </p>
           ) : null}
+
+          {onAdjustBudget ? (
+            <button
+              ref={adjustBudgetButtonRef}
+              type="button"
+              className={styles.adjustBudgetButton}
+              onClick={onAdjustBudget}
+            >
+              Adjust budget
+            </button>
+          ) : null}
         </section>
 
         {feedbackMessage || (state.undo !== null && onUndo) ? (
@@ -316,17 +331,20 @@ export function ActiveTripScreen({
                   <li key={item.id} className={styles.item}>
                     <div className={styles.itemIdentity}>
                       <strong>{item.label ?? `Item ${index + 1}`}</strong>
-                      <span>
-                        {item.quantity > 1
-                          ? `${formatEur(item.unitPriceMinor, locale)} × ${item.quantity}`
-                          : "Single item"}
-                      </span>
-                      <small
-                        className={styles.itemTrust}
-                        data-confidence={item.priceConfidence.kind}
-                      >
-                        {confidenceLabel(item)} · {sourceLabel(item)}
-                      </small>
+                      {item.quantity > 1 ? (
+                        <span>
+                          {formatEur(item.unitPriceMinor, locale)} × {item.quantity}
+                        </span>
+                      ) : null}
+                      {item.priceConfidence.kind !== "confirmed" ||
+                      item.priceSource.kind !== "manual" ? (
+                        <small
+                          className={styles.itemTrust}
+                          data-confidence={item.priceConfidence.kind}
+                        >
+                          {confidenceLabel(item)} · {sourceLabel(item)}
+                        </small>
+                      ) : null}
                     </div>
 
                     <div className={styles.itemActions}>
