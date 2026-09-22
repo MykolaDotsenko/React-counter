@@ -78,6 +78,19 @@ export interface RetentionBetaSummary {
   readonly currentPriceOverrides: number;
 }
 
+export interface RetentionBetaExport {
+  readonly schemaVersion: 1;
+  readonly generatedAt: string;
+  readonly privacy: {
+    readonly networkTransmission: false;
+    readonly containsMoney: false;
+    readonly containsItemNames: false;
+    readonly containsStoreHistory: false;
+  };
+  readonly session: RetentionBetaSession;
+  readonly summary: RetentionBetaSummary;
+}
+
 const isIsoTimestamp = (value: unknown): value is string => {
   if (typeof value !== "string") {
     return false;
@@ -398,7 +411,7 @@ export const summarizeRetentionBeta = (
 export const buildRetentionBetaExport = (
   session: RetentionBetaSession,
   generatedAt: string,
-) => {
+): RetentionBetaExport => {
   if (!isIsoTimestamp(generatedAt)) {
     throw new RangeError("Retention beta export requires canonical ISO time");
   }
@@ -414,5 +427,65 @@ export const buildRetentionBetaExport = (
     },
     session,
     summary: summarizeRetentionBeta(session),
+  });
+};
+
+
+export const parseRetentionBetaExport = (
+  value: unknown,
+): RetentionBetaExport | null => {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if (
+    !hasExactKeys(record, [
+      "schemaVersion",
+      "generatedAt",
+      "privacy",
+      "session",
+      "summary",
+    ]) ||
+    record.schemaVersion !== 1 ||
+    !isIsoTimestamp(record.generatedAt) ||
+    !isSession(record.session)
+  ) {
+    return null;
+  }
+
+  if (typeof record.privacy !== "object" || record.privacy === null) {
+    return null;
+  }
+
+  const privacy = record.privacy as Record<string, unknown>;
+
+  if (
+    !hasExactKeys(privacy, [
+      "networkTransmission",
+      "containsMoney",
+      "containsItemNames",
+      "containsStoreHistory",
+    ]) ||
+    privacy.networkTransmission !== false ||
+    privacy.containsMoney !== false ||
+    privacy.containsItemNames !== false ||
+    privacy.containsStoreHistory !== false
+  ) {
+    return null;
+  }
+
+  return Object.freeze({
+    schemaVersion: 1,
+    generatedAt: record.generatedAt,
+    privacy: Object.freeze({
+      networkTransmission: false,
+      containsMoney: false,
+      containsItemNames: false,
+      containsStoreHistory: false,
+    }),
+    session: record.session,
+    summary: summarizeRetentionBeta(record.session),
   });
 };
