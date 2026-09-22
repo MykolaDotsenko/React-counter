@@ -955,6 +955,8 @@ A history deletion is committed only after the replacement history snapshot is p
 
 Clearing Price Memory writes an empty, versioned Price Memory snapshot. This control may also be used to recover from a degraded Price Memory record without affecting healthy trip history.
 
+If completed-trip history is empty but Price Memory still contains records, the idle/start screen must retain a secondary entry point to these local-data controls. Clearing history must never make remaining remembered prices unreachable.
+
 ## Settings
 
 Keep settings small.
