@@ -125,7 +125,7 @@ describe("StartTripScreen", () => {
     expect(screen.getByText("Add a safety buffer")).not.toBeNull();
     expect(
       screen.getByText(
-        "No account. Your active trip and history stay on this device.",
+        "No account. Your shopping data stays on this device.",
       ),
     ).not.toBeNull();
   });
@@ -147,6 +147,28 @@ describe("StartTripScreen", () => {
       name: "View trip history · 2",
     });
     await user.click(history);
+
+    expect(onOpenHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps remembered-price controls reachable when trip history is empty", async () => {
+    const user = userEvent.setup();
+    const controller = createController();
+    const onOpenHistory = vi.fn();
+
+    render(
+      <StartTripScreen
+        controller={controller}
+        completedTripCount={0}
+        rememberedPriceCount={3}
+        onOpenHistory={onOpenHistory}
+      />,
+    );
+
+    const dataControl = screen.getByRole("button", {
+      name: "Manage remembered prices · 3",
+    });
+    await user.click(dataControl);
 
     expect(onOpenHistory).toHaveBeenCalledTimes(1);
   });
