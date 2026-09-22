@@ -191,6 +191,35 @@ describe("HistoryScreen", () => {
     ).not.toBeNull();
   });
 
+  it("returns focus to the data control after cancelling confirmation", async () => {
+    const user = userEvent.setup();
+    const controller = createController([
+      completedTrip("one", FIRST_COMPLETE, 2_500),
+    ]);
+
+    render(
+      <HistoryScreen
+        controller={controller}
+        onBack={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    const clearHistoryButton = screen.getByRole("button", {
+      name: /Clear trip history/,
+    });
+
+    await user.click(clearHistoryButton);
+    const confirmation = screen.getByRole("region", {
+      name: "Confirm clearing trip history",
+    });
+    await user.click(
+      within(confirmation).getByRole("button", { name: "Cancel" }),
+    );
+
+    expect(document.activeElement).toBe(clearHistoryButton);
+  });
+
   it("provides a single explicit Back action", async () => {
     const user = userEvent.setup();
     const trips = [
