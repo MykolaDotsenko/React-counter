@@ -524,7 +524,9 @@ export function ShoppingAppShell({
                 itemId: item.id,
                 unitPriceMinor: intent.unitPriceMinor,
                 quantity: intent.quantity,
-                label: intent.label,
+                ...(intent.label === undefined
+                  ? {}
+                  : { label: intent.label }),
               });
 
               if (
