@@ -306,6 +306,34 @@ Estimated status survives:
 - persistence round trip
 - cart summary derivation
 
+## B6 physical-evidence QA tests
+
+The guarded timing QA is human-evidence infrastructure, not a machine benchmark.
+
+Tests must prove:
+
+- only the documented EUR 500 / zero-buffer EUR 4.79 and EUR 12.50 quantity-1 samples count toward the timing KPI
+- v2 QA evidence migrates to v3 without losing valid samples or device labels
+- migration never fabricates the new physical-context evidence
+- release eligibility requires:
+  - primary device/browser label
+  - compact-phone/equivalent label
+  - explicit comparable input-method label
+  - phone-like portrait viewport
+  - light appearance for the primary pass
+  - one-handed confirmation
+  - bright/store-like physical lighting confirmation
+  - default system text size confirmation
+  - complete one-hand/correction/stability checklist
+- dark appearance, 200%/large-text, and reduced-motion physical spot-checks remain explicitly `not-run`, `pass`, or `fail`
+- `not-run` does not fabricate evidence
+- a recorded secondary spot-check failure blocks release eligibility immediately
+- resetting timing samples does not silently erase the structured device/context checklist
+- QA evidence persistence failure cannot alter shopping state
+- component tests cover the structured physical-evidence controls
+
+Automation can verify this recorder contract. It cannot prove the human ≤2.5 s KPI.
+
 ## Retention beta evidence tests
 
 The guarded retention beta must prove:
