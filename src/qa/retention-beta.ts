@@ -252,6 +252,42 @@ const uniqueTripCount = (
       .map((event) => event.tripOrdinal),
   ).size;
 
+export const nextRetentionTripOrdinal = (
+  session: RetentionBetaSession,
+): number => {
+  const ordinals = session.events.flatMap((event) =>
+    event.type === "trip_started" ? [event.tripOrdinal] : [],
+  );
+
+  return ordinals.length === 0 ? 1 : Math.max(...ordinals) + 1;
+};
+
+export const currentRetentionTripOrdinal = (
+  session: RetentionBetaSession,
+): number | null => {
+  for (let index = session.events.length - 1; index >= 0; index -= 1) {
+    const event = session.events[index];
+
+    if (event?.type !== "trip_started") {
+      continue;
+    }
+
+    const finishedLater = session.events
+      .slice(index + 1)
+      .some(
+        (candidate) =>
+          candidate.type === "trip_finished" &&
+          candidate.tripOrdinal === event.tripOrdinal,
+      );
+
+    if (!finishedLater) {
+      return event.tripOrdinal;
+    }
+  }
+
+  return null;
+};
+
 export const summarizeRetentionBeta = (
   session: RetentionBetaSession,
 ): RetentionBetaSummary => {
