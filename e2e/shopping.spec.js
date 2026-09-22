@@ -786,6 +786,24 @@ test("keeps trip-history deletion independent from remembered prices", async ({
     unitPriceMinor: 139,
   });
 
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
+
+  const rememberedDataEntry = page.getByRole("button", {
+    name: "Manage remembered prices · 1",
+  });
+  await expect(rememberedDataEntry).toBeVisible();
+
+  await page.reload();
+  await expect(
+    page.getByRole("button", {
+      name: "Manage remembered prices · 1",
+    }),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Manage remembered prices · 1" })
+    .click();
   await page
     .getByRole("button", { name: /Clear remembered prices/ })
     .click();
@@ -806,6 +824,11 @@ test("keeps trip-history deletion independent from remembered prices", async ({
     PRICE_MEMORY_KEY,
   );
   expect(afterMemoryClear.data.records).toHaveLength(0);
+
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(
+    page.getByRole("button", { name: /remembered prices/i }),
+  ).toHaveCount(0);
 });
 
 test("repeats the last spending plan immediately and after a later reload", async ({
