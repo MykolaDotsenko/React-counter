@@ -175,7 +175,7 @@ describe("HistoryScreen", () => {
 
     await user.click(deleteButtons[1]!);
     expect(
-      screen.getByText("Remembered item prices are stored separately."),
+      screen.getByText(/Remembered item prices are stored separately/),
     ).not.toBeNull();
 
     const confirmation = screen.getByRole("region", {
