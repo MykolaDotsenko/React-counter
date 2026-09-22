@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import {
   formatEur,
@@ -74,12 +74,17 @@ export function BudgetSettingsSurface({
   const bufferId = useId();
   const messageId = useId();
   const budgetRef = useRef<HTMLInputElement>(null);
+  const bufferRef = useRef<HTMLInputElement>(null);
   const [budgetRaw, setBudgetRaw] = useState(() => rawMoney(trip.budgetMinor));
   const [bufferRaw, setBufferRaw] = useState(() =>
     trip.safetyBufferMinor === 0 ? "" : rawMoney(trip.safetyBufferMinor),
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    budgetRef.current?.focus();
+  }, []);
 
   const parsedPlan = useMemo(() => {
     const budget = parseEurDraft({
@@ -206,6 +211,8 @@ export function BudgetSettingsSurface({
       );
       if (parsedPlan.field === "budget") {
         budgetRef.current?.focus();
+      } else {
+        bufferRef.current?.focus();
       }
       return;
     }
@@ -288,6 +295,7 @@ export function BudgetSettingsSurface({
             <div className={styles.inputShell}>
               <span aria-hidden="true">€</span>
               <input
+                ref={bufferRef}
                 id={bufferId}
                 value={bufferRaw}
                 inputMode="decimal"
