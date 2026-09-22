@@ -497,26 +497,6 @@ Memories are learned only from confirmed named items after completed history is 
 
 The initial manual/offline product identity is deterministic and label-derived. It is intentionally modest: enough to recognize a user-named familiar product without requiring network lookup or barcode infrastructure.
 
-## Price memory boundary
-
-Price memory is separate from active-trip canonical state.
-
-A remembered-price store may be keyed by:
-
-- product identity
-- optional store identity
-- currency
-
-Records retain:
-
-- last observed price
-- observed date
-- source metadata
-
-Price memory is advisory.
-
-It never changes cart totals until a value is selected/confirmed through the application flow.
-
 ## Scanner technology
 
 Selected P1 direction:
