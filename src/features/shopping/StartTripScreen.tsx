@@ -120,6 +120,7 @@ export interface StartTripScreenProps {
   readonly onTripStarted?: (source: "new" | "repeat") => void;
   readonly completedTripCount?: number;
   readonly rememberedPriceCount?: number;
+  readonly priceMemoryNeedsAttention?: boolean;
   readonly recentTrip?: CompletedTrip | null;
   readonly persistenceHealth?: PersistenceHealth;
   readonly onOpenHistory?: () => void;
@@ -131,6 +132,7 @@ export function StartTripScreen({
   onTripStarted,
   completedTripCount = 0,
   rememberedPriceCount = 0,
+  priceMemoryNeedsAttention = false,
   recentTrip = null,
   persistenceHealth,
   onOpenHistory,
@@ -411,7 +413,9 @@ export function StartTripScreen({
           {errorMessage}
         </div>
 
-        {(completedTripCount > 0 || rememberedPriceCount > 0) &&
+        {(completedTripCount > 0 ||
+          rememberedPriceCount > 0 ||
+          priceMemoryNeedsAttention) &&
         onOpenHistory ? (
           <button
             type="button"
@@ -420,7 +424,9 @@ export function StartTripScreen({
           >
             {completedTripCount > 0
               ? `View trip history · ${completedTripCount}`
-              : `Manage remembered prices · ${rememberedPriceCount}`}
+              : rememberedPriceCount > 0
+                ? `Manage remembered prices · ${rememberedPriceCount}`
+                : "Repair remembered prices"}
           </button>
         ) : null}
 
