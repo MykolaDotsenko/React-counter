@@ -38,7 +38,7 @@ test("has no detectable WCAG A/AA violations with the recent-budget shortcut", a
   expect(results.violations).toEqual([]);
 });
 
-test("has no detectable WCAG A/AA violations in the expanded retention beta panel", async ({
+test("@beta has no detectable WCAG A/AA violations in the expanded retention beta panel", async ({
   page,
   browserName,
 }) => {
