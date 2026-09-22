@@ -210,7 +210,7 @@ export function ShoppingTimingQaPanel({
 
   const nextStep =
     gate.secondarySpotCheckFailures > 0
-      ? "A secondary spot-check failed; resolve it before release."
+      ? "A secondary spot-check failed; resolve it before marking B6 passed."
       : summary479.count < QA_TARGET_SAMPLE_COUNT
         ? `Next: €4.79 sample ${summary479.count + 1}/${QA_TARGET_SAMPLE_COUNT}`
         : summary1250.count < QA_TARGET_SAMPLE_COUNT
@@ -235,7 +235,7 @@ export function ShoppingTimingQaPanel({
                             ? "Release floor met; speed target still missed."
                             : gate.status === "fail"
                               ? "Gate failed; redesign before marking B6 passed or expanding input breadth."
-                              : "Review evidence before release.";
+                              : "Review evidence before marking B6 passed.";
   const copyResults = async (): Promise<void> => {
     let report;
 
@@ -385,7 +385,7 @@ export function ShoppingTimingQaPanel({
             <legend>Secondary physical spot-checks</legend>
             <p>
               These are recommended where available. A recorded failure blocks
-              release; not-run does not replace the automated checks.
+              the B6 gate; not-run does not replace the automated checks.
             </p>
             {SPOT_CHECKS.map((item) => (
               <label key={item.key}>
