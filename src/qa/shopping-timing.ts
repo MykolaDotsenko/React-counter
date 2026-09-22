@@ -115,6 +115,20 @@ export interface QaEmpiricalGateSummary {
   readonly releaseEligible: boolean;
 }
 
+export interface QaTimingExport {
+  readonly schemaVersion: 1;
+  readonly kind: "shopping-timing-evidence";
+  readonly generatedAt: string;
+  readonly privacy: {
+    readonly networkTransmission: false;
+    readonly containsItemNames: false;
+    readonly containsStoreHistory: false;
+    readonly containsDeviceMetadata: true;
+  };
+  readonly session: QaTimingSession;
+  readonly gate: QaEmpiricalGateSummary;
+}
+
 const emptyChecklist = (): QaTimingChecklist => ({
   addPriceReachable: false,
   numericKeysReachable: false,
@@ -175,6 +189,37 @@ export const createQaTimingSession = (
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
 
+const isCanonicalIsoTimestamp = (value: unknown): value is string => {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const parsed = Date.parse(value);
+
+  return (
+    Number.isFinite(parsed) &&
+    new Date(parsed).toISOString() === value
+  );
+};
+
+const hasExactKeys = (
+  value: Record<string, unknown>,
+  keys: readonly string[],
+): boolean => {
+  const actual = Object.keys(value).sort();
+  const expected = [...keys].sort();
+
+  return (
+    actual.length === expected.length &&
+    actual.every((key, index) => key === expected[index])
+  );
+};
+
+const hasUniqueSampleIds = (
+  samples: readonly QaTimingSample[],
+): boolean =>
+  new Set(samples.map((sample) => sample.id)).size === samples.length;
+
 const isQaTimingEnvironment = (
   value: unknown,
 ): value is QaTimingEnvironment => {
@@ -231,24 +276,37 @@ const isQaTimingSample = (value: unknown): value is QaTimingSample => {
 
   const candidate = value as Partial<QaTimingSample>;
 
+  if (
+    typeof candidate.id !== "string" ||
+    candidate.id.trim().length === 0 ||
+    !isFiniteNumber(candidate.durationMs) ||
+    candidate.durationMs <= 0 ||
+    !isFiniteNumber(candidate.unitPriceMinor) ||
+    !Number.isSafeInteger(candidate.unitPriceMinor) ||
+    candidate.unitPriceMinor <= 0 ||
+    !isFiniteNumber(candidate.quantity) ||
+    !Number.isSafeInteger(candidate.quantity) ||
+    candidate.quantity < 1 ||
+    !isFiniteNumber(candidate.lineTotalMinor) ||
+    !Number.isSafeInteger(candidate.lineTotalMinor) ||
+    candidate.lineTotalMinor <= 0 ||
+    !isFiniteNumber(candidate.budgetMinor) ||
+    !Number.isSafeInteger(candidate.budgetMinor) ||
+    candidate.budgetMinor <= 0 ||
+    !isFiniteNumber(candidate.safetyBufferMinor) ||
+    !Number.isSafeInteger(candidate.safetyBufferMinor) ||
+    candidate.safetyBufferMinor < 0 ||
+    !isCanonicalIsoTimestamp(candidate.completedAt)
+  ) {
+    return false;
+  }
+
+  const expectedLineTotal =
+    candidate.unitPriceMinor * candidate.quantity;
+
   return (
-    typeof candidate.id === "string" &&
-    isFiniteNumber(candidate.durationMs) &&
-    candidate.durationMs >= 0 &&
-    isFiniteNumber(candidate.unitPriceMinor) &&
-    Number.isSafeInteger(candidate.unitPriceMinor) &&
-    isFiniteNumber(candidate.quantity) &&
-    Number.isSafeInteger(candidate.quantity) &&
-    candidate.quantity >= 1 &&
-    isFiniteNumber(candidate.lineTotalMinor) &&
-    Number.isSafeInteger(candidate.lineTotalMinor) &&
-    isFiniteNumber(candidate.budgetMinor) &&
-    Number.isSafeInteger(candidate.budgetMinor) &&
-    candidate.budgetMinor > 0 &&
-    isFiniteNumber(candidate.safetyBufferMinor) &&
-    Number.isSafeInteger(candidate.safetyBufferMinor) &&
-    candidate.safetyBufferMinor >= 0 &&
-    typeof candidate.completedAt === "string"
+    Number.isSafeInteger(expectedLineTotal) &&
+    expectedLineTotal === candidate.lineTotalMinor
   );
 };
 
@@ -314,7 +372,8 @@ const isQaTimingSessionV2 = (
     typeof candidate.notes === "string" &&
     isQaTimingChecklist(candidate.checklist) &&
     Array.isArray(candidate.samples) &&
-    candidate.samples.every(isQaTimingSample)
+    candidate.samples.every(isQaTimingSample) &&
+    hasUniqueSampleIds(candidate.samples)
   );
 };
 
@@ -351,7 +410,8 @@ const isQaTimingSession = (value: unknown): value is QaTimingSession => {
     typeof candidate.notes === "string" &&
     isQaTimingChecklist(candidate.checklist) &&
     Array.isArray(candidate.samples) &&
-    candidate.samples.every(isQaTimingSample)
+    candidate.samples.every(isQaTimingSample) &&
+    hasUniqueSampleIds(candidate.samples)
   );
 };
 
@@ -392,10 +452,20 @@ export const persistQaTimingSession = (
 export const appendQaTimingSample = (
   session: QaTimingSession,
   sample: QaTimingSample,
-): QaTimingSession => ({
-  ...session,
-  samples: [...session.samples, sample],
-});
+): QaTimingSession => {
+  if (!isQaTimingSample(sample)) {
+    throw new RangeError("Invalid QA timing sample");
+  }
+
+  if (session.samples.some((candidate) => candidate.id === sample.id)) {
+    throw new RangeError("Duplicate QA timing sample id");
+  }
+
+  return {
+    ...session,
+    samples: [...session.samples, sample],
+  };
+};
 
 export const updateQaChecklist = (
   session: QaTimingSession,
@@ -513,7 +583,9 @@ const isRepresentativeTimingSample = (
   sample: QaTimingSample,
   lineTotalMinor?: number,
 ): boolean =>
+  isQaTimingSample(sample) &&
   sample.quantity === 1 &&
+  sample.unitPriceMinor === sample.lineTotalMinor &&
   sample.budgetMinor === QA_FIXTURE_BUDGET_MINOR &&
   sample.safetyBufferMinor === QA_FIXTURE_BUFFER_MINOR &&
   (lineTotalMinor === undefined || sample.lineTotalMinor === lineTotalMinor);
@@ -651,4 +723,102 @@ export const summarizeQaEmpiricalGate = (
     releaseEligible:
       status === "target-met" || status === "release-floor",
   };
+};
+
+const isQaTimingExportPrivacy = (
+  value: unknown,
+): value is QaTimingExport["privacy"] => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  return (
+    hasExactKeys(record, [
+      "networkTransmission",
+      "containsItemNames",
+      "containsStoreHistory",
+      "containsDeviceMetadata",
+    ]) &&
+    record.networkTransmission === false &&
+    record.containsItemNames === false &&
+    record.containsStoreHistory === false &&
+    record.containsDeviceMetadata === true
+  );
+};
+
+export const buildQaTimingExport = (
+  session: QaTimingSession,
+  generatedAt: string,
+): QaTimingExport => {
+  if (!isQaTimingSession(session)) {
+    throw new RangeError("Cannot export invalid QA timing evidence");
+  }
+
+  if (!isCanonicalIsoTimestamp(generatedAt)) {
+    throw new RangeError("QA timing export requires canonical ISO time");
+  }
+
+  return Object.freeze({
+    schemaVersion: 1,
+    kind: "shopping-timing-evidence",
+    generatedAt,
+    privacy: Object.freeze({
+      networkTransmission: false,
+      containsItemNames: false,
+      containsStoreHistory: false,
+      containsDeviceMetadata: true,
+    }),
+    session,
+    gate: summarizeQaEmpiricalGate(session),
+  });
+};
+
+export const parseQaTimingExport = (
+  value: unknown,
+): QaTimingExport | null => {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if (
+    !hasExactKeys(record, [
+      "schemaVersion",
+      "kind",
+      "generatedAt",
+      "privacy",
+      "session",
+      "gate",
+    ]) ||
+    record.schemaVersion !== 1 ||
+    record.kind !== "shopping-timing-evidence" ||
+    !isCanonicalIsoTimestamp(record.generatedAt) ||
+    !isQaTimingExportPrivacy(record.privacy) ||
+    !isQaTimingSession(record.session)
+  ) {
+    return null;
+  }
+
+  const gate = summarizeQaEmpiricalGate(record.session);
+
+  if (JSON.stringify(record.gate) !== JSON.stringify(gate)) {
+    return null;
+  }
+
+  return Object.freeze({
+    schemaVersion: 1,
+    kind: "shopping-timing-evidence",
+    generatedAt: record.generatedAt,
+    privacy: Object.freeze({
+      networkTransmission: false,
+      containsItemNames: false,
+      containsStoreHistory: false,
+      containsDeviceMetadata: true,
+    }),
+    session: record.session,
+    gate,
+  });
 };
