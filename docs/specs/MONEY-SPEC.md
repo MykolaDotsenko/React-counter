@@ -2,7 +2,7 @@
 
 ## Status
 
-Target MVP contract for monetary parsing, validation, arithmetic, projection, formatting, and testing.
+**IMPLEMENTED current exact-money contract** for parsing, validation, arithmetic, projection, formatting, and testing.
 
 The MVP supports EUR only.
 
@@ -17,7 +17,7 @@ The MVP supports EUR only.
 - accessible output
 - safe future currency extension
 
-## MVP currency scope
+## Current currency scope
 
 Supported currency:
 
@@ -382,7 +382,7 @@ Requirements:
 - quantity is within product bound
 - multiplication result remains a safe integer
 
-## No division in MVP core
+## No generic division in current core
 
 The MVP does not need division.
 
@@ -714,7 +714,7 @@ Do not add generic ISO currency acceptance first and correctness later.
 9. Are negative derived values modelled explicitly?
 10. Are tests exact rather than tolerance-based?
 
-## MVP money readiness score
+## Money review status
 
 **99/100**
 

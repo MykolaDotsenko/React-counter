@@ -1,737 +1,292 @@
-# Brand Strategy
-
-> [!NOTE]
-> **Documentation role: supporting reference.** Use [../README.md](../README.md) for the authority model. Brand and messaging guidance must stay compatible with the shipped product and current authoritative design/product contracts.
+# Brand Reference
 
 ## Status
 
-Target brand strategy for the shopping-budget product.
+**SUPPORTING REFERENCE.**
 
-The shipped application is Shopping Budget Companion. The descriptive product name is still not treated as a legally or commercially locked final brand.
+Current product and visual behaviour are owned by [../PRODUCT.md](../PRODUCT.md) and [../DESIGN.md](../DESIGN.md).
 
-This document defines the brand system that should guide naming, visual identity, voice, messaging, product screenshots, app-store presentation, and future marketing.
-
-It complements:
-
-- PRODUCT.md — product problem and scope
-- DESIGN.md — interface visual system
-- MARKETING.md — acquisition and growth strategy
-- docs/research/MARKETING-RESEARCH.md — external evidence and case studies
-- docs/evidence/BRAND-IMPLEMENTATION-AUDIT.md — implementation evidence, provisional identity boundary, and drift checks
+This file owns brand tone, positioning and identity guidance. It does not define shipped feature status.
 
 ## Brand job
 
-The brand should make a new user think:
+Make a small shopping utility feel:
 
-> “This helps me avoid checkout surprises.”
+- immediately understandable;
+- trustworthy with money;
+- calm under constraint;
+- premium and deliberate;
+- memorable without spectacle.
 
-Not:
+## Positioning
 
-> “This is another finance app.”
+Category:
 
-The brand must communicate one narrow job:
+> pre-checkout shopping budget control
 
-> know what you can still afford while the items are still in your cart
+The product is not positioned as:
 
-## Brand positioning
+- banking;
+- personal finance management;
+- grocery delivery;
+- meal planning;
+- AI shopping assistant.
 
-### Category
+## Core promise
 
-Primary category language:
+> Set your limit. Add prices. Always know what is left.
 
-> Shopping budget companion
+Alternative short expression:
 
-Secondary search/category language:
+> Know what is left before checkout.
 
-- shopping calculator
-- grocery budget tracker
-- cart total calculator
-- shopping spending tracker
-- grocery calculator
-
-Avoid leading with:
-
-- personal finance
-- expense tracker
-- household budget
-- AI shopping assistant
-
-Those categories create broader expectations than the product intends to satisfy.
-
-## Positioning statement
-
-For shoppers who enter a store with a fixed spending limit, this product is a fast, local-first shopping budget companion that shows what you can still afford before checkout.
-
-Unlike general budgeting apps or feature-heavy grocery tools, it is designed around one in-store loop:
-
-> set a limit → add prices → always know what is left
-
-## Brand promise
-
-Primary promise:
-
-> **Know what you can still afford before checkout.**
-
-Short product promise:
-
-> **Set your limit. Add prices. Know what’s left.**
-
-Supporting proof:
-
-> No bank connection. No account. Works offline.
+Do not promise savings, financial outcomes or automation the product has not validated.
 
 ## Differentiation
 
-The brand does not claim category invention.
+Brand differentiation should reinforce product differentiation:
 
-The category already contains strong shopping calculators and grocery-budget apps.
+1. remaining-first control;
+2. exceptional interaction speed;
+3. loss-resistant local trust;
+4. honest remembered/current price distinction;
+5. calm premium interaction quality;
+6. zero-account first value;
+7. repeat trips that require less work.
 
-Our differentiation is execution:
+The brand should make a focused utility feel intentional rather than generic.
 
-1. remaining-first, not spent-first
-2. one-hand speed
-3. exact money arithmetic
-4. local-first privacy
-5. visible uncertainty rather than fake precision
-6. no mandatory account
-7. calm, non-judgmental tone
-8. smart features that never block manual use
+## Personality
 
-## Brand tension
+Should feel:
 
-The product sits between two emotional poles:
+- calm;
+- precise;
+- warm;
+- modern;
+- optimistic;
+- quietly confident;
+- lightly playful;
+- premium but inclusive.
 
-### Too financial
+Should not feel:
 
-Cold, institutional, spreadsheet-like, judgmental.
-
-### Too playful
-
-Gamified, childish, casual about money, visually noisy.
-
-Target:
-
-> **calm confidence**
-
-The user should feel in control, not “motivated” by a finance coach.
-
-## Brand personality
-
-Primary traits:
-
-- calm
-- precise
-- practical
-- reassuring
-- modern
-- human
-- lightly witty
-
-Secondary traits:
-
-- independent
-- private
-- restrained
-- quietly premium
-
-Avoid:
-
-- preachy
-- aspirational-luxury
-- hyper-productive
-- “hustle”
-- guilt-based
-- gamified
-- futuristic-for-its-own-sake
-- AI-first
+- luxury-exclusive;
+- childish;
+- moralising;
+- alarmist;
+- fintech-corporate;
+- cyberpunk;
+- aggressively “AI”;
+- bargain/coupon spammy.
 
 ## Voice principles
 
-### 1. State facts before emotion
+### Facts before emotion
+
+State the financial consequence clearly first.
 
 Good:
 
-> €3.41 over your limit.
-
-Bad:
-
-> Uh-oh! You overspent!
-
-### 2. Short beats clever
-
-Good:
-
-> €18.58 left.
-
-Bad:
-
-> Your smart shopping balance remaining for today is €18.58.
-
-### 3. Encourage control, not consumption
-
-Good:
-
-> Plenty of room.
+> €2.10 over your limit.
 
 Avoid:
 
-> Treat yourself!
+> Uh oh! You went too far!
 
-### 4. Use humour only when consequence is low
+### Short beats clever
 
-Good:
+Shopping is a distracted context.
 
-> €2.20 left. Snack-decision territory.
+Prefer direct labels and one-clause feedback.
 
-Not during:
+### Control, not consumption
 
-- persistence failure
-- checkout discrepancy
-- data loss
-- accessibility errors
+Do not encourage users to buy more merely because room remains.
 
-### 5. Never moralise spending
+### Humour only at low stakes
 
-Avoid:
+Light humour may appear in harmless empty/completion moments.
 
-- good spender
-- bad spender
-- irresponsible
-- failed budget
-- overspent again
+Never joke about:
+
+- persistence/data loss;
+- invalid financial state;
+- serious overage warning;
+- recovery.
+
+### Never moralise spending
+
+Do not label a user good/bad, disciplined/undisciplined.
 
 ## Messaging hierarchy
 
 ### Level 1 — outcome
 
-> Know what you can still afford before checkout.
+Know what is left before checkout.
 
 ### Level 2 — mechanism
 
-> Set a limit, add prices, and watch what remains.
+Set a limit and add prices while you shop.
 
 ### Level 3 — trust
 
-> No bank connection. No account required. Works offline.
+Exact local totals, easy correction, no required account.
 
-### Level 4 — advanced value
+### Level 4 — repeat value
 
-Later:
+Previous trips and remembered prices reduce repeated work.
 
-- remembered prices
-- barcode product recognition
-- price-tag scan
-- safety buffer
+Future barcode/OCR should not enter primary messaging until validated and shipped.
 
-Never reverse this hierarchy by marketing scanners before the user understands the problem.
-
-## Brand story
-
-Recommended long-form story:
-
-> Most budgeting tools tell you what happened after you paid.
->
-> This one helps while you can still change your mind.
->
-> Set a limit before you shop, add prices as items go into your cart, and always see how much room is left before checkout.
-
-This story is stronger than:
-
-> A powerful grocery budgeting platform with AI scanning and analytics.
-
-## Founder/product story
-
-The strongest authentic narrative is problem-first:
-
-> “I wanted a simple way to shop with a hard limit like €50 without doing mental arithmetic through the whole store.”
-
-Do not manufacture a dramatic founder story.
-
-Use a concrete in-store situation because competitor evidence shows this framing resonates:
-
-- tired
-- rushing
-- many items
-- child/family distractions
-- checkout is too late
-
-## Naming strategy
-
-Apple recommends a name that is simple, memorable, easy to spell, distinctive, and hints at what the app does. Naming guidance from broader commerce practice similarly favors names that are memorable, pronounceable, searchable, and legally/domain-distinct.
-
-A good name for this product should score well on:
-
-| Criterion | Weight |
-|---|---:|
-| Easy to remember | 20 |
-| Easy to pronounce/spell | 15 |
-| Hints at remaining/cart/budget job | 20 |
-| Distinct from shopping-calculator clutter | 15 |
-| App Store search compatibility | 10 |
-| International readability | 10 |
-| Future-proof enough for P1 features | 5 |
-| Low obvious naming conflict risk | 5 |
-
-## Working name: CartRoom
-
-Current status:
-
-> working codename, not final trademark decision
-
-### Strengths
-
-- compact
-- easy to say
-- “room” maps to remaining capacity
-- can support the visual metaphor of remaining space
-- broader than “calculator”
-- not finance-heavy
-
-### Weaknesses
-
-- “room” has multiple unrelated meanings
-- the product function is not instantly obvious from the name alone
-- “cart” is heavily used across shopping apps
-- exact web search did not surface a major shopping-budget app called CartRoom at research time, but this is not trademark clearance
-
-### Current name score
-
-**81/100**
-
-Breakdown:
-
-- memorability: 17/20
-- pronunciation/spelling: 14/15
-- product meaning: 15/20
-- distinctiveness: 11/15
-- ASO/search compatibility: 7/10
-- international readability: 9/10
-- future-proofing: 5/5
-- obvious conflict/search risk: 3/5
-
-Interpretation:
-
-> **81/100 — good working codename, not strong enough to lock without trademark/domain/App Store research and user recall testing.**
-
-## Naming research warnings
-
-Current search surfaced existing adjacent or conflicting concepts:
-
-- **SpendRoom** already exists as a daily spend-board product
-- **Basketroom** exists as a retail brand/store
-- “Cart” is extremely saturated in App Store naming
-
-Therefore:
-
-- do not use SpendRoom
-- do not use BasketRoom
-- do not assume CartRoom is legally clear
-- do not commit package/app-store identity until trademark/domain/App Store checks are complete
-
-## Name direction families
-
-Future naming exploration should stay within one of these semantic territories:
-
-### A. Remaining capacity
-
-Meaning:
-
-> room left
-
-Advantages:
-
-- directly supports product thesis
-- differentiates from “calculator” names
-
-### B. Safe checkout
-
-Meaning:
-
-> confidence before paying
-
-Advantages:
-
-- emotionally clear
-- strong marketing story
-
-Risk:
-
-- can sound like checkout software
-
-### C. Cart control
-
-Meaning:
-
-> keep the cart within a boundary
-
-Advantages:
-
-- obvious shopping context
-
-Risk:
-
-- saturated naming category
-
-### D. Constraint / limit
-
-Meaning:
-
-> know the line
-
-Advantages:
-
-- precise
-
-Risk:
-
-- may feel restrictive or negative
-
-Do not pursue abstract coined names until the product has enough brand awareness to teach the meaning.
-
-## Tagline system
-
-### Primary
-
-> **Know what you can still afford before checkout.**
-
-Score: **98/100**
-
-Why:
-
-- outcome-first
-- no jargon
-- distinguishes pre-checkout timing
-- emotionally relevant without fear
-
-### Short
-
-> **Know what’s left.**
-
-Score: **91/100**
-
-Strong brand shorthand, but requires product context.
-
-### Functional
-
-> **Set a limit. Add prices. Know what’s left.**
-
-Score: **97/100**
-
-Excellent for landing page/store screenshots.
-
-### Avoid
-
-> Smarter grocery budgeting.
-
-Too generic.
-
-> AI-powered shopping intelligence.
-
-Wrong product promise.
-
-> Never overspend again.
-
-Absolute and untrustworthy.
-
-## Brand visual metaphor
+## Visual metaphor
 
 Primary metaphor:
 
-> **remaining space inside a boundary**
+> remaining room inside a limit
 
-This should influence:
+Useful expressions:
 
-- app icon
-- progress indicator
-- logo mark
-- animation
-- screenshot compositions
-
-Avoid primary metaphors:
-
-- piggy bank
-- bank card
-- wallet
-- calculator
-- shopping cart with currency symbol
-- AI sparkle
-
-Those are generic and make the product look interchangeable.
-
-## Logo / app icon direction
-
-Preferred:
-
-- simple rounded container
-- one open/remaining segment
-- strong negative space
-- no text
-- readable at favicon/app-icon size
-
-Potential shape:
-
-> a rounded C/container with an intentionally unfilled segment
-
-The empty segment represents room remaining.
-
-The mark should work:
-
-- monochrome
-- light/dark
-- small size
-- without gradient
-- without euro symbol
-
-## Colour identity
-
-Brand colour should not carry financial meaning alone.
-
-Recommended direction:
-
-- neutral warm surfaces
-- one distinctive accent
-- restrained semantic warning colours
-
-Do not lock exact hue until prototype testing.
-
-The accent should feel:
-
-- calm
-- modern
-- recognizable
-- non-bank
-- non-grocery-green
-
-Avoid default fintech:
-
-- navy + neon green
-- black + electric cyan
-- aggressive red/green
-
-## Typography identity
-
-Brand identity should come more from hierarchy and rhythm than exotic type.
-
-Preferred:
-
-- legible modern sans
-- large tabular numerals
-- confident weight
-- system/body typography where it improves accessibility
-
-If a custom display font is introduced, use it sparingly.
-
-## Brand motion
-
-Signature motion should express:
-
-> room shrinking / room remaining
-
-Examples:
-
-- remaining bar settles after price commit
-- number transitions cleanly
-- capacity visual contracts gently
+- capacity;
+- breathing room;
+- remaining space;
+- controlled boundary.
 
 Avoid:
 
-- coins
-- confetti
-- bouncing shopping carts
-- spinning logos
-- constant ambient animation
+- bank vaults;
+- stock charts;
+- coins raining;
+- grocery-cart clip art;
+- AI sparkles;
+- neon finance aesthetics.
 
-## Product copy library
+## Identity direction
+
+Brand identity should complement Calm Utility.
+
+Use:
+
+- restrained accent;
+- strong negative space;
+- simple memorable geometry;
+- premium typography/spacing;
+- iconography that reads at small sizes.
+
+Do not let the logo/brand mark overpower live financial information.
+
+## Product copy patterns
 
 ### Start
 
-> How much can you spend today?
+> Set your shopping limit
 
 ### Empty cart
 
-> Nothing in the cart yet.
-
-### Add
-
-> Add price
+> Add your first price
 
 ### Safe remaining
 
-> €18.58 safe to spend
+> €12.40 safe to spend
 
-### Normal remaining
+### Reserve use
 
-> €18.58 left
+> Uses €1.20 of your safety buffer
 
-### Near limit
+### Over budget
 
-> Close to your safety buffer.
+> €2.10 over your limit
 
-### Safety buffer reached
+### Persistence issue
 
-> €0.00 safe to spend.
+Use factual durability language and a recovery/retry action. No humour.
 
-Supporting copy:
+### Repeat price
 
-> Safety buffer reached · €1.44 remains in your nominal budget.
+> Remembered price
 
-### Over nominal budget
+and preserve an explicit:
 
-> €3.41 over your limit.
+> Enter current price
 
-### Persistence failure
+## Premium brand rule
 
-> This trip is not being saved right now. Keep this page open until checkout.
+Premium should be perceived through:
 
-### Exact finish
+- precision;
+- consistency;
+- restraint;
+- smooth feedback;
+- quality of states;
+- typography;
+- details that remove ambiguity.
 
-> Perfect landing. €0.00 left.
+Do not simulate premium through ornamental complexity.
 
-### Slightly close finish
+## Naming
 
-> That was close. Nicely done.
+The repository/public development identity is currently **Shopping Budget Companion**.
 
-## Brand trust principles
+Final commercial naming is not locked solely by this document.
 
-Trust is a marketing asset.
+Before locking a market name:
 
-The brand must never:
+- check category clarity;
+- trademark/conflict risk;
+- app-store/search collisions;
+- pronunciation/localisation;
+- fit with the remaining-room metaphor.
 
-- fake “live” prices
-- imply scanner accuracy it cannot guarantee
-- advertise features not shipped
-- advertise “AI” merely because OCR exists
-- hide core capability behind a surprise paywall
-- claim users will save a specific amount without evidence
-- shame users for exceeding a budget
-- claim financial advice
+Historical naming exploration belongs in marketing/research material, not current product contracts.
 
-## Monetization brand rule
+## Tagline criteria
 
-If commercialized:
+A tagline should:
 
-> monetization must feel fair to a budget-conscious user
+- express outcome, not technology;
+- be understandable without product explanation;
+- avoid unvalidated “save money” promises;
+- remain compatible with manual-first product value.
 
-Preferred hierarchy:
+Preferred current product promise is already strong enough; do not create extra slogan layers without a marketing need.
 
-1. core shopping loop free
-2. optional advanced capabilities
-3. transparent one-time/lifetime option if economics permit
-4. subscription only where ongoing service cost/value exists
+## Trust principles
 
-Competitor evidence shows pricing trust matters: Cart AI now explicitly markets “pay once, no subscription,” while GroceryBudget offers a generous free core with premium scanning/history.
+Never imply:
 
-## Brand architecture
+- a remembered price is current when it is not;
+- scanner/OCR capability is shipped before it is;
+- human timing/retention evidence passed when it has not;
+- local data is cloud-synced;
+- the app provides financial advice.
 
-For portfolio/PWA phase:
+## Monetisation brand rule
 
-- one product brand
-- no feature sub-brands
-- no “AI Smart Scan™”
-- no separate names for buffer/history/scanner
+If commercialisation occurs:
 
-Plain feature names build more trust.
+- core first value must remain understandable before payment;
+- avoid surprise/weekly-subscription dark patterns;
+- paid value should correspond to advanced/ongoing-cost capability;
+- pricing language must remain transparent.
 
-Potential exception:
+## Localisation
 
-A future scanner may have a descriptive label like:
+Translate meaning and action, not wordplay.
 
-> Scan price tag
+Critical money/status copy must remain:
 
-not a branded technology name.
+- short;
+- culturally neutral;
+- easy to scan;
+- unambiguous.
 
-## App-store category presentation
+## Brand acceptance questions
 
-Store name/title should combine brand + category intent without keyword stuffing.
-
-Pattern:
-
-> [Brand]: Shopping Budget
-
-or
-
-> [Brand] — Cart Budget
-
-Subtitle direction:
-
-> Know your total before checkout
-
-Avoid:
-
-> AI Grocery Expense Finance Tracker
-
-## Localization rule
-
-Brand name may remain global.
-
-Value proposition, screenshots, subtitle, description, and keywords should be localized.
-
-Do not assume English-only copy will convert equally across Finland/Europe.
-
-## Brand scorecard
-
-Current strategy:
-
-| Dimension | Score |
-|---|---:|
-| Product-brand fit | 99 |
-| Emotional clarity | 98 |
-| Trust model | 99 |
-| Differentiation | 94 |
-| Visual metaphor | 97 |
-| Voice system | 98 |
-| Naming readiness | 81 |
-| International readiness | 91 |
-| Monetization alignment | 96 |
-
-Overall brand-system readiness:
-
-> **95/100**
-
-The biggest unfinished area is final naming, not positioning.
-
-## Brand acceptance test
-
-Show only the name, icon direction, hero screen, and one sentence to a new person.
-
-They should be able to answer:
-
-1. Is this for shopping?
-2. Does it help before checkout?
-3. Does it show what I have left?
-4. Does it feel like a finance app?
-5. Does it feel judgmental?
-6. What would you expect to tap first?
-
-Target:
-
-- 80%+ correctly infer the core job without explanation
-- no strong “banking/crypto” interpretation
-- no strong “shopping list only” interpretation
-
-## Implementation status
-
-The public, QA, and beta builds use the same provisional remaining-room mark and shopping-specific browser identity.
-
-This does **not** lock:
-
-- the final commercial product name
-- the current accent hue as the final brand colour
-- a production app-icon family
-
-The public/default root now represents Shopping Budget Companion. Evidence gates continue to govern performance and retention claims, not which product shell is published.
-
-See [Brand implementation audit](../evidence/BRAND-IMPLEMENTATION-AUDIT.md) for the implementation evidence and anti-drift contract.
-
-## Maintenance rule
-
-Brand changes should be evidence-led.
-
-Do not rename or restyle because a trend changes.
-
-Revisit when:
-
-- usability research shows wrong category expectation
-- App Store conversion tests favor another message
-- final naming research finds conflict
-- target geography changes materially
+- Is the category clear?
+- Does the copy state the user outcome before features?
+- Does the interface feel premium without exclusive/luxury cues?
+- Does the product identity support trust with money?
+- Is humour absent from high-stakes states?
+- Is remembered/current uncertainty communicated honestly?
+- Could this messaging be confused with a finance dashboard or grocery super-app?
+- Does the brand reinforce a reason to choose the product over a calculator?

@@ -68,10 +68,10 @@ Reference adds rationale or future planning; it does not redefine current implem
 
 - [reference/FUNCTIONALITY.md](./reference/FUNCTIONALITY.md) — compact capability map
 - [reference/UX.md](./reference/UX.md) — practical interaction heuristics
-- [reference/BRAND.md](./reference/BRAND.md)
-- [reference/SCENARIOS.md](./reference/SCENARIOS.md)
+- [reference/BRAND.md](./reference/BRAND.md) — brand positioning/voice/identity
+- [reference/SCENARIOS.md](./reference/SCENARIOS.md) — compact product/UX challenge matrix
 - [reference/TECH-STACK.md](./reference/TECH-STACK.md) — current stack intent and dependency admission
-- [reference/MARKETING.md](./reference/MARKETING.md)
+- [reference/MARKETING.md](./reference/MARKETING.md) — evidence-aware go-to-market guidance
 - [reference/DESIGN-RATIONALE.md](./reference/DESIGN-RATIONALE.md)
 - [reference/FUTURE-QUALITY-PLANS.md](./reference/FUTURE-QUALITY-PLANS.md)
 
