@@ -385,7 +385,7 @@ Progress:
 - B3 Buffer / over-budget consequence states — **complete via PR #24**
 - B4 Quantity — **complete via PR #25**
 - B5 Commit / persist / return — **complete via PR #26**
-- B6 Correction minimum + quality gate — **automated/code gate implemented and green; representative human timing and physical one-hand/bright-store evidence remains unverified under explicit D-039 sequencing waiver**
+- B6 Correction minimum + quality gate — **automated/code gate implemented and green; QA v3 now structurally captures input method, one-handed/bright-store/default-text context and secondary physical spot-checks with v2 evidence migration; representative human timing and physical evidence itself remains unverified under explicit D-039 sequencing waiver**
 
 B5 closes the projection-to-canonical loop: the application controller creates the confirmed manual CartItem from the validated `unitPriceMinor + quantity` intent, commits it through the domain reducer, attempts persistence immediately, and returns the UI to canonical summary state. A failed storage write keeps the committed item in memory and surfaces degraded persistence rather than rolling back valid shopping state.
 
