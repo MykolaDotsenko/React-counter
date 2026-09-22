@@ -476,6 +476,25 @@ Good candidates:
 
 Do not create a brittle full-app screenshot suite for every animation frame.
 
+## Retention-beta evidence tests
+
+The guarded retention beta must remain a validation tool rather than a hidden analytics product.
+
+Test at unit/component/browser levels that:
+
+- malformed retained evidence falls back safely
+- event history is bounded
+- trip ordinals are session-relative rather than derived from shopping history
+- 1 / 5 / 10 item milestones deduplicate per trip
+- second-trip 7 / 14 / 30 day windows derive from timestamps only
+- reset is blocked during an active trip
+- a repeated-trip browser journey records new → finish → repeat → remembered reuse
+- the retention storage/export contains no money, item-name, product-id, memory-id, store-id, or checkout-total fields
+- recorder/storage failures never alter shopping behaviour
+- beta UI remains collapsed and accessible by default
+
+The beta harness must never be interpreted as a substitute for real-store observation, interviews, or cohort analysis.
+
 ## Performance checks
 
 Critical interactions should remain local and immediate.
