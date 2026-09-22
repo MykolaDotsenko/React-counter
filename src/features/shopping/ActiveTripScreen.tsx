@@ -253,16 +253,6 @@ export function ActiveTripScreen({
             </p>
           ) : null}
 
-          {onAdjustBudget ? (
-            <button
-              ref={adjustBudgetButtonRef}
-              type="button"
-              className={styles.adjustBudgetButton}
-              onClick={onAdjustBudget}
-            >
-              Adjust budget
-            </button>
-          ) : null}
         </section>
 
         {feedbackMessage || (state.undo !== null && onUndo) ? (
@@ -294,6 +284,16 @@ export function ActiveTripScreen({
             <span aria-hidden="true">+</span>
             <span>Add price</span>
           </button>
+          {onAdjustBudget ? (
+            <button
+              ref={adjustBudgetButtonRef}
+              type="button"
+              className={styles.adjustBudgetButton}
+              onClick={onAdjustBudget}
+            >
+              Adjust budget
+            </button>
+          ) : null}
           {onFinishTrip ? (
             <button
               ref={finishTripButtonRef}
