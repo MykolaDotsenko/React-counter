@@ -10,6 +10,17 @@ A **mobile-first, local-first shopping budget companion** built to answer one qu
 
 **Live app:** https://mykoladotsenko.github.io/shopping-budget-companion/
 
+
+<p align="center">
+  <img
+    src="docs/assets/shopping-budget-companion.png"
+    alt="Shopping Budget Companion active trip screen with a €50 budget"
+    width="390"
+  />
+</p>
+
+<p align="center"><em>Current mobile active-trip UI — captured from the repository in Chromium.</em></p>
+
 ---
 
 ## Product
