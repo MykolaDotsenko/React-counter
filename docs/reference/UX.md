@@ -1,5 +1,8 @@
 # UX
 
+> [!NOTE]
+> **Documentation role: supporting reference.** Use [../README.md](../README.md) for the authority model. This file preserves detailed UX heuristics and edge-case guidance; current authoritative product/design/spec contracts take precedence if wording diverges.
+
 ## Status
 
 This document defines the target user experience for the shopping budget companion.

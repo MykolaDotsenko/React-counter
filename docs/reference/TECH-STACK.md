@@ -1,5 +1,8 @@
 # Technology Stack
 
+> [!NOTE]
+> **Documentation role: supporting reference.** Use [../README.md](../README.md) for the authority model. This file records technology rationale and candidate sequencing; actual dependency/runtime state is defined by the codebase, package metadata, architecture decisions, and current authoritative contracts.
+
 ## Status
 
 Authoritative target technology stack for the shopping-budget product.

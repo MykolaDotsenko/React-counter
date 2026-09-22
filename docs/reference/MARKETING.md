@@ -1,5 +1,8 @@
 # Marketing Strategy
 
+> [!NOTE]
+> **Documentation role: supporting reference.** Use [../README.md](../README.md) for the authority model. Marketing strategy may describe future experiments, but it must not be read as shipped functionality or as permission to bypass current product/evidence gates.
+
 ## Status
 
 Target go-to-market and growth strategy for the shopping-budget product.

@@ -1,5 +1,8 @@
 # Scenario Architecture
 
+> [!NOTE]
+> **Documentation role: supporting reference.** Use [../README.md](../README.md) for the authority model. Scenario scores and exploratory cases inform prioritisation; they do not independently redefine shipped scope or current release gates.
+
 ## Status
 
 This document defines the target scenario model for the shopping budget companion.

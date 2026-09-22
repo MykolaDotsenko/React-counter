@@ -12,150 +12,27 @@ A **mobile-first, local-first shopping budget companion** built to answer one qu
 
 ---
 
-## Why this project is interesting
+## Product
 
-This is not a generic expense tracker.
+This is deliberately narrower than a generic expense tracker:
 
-The product is deliberately optimized for a narrow in-store job:
+**set a spending limit → add prices quickly → always know what remains**
 
-> **set a spending limit → add prices quickly → always know what remains**
+The core flow is local-first and account-free. The product prioritizes exact money, durable state, one-hand interaction, reversible corrections, accessibility, and evidence-based feature expansion.
 
-The engineering challenge is making that simple interaction trustworthy:
-
-- exact financial arithmetic
-- durable local persistence
-- explicit degraded-storage states
-- fast one-hand mobile interaction
-- reversible corrections
-- repeat-trip acceleration without pretending remembered prices are current
-- accessibility across keyboard, reduced motion, large text, forced colours, and multiple browser engines
-- evidence-driven release gates instead of unsupported product claims
-
-There is no required account, backend, bank connection, camera, or network service in the core flow.
-
----
-
-## Product flow
-
-### 1. Start a trip
-
-Choose a quick budget or enter a custom EUR amount.
-
-Optionally reserve a safety buffer.
-
-### 2. Add prices
-
-The common path is intentionally short:
-
-1. tap **Add price**
-2. enter the price
-3. optionally change quantity
-4. review projected remaining
-5. commit
-
-Canonical money is stored in integer minor units:
-
-```text
-€4.79  → 479
-€50.00 → 5000
-```
-
-No floating-point value is used as canonical financial state.
-
-### 3. See what remains
-
-The active screen is **remaining-first**, not spent-first.
-
-It distinguishes:
-
-- safe remaining
-- nominal remaining
-- safety-buffer use
-- nominal over-budget state
-
-Crossing the safety buffer is informational.
-
-Crossing the nominal budget requires explicit confirmation.
-
-### 4. Correct mistakes safely
-
-Supported corrections include:
-
-- Backspace / Clear / Cancel before commit
-- one-step Undo
-- edit price
-- edit quantity
-- remove item
-- adjust budget and safety buffer during an active trip
-
-### 5. Finish and reuse
-
-Completed trips are stored separately from the active trip.
-
-Returning shoppers can:
-
-- **Shop again** with the previous spending plan
-- inspect lightweight trip history
-- reuse Recent Items
-- use local Price Memory
-- always choose **Enter current price** instead
-
-Remembered prices remain explicitly advisory and visibly dated.
+Returning shoppers can reuse a previous spending plan, Recent Items, and local Price Memory while always retaining an explicit **Enter current price** path.
 
 ---
 
 ## Engineering highlights
 
-### Exact money domain
-
-Financial logic lives in a pure TypeScript domain layer.
-
-React does not independently calculate:
-
-- line totals
-- cart total
-- remaining budget
-- safe remaining
-- over-budget state
-
-Property-based tests cover money and domain invariants.
-
-### Local-first durability
-
-Persistence is:
-
-- versioned
-- runtime-validated with Zod
-- reconstructed through domain constructors
-- isolated from React
-- explicit about degraded writes
-
-If a valid in-memory mutation cannot be persisted, the app keeps the valid state visible and reports degraded durability instead of pretending it was saved.
-
-### Loss-safe completion and history
-
-Trip completion uses reconciliation-aware persistence.
-
-Important cases are covered:
-
-- history write succeeds before active-trip cleanup
-- failed history write keeps the active trip recoverable
-- stale active copies are reconciled without duplicating completed trips
-- destructive history changes use persist-before-publish semantics
-
-### Independent Price Memory
-
-Price Memory is a separate advisory persistence concern.
-
-That separation prevents a Price Memory failure from degrading an otherwise healthy active cart/history record.
-
-### One canonical application state
-
-The application uses a plain TypeScript `ShoppingAppController` plus `useSyncExternalStore`.
-
-No Redux, Zustand, XState, router, or backend is required for the current product.
-
----
+- **Exact money:** canonical financial state uses integer minor units, never binary floating point.
+- **Pure domain rules:** totals, remaining budget, safety buffer, projections, and over-budget state live outside React.
+- **Local-first durability:** versioned Zod-validated persistence with explicit degraded-write and recovery states.
+- **Loss-safe completion:** history and active-trip cleanup are reconciliation-aware.
+- **Independent Price Memory:** advisory remembered prices cannot corrupt active-cart/history durability.
+- **Proportional state architecture:** a plain TypeScript `ShoppingAppController` + `useSyncExternalStore`; no Redux/Zustand/XState/router/backend required.
+- **Evidence separation:** QA timing and retention instrumentation never become product state.
 
 ## Architecture
 
@@ -171,123 +48,51 @@ Application ports
 Browser infrastructure adapters
 ```
 
-Responsibilities stay deliberately narrow:
-
 | Layer | Owns |
 | --- | --- |
 | **Domain** | money, trip invariants, projections, selectors |
 | **Application** | lifecycle, commands, Undo, persistence ordering, recovery |
 | **Infrastructure** | storage schemas, localStorage adapters, runtime boundaries |
 | **UI** | rendering, drafts, focus, accessibility, interaction feedback |
-| **QA** | timing and retention evidence that never becomes product state |
+| **QA** | timing and retention evidence only |
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md).
+See [Architecture](./docs/ARCHITECTURE.md).
 
 ---
 
 ## Tech stack
 
-### Runtime
+**Runtime:** React 19.3, TypeScript 6 strict, Vite 8, Zod 4, CSS Modules, native Web APIs, versioned `localStorage`.
 
-- React 19.3
-- TypeScript 6 strict
-- Vite 8
-- Zod 4
-- CSS Modules
-- native Web APIs
-- versioned `localStorage`
+**Quality:** ESLint 10, Vitest 5, React Testing Library, user-event, fast-check, Playwright, axe-core, GitHub Actions.
 
-### Quality
-
-- ESLint 10
-- Vitest 5
-- React Testing Library
-- `@testing-library/user-event`
-- fast-check
-- Playwright
-- `@axe-core/playwright`
-- GitHub Actions
-
-The dependency budget is intentionally small. A dependency is added only when a product requirement earns it.
+The runtime dependency budget is intentionally small; new dependencies must earn their product value.
 
 ---
 
 ## Quality gates
 
-Core gate:
-
 ```bash
 npm ci
 npm run check
-```
-
-`npm run check` runs:
-
-1. ESLint
-2. strict TypeScript
-3. unit/component tests
-4. production build
-
-Browser gate:
-
-```bash
 npm run test:e2e
 ```
 
-CI runs browser and accessibility coverage independently in:
+`npm run check` runs lint, strict TypeScript, unit/component tests, and a production build.
 
-- Chromium
-- Firefox
-- WebKit
+CI additionally validates:
 
-Automated coverage also includes:
-
+- Chromium, Firefox, and WebKit
+- browser-level accessibility
 - 360×800 and 390×844 mobile layouts
 - 200% text sizing
 - reduced motion
 - keyboard/focus behavior
 - forced-colours critical paths
-- axe WCAG A/AA checks
-- active-trip reload/restore
-- storage failure and recovery
+- reload/restore and storage failure recovery
 - exact-money flagship journeys
 - independent history / Price Memory deletion semantics
-- guarded QA and retention-beta builds
-
----
-
-## Validation builds
-
-The public root is the actual Shopping Budget Companion.
-
-Two separate internal builds support evidence collection:
-
-### Timing QA
-
-https://mykoladotsenko.github.io/shopping-budget-companion/qa/
-
-Used for representative one-hand timing and physical usability evidence.
-
-The documented manual-entry target remains **unverified until real-device evidence is collected**. Automated Playwright timings are not used as a substitute for human interaction data.
-
-### Retention beta
-
-https://mykoladotsenko.github.io/shopping-budget-companion/beta/
-
-Used for the Phase 8 real-store retention study.
-
-The beta recorder is local-only and intentionally excludes:
-
-- prices
-- budgets
-- item names
-- store history
-- account identity
-- network telemetry
-
-Real second-trip / third-trip validation is still pending.
-
-See [docs/RETENTION-BETA-PLAYBOOK.md](./docs/RETENTION-BETA-PLAYBOOK.md).
+- QA and retention-beta builds
 
 ---
 
@@ -296,19 +101,17 @@ See [docs/RETENTION-BETA-PLAYBOOK.md](./docs/RETENTION-BETA-PLAYBOOK.md).
 ### Engineering
 
 - ✅ exact EUR money model
-- ✅ shopping trip domain
+- ✅ shopping-trip domain
 - ✅ local-first active-trip persistence
 - ✅ remaining-first UI
 - ✅ fast manual price entry
 - ✅ quantity and projected totals
 - ✅ reserve / over-budget states
-- ✅ Undo, edit, remove, budget adjustment
+- ✅ Undo, edit, remove, and budget adjustment
 - ✅ persistence-health and recovery UX
 - ✅ trip completion and reconciliation
-- ✅ lightweight completed-trip history
-- ✅ Shop again
-- ✅ Recent Items
-- ✅ Price Memory
+- ✅ completed-trip history and Shop again
+- ✅ Recent Items and Price Memory
 - ✅ local-data controls
 - ✅ privacy-safe retention evidence harness
 - ✅ cohort-level retention analysis
@@ -321,7 +124,12 @@ See [docs/RETENTION-BETA-PLAYBOOK.md](./docs/RETENTION-BETA-PLAYBOOK.md).
 - ⏳ 20–50 real-shopper retention beta
 - ⏳ measured second-trip and third-trip behavior
 
-PWA, barcode, and OCR breadth remain intentionally gated behind product evidence.
+PWA, barcode, and OCR breadth remain evidence-gated.
+
+Internal evidence builds:
+
+- **Timing QA:** https://mykoladotsenko.github.io/shopping-budget-companion/qa/
+- **Retention beta:** https://mykoladotsenko.github.io/shopping-budget-companion/beta/
 
 ---
 
@@ -339,17 +147,16 @@ src/
 
 tests/               # unit + component + application tests
 e2e/                 # Playwright browser/a11y journeys
-docs/                # detailed product, QA, and technical contracts
+docs/                # current contracts, specs, evidence and reference material
 ```
+
+The repository root intentionally stays small. Start with the [documentation map](./docs/README.md) instead of browsing individual Markdown files at random.
 
 ---
 
 ## Run locally
 
-Requirements:
-
-- Node.js 24+
-- npm
+Requirements: Node.js 24+ and npm.
 
 ```bash
 git clone https://github.com/MykolaDotsenko/shopping-budget-companion.git
@@ -367,54 +174,41 @@ npm run preview
 
 ---
 
-## Key documentation
+## Documentation
 
-The repository is documentation-driven, but the main entry points are intentionally limited:
+The authoritative entry point is [docs/README.md](./docs/README.md).
 
-- [PRODUCT.md](./PRODUCT.md) — product thesis and scope
-- [ROADMAP.md](./ROADMAP.md) — implementation sequence and evidence gates
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — ownership and dependency boundaries
-- [DOMAIN.md](./DOMAIN.md) — business invariants
-- [TESTING.md](./TESTING.md) — quality strategy
-- [docs/DATA-PERSISTENCE.md](./docs/DATA-PERSISTENCE.md) — storage and recovery contract
-- [docs/SPRINT-B-QUALITY-GATE.md](./docs/SPRINT-B-QUALITY-GATE.md) — human timing evidence contract
-- [docs/RETENTION-BETA-PLAYBOOK.md](./docs/RETENTION-BETA-PLAYBOOK.md) — real-store retention protocol
+Key current contracts:
 
-Detailed specs remain under [docs/specs/](./docs/specs/).
+- [Product](./docs/PRODUCT.md)
+- [Architecture](./docs/ARCHITECTURE.md)
+- [Domain](./docs/DOMAIN.md)
+- [Design](./docs/DESIGN.md)
+- [Roadmap](./docs/ROADMAP.md)
+- [Testing](./docs/TESTING.md)
+- [Data persistence](./docs/architecture/DATA-PERSISTENCE.md)
+- [Decision log](./docs/DECISIONS.md)
+- [Detailed specs](./docs/specs/)
 
----
-
-## Design philosophy
-
-The interface follows a **Calm Utility** direction:
-
-- clear remaining-first hierarchy
-- warm neutral surfaces
-- one dominant action
-- restrained semantic colour
-- light mode suitable for bright stores
-- dark-mode equivalent
-- predictable focus
-- reduced-motion equivalence
-- no colour-only financial meaning
-
-The UI is intentionally less decorative than many portfolio demos because the product's job is to stay understandable while someone is actively shopping.
+Supporting research, scenario analysis, execution history, and evidence protocols are indexed separately so they do not compete with current contracts.
 
 ---
 
-## What this project demonstrates to a reviewer
+## What this project demonstrates
 
-This repository is primarily a case study in:
+This repository is a case study in:
 
 - translating a real product constraint into domain rules
 - designing exact-money state instead of UI-level arithmetic
 - handling persistence failure honestly
 - keeping architecture proportional
 - separating product state from QA evidence
-- testing risky user journeys across browser engines
+- testing risky journeys across browser engines
 - building accessibility into interaction contracts
 - using empirical gates to decide what **not** to build yet
 
-The goal is not framework breadth.
+The goal is not framework breadth. It is a small product that is technically disciplined, testable, and explicit about what has — and has not — been validated.
 
-It is a small product that is technically disciplined, testable, and explicit about what has — and has not — been validated.
+## License
+
+MIT — see [LICENSE](./LICENSE).
