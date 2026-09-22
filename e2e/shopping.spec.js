@@ -1058,6 +1058,46 @@ test("records privacy-safe retention evidence across a repeated trip", async ({
   );
 });
 
+test("records an active-trip restore without placing beta UI over the trip", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  await expect(
+    page.getByRole("button", { name: "Beta evidence" }),
+  ).toHaveCount(0);
+
+  await page.reload();
+
+  await expect(
+    page.getByRole("heading", { name: "Know what’s left" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Beta evidence" }),
+  ).toHaveCount(0);
+
+  const evidence = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw === null ? null : JSON.parse(raw);
+  }, RETENTION_BETA_KEY);
+
+  expect(evidence).not.toBeNull();
+  expect(evidence.events).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "new",
+      }),
+      expect.objectContaining({
+        type: "trip_restored",
+        tripOrdinal: 1,
+      }),
+    ]),
+  );
+});
+
 test("never clears the active trip when completed-history persistence fails", async ({
   page,
 }) => {
