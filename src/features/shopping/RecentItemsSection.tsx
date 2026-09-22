@@ -7,6 +7,7 @@ import {
   type PriceMemoryRecord,
 } from "../../domain/price-memory";
 import {
+  isoTimestamp,
   projectAddItem,
   type ActiveTrip,
   type IsoTimestamp,
@@ -16,7 +17,7 @@ import styles from "./RecentItemsSection.module.css";
 export interface RecentItemsSectionProps {
   readonly trip: ActiveTrip;
   readonly records: readonly PriceMemoryRecord[];
-  readonly now: IsoTimestamp;
+  readonly now?: IsoTimestamp;
   readonly onUseRemembered: (
     record: PriceMemoryRecord,
   ) => boolean | void;
@@ -58,6 +59,16 @@ const absoluteMoney = (
   return formatEur(amount.value, locale);
 };
 
+const currentTimestamp = (): IsoTimestamp => {
+  const parsed = isoTimestamp(new Date().toISOString());
+
+  if (!parsed.ok) {
+    throw new RangeError("Browser produced an invalid canonical timestamp");
+  }
+
+  return parsed.value;
+};
+
 export function RecentItemsSection({
   trip,
   records,
@@ -68,6 +79,7 @@ export function RecentItemsSection({
   limit = 4,
   persistenceDegraded = false,
 }: RecentItemsSectionProps) {
+  const effectiveNow = now ?? currentTimestamp();
   const recent = useMemo(
     () => recentPriceMemories(records, { limit }),
     [limit, records],
@@ -125,7 +137,7 @@ export function RecentItemsSection({
                   {formatEur(record.unitPriceMinor, locale)}
                 </span>
                 <small>
-                  Remembered · {ageLabel(record, now)}
+                  Remembered · {ageLabel(record, effectiveNow)}
                   {record.storeId === undefined ? "" : " · Store-specific"}
                 </small>
               </div>
@@ -203,6 +215,7 @@ export function RecentItemsSection({
                   <button
                     type="button"
                     className={styles.secondaryButton}
+                    data-current-price-memory-id={record.id}
                     onClick={() => {
                       setPendingId(null);
                       setErrorMessage("");
