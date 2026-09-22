@@ -206,7 +206,7 @@ npm run check
 npm run test:e2e
 ```
 
-`npm run check` covers lint, strict TypeScript, unit/component tests and production build.
+`npm run check` covers documentation validation, lint, strict TypeScript, unit/component tests and production build.
 
 Add regression coverage when changing:
 
@@ -261,7 +261,7 @@ While editing:
 Before declaring complete:
 
 1. verify code ↔ docs ↔ tests;
-2. run quality gates;
+2. run quality gates, including documentation validation;
 3. inspect changed-file scope;
 4. confirm no generated/build artifacts entered the repo;
 5. disclose any unverified human/evidence gate.
