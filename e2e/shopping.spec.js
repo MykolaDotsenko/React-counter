@@ -874,7 +874,7 @@ test("learns named completed items, reuses remembered prices, and keeps current-
   await expect(page.getByText(/Remembered · Seen/)).toBeVisible();
 
   await page
-    .getByRole("button", { name: "Use remembered price" })
+    .getByRole("button", { name: "Use remembered price for Milk 1L" })
     .click();
 
   await expect(
