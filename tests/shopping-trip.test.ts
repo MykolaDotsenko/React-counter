@@ -18,6 +18,7 @@ import {
   lineTotal,
   nominalOverage,
   projectAddItem,
+  projectSpendingPlan,
   reduceTrip,
   remaining,
   safeLimit,
@@ -700,6 +701,32 @@ describe("trip reducer", () => {
       }),
       "invalid-buffer",
     );
+  });
+
+  it("projects a proposed spending plan without mutating canonical trip state", () => {
+    let trip = createTrip(5_000, 200);
+    trip = addItem(
+      trip,
+      createItem({ id: "plan-preview-item", price: 4_500 }),
+    );
+
+    const projection = unwrap(
+      projectSpendingPlan(
+        trip,
+        money(4_000),
+        money(500),
+      ),
+    );
+
+    expect(projection).toEqual({
+      cartTotalMinor: 4_500,
+      remainingMinor: -500,
+      safeRemainingMinor: -1_000,
+      crossesSafeLimit: true,
+      crossesNominalBudget: true,
+    });
+    expect(trip.budgetMinor).toBe(5_000);
+    expect(trip.safetyBufferMinor).toBe(200);
   });
 
   it("updates budget and safety buffer atomically against the final pair", () => {
