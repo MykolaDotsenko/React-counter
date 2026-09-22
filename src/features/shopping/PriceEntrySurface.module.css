@@ -492,9 +492,9 @@
 }
 
 .labelDetails summary span {
+  color: var(--text);
   font-size: 0.72rem;
-  font-weight: 650;
-  opacity: 0.8;
+  font-weight: 700;
 }
 
 .labelDetails summary:focus-visible {
@@ -591,19 +591,22 @@
 
 @media (max-height: 860px) {
   .sheet {
-    gap: 8px;
-    padding-block: 10px;
+    gap: 6px;
+    padding-block: 8px;
   }
 
   .modeGroup {
-    gap: 3px;
+    gap: 2px;
   }
 
   .modeHint,
-  .utilityRow p,
+  .utilityRow p {
+    display: none;
+  }
+
   .status {
     font-size: 0.76rem;
-    line-height: 1.3;
+    line-height: 1.25;
   }
 
   .amountBlock {
@@ -630,6 +633,20 @@
 
   .addButton {
     min-height: 52px;
+  }
+
+  .labelDetails {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .labelDetails summary {
+    min-height: 32px;
+    font-size: 0.76rem;
+  }
+
+  .labelDetails summary span {
+    font-size: 0.7rem;
   }
 }
 
