@@ -6,7 +6,6 @@ const LEGACY = Object.freeze({
   description:
     'content="Pulse Counter — a polished React micro-interaction case study focused on motion, accessibility and proportional architecture."',
   theme: '<meta name="theme-color" content="#070810" />',
-  favicon: '<link rel="icon" type="image/svg+xml" href="/favicon.svg" />',
 });
 
 const SHOPPING_MARK_FILE = "shopping-mark.svg";
@@ -19,6 +18,16 @@ const replaceRequired = (html, from, to, label) => {
   }
 
   return html.replace(from, to);
+};
+
+const replaceRequiredPattern = (html, pattern, to, label) => {
+  if (!pattern.test(html)) {
+    throw new Error(
+      `Guarded build branding could not find expected ${label}`,
+    );
+  }
+
+  return html.replace(pattern, to);
 };
 
 export const applyGuardedBuildBrandingHtml = (
@@ -54,9 +63,9 @@ export const applyGuardedBuildBrandingHtml = (
     ].join("\n    "),
     "theme metadata",
   );
-  next = replaceRequired(
+  next = replaceRequiredPattern(
     next,
-    LEGACY.favicon,
+    /<link rel="icon" type="image\/svg\+xml" href="[^"]*favicon\.svg" \/>/,
     `<link rel="icon" type="image/svg+xml" href="./${SHOPPING_MARK_FILE}" />`,
     "favicon",
   );
