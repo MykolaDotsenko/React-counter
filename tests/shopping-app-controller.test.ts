@@ -52,6 +52,34 @@ const createTrip = (
     }),
   );
 
+const createCompletedTrip = (
+  id: string,
+  completedAt: string,
+  budgetMinor = 5_000,
+  safetyBufferMinor = 0,
+): CompletedTrip => {
+  const active = unwrap(
+    createActiveTrip({
+      id,
+      budgetMinor: money(budgetMinor),
+      safetyBufferMinor: money(safetyBufferMinor),
+      startedAt: START,
+    }),
+  );
+  const completed = unwrap(
+    reduceTrip(active, {
+      type: "complete-trip",
+      completedAt: time(completedAt),
+    }),
+  );
+
+  if (completed.status !== "completed") {
+    throw new Error("Expected completed trip");
+  }
+
+  return completed;
+};
+
 type BootstrapInput = ActiveTripBootstrapResult extends infer T
   ? T extends ActiveTripBootstrapResult
     ? Omit<T, "completedTrips" | "completionCleanupPending"> & {
@@ -637,6 +665,160 @@ describe("ShoppingAppController startTrip", () => {
       error: {
         kind: "application",
         code: "recovery-required",
+      },
+    });
+    expect(persistence.saveCalls).toHaveLength(0);
+  });
+});
+
+describe("ShoppingAppController repeat trip", () => {
+  it("starts a fresh empty trip from a completed spending plan and preserves history", () => {
+    const source = createCompletedTrip(
+      "completed-source",
+      NEXT,
+      7_500,
+      500,
+    );
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: null,
+      completedTrips: [source],
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.startTripFromCompleted(source.id);
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected repeat-trip success");
+    }
+
+    expect(result.state.lifecycle).toBe("active");
+    expect(result.state.activeTrip).toMatchObject({
+      id: "trip-generated",
+      budgetMinor: 7_500,
+      safetyBufferMinor: 500,
+      items: [],
+      startedAt: LATER,
+    });
+    expect(result.state.activeTrip?.id).not.toBe(source.id);
+    expect(result.state.completedTrips).toEqual([source]);
+    expect(result.state.completedSummary).toBeNull();
+    expect(persistence.saveCalls).toHaveLength(1);
+    expect(persistence.saveCalls[0]?.trip).toBe(result.state.activeTrip);
+    expect(persistence.saveCalls[0]?.savedAt).toBe(LATER);
+  });
+
+  it("can shop again directly from a healthy completed summary", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 200),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    const finished = controller.completeTrip();
+    expect(finished.ok).toBe(true);
+
+    const source = controller.getSnapshot().completedSummary;
+
+    if (source === null) {
+      throw new Error("Expected completed summary");
+    }
+
+    const repeated = controller.startTripFromCompleted(source.id);
+
+    expect(repeated.ok).toBe(true);
+
+    if (!repeated.ok) {
+      throw new Error("Expected direct repeat-trip success");
+    }
+
+    expect(repeated.state).toMatchObject({
+      lifecycle: "active",
+      completedSummary: null,
+      activeTrip: {
+        budgetMinor: 5_000,
+        safetyBufferMinor: 200,
+        items: [],
+        startedAt: LATER,
+      },
+    });
+    expect(repeated.state.completedTrips).toHaveLength(1);
+  });
+
+  it("blocks repeat when completed persistence is degraded or cleanup is pending", () => {
+    const source = createCompletedTrip("repeat-source", NEXT);
+    const issue: PersistenceProblem = {
+      code: "history-read-failed",
+      storageKey: "budget-cart:history",
+    };
+    const persistence = createPersistence({
+      ok: false,
+      activeTrip: null,
+      completedTrips: [source],
+      completionCleanupPending: true,
+      issue,
+      recoveryRequired: false,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.startTripFromCompleted(source.id);
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        kind: "application",
+        code: "repeat-source-unavailable",
+      },
+    });
+    expect(persistence.saveCalls).toHaveLength(0);
+    expect(controller.getSnapshot().completedTrips).toEqual([source]);
+  });
+
+  it("rejects a missing completed source without creating or persisting a trip", () => {
+    const source = createCompletedTrip("known-source", NEXT);
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: null,
+      completedTrips: [source],
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const missing = unwrap(
+      createActiveTrip({
+        id: "missing-source",
+        budgetMinor: money(1_000),
+        startedAt: START,
+      }),
+    ).id;
+
+    const result = controller.startTripFromCompleted(missing);
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        kind: "application",
+        code: "completed-trip-not-found",
       },
     });
     expect(persistence.saveCalls).toHaveLength(0);
