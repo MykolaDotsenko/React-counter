@@ -75,9 +75,8 @@ Events:
 
 - SET_ACTUAL_CHECKOUT → COMPLETED_SUMMARY
 - SHOP_AGAIN(healthy completed source) → ACTIVE with a fresh empty trip using the source budget/buffer
-- START_NEW_TRIP → ACTIVE
-- DISMISS_SUMMARY → IDLE
-- CONTINUE_SHOPPING → ACTIVE only through the explicitly defined immediate-recovery path
+- DISMISS_SUMMARY → IDLE; a normal new trip may then start from IDLE
+- CONTINUE_SHOPPING → ACTIVE only through the explicitly defined deferred immediate-recovery path
 
 ### RECOVERY
 
