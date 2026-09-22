@@ -40,7 +40,9 @@ import { ShoppingTimingQaPanel } from "../qa/ShoppingTimingQaPanel";
 import {
   appendRetentionBetaEvent,
   createRetentionBetaSession,
+  currentRetentionTripOrdinal,
   loadRetentionBetaSession,
+  nextRetentionTripOrdinal,
   persistRetentionBetaSession,
   type RetentionBetaEvent,
   type RetentionBetaSession,
@@ -265,14 +267,21 @@ export function ShoppingAppShell({
     );
   };
 
-  const activeTripOrdinal = (): number => {
-    const snapshot = controller.getSnapshot();
-    return snapshot.completedTrips.length + 1;
+  const activeTripOrdinal = (): number | null => {
+    if (betaSession === null) {
+      return null;
+    }
+
+    return currentRetentionTripOrdinal(betaSession);
   };
 
   const recordTripStarted = (
     source: RetentionBetaTripSource,
   ): void => {
+    if (betaSession === null) {
+      return;
+    }
+
     const snapshot = controller.getSnapshot();
 
     if (snapshot.activeTrip === null) {
@@ -282,7 +291,7 @@ export function ShoppingAppShell({
     recordBetaEvent({
       type: "trip_started",
       at: new Date().toISOString(),
-      tripOrdinal: snapshot.completedTrips.length + 1,
+      tripOrdinal: nextRetentionTripOrdinal(betaSession),
       source,
     });
   };
@@ -515,7 +524,7 @@ export function ShoppingAppShell({
               recordBetaEvent({
                 type: "manual_entry_abandoned",
                 at: new Date().toISOString(),
-                tripOrdinal: activeTripOrdinal(),
+                tripOrdinal: activeTripOrdinal() ?? 1,
               });
               betaManualStartedAtRef.current = null;
             }
@@ -526,7 +535,7 @@ export function ShoppingAppShell({
           }}
           onValidatedItem={(intent: ValidatedItemIntent) => {
             const beforeCount = itemCount(state.activeTrip);
-            const tripOrdinal = activeTripOrdinal();
+            const tripOrdinal = activeTripOrdinal() ?? 1;
             const result = controller.addManualItem(intent);
 
             if (
@@ -639,18 +648,20 @@ export function ShoppingAppShell({
             returnFocusToFinishTrip();
           }}
           onConfirm={() => {
-            const tripOrdinal = state.completedTrips.length + 1;
+            const tripOrdinal = activeTripOrdinal() ?? 1;
             const result = controller.completeTrip();
 
             if (!result.ok) {
               return false;
             }
 
-            recordBetaEvent({
-              type: "trip_finished",
-              at: new Date().toISOString(),
-              tripOrdinal,
-            });
+            if (tripOrdinal !== null) {
+              recordBetaEvent({
+                type: "trip_finished",
+                at: new Date().toISOString(),
+                tripOrdinal,
+              });
+            }
             setOverlay({ kind: "none" });
             return true;
           }}
@@ -860,7 +871,7 @@ export function ShoppingAppShell({
           recordBetaEvent({
             type: "current_price_override_started",
             at: new Date().toISOString(),
-            tripOrdinal: activeTripOrdinal(),
+            tripOrdinal: activeTripOrdinal() ?? 1,
           });
 
           if (betaEvidenceEnabled) {
