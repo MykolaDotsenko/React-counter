@@ -624,6 +624,39 @@ No evidence is transmitted over the network. The tester/researcher manually copi
 
 The harness is an **instrument**, not evidence by itself. Second-trip and third-trip conclusions require real shoppers using the app in real shopping contexts.
 
+## Guarded retention-beta evidence harness
+
+Phase 8 now includes a guarded internal beta build at the repository's `/beta/` Pages path.
+
+The harness is intentionally local-first:
+
+- no analytics SDK
+- no network telemetry
+- no budget values
+- no item prices
+- no item names
+- no product or memory identifiers
+- no store history
+- no camera content
+
+It records only validation structure:
+
+- trip started: new / repeat / resume
+- trip restored
+- trip finished
+- item milestones: 1 / 5 / 10
+- manual entry completed / abandoned
+- manual-entry duration
+- remembered item used
+- current-price override started
+- timestamps needed for 7 / 14 / 30 day second-trip analysis
+
+Evidence is stored locally on the beta device and copied manually as JSON for cohort analysis.
+
+Reset is blocked during an active trip so event ordinals cannot become detached from the current trip.
+
+This instrumentation supports the retention gate; it does **not** pass the gate by itself.
+
 ## Real-store beta
 
 Minimum recommended cohort:
