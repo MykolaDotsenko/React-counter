@@ -10,6 +10,7 @@ import {
   lineTotal,
   remaining,
   type CompletedTrip,
+  type TripId,
 } from "../../domain/shopping-trip";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./HistoryScreen.module.css";
@@ -23,7 +24,7 @@ export interface HistoryScreenProps {
 
 type ConfirmationState =
   | { readonly kind: "none" }
-  | { readonly kind: "delete-trip"; readonly tripId: string }
+  | { readonly kind: "delete-trip"; readonly tripId: TripId }
   | { readonly kind: "clear-history" }
   | { readonly kind: "clear-price-memory" };
 
@@ -122,7 +123,7 @@ export function HistoryScreen({
     setErrorMessage("");
   };
 
-  const restoreDeleteTripFocus = (tripId: string): void => {
+  const restoreDeleteTripFocus = (tripId: TripId): void => {
     queueMicrotask(() => {
       const buttons = document.querySelectorAll<HTMLButtonElement>(
         "[data-delete-trip-id]",
@@ -160,11 +161,9 @@ export function HistoryScreen({
     onTripStarted?.();
   };
 
-  const deleteTrip = (tripId: string): void => {
+  const deleteTrip = (tripId: TripId): void => {
     resetMessages();
-    const result = controller.deleteCompletedTrip(
-      tripId as CompletedTrip["id"],
-    );
+    const result = controller.deleteCompletedTrip(tripId);
 
     if (!result.ok) {
       setErrorMessage(
