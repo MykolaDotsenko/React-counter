@@ -14,6 +14,7 @@ It complements:
 - DESIGN.md — interface visual system
 - MARKETING.md — acquisition and growth strategy
 - docs/marketing/RESEARCH.md — external evidence and case studies
+- docs/BRAND-IMPLEMENTATION-AUDIT.md — implementation evidence, provisional identity boundary, and drift checks
 
 ## Brand job
 
@@ -704,6 +705,20 @@ Target:
 - 80%+ correctly infer the core job without explanation
 - no strong “banking/crypto” interpretation
 - no strong “shopping list only” interpretation
+
+## Implementation status
+
+The guarded shopping builds now use a provisional remaining-room mark and shopping-specific browser metadata rather than inheriting the Pulse Counter favicon/title.
+
+This does **not** lock:
+
+- the final commercial product name
+- the current accent hue as the final brand colour
+- a production app-icon family
+
+The public/default root still intentionally represents Pulse Counter until the release gate permits the shopping-shell switch.
+
+See [docs/BRAND-IMPLEMENTATION-AUDIT.md](./docs/BRAND-IMPLEMENTATION-AUDIT.md) for the implementation evidence and anti-drift contract.
 
 ## Maintenance rule
 
