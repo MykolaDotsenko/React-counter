@@ -42,6 +42,10 @@ export interface ShoppingPersistencePort {
     trip: CompletedTrip,
     savedAt: IsoTimestamp,
   ): ActiveTripSaveResult;
+  replaceCompletedHistory(
+    trips: readonly CompletedTrip[],
+    savedAt: IsoTimestamp,
+  ): ActiveTripSaveResult;
   clearCompletedActive(): ActiveTripSaveResult;
 }
 
@@ -180,6 +184,7 @@ export type ApplicationError =
         | "completion-not-saved"
         | "completed-trip-not-found"
         | "repeat-source-unavailable"
+        | "history-write-unavailable"
         | "price-memory-not-found";
     }
   | DomainError;
@@ -222,6 +227,8 @@ export interface ShoppingAppController {
     actualCheckoutMinor: MinorUnits,
   ) => AppCommandResult;
   readonly dismissCompletedSummary: () => AppCommandResult;
+  readonly deleteCompletedTrip: (tripId: TripId) => AppCommandResult;
+  readonly clearCompletedHistory: () => AppCommandResult;
   readonly retryPersistence: () => AppCommandResult;
   readonly dispatch: (command: ActiveTripCommand) => AppCommandResult;
 }
@@ -933,6 +940,94 @@ export const createShoppingAppController = ({
     return success(nextState, true, "unchanged");
   };
 
+  const replaceCompletedHistory = (
+    nextTrips: readonly CompletedTrip[],
+  ): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (state.activeTrip !== null) {
+      return failure(state, applicationError("active-trip-exists"));
+    }
+
+    if (
+      state.persistence.status === "degraded" ||
+      state.completionCleanupPending
+    ) {
+      return failure(
+        state,
+        applicationError("history-write-unavailable"),
+      );
+    }
+
+    const now = clock.now();
+    const saveResult = persistence.replaceCompletedHistory(
+      nextTrips,
+      now,
+    );
+
+    if (!saveResult.ok) {
+      const nextState = publish({
+        ...state,
+        persistence: degradedPersistence(saveResult.issue, now),
+      });
+
+      return failure(
+        nextState,
+        applicationError("history-write-unavailable"),
+      );
+    }
+
+    const completedSummaryStillExists =
+      state.completedSummary === null ||
+      nextTrips.some((trip) => trip.id === state.completedSummary?.id);
+
+    const nextState = publish({
+      ...state,
+      lifecycle:
+        completedSummaryStillExists ? state.lifecycle : "idle",
+      completedSummary: completedSummaryStillExists
+        ? state.completedSummary
+        : null,
+      completedTrips: Object.freeze([...nextTrips]),
+      persistence: HEALTHY_PERSISTENCE,
+      undo: null,
+      recovery: null,
+    });
+
+    return success(nextState, true, "persisted");
+  };
+
+  const deleteCompletedTrip = (tripId: TripId): AppCommandResult => {
+    const existing = state.completedTrips.find(
+      (trip) => trip.id === tripId,
+    );
+
+    if (existing === undefined) {
+      return failure(
+        state,
+        applicationError("completed-trip-not-found"),
+      );
+    }
+
+    return replaceCompletedHistory(
+      state.completedTrips.filter((trip) => trip.id !== tripId),
+    );
+  };
+
+  const clearCompletedHistory = (): AppCommandResult => {
+    if (state.completedTrips.length === 0) {
+      return success(state, false, "unchanged");
+    }
+
+    return replaceCompletedHistory([]);
+  };
+
   const retryPersistence = (): AppCommandResult => {
     if (state.lifecycle === "booting") {
       return failure(state, applicationError("not-ready"));
@@ -1136,6 +1231,8 @@ export const createShoppingAppController = ({
     completeTrip,
     setActualCheckout,
     dismissCompletedSummary,
+    deleteCompletedTrip,
+    clearCompletedHistory,
     retryPersistence,
     dispatch,
   });
