@@ -149,7 +149,7 @@ Keep qualitative notes separate from privacy-safe app evidence.
 
 ## Decision discipline
 
-Use the provisional retention bands defined in `ROADMAP.md` and `docs/PRODUCT-SUCCESS-STRATEGY.md`.
+Use the provisional retention bands defined in `ROADMAP.md` and `docs/research/PRODUCT-SUCCESS-STRATEGY.md`.
 
 Do not start Phase 9 merely because the engineering backlog is ready.
 
@@ -159,6 +159,6 @@ Human cohort evidence must drive the gate. Code, automated browser tests, synthe
 
 The Phase 5 B6 human timing/physical-usability gate remains separate from retention.
 
-Before making release-quality speed claims, collect the representative one-hand, software-keyboard, repeated-add, typo, compact-device/equivalent, and bright-store evidence defined in `docs/SPRINT-B-QUALITY-GATE.md`.
+Before making release-quality speed claims, collect the representative one-hand, software-keyboard, repeated-add, typo, compact-device/equivalent, and bright-store evidence defined in `docs/evidence/SPRINT-B-QUALITY-GATE.md`.
 
 Retention success does not automatically satisfy the B6 timing gate.
