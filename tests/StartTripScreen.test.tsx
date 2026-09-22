@@ -91,6 +91,7 @@ const createController = (
       save: () => ({ ok: true }),
       complete: () => ({ ok: true }),
       saveCompleted: () => ({ ok: true }),
+      replaceCompletedHistory: () => ({ ok: true }),
       clearCompletedActive: () => ({ ok: true }),
     },
     clock,
@@ -124,12 +125,12 @@ describe("StartTripScreen", () => {
     expect(screen.getByText("Add a safety buffer")).not.toBeNull();
     expect(
       screen.getByText(
-        "No account. Your active trip and history stay on this device.",
+        "No account. Your shopping data stays on this device.",
       ),
     ).not.toBeNull();
   });
 
-  it("offers local history as a secondary action only when completed trips exist", async () => {
+  it("offers completed history as a secondary action when trips exist", async () => {
     const user = userEvent.setup();
     const controller = createController();
     const onOpenHistory = vi.fn();
@@ -146,6 +147,51 @@ describe("StartTripScreen", () => {
       name: "View trip history · 2",
     });
     await user.click(history);
+
+    expect(onOpenHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps degraded Price Memory recovery reachable with zero valid records", async () => {
+    const user = userEvent.setup();
+    const controller = createController();
+    const onOpenHistory = vi.fn();
+
+    render(
+      <StartTripScreen
+        controller={controller}
+        completedTripCount={0}
+        rememberedPriceCount={0}
+        priceMemoryNeedsAttention
+        onOpenHistory={onOpenHistory}
+      />,
+    );
+
+    const repair = screen.getByRole("button", {
+      name: "Repair remembered prices",
+    });
+    await user.click(repair);
+
+    expect(onOpenHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps remembered-price controls reachable when trip history is empty", async () => {
+    const user = userEvent.setup();
+    const controller = createController();
+    const onOpenHistory = vi.fn();
+
+    render(
+      <StartTripScreen
+        controller={controller}
+        completedTripCount={0}
+        rememberedPriceCount={3}
+        onOpenHistory={onOpenHistory}
+      />,
+    );
+
+    const dataControl = screen.getByRole("button", {
+      name: "Manage remembered prices · 3",
+    });
+    await user.click(dataControl);
 
     expect(onOpenHistory).toHaveBeenCalledTimes(1);
   });

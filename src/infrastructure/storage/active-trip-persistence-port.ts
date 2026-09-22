@@ -16,6 +16,7 @@ import {
   completeTripPersistence,
   updateCompletedTripPersistence,
   writeActiveTrip,
+  writeHistory,
   type PersistenceIssue,
   type StorageLike,
 } from "./shopping-storage";
@@ -112,6 +113,22 @@ export const createActiveTripPersistencePort = (
       trip,
       savedAt,
     );
+
+    if (result.health === "healthy") {
+      return { ok: true };
+    }
+
+    return {
+      ok: false,
+      issue: toPersistenceProblem(result.issue),
+    };
+  },
+
+  replaceCompletedHistory(
+    trips: readonly CompletedTrip[],
+    savedAt: IsoTimestamp,
+  ): ActiveTripSaveResult {
+    const result = writeHistory(storage, trips, savedAt);
 
     if (result.health === "healthy") {
       return { ok: true };

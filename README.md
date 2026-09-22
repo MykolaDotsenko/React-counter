@@ -92,6 +92,7 @@ Manual price entry remains the baseline.
 | Public shopping-shell switch | ⛔ blocked until empirical gate passes |
 | Completion/history/reconciliation | ✅ implemented |
 | Lightweight budget-outcome history | ✅ implemented |
+| Loss-safe history + local-data controls | ✅ implemented |
 | Shop again / recent-budget shortcut | ✅ implemented |
 | Recent Items | ✅ implemented |
 | Local product identity + Price Memory | ✅ implemented |
@@ -150,6 +151,23 @@ Rules:
 - Price Memory has its own versioned storage record and cannot make the active cart unsavable
 
 Manual price entry remains the universal baseline.
+
+### History and local data
+
+Completed-trip history stays shopping-focused instead of becoming a finance dashboard.
+
+The guarded shell supports:
+
+- **Shop again** from any healthy completed-trip card
+- inline item details for answering “what did I pay last time?”
+- delete-one-trip and clear-all-history controls with explicit confirmation
+- persist-before-publish deletion so failed writes never pretend data disappeared
+- independent **Clear remembered prices** because Price Memory is a separate local record
+- a **Manage remembered prices** entry point when history is empty but memories remain
+- a **Repair remembered prices** entry point when the Price Memory record is degraded even if no valid records can be reconstructed
+- keyboard focus restoration after destructive confirmations are cancelled
+
+Clearing trip history does **not** silently clear Price Memory, and clearing Price Memory does **not** remove completed-trip history. The UI states this boundary explicitly.
 
 ### Active trip
 

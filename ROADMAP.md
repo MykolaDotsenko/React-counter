@@ -588,6 +588,18 @@ Implemented second slice:
 - advisory memory persistence failure remains isolated from active-cart durability
 - store-aware selector semantics for future known-store context
 
+Implemented product/UX hardening:
+
+- one-action **Shop again** from any healthy completed-history card, not only the latest summary/idle shortcut
+- inline completed-trip item details without introducing a new navigation layer
+- explicit delete-one-trip and clear-all-history controls with loss-safe persist-before-publish semantics
+- independent **Clear remembered prices** control so completed history and Price Memory are never conflated
+- destructive confirmation copy states exactly which local record is affected
+- keyboard focus restoration after cancelling destructive confirmations
+- active-trip secondary actions grouped beneath the single dominant **Add price** action
+- QA/retention instrumentation split out of the product shell so evidence state cannot become a second product-state owner
+- browser-level regression coverage for independent history/Price Memory clearing and confirmation accessibility
+
 Implemented validation preparation:
 
 - guarded `/beta/` shopping build for real-store retention testing

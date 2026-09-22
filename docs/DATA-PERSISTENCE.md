@@ -201,6 +201,47 @@ If step 2 fails, keep the active trip intact.
 
 Prefer temporary duplication over data loss.
 
+## User-controlled deletion
+
+Local-first storage must also be user-controllable.
+
+Completed-trip history and Price Memory are independent durable records.
+
+### Delete one trip / clear trip history
+
+History deletion rewrites the complete validated history snapshot.
+
+Ordering:
+
+1. derive the intended replacement history in memory
+2. encode and validate the complete versioned snapshot
+3. attempt the history write
+4. publish the replacement history only after the write succeeds
+
+If the write fails:
+
+- keep the previous visible history unchanged
+- preserve the previous persistence-health state because the canonical durable snapshot did not change
+- tell the user that nothing was removed
+- let the user retry the explicit deletion action rather than exposing a generic persistence retry that cannot reconstruct the rejected intent
+- do not fake a successful deletion or non-durable Undo
+
+### Clear Price Memory
+
+Clearing Price Memory writes an empty valid Price Memory snapshot through the independent Price Memory port.
+
+This may repair a degraded Price Memory record when storage itself is writable.
+
+A failed clear attempt keeps the previous Price Memory records and their prior durability status unchanged; the failed intent is reported locally. Price Memory failure must remain isolated from healthy active-trip/completed-history durability.
+
+### Disclosure rule
+
+Deleting completed-trip history does not automatically delete Price Memory because Price Memory is an independent advisory record and does not retain reliable per-trip lineage.
+
+The UI must state this boundary explicitly.
+
+Likewise, clearing remembered prices must not imply that completed-trip history was removed.
+
 ## Canonical storage
 
 Persist canonical inputs only.

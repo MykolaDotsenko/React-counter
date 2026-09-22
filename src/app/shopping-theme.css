@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --shopping-page: #f5f3ee;
   --shopping-panel: #fffdf9;
   --shopping-soft: #f0ede6;
@@ -16,6 +17,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --shopping-page: #171a18;
     --shopping-panel: #202421;
     --shopping-soft: #292e2a;

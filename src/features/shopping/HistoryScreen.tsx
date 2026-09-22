@@ -1,100 +1,170 @@
-import type {
-  PersistenceHealth,
-  ShoppingAppController,
-} from "../../application/shopping-app-controller";
-import { formatEur, signedMinorUnits } from "../../domain/money";
+import { useEffect, useRef, useState } from "react";
+
+import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
+import type { ShoppingAppController } from "../../application/shopping-app-controller";
 import {
-  cartTotal,
-  checkoutDifference,
-  itemCount,
-  remaining,
   type CompletedTrip,
+  type TripId,
 } from "../../domain/shopping-trip";
+import {
+  HistoryDataControls,
+  type HistoryDataConfirmation,
+} from "./HistoryDataControls";
+import { HistoryTripCard } from "./HistoryTripCard";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./HistoryScreen.module.css";
 
 export interface HistoryScreenProps {
   readonly controller: ShoppingAppController;
-  readonly persistenceHealth: PersistenceHealth;
-  readonly trips: readonly CompletedTrip[];
   readonly onBack: () => void;
+  readonly onTripStarted?: () => void;
   readonly locale?: string;
 }
 
-const formatAbsoluteEur = (
-  value: number,
-  locale: string,
-): string => {
-  const amount = signedMinorUnits(Math.abs(value));
-
-  if (!amount.ok) {
-    throw new RangeError("History reconciliation exceeded safe integer bounds");
-  }
-
-  return formatEur(amount.value, locale);
-};
-
-const differenceLabel = (
-  trip: CompletedTrip,
-  locale: string,
-): string | null => {
-  const difference = checkoutDifference(trip);
-
-  if (difference === null) {
-    return null;
-  }
-
-  if (difference === 0) {
-    return "Checkout matched";
-  }
-
-  return difference > 0
-    ? `${formatAbsoluteEur(difference, locale)} more at checkout`
-    : `${formatAbsoluteEur(difference, locale)} less at checkout`;
-};
-
-const budgetOutcomeLabel = (
-  trip: CompletedTrip,
-  locale: string,
-): string => {
-  const amount = remaining(trip);
-
-  if (amount === 0) {
-    return "On budget";
-  }
-
-  return amount > 0
-    ? `${formatAbsoluteEur(amount, locale)} under budget`
-    : `${formatAbsoluteEur(amount, locale)} over budget`;
-};
-
-const completedLabel = (
-  trip: CompletedTrip,
-  locale: string,
-): string => {
-  const date = new Date(trip.completedAt);
-
-  if (!Number.isFinite(date.getTime())) {
-    return trip.completedAt;
-  }
-
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-};
+type ConfirmationState =
+  | { readonly kind: "none" }
+  | { readonly kind: "delete-trip"; readonly tripId: TripId }
+  | { readonly kind: "clear-history" }
+  | { readonly kind: "clear-price-memory" };
 
 export function HistoryScreen({
   controller,
-  persistenceHealth,
-  trips,
   onBack,
+  onTripStarted,
   locale = "en-FI",
 }: HistoryScreenProps) {
-  const ordered = [...trips].sort(
+  const state = useShoppingAppState(controller);
+  const ordered = [...state.completedTrips].sort(
     (left, right) =>
       Date.parse(right.completedAt) - Date.parse(left.completedAt),
   );
+  const [confirmation, setConfirmation] = useState<ConfirmationState>({
+    kind: "none",
+  });
+  const [statusMessage, setStatusMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const confirmationCancelRef = useRef<HTMLButtonElement>(null);
+  const canChangeHistory =
+    state.persistence.status === "healthy" &&
+    !state.completionCleanupPending;
+
+  useEffect(() => {
+    if (confirmation.kind !== "none") {
+      confirmationCancelRef.current?.focus();
+    }
+  }, [confirmation]);
+
+  const resetMessages = (): void => {
+    setStatusMessage("");
+    setErrorMessage("");
+  };
+
+  const restoreDeleteTripFocus = (tripId: TripId): void => {
+    queueMicrotask(() => {
+      const buttons = document.querySelectorAll<HTMLButtonElement>(
+        "[data-delete-trip-id]",
+      );
+
+      for (const button of buttons) {
+        if (button.dataset.deleteTripId === tripId) {
+          button.focus();
+          return;
+        }
+      }
+    });
+  };
+
+  const restoreDataControlFocus = (
+    selector: string,
+  ): void => {
+    queueMicrotask(() => {
+      document.querySelector<HTMLButtonElement>(selector)?.focus();
+    });
+  };
+
+  const cancelConfirmation = (): void => {
+    const previous = confirmation;
+    setConfirmation({ kind: "none" });
+
+    if (previous.kind === "delete-trip") {
+      restoreDeleteTripFocus(previous.tripId);
+      return;
+    }
+
+    if (previous.kind === "clear-history") {
+      restoreDataControlFocus("[data-clear-trip-history-trigger]");
+      return;
+    }
+
+    if (previous.kind === "clear-price-memory") {
+      restoreDataControlFocus("[data-clear-price-memory-trigger]");
+    }
+  };
+
+  const startSimilarTrip = (trip: CompletedTrip): void => {
+    resetMessages();
+    const result = controller.startTripFromCompleted(trip.id);
+
+    if (!result.ok) {
+      setErrorMessage(
+        "A new trip could not be started from this budget. Check local saving and try again.",
+      );
+      return;
+    }
+
+    onTripStarted?.();
+  };
+
+  const deleteTrip = (trip: CompletedTrip): void => {
+    resetMessages();
+    const result = controller.deleteCompletedTrip(trip.id);
+
+    if (!result.ok) {
+      setErrorMessage(
+        "This trip could not be deleted safely. Nothing was removed.",
+      );
+      return;
+    }
+
+    setConfirmation({ kind: "none" });
+    setStatusMessage("Trip deleted from this device.");
+  };
+
+  const clearHistory = (): void => {
+    resetMessages();
+    const result = controller.clearCompletedHistory();
+
+    if (!result.ok) {
+      setErrorMessage(
+        "Trip history could not be cleared safely. Nothing was removed.",
+      );
+      return;
+    }
+
+    setConfirmation({ kind: "none" });
+    setStatusMessage("Trip history cleared from this device.");
+  };
+
+  const clearPriceMemory = (): void => {
+    resetMessages();
+    const result = controller.clearPriceMemory();
+
+    if (!result.ok) {
+      setErrorMessage(
+        "Remembered prices could not be cleared safely. Nothing was removed.",
+      );
+      return;
+    }
+
+    setConfirmation({ kind: "none" });
+    setStatusMessage("Remembered item prices cleared from this device.");
+  };
+
+  const dataConfirmation: HistoryDataConfirmation =
+    confirmation.kind === "clear-history" ||
+    confirmation.kind === "clear-price-memory"
+      ? confirmation.kind
+      : "none";
 
   return (
     <main className={styles.screen} aria-labelledby="history-title">
@@ -119,9 +189,21 @@ export function HistoryScreen({
 
         <PersistenceHealthNotice
           controller={controller}
-          health={persistenceHealth}
+          health={state.persistence}
           context="idle"
         />
+
+        {statusMessage ? (
+          <p className={styles.status} role="status" aria-live="polite">
+            {statusMessage}
+          </p>
+        ) : null}
+
+        {errorMessage ? (
+          <p className={styles.error} role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
 
         {ordered.length === 0 ? (
           <section className={styles.emptyState}>
@@ -130,56 +212,53 @@ export function HistoryScreen({
           </section>
         ) : (
           <ol className={styles.tripList}>
-            {ordered.map((trip) => {
-              const tracked = cartTotal(trip);
-              const quantity = itemCount(trip);
-              const difference = differenceLabel(trip, locale);
-
-              return (
-                <li key={trip.id} className={styles.trip}>
-                  <div className={styles.tripHeader}>
-                    <div>
-                      <span className={styles.completedAt}>
-                        {completedLabel(trip, locale)}
-                      </span>
-                      <strong>{formatEur(tracked, locale)} tracked</strong>
-                    </div>
-                    <span className={styles.itemCount}>
-                      {quantity} {quantity === 1 ? "item" : "items"}
-                    </span>
-                  </div>
-
-                  <dl className={styles.metrics}>
-                    <div>
-                      <dt>Budget</dt>
-                      <dd>{formatEur(trip.budgetMinor, locale)}</dd>
-                    </div>
-                    <div>
-                      <dt>Checkout</dt>
-                      <dd>
-                        {trip.actualCheckoutMinor === undefined
-                          ? "Not added"
-                          : formatEur(trip.actualCheckoutMinor, locale)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Budget outcome</dt>
-                      <dd>{budgetOutcomeLabel(trip, locale)}</dd>
-                    </div>
-                  </dl>
-
-                  {difference ? (
-                    <p className={styles.difference}>{difference}</p>
-                  ) : (
-                    <p className={styles.neutral}>
-                      No checkout comparison recorded.
-                    </p>
-                  )}
-                </li>
-              );
-            })}
+            {ordered.map((trip) => (
+              <HistoryTripCard
+                key={trip.id}
+                trip={trip}
+                locale={locale}
+                canChangeHistory={canChangeHistory}
+                deleting={
+                  confirmation.kind === "delete-trip" &&
+                  confirmation.tripId === trip.id
+                }
+                confirmationCancelRef={confirmationCancelRef}
+                onStartSimilar={startSimilarTrip}
+                onRequestDelete={(candidate) => {
+                  resetMessages();
+                  setConfirmation({
+                    kind: "delete-trip",
+                    tripId: candidate.id,
+                  });
+                }}
+                onCancelDelete={cancelConfirmation}
+                onConfirmDelete={deleteTrip}
+              />
+            ))}
           </ol>
         )}
+
+        <HistoryDataControls
+          tripCount={state.completedTrips.length}
+          priceMemoryCount={state.priceMemories.length}
+          priceMemoryDegraded={
+            state.priceMemoryPersistence.status === "degraded"
+          }
+          canChangeHistory={canChangeHistory}
+          confirmation={dataConfirmation}
+          confirmationCancelRef={confirmationCancelRef}
+          onRequestClearHistory={() => {
+            resetMessages();
+            setConfirmation({ kind: "clear-history" });
+          }}
+          onConfirmClearHistory={clearHistory}
+          onRequestClearPriceMemory={() => {
+            resetMessages();
+            setConfirmation({ kind: "clear-price-memory" });
+          }}
+          onConfirmClearPriceMemory={clearPriceMemory}
+          onCancel={cancelConfirmation}
+        />
       </section>
     </main>
   );

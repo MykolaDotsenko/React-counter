@@ -210,3 +210,305 @@
     border: 1px solid ButtonText;
   }
 }
+
+
+.status,
+.error,
+.controlNote {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.status {
+  border: 1px solid color-mix(in srgb, var(--shopping-accent) 35%, var(--shopping-border));
+  background: color-mix(in srgb, var(--shopping-accent) 8%, var(--shopping-panel));
+  color: var(--shopping-text);
+}
+
+.error {
+  border: 1px solid color-mix(in srgb, var(--shopping-danger) 40%, var(--shopping-border));
+  background: color-mix(in srgb, var(--shopping-danger) 8%, var(--shopping-panel));
+  color: var(--shopping-danger);
+  font-weight: 750;
+}
+
+.deleteTripButton,
+.secondaryButton,
+.dangerButton,
+.dataAction {
+  min-height: 48px;
+  border-radius: 13px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.deleteTripButton {
+  width: fit-content;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--shopping-muted-strong);
+}
+
+.deleteTripButton:hover:not(:disabled) {
+  background: var(--shopping-soft);
+  color: var(--shopping-danger);
+}
+
+.deleteTripButton:disabled,
+.dataAction:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.confirmation,
+.dataControls {
+  border: 1px solid var(--shopping-border);
+  border-radius: 18px;
+  background: var(--shopping-soft);
+}
+
+.confirmation {
+  display: grid;
+  gap: 14px;
+  padding: 15px;
+}
+
+.confirmation > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.confirmation p {
+  margin: 0;
+  color: var(--shopping-muted-strong);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.confirmationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.secondaryButton,
+.dangerButton {
+  flex: 1 1 9rem;
+  padding: 0 14px;
+}
+
+.secondaryButton {
+  border: 1px solid var(--shopping-border);
+  background: var(--shopping-panel);
+  color: var(--shopping-text);
+}
+
+.dangerButton {
+  border: 1px solid transparent;
+  background: var(--shopping-danger);
+  color: var(--shopping-panel);
+}
+
+.dataControls {
+  display: grid;
+  gap: 12px;
+  padding: clamp(17px, 5vw, 22px);
+  background: var(--shopping-panel);
+}
+
+.dataControls > div:first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.dataControls h2,
+.dataControls p,
+.sectionKicker {
+  margin: 0;
+}
+
+.sectionKicker {
+  color: var(--shopping-accent);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dataControls h2 {
+  font-size: 1.2rem;
+}
+
+.dataControls > div:first-child > p:last-child {
+  color: var(--shopping-muted-strong);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.controlNote {
+  border: 1px solid color-mix(in srgb, var(--shopping-warning) 35%, var(--shopping-border));
+  background: color-mix(in srgb, var(--shopping-warning) 8%, var(--shopping-panel));
+  color: var(--shopping-text);
+}
+
+.dataAction {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 14px;
+  border: 1px solid var(--shopping-border);
+  background: var(--shopping-soft);
+  color: var(--shopping-text);
+  text-align: left;
+}
+
+.dataAction:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--shopping-danger) 45%, var(--shopping-border));
+}
+
+.dataAction > span:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.dataAction small {
+  color: var(--shopping-muted-strong);
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.deleteTripButton:focus-visible,
+.secondaryButton:focus-visible,
+.dangerButton:focus-visible,
+.dataAction:focus-visible {
+  outline: 3px solid var(--shopping-focus);
+  outline-offset: 3px;
+}
+
+@media (forced-colors: active) {
+  .status,
+  .error,
+  .confirmation,
+  .dataControls,
+  .deleteTripButton,
+  .secondaryButton,
+  .dangerButton,
+  .dataAction,
+  .controlNote {
+    border: 1px solid ButtonText;
+  }
+}
+
+
+.tripDetails {
+  border-top: 1px solid var(--shopping-border);
+  padding-top: 4px;
+}
+
+.tripDetails summary {
+  min-height: 48px;
+  width: fit-content;
+  padding: 14px 4px;
+  color: var(--shopping-accent);
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tripDetails summary:focus-visible {
+  outline: 3px solid var(--shopping-focus);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+.tripDetails ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 0 0;
+  list-style: none;
+}
+
+.tripDetails li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--shopping-soft);
+  font-size: 0.84rem;
+}
+
+.tripDetails li span {
+  min-width: 0;
+  color: var(--shopping-muted-strong);
+  overflow-wrap: anywhere;
+}
+
+.tripDetails li strong {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.tripActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.tripActions .confirmation {
+  grid-column: 1 / -1;
+}
+
+.repeatTripButton {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--shopping-accent);
+  border-radius: 13px;
+  background: var(--shopping-panel);
+  color: var(--shopping-accent);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.repeatTripButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--shopping-accent) 8%, var(--shopping-panel));
+}
+
+.repeatTripButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.repeatTripButton:focus-visible {
+  outline: 3px solid var(--shopping-focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 380px) {
+  .tripActions {
+    grid-template-columns: 1fr;
+  }
+
+  .deleteTripButton {
+    width: 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  .tripDetails li,
+  .repeatTripButton {
+    border: 1px solid ButtonText;
+  }
+}

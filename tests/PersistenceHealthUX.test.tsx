@@ -124,6 +124,9 @@ const createPersistence = (
     saveCompleted() {
       return { ok: true };
     },
+    replaceCompletedHistory() {
+      return { ok: true };
+    },
     clearCompletedActive() {
       return { ok: true };
     },

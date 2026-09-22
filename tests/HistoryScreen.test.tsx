@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -79,6 +79,7 @@ const createController = (trips: readonly CompletedTrip[]) => {
       save: () => ({ ok: true }),
       complete: () => ({ ok: true }),
       saveCompleted: () => ({ ok: true }),
+      replaceCompletedHistory: () => ({ ok: true }),
       clearCompletedActive: () => ({ ok: true }),
     },
     clock,
@@ -107,8 +108,6 @@ describe("HistoryScreen", () => {
     render(
       <HistoryScreen
         controller={controller}
-        persistenceHealth={{ status: "healthy" }}
-        trips={trips}
         onBack={vi.fn()}
         locale="en-IE"
       />,
@@ -128,6 +127,101 @@ describe("HistoryScreen", () => {
     expect(trips[1]).toBe(newer);
   });
 
+  it("starts a similar trip directly from history", async () => {
+    const user = userEvent.setup();
+    const source = completedTrip("source", SECOND_COMPLETE, 5_000);
+    const controller = createController([source]);
+    const onTripStarted = vi.fn();
+
+    render(
+      <HistoryScreen
+        controller={controller}
+        onBack={vi.fn()}
+        onTripStarted={onTripStarted}
+        locale="en-IE"
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Shop again" }),
+    );
+
+    expect(controller.getSnapshot().lifecycle).toBe("active");
+    expect(controller.getSnapshot().activeTrip).toMatchObject({
+      budgetMinor: 5_000,
+      safetyBufferMinor: 0,
+    });
+    expect(onTripStarted).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires explicit confirmation before deleting a trip", async () => {
+    const user = userEvent.setup();
+    const older = completedTrip("older", FIRST_COMPLETE, 2_500);
+    const newer = completedTrip("newer", SECOND_COMPLETE, 5_000);
+    const controller = createController([older, newer]);
+
+    render(
+      <HistoryScreen
+        controller={controller}
+        onBack={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    const deleteButtons = screen.getAllByRole("button", {
+      name: "Delete trip",
+    });
+    expect(deleteButtons).toHaveLength(2);
+
+    await user.click(deleteButtons[1]!);
+    expect(
+      screen.getByText(/Remembered item prices are stored separately/),
+    ).not.toBeNull();
+
+    const confirmation = screen.getByRole("region", {
+      name: "Confirm trip deletion",
+    });
+    await user.click(
+      within(confirmation).getByRole("button", { name: "Delete trip" }),
+    );
+
+    expect(controller.getSnapshot().completedTrips).toEqual([newer]);
+    expect(
+      screen.getByText("Trip deleted from this device."),
+    ).not.toBeNull();
+  });
+
+  it("returns focus to the data control after cancelling confirmation", async () => {
+    const user = userEvent.setup();
+    const controller = createController([
+      completedTrip("one", FIRST_COMPLETE, 2_500),
+    ]);
+
+    render(
+      <HistoryScreen
+        controller={controller}
+        onBack={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    const clearHistoryButton = screen.getByRole("button", {
+      name: /Clear trip history/,
+    });
+
+    await user.click(clearHistoryButton);
+    const confirmation = screen.getByRole("region", {
+      name: "Confirm clearing trip history",
+    });
+    await user.click(
+      within(confirmation).getByRole("button", { name: "Cancel" }),
+    );
+
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: /Clear trip history/ }),
+    );
+  });
+
   it("provides a single explicit Back action", async () => {
     const user = userEvent.setup();
     const trips = [
@@ -139,8 +233,6 @@ describe("HistoryScreen", () => {
     render(
       <HistoryScreen
         controller={controller}
-        persistenceHealth={{ status: "healthy" }}
-        trips={trips}
         onBack={onBack}
         locale="en-IE"
       />,

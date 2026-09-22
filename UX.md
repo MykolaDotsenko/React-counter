@@ -366,8 +366,26 @@ History should answer practical questions:
 - What was the last trip total?
 - What did I pay for this item last time?
 - How accurate are my estimates?
+- Can I start a similar trip without re-entering the same spending plan?
 
-Avoid monthly cash-flow dashboards, category-budget systems, income tracking, net worth, or financial scoring.
+History is a repeat-shopping accelerator, not a reporting dashboard.
+
+A completed-trip card should prioritise:
+
+1. completion time
+2. tracked total and budget outcome
+3. lightweight checkout comparison when available
+4. one-action **Shop again**
+5. progressive-disclosure item details
+6. quiet destructive controls
+
+Item details should expand inline rather than opening a new navigation layer when the information is small.
+
+Local-data controls must distinguish completed-trip history from Price Memory. Clearing one must never visually imply that the other was deleted. Rare destructive actions use explicit inline confirmation with factual consequence copy.
+
+Reachability is part of this contract: if trip history becomes empty while remembered prices remain, the start screen keeps a quiet **Manage remembered prices** entry point. If Price Memory is degraded with no valid records, that entry point becomes **Repair remembered prices** instead of disappearing. A destructive action or recovery state must not strand local data behind a navigation condition that no longer exists.
+
+Avoid monthly cash-flow dashboards, category-budget systems, income tracking, net worth, financial scoring, or a persistent history tab.
 
 ## Empty states
 

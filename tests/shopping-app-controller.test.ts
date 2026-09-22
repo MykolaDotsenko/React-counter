@@ -112,11 +112,16 @@ interface PersistenceFake extends ActiveTripPersistencePort {
     trip: CompletedTrip;
     savedAt: IsoTimestamp;
   }[];
+  readonly replaceCompletedHistoryCalls: readonly {
+    trips: readonly CompletedTrip[];
+    savedAt: IsoTimestamp;
+  }[];
   readonly clearCompletedActiveCalls: number;
   setBootstrapResult(result: BootstrapInput): void;
   queueSaveResult(result: ActiveTripSaveResult): void;
   queueCompleteResult(result: CompletionSaveResult): void;
   queueCompletedSaveResult(result: ActiveTripSaveResult): void;
+  queueHistoryReplaceResult(result: ActiveTripSaveResult): void;
   queueClearResult(result: ActiveTripSaveResult): void;
 }
 
@@ -141,9 +146,14 @@ const createPersistence = (
     trip: CompletedTrip;
     savedAt: IsoTimestamp;
   }> = [];
+  const replaceCompletedHistoryCalls: Array<{
+    trips: readonly CompletedTrip[];
+    savedAt: IsoTimestamp;
+  }> = [];
   const saveResults: ActiveTripSaveResult[] = [];
   const completeResults: CompletionSaveResult[] = [];
   const completedSaveResults: ActiveTripSaveResult[] = [];
+  const historyReplaceResults: ActiveTripSaveResult[] = [];
   const clearResults: ActiveTripSaveResult[] = [];
 
   return {
@@ -159,6 +169,9 @@ const createPersistence = (
     get saveCompletedCalls() {
       return saveCompletedCalls;
     },
+    get replaceCompletedHistoryCalls() {
+      return replaceCompletedHistoryCalls;
+    },
     get clearCompletedActiveCalls() {
       return clearCompletedActiveCalls;
     },
@@ -173,6 +186,9 @@ const createPersistence = (
     },
     queueCompletedSaveResult(result) {
       completedSaveResults.push(result);
+    },
+    queueHistoryReplaceResult(result) {
+      historyReplaceResults.push(result);
     },
     queueClearResult(result) {
       clearResults.push(result);
@@ -199,6 +215,11 @@ const createPersistence = (
       saveCompletedCalls.push({ trip, savedAt });
 
       return completedSaveResults.shift() ?? { ok: true };
+    },
+    replaceCompletedHistory(trips, savedAt) {
+      replaceCompletedHistoryCalls.push({ trips, savedAt });
+
+      return historyReplaceResults.shift() ?? { ok: true };
     },
     clearCompletedActive() {
       clearCompletedActiveCalls += 1;
@@ -233,6 +254,11 @@ const ids: IdGenerator = {
 const writeFailure: PersistenceProblem = {
   code: "write-failed",
   storageKey: "budget-cart:active-trip",
+};
+
+const historyWriteFailure: PersistenceProblem = {
+  code: "write-failed",
+  storageKey: "budget-cart:history",
 };
 
 describe("ShoppingAppController snapshot contract", () => {
@@ -2024,6 +2050,73 @@ describe("ShoppingAppController dispatch", () => {
     });
     expect(persistence.saveCalls).toHaveLength(2);
     expect(persistence.saveCalls[1]?.savedAt).toBe(LATER);
+  });
+
+  it("deletes one completed trip through the durable history boundary", () => {
+    const older = createCompletedTrip("older", NEXT, 2_500);
+    const newer = createCompletedTrip("newer", LATER, 5_000);
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: null,
+      completedTrips: [older, newer],
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.deleteCompletedTrip(older.id);
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected history deletion success");
+    }
+
+    expect(result.durability).toBe("persisted");
+    expect(result.state.completedTrips).toEqual([newer]);
+    expect(persistence.replaceCompletedHistoryCalls).toHaveLength(1);
+    expect(persistence.replaceCompletedHistoryCalls[0]?.trips).toEqual([
+      newer,
+    ]);
+    expect(persistence.replaceCompletedHistoryCalls[0]?.savedAt).toBe(
+      LATER,
+    );
+  });
+
+  it("clears completed history only after a durable replacement succeeds", () => {
+    const completed = createCompletedTrip("completed", NEXT);
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: null,
+      completedTrips: [completed],
+    });
+    persistence.queueHistoryReplaceResult({
+      ok: false,
+      issue: historyWriteFailure,
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.clearCompletedHistory();
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        kind: "application",
+        code: "history-write-unavailable",
+      },
+    });
+    expect(result.state.completedTrips).toEqual([completed]);
+    expect(result.state.persistence).toEqual({
+      status: "healthy",
+    });
   });
 
   it("rejects dispatch when no active trip exists", () => {

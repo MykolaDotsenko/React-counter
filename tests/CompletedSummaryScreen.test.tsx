@@ -100,6 +100,7 @@ const createController = (
       save: () => ({ ok: true }),
       complete: () => ({ ok: true }),
       saveCompleted: () => completedSaveResult,
+      replaceCompletedHistory: () => ({ ok: true }),
       clearCompletedActive: () => ({ ok: true }),
     },
     clock: createClock(),

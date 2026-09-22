@@ -734,6 +734,108 @@ test("finishes a trip loss-safely, reconciles checkout, persists history, and re
   ).toBeVisible();
 });
 
+test("keeps trip-history deletion independent from remembered prices", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("1.39");
+  await page.getByText("Name for next time", { exact: false }).click();
+  await page.getByRole("textbox", { name: "Item name" }).fill("Milk 1L");
+  await page.getByRole("button", { name: "Add · €1.39" }).click();
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page
+    .getByRole("button", { name: "View trip history" })
+    .click();
+
+  const clearHistory = page.getByRole("button", {
+    name: /Clear trip history/,
+  });
+  await clearHistory.click();
+
+  const historyConfirmation = page.getByRole("region", {
+    name: "Confirm clearing trip history",
+  });
+  await historyConfirmation
+    .getByRole("button", { name: "Clear trip history" })
+    .click();
+
+  await expect(
+    page.getByText("Trip history cleared from this device."),
+  ).toBeVisible();
+  await expect(
+    page.getByText("No completed trips yet."),
+  ).toBeVisible();
+
+  const afterHistoryClear = await page.evaluate(
+    ({ historyKey, memoryKey }) => ({
+      history: JSON.parse(localStorage.getItem(historyKey)),
+      memory: JSON.parse(localStorage.getItem(memoryKey)),
+    }),
+    { historyKey: HISTORY_KEY, memoryKey: PRICE_MEMORY_KEY },
+  );
+
+  expect(afterHistoryClear.history.data.trips).toHaveLength(0);
+  expect(afterHistoryClear.memory.data.records).toHaveLength(1);
+  expect(afterHistoryClear.memory.data.records[0]).toMatchObject({
+    label: "Milk 1L",
+    unitPriceMinor: 139,
+  });
+
+  await page.getByRole("button", { name: "Back" }).click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "How much can you spend today?",
+    }),
+  ).toBeVisible();
+
+  const rememberedDataEntry = page.getByRole("button", {
+    name: "Manage remembered prices · 1",
+  });
+  await expect(rememberedDataEntry).toBeVisible();
+
+  await page.reload();
+  await expect(
+    page.getByRole("button", {
+      name: "Manage remembered prices · 1",
+    }),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Manage remembered prices · 1" })
+    .click();
+  await page
+    .getByRole("button", { name: /Clear remembered prices/ })
+    .click();
+
+  const memoryConfirmation = page.getByRole("region", {
+    name: "Confirm clearing remembered prices",
+  });
+  await memoryConfirmation
+    .getByRole("button", { name: "Clear remembered prices" })
+    .click();
+
+  await expect(
+    page.getByText("Remembered item prices cleared from this device."),
+  ).toBeVisible();
+
+  const afterMemoryClear = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    PRICE_MEMORY_KEY,
+  );
+  expect(afterMemoryClear.data.records).toHaveLength(0);
+
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(
+    page.getByRole("button", { name: /remembered prices/i }),
+  ).toHaveCount(0);
+});
+
 test("repeats the last spending plan immediately and after a later reload", async ({
   page,
 }) => {

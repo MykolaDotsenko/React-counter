@@ -119,6 +119,8 @@ export interface StartTripScreenProps {
   readonly controller: ShoppingAppController;
   readonly onTripStarted?: (source: "new" | "repeat") => void;
   readonly completedTripCount?: number;
+  readonly rememberedPriceCount?: number;
+  readonly priceMemoryNeedsAttention?: boolean;
   readonly recentTrip?: CompletedTrip | null;
   readonly persistenceHealth?: PersistenceHealth;
   readonly onOpenHistory?: () => void;
@@ -129,6 +131,8 @@ export function StartTripScreen({
   controller,
   onTripStarted,
   completedTripCount = 0,
+  rememberedPriceCount = 0,
+  priceMemoryNeedsAttention = false,
   recentTrip = null,
   persistenceHealth,
   onOpenHistory,
@@ -409,18 +413,25 @@ export function StartTripScreen({
           {errorMessage}
         </div>
 
-        {completedTripCount > 0 && onOpenHistory ? (
+        {(completedTripCount > 0 ||
+          rememberedPriceCount > 0 ||
+          priceMemoryNeedsAttention) &&
+        onOpenHistory ? (
           <button
             type="button"
             className={styles.historyButton}
             onClick={onOpenHistory}
           >
-            View trip history · {completedTripCount}
+            {completedTripCount > 0
+              ? `View trip history · ${completedTripCount}`
+              : rememberedPriceCount > 0
+                ? `Manage remembered prices · ${rememberedPriceCount}`
+                : "Repair remembered prices"}
           </button>
         ) : null}
 
         <p className={styles.trustNote}>
-          No account. Your active trip and history stay on this device.
+          No account. Your shopping data stays on this device.
         </p>
       </section>
     </main>

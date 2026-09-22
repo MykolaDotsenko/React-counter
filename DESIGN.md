@@ -199,6 +199,8 @@ One visually dominant action:
 
 > Add price
 
+Active-trip utilities such as **Adjust budget** and **Finish trip** must remain visibly secondary. When both are present, group them compactly beneath the Add action rather than giving either another full-width primary-looking row.
+
 ### 5. Cart details
 
 Recent items and corrections belong below the primary decision information.

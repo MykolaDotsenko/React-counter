@@ -104,6 +104,9 @@ const createCorePersistence = (
     saveCompleted(): ActiveTripSaveResult {
       return { ok: true };
     },
+    replaceCompletedHistory(): ActiveTripSaveResult {
+      return { ok: true };
+    },
     clearCompletedActive(): ActiveTripSaveResult {
       return { ok: true };
     },
@@ -443,6 +446,85 @@ describe("ShoppingAppController price memory", () => {
       observedAt: EDIT,
     });
     expect(memory.saveCalls).toHaveLength(1);
+  });
+
+  it("clears remembered prices through their independent persistence boundary", () => {
+    const remembered = rememberedMilk();
+    const core = createCorePersistence({
+      ok: true,
+      activeTrip: null,
+      completedTrips: [],
+      completionCleanupPending: false,
+    });
+    const memory = createMemoryPersistence({
+      ok: true,
+      records: [remembered],
+    });
+    const controller = createShoppingAppController({
+      persistence: core,
+      priceMemoryPersistence: memory,
+      clock: createClock(MEMORY_SAVE),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.clearPriceMemory();
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected price-memory clearing success");
+    }
+
+    expect(result.state.priceMemories).toEqual([]);
+    expect(result.state.priceMemoryPersistence).toEqual({
+      status: "healthy",
+    });
+    expect(memory.saveCalls).toHaveLength(1);
+    expect(memory.saveCalls[0]?.records).toEqual([]);
+    expect(memory.saveCalls[0]?.savedAt).toBe(MEMORY_SAVE);
+  });
+
+  it("keeps remembered prices visible when clearing them cannot be persisted", () => {
+    const remembered = rememberedMilk();
+    const core = createCorePersistence({
+      ok: true,
+      activeTrip: null,
+      completedTrips: [],
+      completionCleanupPending: false,
+    });
+    const memory = createMemoryPersistence({
+      ok: true,
+      records: [remembered],
+    });
+    memory.queueSave({
+      ok: false,
+      issue: {
+        code: "write-failed",
+        storageKey: "budget-cart:price-memory",
+      },
+    });
+    const controller = createShoppingAppController({
+      persistence: core,
+      priceMemoryPersistence: memory,
+      clock: createClock(MEMORY_SAVE),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.clearPriceMemory();
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        kind: "application",
+        code: "price-memory-write-unavailable",
+      },
+    });
+    expect(result.state.priceMemories).toEqual([remembered]);
+    expect(result.state.priceMemoryPersistence).toEqual({
+      status: "healthy",
+    });
   });
 
   it("rejects a missing remembered item without changing the cart", () => {
