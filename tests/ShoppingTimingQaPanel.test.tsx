@@ -177,8 +177,8 @@ describe("ShoppingTimingQaPanel", () => {
 
     expect(onResetSession).not.toHaveBeenCalled();
     expect(
-      screen.getByRole("button", { name: "Confirm fresh session" }),
-    ).toBeInTheDocument();
+      screen.getByRole("button", { name: "Confirm fresh session" }).textContent,
+    ).toBe("Confirm fresh session");
 
     await user.click(
       screen.getByRole("button", { name: "Confirm fresh session" }),
