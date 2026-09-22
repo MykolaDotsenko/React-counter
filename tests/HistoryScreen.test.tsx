@@ -119,6 +119,8 @@ describe("HistoryScreen", () => {
     expect(screen.getByText("€25.00")).not.toBeNull();
     expect(screen.getByText("€50.00")).not.toBeNull();
     expect(screen.getByText("€24.00")).not.toBeNull();
+    expect(screen.getByText("€25.00 under budget")).not.toBeNull();
+    expect(screen.getByText("€50.00 under budget")).not.toBeNull();
     expect(
       screen.getByText("€24.00 more at checkout"),
     ).not.toBeNull();
