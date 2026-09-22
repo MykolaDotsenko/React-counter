@@ -8,17 +8,17 @@ Phase 4 A0 design validation is complete. **Calm Utility** is the selected produ
 
 Decision evidence:
 
-- docs/design/PHASE-4-DESIGN-VALIDATION.md
+- docs/evidence/PHASE-4-DESIGN-VALIDATION.md
 
 The public/default build now ships the Calm Utility Shopping Budget Companion. The automated/code portion of Phase 5 through B6 is implemented, while representative human timing/one-hand/bright-store evidence remains explicitly unverified.
 
 This document complements:
 
 - PRODUCT.md — product purpose and scope
-- UX.md — interaction behaviour
+- docs/reference/UX.md — detailed interaction behaviour
 - DOMAIN.md — business rules
 - ARCHITECTURE.md — implementation boundaries
-- docs/ACCESSIBILITY.md — accessibility contract
+- docs/quality/ACCESSIBILITY.md — accessibility contract
 
 When visual preference conflicts with clarity, trust, accessibility, or task speed, those requirements win.
 
@@ -300,7 +300,7 @@ The Phase 4 design validation selected the quiet linear capacity bar because it 
 
 Do not add decorative radial progress unless it communicates shopping state better than the current linear capacity model.
 
-See docs/design/PHASE-4-DESIGN-VALIDATION.md.
+See docs/evidence/PHASE-4-DESIGN-VALIDATION.md.
 
 ## Brand expression
 
@@ -947,7 +947,7 @@ Avoid screenshots that primarily showcase decorative effects.
 
 ## Prototype variants evaluated
 
-Phase 4 A0 evaluated three intentionally different directions using the same canonical fixture. The selected direction is documented in docs/design/PHASE-4-DESIGN-VALIDATION.md:
+Phase 4 A0 evaluated three intentionally different directions using the same canonical fixture. The selected direction is documented in docs/evidence/PHASE-4-DESIGN-VALIDATION.md:
 
 ### A. Calm utility
 
