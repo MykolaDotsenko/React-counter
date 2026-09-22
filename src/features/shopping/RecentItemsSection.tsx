@@ -228,6 +228,7 @@ export function RecentItemsSection({
                   <button
                     type="button"
                     className={styles.rememberedButton}
+                    aria-label={`Use remembered price for ${record.label}`}
                     data-use-remembered-memory-id={record.id}
                     onClick={() => {
                       setErrorMessage("");
@@ -251,6 +252,7 @@ export function RecentItemsSection({
                   <button
                     type="button"
                     className={styles.secondaryButton}
+                    aria-label={`Enter current price for ${record.label}`}
                     data-current-price-memory-id={record.id}
                     onClick={() => {
                       setPendingId(null);
