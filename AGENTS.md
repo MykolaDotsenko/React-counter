@@ -230,7 +230,8 @@ When behaviour changes:
 3. update detailed specs only when their contract changed;
 4. add a decision only for cross-cutting/reversibility-sensitive choices;
 5. move useful historical rationale to reference/archive;
-6. delete duplicated status narration.
+6. delete duplicated status narration;
+7. before creating a new Markdown file, apply the placement/new-document rules in `docs/README.md`.
 
 Use only these status words for current docs:
 
