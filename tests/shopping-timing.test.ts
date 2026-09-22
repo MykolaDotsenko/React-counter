@@ -22,6 +22,7 @@ import {
   updateQaSpotCheck,
   type QaTimingEnvironment,
   type QaTimingSample,
+  type QaTimingSession,
 } from "../src/qa/shopping-timing";
 
 const environment: QaTimingEnvironment = {
@@ -35,17 +36,11 @@ const environment: QaTimingEnvironment = {
   reducedMotion: false,
 };
 
-const completeRequiredPhysicalEvidence = <T extends {
-  physicalContext: {
-    oneHanded: boolean;
-    brightStoreLikeLighting: boolean;
-    defaultTextSize: boolean;
-  };
-}>(
-  session: T,
-) => {
+const completeRequiredPhysicalEvidence = (
+  session: QaTimingSession,
+): QaTimingSession => {
   let next = updateQaInputMethodLabel(
-    session as never,
+    session,
     "On-screen custom keypad · one thumb",
   );
 
@@ -251,7 +246,6 @@ describe("shopping timing QA model", () => {
       session,
       "iPhone SE · Safari",
     );
-    session = completeRequiredPhysicalEvidence(session);
 
     for (const key of Object.keys(session.checklist) as Array<
       keyof typeof session.checklist
@@ -367,6 +361,8 @@ describe("shopping timing QA model", () => {
     >) {
       session = updateQaChecklist(session, key, true);
     }
+
+    session = completeRequiredPhysicalEvidence(session);
 
     expect(summarizeQaEmpiricalGate(session)).toMatchObject({
       status: "target-met",
