@@ -91,7 +91,7 @@ npm run check
 npm run test:e2e
 ```
 
-`npm run check` runs lint, strict TypeScript, unit/component tests, and a production build.
+`npm run check` validates documentation structure/links, then runs lint, strict TypeScript, unit/component tests, and a production build.
 
 CI additionally validates:
 
