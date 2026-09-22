@@ -185,6 +185,7 @@ export type ApplicationError =
         | "completed-trip-not-found"
         | "repeat-source-unavailable"
         | "history-write-unavailable"
+        | "price-memory-write-unavailable"
         | "price-memory-not-found";
     }
   | DomainError;
@@ -229,6 +230,7 @@ export interface ShoppingAppController {
   readonly dismissCompletedSummary: () => AppCommandResult;
   readonly deleteCompletedTrip: (tripId: TripId) => AppCommandResult;
   readonly clearCompletedHistory: () => AppCommandResult;
+  readonly clearPriceMemory: () => AppCommandResult;
   readonly retryPersistence: () => AppCommandResult;
   readonly dispatch: (command: ActiveTripCommand) => AppCommandResult;
 }
@@ -1028,6 +1030,53 @@ export const createShoppingAppController = ({
     return replaceCompletedHistory([]);
   };
 
+  const clearPriceMemory = (): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (state.activeTrip !== null) {
+      return failure(state, applicationError("active-trip-exists"));
+    }
+
+    if (
+      state.priceMemories.length === 0 &&
+      state.priceMemoryPersistence.status === "healthy"
+    ) {
+      return success(state, false, "unchanged");
+    }
+
+    const now = clock.now();
+    const saveResult = priceMemoryPersistence.save([], now);
+
+    if (!saveResult.ok) {
+      const nextState = publish({
+        ...state,
+        priceMemoryPersistence: degradedPersistence(
+          saveResult.issue,
+          now,
+        ),
+      });
+
+      return failure(
+        nextState,
+        applicationError("price-memory-write-unavailable"),
+      );
+    }
+
+    const nextState = publish({
+      ...state,
+      priceMemories: EMPTY_PRICE_MEMORIES,
+      priceMemoryPersistence: HEALTHY_PERSISTENCE,
+    });
+
+    return success(nextState, true, "persisted");
+  };
+
   const retryPersistence = (): AppCommandResult => {
     if (state.lifecycle === "booting") {
       return failure(state, applicationError("not-ready"));
@@ -1233,6 +1282,7 @@ export const createShoppingAppController = ({
     dismissCompletedSummary,
     deleteCompletedTrip,
     clearCompletedHistory,
+    clearPriceMemory,
     retryPersistence,
     dispatch,
   });
