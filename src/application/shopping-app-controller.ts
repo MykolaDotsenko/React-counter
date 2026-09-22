@@ -19,7 +19,6 @@ import {
   initialState,
   recoveryState,
   success,
-  upsertCompletedTrip,
 } from "./shopping-app-support";
 import type {
   ActiveTripCommand,
