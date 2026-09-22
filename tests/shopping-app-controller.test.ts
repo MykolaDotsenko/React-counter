@@ -1560,7 +1560,9 @@ describe("ShoppingAppController trip completion", () => {
       4_672,
     );
     expect(result.state.persistence).toEqual({
-      status: "healthy",
+      status: "degraded",
+      issue: historyWriteFailure,
+      since: LATER,
     });
   });
 
@@ -2113,9 +2115,7 @@ describe("ShoppingAppController dispatch", () => {
     });
     expect(result.state.completedTrips).toEqual([completed]);
     expect(result.state.persistence).toEqual({
-      status: "degraded",
-      issue: historyWriteFailure,
-      since: LATER,
+      status: "healthy",
     });
   });
 
