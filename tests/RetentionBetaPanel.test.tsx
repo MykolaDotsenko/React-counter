@@ -28,6 +28,16 @@ describe("RetentionBetaPanel", () => {
       />,
     );
 
+    expect(document.title).toBe(
+      "Shopping Budget Companion — Retention Beta",
+    );
+    expect(
+      document.querySelector<HTMLMetaElement>(
+        'meta[name="description"]',
+      )?.content,
+    ).toBe(
+      "Internal Shopping Budget Companion real-store retention beta with privacy-safe local evidence.",
+    );
     expect(
       screen.queryByRole("heading", { name: "Local beta evidence" }),
     ).toBeNull();
