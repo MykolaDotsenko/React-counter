@@ -98,6 +98,8 @@ src/
 │       ├── FinishTripSurface.tsx
 │       ├── CompletedSummaryScreen.tsx
 │       ├── HistoryScreen.tsx
+│       ├── HistoryTripCard.tsx
+│       ├── HistoryDataControls.tsx
 │       ├── RecentItemsSection.tsx
 │       └── PersistenceHealthNotice.tsx
 ├── infrastructure/
