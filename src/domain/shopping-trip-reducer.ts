@@ -2,6 +2,7 @@ import type { Result } from "./money";
 import {
   cartTotalResult,
   domainError,
+  isoTimestamp,
   normalizeLabel,
   ok,
   timestampAtOrAfter,
