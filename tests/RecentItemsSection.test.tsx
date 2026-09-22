@@ -191,9 +191,9 @@ describe("RecentItemsSection", () => {
       screen.getByRole("button", { name: "Use remembered price" }),
     );
 
-    expect(
+    expect(document.activeElement).toBe(
       screen.getByRole("button", { name: "Cancel" }),
-    ).toBeFocused();
+    );
 
     await user.keyboard("{Escape}");
 
