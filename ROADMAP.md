@@ -128,7 +128,7 @@ Suggested PR:
 - implement EUR-only parser/formatter from MONEY-SPEC.md
 - introduce explicit SupportedCurrency = 'EUR' boundary
 - add exact parsing/formatting/property-style tests
-- keep existing Pulse UI working during the migration where practical
+- keep the existing public UI stable during migration where practical
 
 ### Must not include
 
@@ -312,7 +312,7 @@ Key locks:
 - quiet linear capacity bar
 - Add price is the single primary action
 - light mode is first-class for bright-store use
-- subtle Pulse-quality motion may survive only as polish
+- subtle motion may survive only where it adds useful polish
 
 ## Phase 4 — core Budget Cart UI
 
@@ -372,7 +372,7 @@ Suggested PR:
 - purpose is understandable in 3–5 seconds
 - no account/setup wall
 - mobile-first at compact viewport
-- current Pulse visual identity is simplified rather than discarded
+- the earlier experimental visual identity is simplified into task-focused product styling
 - remaining budget has strongest hierarchy
 
 ## Phase 5 — ultra-fast manual price entry
