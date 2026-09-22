@@ -415,9 +415,8 @@
 
 .tripDetails summary {
   min-height: 48px;
-  display: flex;
-  align-items: center;
   width: fit-content;
+  padding: 14px 4px;
   color: var(--shopping-accent);
   font-size: 0.86rem;
   font-weight: 800;
