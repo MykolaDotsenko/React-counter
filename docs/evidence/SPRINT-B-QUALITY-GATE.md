@@ -28,9 +28,14 @@ The QA evidence recorder now treats empirical evidence as a strict contract rath
 - one-handed use, bright/store-like lighting, and default system text size are structured primary-context requirements
 - typo correction, five consecutive adds, consistent input method, and compact spot-check are structured checklist requirements
 - dark appearance, 200%/large text, and reduced-motion physical spot-checks are recorded independently when available
-- a recorded secondary spot-check failure blocks release eligibility; not-run remains visible and does not pretend that a physical check happened
+- a recorded secondary spot-check failure blocks B6 eligibility; not-run remains visible and does not pretend that a physical check happened
 - samples outside the fixture remain visible as excluded evidence rather than silently contaminating the KPI
-- QA schema v3 preserves valid v2 samples/device labels through migration but intentionally requires the new physical-context evidence before release eligibility
+- QA schema v3 preserves valid v2 samples/device labels through migration but intentionally requires the new physical-context evidence before B6 eligibility
+- every timing sample is integrity-checked: non-empty unique ID, positive finite duration, canonical ISO completion time, positive exact minor-unit price, safe integer quantity, and exact unit-price × quantity line-total consistency
+- duplicate sample IDs and mathematically inconsistent samples are rejected instead of entering evidence summaries
+- copied evidence uses a versioned `shopping-timing-evidence` export with a recomputed B6 summary; tampered exported summaries fail parser validation
+- exports explicitly disclose that device metadata is present while item names/store history are absent and no network transmission occurs
+- **Start fresh QA session** clears all QA evidence and recaptures the current viewport/appearance/environment so a changed physical setup cannot inherit stale environment metadata
 
 This document separates:
 
@@ -45,15 +50,15 @@ The public Shopping Budget Companion may ship while this evidence remains pendin
 
 Authoritative sources:
 
-- PRODUCT.md
-- FUNCTIONALITY.md
-- SCENARIOS.md
-- UX.md
-- DESIGN.md
-- TESTING.md
-- docs/ACCESSIBILITY.md
-- docs/CORE-UI-EXECUTION-BRIEF.md
-- ROADMAP.md
+- docs/PRODUCT.md
+- docs/reference/FUNCTIONALITY.md
+- docs/reference/SCENARIOS.md
+- docs/reference/UX.md
+- docs/DESIGN.md
+- docs/TESTING.md
+- docs/quality/ACCESSIBILITY.md
+- docs/archive/CORE-UI-EXECUTION-BRIEF.md
+- docs/ROADMAP.md
 
 ## Automated B6 evidence
 
@@ -153,7 +158,8 @@ The QA build:
 - records a sample from intentional **Add price** activation until the canonical summary has rendered again
 - automatically calculates median, P75 and maximum for the two required ordinary price-only tasks using only the documented EUR 500 / zero-buffer measurement fixture
 - provides a manual one-hand/bright-store checklist
-- can copy the raw evidence as JSON
+- can copy a versioned, parseable evidence export as JSON; the derived B6 gate is recomputed from the validated session instead of trusted as free-form data
+- offers a two-step **Start fresh QA session** action that clears QA evidence and recaptures environment metadata
 
 The small **QA n/20** tab is fixed outside document layout. Keep the panel closed while measuring so it does not cover the shopping UI.
 
@@ -162,7 +168,7 @@ The small **QA n/20** tab is fixed outside document layout. Keep the panel close
 For the 20 ordinary speed samples:
 
 1. open the guarded QA URL on the physical phone
-2. reset timing samples from the QA panel
+2. if the physical setup, appearance, viewport, or device changed, use **Start fresh QA session** so environment metadata is recaptured; otherwise reset only timing samples
 3. start a **custom EUR 500 budget**
 4. use **no safety buffer**
 5. close the QA panel
@@ -269,7 +275,7 @@ Interpretation:
 
 - <=2.5 s median: target met
 - >2.5 s and <=3.0 s median: usable release floor, but optimize before calling the speed target achieved
-- >3.0 s median: B6 speed gate fails; do not switch the public shell
+- >3.0 s median: B6 speed gate fails; do not mark B6 as passed or expand input breadth based on the speed claim
 
 ### One-hand / bright-store checklist
 
@@ -303,7 +309,7 @@ B6 can be marked complete only when:
 7. automated mobile/200%/reduced-motion/offline-runtime checks are green
 8. human timing results are recorded
 9. one-hand and bright-store checks are recorded
-10. no release blocker from docs/CORE-UI-EXECUTION-BRIEF.md remains
+10. no unresolved B6 blocker from docs/archive/CORE-UI-EXECUTION-BRIEF.md remains
 
 Until then:
 

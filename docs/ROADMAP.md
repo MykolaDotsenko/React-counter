@@ -26,31 +26,31 @@ Goal: make future AI-assisted development consistent.
 
 ### Deliverables
 
-- PRODUCT.md
-- FUNCTIONALITY.md
-- SCENARIOS.md
+- docs/PRODUCT.md
+- docs/reference/FUNCTIONALITY.md
+- docs/reference/SCENARIOS.md
 - docs/specs/MVP-SPEC.md
 - docs/specs/CONTRACTS.md
 - docs/specs/STATE-MACHINES.md
 - docs/specs/STORAGE-SCHEMA.md
 - docs/specs/MONEY-SPEC.md
-- TECH-STACK.md
-- docs/tech/TECHNOLOGY-RESEARCH.md
-- BRAND.md
-- MARKETING.md
+- docs/reference/TECH-STACK.md
+- docs/research/TECHNOLOGY-RESEARCH.md
+- docs/reference/BRAND.md
+- docs/reference/MARKETING.md
 - docs/marketing/RESEARCH.md
 - docs/marketing/STORE-LISTING-SPEC.md
 - docs/marketing/LAUNCH-CHECKLIST.md
-- UX.md
-- DESIGN.md
-- DOMAIN.md
-- ARCHITECTURE.md
-- TESTING.md
-- ROADMAP.md
+- docs/reference/UX.md
+- docs/DESIGN.md
+- docs/DOMAIN.md
+- docs/ARCHITECTURE.md
+- docs/TESTING.md
+- docs/ROADMAP.md
 - AGENTS.md
-- docs/COMPETITIVE-RESEARCH.md
-- docs/DATA-PERSISTENCE.md
-- docs/ACCESSIBILITY.md
+- docs/research/COMPETITIVE-RESEARCH.md
+- docs/architecture/DATA-PERSISTENCE.md
+- docs/quality/ACCESSIBILITY.md
 - docs/DECISIONS.md or ADRs as decisions accumulate
 
 ### Exit criteria
@@ -72,7 +72,7 @@ Before code migration begins, confirm:
 
 - MVP currency scope is locked to EUR
 - exact EUR parser/formatter contract is agreed
-- application/domain/infrastructure boundaries match ARCHITECTURE.md
+- application/domain/infrastructure boundaries match docs/ARCHITECTURE.md
 - state-machine forbidden states remain impossible
 - v1 storage schema is internally consistent
 - no unresolved spec contradiction exists
@@ -91,7 +91,7 @@ Confirm before adding dependencies:
 - Phase 1 adds only TypeScript/tooling and fast-check
 - Zod waits until persistence runtime validation is implemented
 - PWA/scanner/OCR dependencies remain phase-gated
-- TECH-STACK.md and docs/tech/TECHNOLOGY-RESEARCH.md have no unresolved contradiction
+- docs/reference/TECH-STACK.md and docs/research/TECHNOLOGY-RESEARCH.md have no unresolved contradiction
 
 Current stack fit: **98/100**.
 
@@ -245,7 +245,7 @@ Suggested PR:
 
 ## Scenario validation gate — before Phase 4
 
-Before building the final core UI, review the Tier 0 scenarios in SCENARIOS.md and verify that the proposed interaction model supports them without contradictory behaviour.
+Before building the final core UI, review the Tier 0 scenarios in docs/reference/SCENARIOS.md and verify that the proposed interaction model supports them without contradictory behaviour.
 
 At minimum, walkthrough/prototype:
 
@@ -269,7 +269,7 @@ No Tier 0 scenario may fall below the documented target quality without an expli
 
 Before a final product name, icon, public landing page, or app-store metadata is locked:
 
-- review BRAND.md
+- review docs/reference/BRAND.md
 - complete the naming checks required by D-021
 - validate that a new person understands the pre-checkout job
 - ensure the visual mark communicates remaining capacity without looking like generic fintech
@@ -287,9 +287,9 @@ Selected direction:
 
 Decision record:
 
-- docs/design/PHASE-4-DESIGN-VALIDATION.md
+- docs/evidence/PHASE-4-DESIGN-VALIDATION.md
 
-The three directions defined in DESIGN.md were compared against the same canonical fixture:
+The three directions defined in docs/DESIGN.md were compared against the same canonical fixture:
 
 - Calm utility
 - Premium spatial
@@ -348,7 +348,7 @@ Historical note: during the early migration, the new shopping shell stayed isola
 
 Execution contract:
 
-- docs/CORE-UI-EXECUTION-BRIEF.md — Sprint A
+- docs/archive/CORE-UI-EXECUTION-BRIEF.md — Sprint A
 
 Do not implement Phase 4 as one oversized PR. Follow the brief's application-controller → bootstrap → start-flow → remaining-first-screen → persistence-health → hardening sequence.
 
@@ -368,7 +368,7 @@ Suggested PR:
 
 ### Acceptance criteria
 
-- active-trip behaviour matches FUNCTIONALITY.md
+- active-trip behaviour matches docs/reference/FUNCTIONALITY.md
 - purpose is understandable in 3–5 seconds
 - no account/setup wall
 - mobile-first at compact viewport
@@ -385,7 +385,7 @@ Progress:
 - B3 Buffer / over-budget consequence states — **complete via PR #24**
 - B4 Quantity — **complete via PR #25**
 - B5 Commit / persist / return — **complete via PR #26**
-- B6 Correction minimum + quality gate — **automated/code gate implemented and green; QA v3 now structurally captures input method, one-handed/bright-store/default-text context and secondary physical spot-checks with v2 evidence migration; representative human timing and physical evidence itself remains unverified under explicit D-039 sequencing waiver**
+- B6 Correction minimum + quality gate — **automated/code gate implemented and green; QA v3 structurally captures input method, one-handed/bright-store/default-text context and secondary physical spot-checks with v2 evidence migration. Evidence integrity now rejects inconsistent/duplicate samples, supports versioned verifiable exports, and can recapture environment metadata through a fresh-session reset. Representative human timing and physical evidence itself remains unverified under explicit D-039 sequencing waiver.**
 
 B5 closes the projection-to-canonical loop: the application controller creates the confirmed manual CartItem from the validated `unitPriceMinor + quantity` intent, commits it through the domain reducer, attempts persistence immediately, and returns the UI to canonical summary state. A failed storage write keeps the committed item in memory and surfaces degraded persistence rather than rolling back valid shopping state.
 
@@ -395,7 +395,7 @@ B3 locks the threshold interaction before canonical commit wiring: reserve-only 
 
 Execution contract:
 
-- docs/CORE-UI-EXECUTION-BRIEF.md — Sprint B
+- docs/archive/CORE-UI-EXECUTION-BRIEF.md — Sprint B
 
 Do not begin Sprint B until the Sprint A stop/go gate passes.
 
@@ -710,8 +710,8 @@ Exceptions:
 
 Full retention contract:
 
-- docs/PRODUCT-SUCCESS-STRATEGY.md
-- docs/CORE-UI-EXECUTION-BRIEF.md
+- docs/research/PRODUCT-SUCCESS-STRATEGY.md
+- docs/archive/CORE-UI-EXECUTION-BRIEF.md
 - docs/RETENTION-BETA-PLAYBOOK.md — facilitator workflow, export validation, cohort denominators, and anti-fabrication rules
 
 ## Phase 9 — offline PWA
@@ -877,7 +877,7 @@ After retention validation:
 
 ## Explicitly not planned
 
-Unless PRODUCT.md is intentionally changed with strong evidence:
+Unless docs/PRODUCT.md is intentionally changed with strong evidence:
 
 - bank synchronization
 - income/bill management
@@ -911,22 +911,22 @@ Cosmetic refactoring can wait.
 Before implementing a roadmap item, an AI agent should read:
 
 1. AGENTS.md
-2. PRODUCT.md
-3. relevant FUNCTIONALITY.md section
-4. relevant SCENARIOS.md entries
+2. docs/PRODUCT.md
+3. relevant docs/reference/FUNCTIONALITY.md section
+4. relevant docs/reference/SCENARIOS.md entries
 5. relevant docs/specs/MVP-SPEC.md requirements
 6. relevant docs/specs/CONTRACTS.md interfaces
 7. relevant docs/specs/STATE-MACHINES.md transitions
 8. docs/specs/STORAGE-SCHEMA.md when persistence is touched
 9. docs/specs/MONEY-SPEC.md for any price/budget/quantity/checkout work
-10. TECH-STACK.md and docs/tech/TECHNOLOGY-RESEARCH.md for dependency/framework/platform work
-11. BRAND.md for naming/copy/identity work
-12. MARKETING.md and relevant docs/marketing/* for acquisition/store/launch work
-13. relevant UX.md section
-14. DESIGN.md for visual/user-facing work
-15. relevant DOMAIN.md section
-16. ARCHITECTURE.md
-17. TESTING.md
+10. docs/reference/TECH-STACK.md and docs/research/TECHNOLOGY-RESEARCH.md for dependency/framework/platform work
+11. docs/reference/BRAND.md for naming/copy/identity work
+12. docs/reference/MARKETING.md and relevant docs/marketing/* for acquisition/store/launch work
+13. relevant docs/reference/UX.md section
+14. docs/DESIGN.md for visual/user-facing work
+15. relevant docs/DOMAIN.md section
+16. docs/ARCHITECTURE.md
+17. docs/TESTING.md
 18. this roadmap item
 
 The agent should implement only the current roadmap slice plus fixes required to keep main healthy.
