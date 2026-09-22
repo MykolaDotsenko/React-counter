@@ -1,5 +1,8 @@
 # Functionality and User Experience Contract
 
+> [!NOTE]
+> **Documentation role: supporting reference.** Use [../README.md](../README.md) for the authority model. This file may preserve extended flows and edge cases, but it must not override current authoritative product, domain, architecture, design, roadmap, testing, or spec contracts.
+
 ## Status
 
 This document defines the functional behaviour of the shopping budget companion.
