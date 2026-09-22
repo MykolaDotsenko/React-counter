@@ -1133,7 +1133,7 @@ export const clearActiveTrip = (
   };
 };
 
-export const retireLegacyPulseKeys = (
+export const retireHistoricalNonShoppingKeys = (
   storage: StorageLike | null | undefined,
 ): LegacyRetirementResult => {
   if (storage === null || storage === undefined) {
@@ -1226,7 +1226,7 @@ export const bootstrapShoppingPersistence = (
     };
   }
 
-  const retirement = retireLegacyPulseKeys(storage);
+  const retirement = retireHistoricalNonShoppingKeys(storage);
 
   if (reconciliationIssue !== null) {
     return {
