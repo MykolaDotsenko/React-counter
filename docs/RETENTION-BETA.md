@@ -19,7 +19,6 @@ Pages path:
 Build flags:
 
 ~~~text
-VITE_SHOPPING_SHELL=1
 VITE_SHOPPING_BETA_EVIDENCE=1
 ~~~
 

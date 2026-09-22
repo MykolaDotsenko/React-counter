@@ -4,7 +4,7 @@
 
 This document defines the target business rules for the shopping budget companion.
 
-The repository still retains the legacy Pulse Counter compatibility path, but the guarded shopping path already implements the exact EUR money model, ShoppingTrip / CartItem domain, price source/confidence semantics, projections, active-trip commands, manual-cart behaviour through Phase 5 / B6, Phase 6 price/quantity edit plus remove/Undo correction flows, Phase 7 completion/history/reconciliation, and the current Phase 8 local product identity + Price Memory domain. Scanner-backed sources remain later evidence-gated slices. Each rule below must be read with its explicit MVP/later-phase status rather than assumed shipped merely because it is specified.
+The repository implements the shopping domain through Phase 8 engineering: exact EUR money, ShoppingTrip / CartItem rules, price source/confidence semantics, projections, active-trip commands, correction/Undo, completion/history/reconciliation, local product identity, and Price Memory. Scanner-backed sources remain later evidence-gated slices.
 
 ## Domain goals
 
@@ -541,22 +541,22 @@ Barcode or product service is unavailable.
 
 This must not block manual entry.
 
-## Migration from Pulse Counter
+## Legacy non-shopping data
 
-Do not reinterpret the old numeric counter value as money.
+Do not reinterpret historical non-shopping counter values as money.
 
-The existing Pulse Counter state has a different meaning and must not be silently migrated into a shopping trip.
+Historical counter state has a different meaning and must not be silently migrated into a shopping trip.
 
 Safe migration policy:
 
 - preserve no old count as financial data
-- remove or archive old counter-specific storage keys during the explicit product migration
+- retire historical counter-specific storage keys only after shopping bootstrap is safe
 - document the migration version
 - test fresh, legacy, malformed, and future-version storage
 
 ## TypeScript migration
 
-The old counter domain was intentionally small enough for JavaScript.
+The shopping domain is intentionally strict-TypeScript because money, persistence, and lifecycle invariants justify the stronger contract.
 
 The shopping domain introduces distinct money concepts, multiple price origins, optional metadata, persistence evolution, scanner boundary data, and a trip lifecycle.
 

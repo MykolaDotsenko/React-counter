@@ -1,642 +1,420 @@
-# Pulse Counter → Shopping Budget Companion
+# Shopping Budget Companion
 
-A small React counter that evolved into a disciplined **product-migration and interaction-engineering case study**.
-
-> **Repository status:** the public/default build is still Pulse Counter. The shopping-budget replacement is implemented behind a guarded feature flag and has passed its automated Sprint B quality gate. The final real-device one-hand timing validation is still required before the shopping shell can become the public default.
-
-The repository deliberately separates **implemented**, **guarded**, and **future** capabilities instead of presenting roadmap ideas as shipped features.
-
-## Live builds
-
-### Public demo — Pulse Counter
-
-https://mykoladotsenko.github.io/shopping-budget-companion/
-
-This remains the default GitHub Pages experience until the shopping replacement passes its empirical release gate.
-
-### Guarded retention beta
-
-A separate internal beta build is published at:
-
-> `https://mykoladotsenko.github.io/shopping-budget-companion/beta/`
-
-It runs the guarded shopping product with a local privacy-safe retention evidence recorder.
-
-It records behavioural structure only—trip starts/finishes, item-count milestones, manual-entry duration/abandonment, remembered-item reuse, and current-price override. It does **not** record prices, budgets, item names, stores, checkout totals, or transmit analytics.
-
-This route exists to support the documented 20–50 real-shopper retention gate. It does not mean that retention has been validated.
-
-See [docs/RETENTION-BETA.md](./docs/RETENTION-BETA.md) for the evidence schema, privacy boundary, reset/export rules, and study protocol.
-
-## Guarded shopping QA
-
-https://mykoladotsenko.github.io/shopping-budget-companion/qa/
-
-The QA route is a separate internal build used for real-device timing and usability validation. It is statically marked noindex/nofollow/noarchive and does not change the public Pulse Counter bundle.
-
-The guarded shopping builds use a separate provisional remaining-room favicon and the descriptive browser label **Shopping Budget Companion**. They no longer inherit the Pulse Counter neon icon/title. This is migration identity only; the final commercial name and final accent colour remain evidence-gated.
-
-Its v3 evidence contract records the primary/compact device labels, the comparable input method, explicit one-handed + bright-store-like + default-text context, the required usability checklist, and optional dark/large-text/reduced-motion physical spot-check results. Valid v2 timing samples migrate forward without being mistaken for the new physical evidence.
-
----
-
-## What this repository demonstrates
-
-The interesting part of this project is no longer the counter itself.
-
-The repository now demonstrates how to migrate a polished but narrow UI experiment into a real product domain without discarding correctness, accessibility, interaction quality, or architectural proportionality.
-
-The target product answers one question:
+A **mobile-first, local-first shopping budget companion** built to answer one question while you shop:
 
 > **How much can I still safely spend before checkout?**
 
-The core loop is intentionally narrow:
+[![Quality](https://github.com/MykolaDotsenko/shopping-budget-companion/actions/workflows/quality.yml/badge.svg)](https://github.com/MykolaDotsenko/shopping-budget-companion/actions/workflows/quality.yml)
+[![React](https://img.shields.io/badge/React-19.3-20232a?logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-> **set a limit → add prices → always know what is left**
-
-No account.  
-No bank connection.  
-No mandatory backend.  
-No scanner dependency.  
-Manual price entry remains the baseline.
+**Live app:** https://mykoladotsenko.github.io/shopping-budget-companion/
 
 ---
 
-## Current implementation status
+## Why this project is interesting
 
-| Area | Status |
-| --- | --- |
-| Public Pulse Counter shell | ✅ shipped |
-| Exact EUR money model | ✅ implemented |
-| ShoppingTrip / CartItem domain | ✅ implemented |
-| Remaining-first active screen | ✅ implemented |
-| Safety buffer | ✅ implemented |
-| Manual price entry | ✅ implemented |
-| Quantity | ✅ implemented |
-| Exact projected remaining | ✅ implemented |
-| Reserve / over-budget states | ✅ implemented |
-| Canonical add + persistence | ✅ implemented |
-| One-step Undo | ✅ implemented |
-| Edit/remove correction flow | ✅ implemented |
-| Atomic budget + safety-buffer adjustment | ✅ implemented |
-| Persistence-health UX | ✅ implemented |
-| Recovery from malformed/future saved state | ✅ implemented |
-| Reload / restore active trip | ✅ implemented |
-| 360×800 / 390×844 mobile gate | ✅ automated |
-| 200% text resilience | ✅ automated |
-| Reduced-motion flow | ✅ automated |
-| Chromium / Firefox / WebKit | ✅ automated |
-| Axe accessibility gate | ✅ automated |
-| Runtime core with network offline | ✅ automated |
-| Real-device one-hand timing | ⏳ pending |
-| Public shopping-shell switch | ⛔ blocked until empirical gate passes |
-| Completion/history/reconciliation | ✅ implemented |
-| Lightweight budget-outcome history | ✅ implemented |
-| Loss-safe history + local-data controls | ✅ implemented |
-| Shop again / recent-budget shortcut | ✅ implemented |
-| Recent Items | ✅ implemented |
-| Local product identity + Price Memory | ✅ implemented |
-| Freshness + current-price override | ✅ implemented |
-| Store-aware matching foundation | ✅ implemented |
-| User-facing store context | optional Phase 8 follow-up |
-| Guarded privacy-safe retention beta | ✅ implemented |
-| Real-user retention validation | ⏳ pending |
-| PWA cold offline launch | blocked until retention gate |
-| Barcode / OCR scanning | evidence-gated later work |
+This is not a generic expense tracker.
 
-See [ROADMAP.md](./ROADMAP.md) for the authoritative sequence.
+The product is deliberately optimized for a narrow in-store job:
+
+> **set a spending limit → add prices quickly → always know what remains**
+
+The engineering challenge is making that simple interaction trustworthy:
+
+- exact financial arithmetic
+- durable local persistence
+- explicit degraded-storage states
+- fast one-hand mobile interaction
+- reversible corrections
+- repeat-trip acceleration without pretending remembered prices are current
+- accessibility across keyboard, reduced motion, large text, forced colours, and multiple browser engines
+- evidence-driven release gates instead of unsupported product claims
+
+There is no required account, backend, bank connection, camera, or network service in the core flow.
 
 ---
 
-## Shopping flow implemented today
+## Product flow
 
-### Start
+### 1. Start a trip
 
-The guarded shopping shell begins with one question:
+Choose a quick budget or enter a custom EUR amount.
 
-> **How much can you spend today?**
+Optionally reserve a safety buffer.
 
-It supports:
+### 2. Add prices
 
-- quick budget values
-- custom EUR budget
-- optional safety buffer
-- no account or profile setup
-
-### Returning trip
-
-When completed history exists, the guarded shell offers **Shop again** using the most recent validated spending plan.
-
-It reuses only:
-
-- budget
-- safety buffer
-
-It deliberately creates a new trip with a new id/time and an empty cart. The completed trip remains immutable history.
-
-### Recent Items and Price Memory
-
-After a named, confirmed item is part of a **durably completed trip**, the guarded shopping shell can remember its last observed price locally.
-
-Rules:
-
-- the remembered price is advisory, not live
-- observation age is visible
-- one tap can reuse a familiar remembered price
-- crossing the nominal budget still requires explicit confirmation
-- **Enter current price** always remains available
-- choosing the current-price path preserves the product name while using the ordinary manual confirmed-price flow
-- using a remembered price keeps `priceSource=price-memory` and `priceConfidence=remembered`
-- simply finishing a trip with an unchanged remembered price does not falsely refresh its observation date
-- Price Memory has its own versioned storage record and cannot make the active cart unsavable
-
-Manual price entry remains the universal baseline.
-
-### History and local data
-
-Completed-trip history stays shopping-focused instead of becoming a finance dashboard.
-
-The guarded shell supports:
-
-- **Shop again** from any healthy completed-trip card
-- inline item details for answering “what did I pay last time?”
-- delete-one-trip and clear-all-history controls with explicit confirmation
-- persist-before-publish deletion so failed writes never pretend data disappeared
-- independent **Clear remembered prices** because Price Memory is a separate local record
-- a **Manage remembered prices** entry point when history is empty but memories remain
-- a **Repair remembered prices** entry point when the Price Memory record is degraded even if no valid records can be reconstructed
-- keyboard focus restoration after destructive confirmations are cancelled
-
-Clearing trip history does **not** silently clear Price Memory, and clearing Price Memory does **not** remove completed-trip history. The UI states this boundary explicitly.
-
-### Active trip
-
-The primary metric is **remaining capacity**, not money already spent.
-
-The screen shows:
-
-- safe amount remaining
-- cart total relative to budget
-- spent progress
-- explicit safe-limit boundary
-- visible reserve zone
-- recent cart items
-- one dominant **Add price** action
-- persistence warning when saving is degraded
-
-### Add price
-
-Common flow:
+The common path is intentionally short:
 
 1. tap **Add price**
 2. enter the price
-3. optionally adjust quantity
-4. inspect projected remaining
+3. optionally change quantity
+4. review projected remaining
 5. commit
 
-Example:
+Canonical money is stored in integer minor units:
 
-~~~text
-€1.29 × 3 = €3.87
-~~~
+```text
+€4.79  → 479
+€50.00 → 5000
+```
 
-The projection comes from domain logic before commit.
+No floating-point value is used as canonical financial state.
 
-### Safety buffer
+### 3. See what remains
 
-Budget and safety buffer can be adjusted during an active trip without mutating cart prices or quantities.
+The active screen is **remaining-first**, not spent-first.
 
-Example:
+It distinguishes:
 
-~~~text
-Nominal budget   €50.00
-Safety buffer     €2.00
-Safe limit       €48.00
-~~~
+- safe remaining
+- nominal remaining
+- safety-buffer use
+- nominal over-budget state
 
-Crossing only the safety buffer is informational and does **not** introduce a second confirmation step.
+Crossing the safety buffer is informational.
 
-Crossing the nominal budget requires explicit **Add anyway / Cancel** confirmation.
+Crossing the nominal budget requires explicit confirmation.
 
-### Correction and active-trip adjustment
+### 4. Correct mistakes safely
 
-Implemented correction support includes:
+Supported corrections include:
 
-- Backspace
-- Clear
-- Cancel
-- one-action Undo after add/edit/remove
-- edit price and quantity
+- Backspace / Clear / Cancel before commit
+- one-step Undo
+- edit price
+- edit quantity
 - remove item
-- adjust budget and safety buffer as one atomic canonical mutation
+- adjust budget and safety buffer during an active trip
 
-Budget adjustment deliberately preserves cart items. Lowering the budget below the current cart total is allowed and immediately produces the explicit over-budget state required by the product contract.
+### 5. Finish and reuse
 
-Undo restores the exact previous canonical cart snapshot and immediately attempts persistence. Budget/buffer adjustment is intentionally not added to the one-step cart Undo slot.
+Completed trips are stored separately from the active trip.
+
+Returning shoppers can:
+
+- **Shop again** with the previous spending plan
+- inspect lightweight trip history
+- reuse Recent Items
+- use local Price Memory
+- always choose **Enter current price** instead
+
+Remembered prices remain explicitly advisory and visibly dated.
 
 ---
 
-## Exact money by construction
+## Engineering highlights
 
-Canonical financial state never uses floating-point prices.
+### Exact money domain
 
-~~~text
-€4.79  → 479
-€50.00 → 5000
-~~~
-
-Money arithmetic lives in the pure TypeScript domain layer using integer minor units.
+Financial logic lives in a pure TypeScript domain layer.
 
 React does not independently calculate:
 
 - line totals
-- cart totals
+- cart total
 - remaining budget
-- reserve use
+- safe remaining
 - over-budget state
 
-See [DOMAIN.md](./DOMAIN.md) and [docs/specs/MONEY-SPEC.md](./docs/specs/MONEY-SPEC.md).
+Property-based tests cover money and domain invariants.
+
+### Local-first durability
+
+Persistence is:
+
+- versioned
+- runtime-validated with Zod
+- reconstructed through domain constructors
+- isolated from React
+- explicit about degraded writes
+
+If a valid in-memory mutation cannot be persisted, the app keeps the valid state visible and reports degraded durability instead of pretending it was saved.
+
+### Loss-safe completion and history
+
+Trip completion uses reconciliation-aware persistence.
+
+Important cases are covered:
+
+- history write succeeds before active-trip cleanup
+- failed history write keeps the active trip recoverable
+- stale active copies are reconciled without duplicating completed trips
+- destructive history changes use persist-before-publish semantics
+
+### Independent Price Memory
+
+Price Memory is a separate advisory persistence concern.
+
+That separation prevents a Price Memory failure from degrading an otherwise healthy active cart/history record.
+
+### One canonical application state
+
+The application uses a plain TypeScript `ShoppingAppController` plus `useSyncExternalStore`.
+
+No Redux, Zustand, XState, router, or backend is required for the current product.
 
 ---
 
 ## Architecture
 
-The shopping migration uses one canonical application state and a deliberately small dependency graph.
-
-~~~text
-React UI / feature components
-            ↓
+```text
+React UI
+   ↓
 ShoppingAppController
-            ↓
-Pure TypeScript domain + selectors
-            ↓
-application ports
-            ↓
-browser infrastructure adapters
-~~~
+   ↓
+Pure domain + selectors
+   ↓
+Application ports
+   ↓
+Browser infrastructure adapters
+```
 
-Key rules:
+Responsibilities stay deliberately narrow:
 
-- **domain owns business truth**
-- React renders state and sends intent
-- React does not perform storage writes
-- React does not own financial arithmetic
-- persistence happens in the application command path
-- infrastructure never becomes a source of money truth
-- one canonical in-memory application snapshot exists
-- no Redux, Zustand or XState runtime is used
-
-The plain-TypeScript ShoppingAppController owns lifecycle, canonical trip state, commands, persistence ordering, degraded durability, recovery and one-step Undo.
-
-React reads the controller through useSyncExternalStore.
-
-### Persistence ordering
-
-~~~text
-validate intent
-    ↓
-compute valid domain state
-    ↓
-attempt synchronous persistence
-    ↓
-publish canonical application state
-    ↓
-render
-    ↓
-optional visual feedback
-~~~
-
-If storage fails, the valid cart remains visible in memory and the UI reports degraded durability instead of pretending the trip was saved.
+| Layer | Owns |
+| --- | --- |
+| **Domain** | money, trip invariants, projections, selectors |
+| **Application** | lifecycle, commands, Undo, persistence ordering, recovery |
+| **Infrastructure** | storage schemas, localStorage adapters, runtime boundaries |
+| **UI** | rendering, drafts, focus, accessibility, interaction feedback |
+| **QA** | timing and retention evidence that never becomes product state |
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ---
 
-## Persistence and recovery
-
-Active-trip persistence is:
-
-- local-first
-- versioned
-- validated with Zod at the untrusted JSON boundary
-- reconstructed through domain constructors
-- isolated from React
-
-Failure behavior is explicit:
-
-- malformed saved data is not silently reinterpreted
-- unsupported future versions enter recovery
-- failed writes do not roll back valid in-memory cart state
-- the UI never falsely claims that data was saved
-- retry is available when technically meaningful
-
-See [docs/DATA-PERSISTENCE.md](./docs/DATA-PERSISTENCE.md).
-
----
-
-## Design system: Calm Utility
-
-The shopping interface intentionally moved away from the visual spectacle of the original Pulse Counter.
-
-Target feel:
-
-> **calm, precise, practical, one-hand friendly**
-
-Design priorities:
-
-- remaining-first hierarchy
-- large tabular money values
-- warm neutral surfaces
-- restrained semantic colour
-- light mode as a first-class supermarket mode
-- dark-mode equivalent
-- visible focus
-- reduced-motion equivalence
-- forced-colours support
-- no colour-only financial state
-
-The progress model is:
-
-> **spent → safe-limit boundary → reserve**
-
-The reserve zone uses structural/pattern treatment so it remains understandable without relying only on colour.
-
-See [DESIGN.md](./DESIGN.md) and [UX.md](./UX.md).
-
----
-
-## Accessibility and browser quality
-
-Automated coverage includes:
-
-- semantic landmarks
-- keyboard operation
-- focus restoration
-- over-budget focus management
-- Escape recovery
-- 48px frequent controls
-- 200% text sizing
-- reduced motion
-- forced colours
-- no colour-only reserve state
-- axe WCAG A/AA checks
-- Chromium
-- Firefox
-- WebKit
-
-Axe coverage includes the start screen, active-trip screen, price-entry surface and nominal over-budget review.
-
-Accessibility automation is treated as evidence, not a substitute for real assistive-technology testing.
-
-See [docs/ACCESSIBILITY.md](./docs/ACCESSIBILITY.md).
-
----
-
-## Sprint B flagship scenario
-
-The browser gate exercises a full exact-money journey:
-
-~~~text
-budget €50
-buffer €2
-
-+ €3.79
-+ €12.50
-+ €1.29 × 3
-→ exact remaining
-
-enter typo
-→ correct before commit
-
-cross safety buffer
-→ informational consequence
-
-preview nominal overage
-→ Cancel
-→ cart unchanged
-
-add valid item
-reload
-restore exact trip
-continue adding
-~~~
-
-This scenario runs across the full browser matrix and includes persistence, mobile and accessibility assertions.
-
----
-
-## Empirical release gate
-
-The remaining Sprint B blocker is intentionally **human**, not technical.
-
-Target for the common price-only flow:
-
-> **median ≤ 2.5 seconds**
-
-Minimum release-quality floor:
-
-> **approximately ≤ 3.0 seconds**
-
-Automation cannot honestly prove this because Playwright measures machine interaction, not a person using a phone one-handed.
-
-The guarded QA build measures real time from **Add price activation** until the canonical summary is rendered again.
-
-Required timing set:
-
-- 10 × €4.79
-- 10 × €12.50
-
-The QA panel reports:
-
-- median
-- P75
-- maximum
-- sample count
-- canonical gate status
-- release eligibility
-- ignored non-target samples
-- device/browser evidence
-- one-hand / bright-store checklist
-
-The public shopping-shell switch remains blocked until this evidence is recorded.
-
-See [docs/SPRINT-B-QUALITY-GATE.md](./docs/SPRINT-B-QUALITY-GATE.md).
-
----
-
-## Legacy Pulse Counter
-
-The original public shell remains a useful interaction-engineering artifact.
-
-It demonstrates:
-
-- scoped keyboard interaction
-- native same-document View Transitions
-- pointer-reactive effects without React render churn
-- reduced-motion adaptation
-- versioned legacy persistence
-- container-query-driven layout
-- modern CSS without an animation framework
-
-The shopping migration deliberately keeps only the techniques that still create user value.
-
----
-
-## Technology stack
+## Tech stack
 
 ### Runtime
 
 - React 19.3
-- Vite 8
 - TypeScript 6 strict
-- Zod 4 at persistence boundaries
+- Vite 8
+- Zod 4
+- CSS Modules
 - native Web APIs
-- CSS Modules for shopping features
-
-### State and architecture
-
-- plain-TypeScript application controller
-- useSyncExternalStore
-- immutable canonical snapshots
-- versioned localStorage persistence
-- no global state library
-- no router
-- no backend
+- versioned `localStorage`
 
 ### Quality
 
 - ESLint 10
 - Vitest 5
 - React Testing Library
-- @testing-library/user-event
-- Playwright
-- @axe-core/playwright
+- `@testing-library/user-event`
 - fast-check
+- Playwright
+- `@axe-core/playwright`
 - GitHub Actions
 
-The dependency budget is intentionally small. A dependency is added only when a documented requirement earns it.
-
-See [TECH-STACK.md](./TECH-STACK.md).
+The dependency budget is intentionally small. A dependency is added only when a product requirement earns it.
 
 ---
 
 ## Quality gates
 
-Install:
-
-~~~bash
-npm ci
-~~~
-
 Core gate:
 
-~~~bash
+```bash
+npm ci
 npm run check
-~~~
+```
 
-This runs:
+`npm run check` runs:
 
 1. ESLint
 2. strict TypeScript
-3. Vitest unit/component tests
-4. Vite production build
+3. unit/component tests
+4. production build
 
 Browser gate:
 
-~~~bash
+```bash
 npm run test:e2e
-~~~
+```
 
-CI runs Playwright independently in Chromium, Firefox and WebKit.
+CI runs browser and accessibility coverage independently in:
 
-The Quality workflow also compiles the guarded empirical QA build separately.
+- Chromium
+- Firefox
+- WebKit
 
-GitHub Pages publishes two isolated artifacts:
+Automated coverage also includes:
 
-~~~text
-/shopping-budget-companion/      → public Pulse Counter
-/shopping-budget-companion/qa/   → guarded shopping empirical QA
-~~~
-
-QA instrumentation is tree-shaken from the public Pulse production bundle.
+- 360×800 and 390×844 mobile layouts
+- 200% text sizing
+- reduced motion
+- keyboard/focus behavior
+- forced-colours critical paths
+- axe WCAG A/AA checks
+- active-trip reload/restore
+- storage failure and recovery
+- exact-money flagship journeys
+- independent history / Price Memory deletion semantics
+- guarded QA and retention-beta builds
 
 ---
 
-## Representative repository structure
+## Validation builds
 
-~~~text
+The public root is the actual Shopping Budget Companion.
+
+Two separate internal builds support evidence collection:
+
+### Timing QA
+
+https://mykoladotsenko.github.io/shopping-budget-companion/qa/
+
+Used for representative one-hand timing and physical usability evidence.
+
+The documented manual-entry target remains **unverified until real-device evidence is collected**. Automated Playwright timings are not used as a substitute for human interaction data.
+
+### Retention beta
+
+https://mykoladotsenko.github.io/shopping-budget-companion/beta/
+
+Used for the Phase 8 real-store retention study.
+
+The beta recorder is local-only and intentionally excludes:
+
+- prices
+- budgets
+- item names
+- store history
+- account identity
+- network telemetry
+
+Real second-trip / third-trip validation is still pending.
+
+See [docs/RETENTION-BETA-PLAYBOOK.md](./docs/RETENTION-BETA-PLAYBOOK.md).
+
+---
+
+## Current status
+
+### Engineering
+
+- ✅ exact EUR money model
+- ✅ shopping trip domain
+- ✅ local-first active-trip persistence
+- ✅ remaining-first UI
+- ✅ fast manual price entry
+- ✅ quantity and projected totals
+- ✅ reserve / over-budget states
+- ✅ Undo, edit, remove, budget adjustment
+- ✅ persistence-health and recovery UX
+- ✅ trip completion and reconciliation
+- ✅ lightweight completed-trip history
+- ✅ Shop again
+- ✅ Recent Items
+- ✅ Price Memory
+- ✅ local-data controls
+- ✅ privacy-safe retention evidence harness
+- ✅ cohort-level retention analysis
+- ✅ Chromium / Firefox / WebKit CI
+
+### Evidence still pending
+
+- ⏳ representative real-device one-hand timing
+- ⏳ bright-store / software-keyboard physical validation
+- ⏳ 20–50 real-shopper retention beta
+- ⏳ measured second-trip and third-trip behavior
+
+PWA, barcode, and OCR breadth remain intentionally gated behind product evidence.
+
+---
+
+## Repository structure
+
+```text
 src/
-├── app/
-│   ├── ShoppingAppShell.tsx
-│   └── composition-root.ts
-├── application/
-│   ├── shopping-app-controller.ts
-│   └── react/
-├── domain/
-│   ├── money.ts
-│   └── shopping-trip.ts
+├── app/             # composition root + shopping shell
+├── application/     # controller, ports, React bridge
+├── domain/          # exact money, shopping trip, Price Memory
 ├── features/
-│   ├── counter/
-│   └── shopping/
-├── infrastructure/
-│   └── storage/
-└── qa/
-    ├── shopping-timing.ts
-    └── ShoppingTimingQaPanel.tsx
+│   └── shopping/    # product UI
+├── infrastructure/  # storage + browser adapters
+└── qa/              # timing / retention evidence
 
-tests/
-e2e/
-docs/
-├── specs/
-├── design/
-├── marketing/
-└── SPRINT-B-QUALITY-GATE.md
-~~~
-
-This is a responsibility map, not architecture theatre.
+tests/               # unit + component + application tests
+e2e/                 # Playwright browser/a11y journeys
+docs/                # detailed product, QA, and technical contracts
+```
 
 ---
 
-## Why this project exists
+## Run locally
 
-This repository started as a tiny counter.
+Requirements:
 
-Instead of creating another unrelated portfolio project, it is being evolved in place into a stronger case study:
+- Node.js 24+
+- npm
 
-- preserve good interaction engineering
-- introduce a real user problem
-- formalise exact money rules
-- introduce a pure domain
-- add application orchestration
-- make persistence failure explicit
-- design for one-hand mobile use
-- test actual release gates
-- keep target claims separate from shipped reality
+```bash
+git clone https://github.com/MykolaDotsenko/shopping-budget-companion.git
+cd shopping-budget-companion
+npm ci
+npm run dev
+```
 
-The goal is to demonstrate something more useful than framework breadth:
+Production build:
 
-> **how to turn a polished prototype into a trustworthy product without over-engineering it.**
+```bash
+npm run build
+npm run preview
+```
 
 ---
 
-## Documentation
+## Key documentation
 
-The repository is documentation-driven.
-
-Start here:
+The repository is documentation-driven, but the main entry points are intentionally limited:
 
 - [PRODUCT.md](./PRODUCT.md) — product thesis and scope
-- [ROADMAP.md](./ROADMAP.md) — authoritative implementation sequence
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — dependency and state boundaries
+- [ROADMAP.md](./ROADMAP.md) — implementation sequence and evidence gates
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — ownership and dependency boundaries
 - [DOMAIN.md](./DOMAIN.md) — business invariants
-- [FUNCTIONALITY.md](./FUNCTIONALITY.md) — product behavior
-- [UX.md](./UX.md) — interaction rules
-- [DESIGN.md](./DESIGN.md) — Calm Utility visual system
-- [BRAND.md](./BRAND.md) — positioning, voice, naming and identity strategy
-- [docs/BRAND-IMPLEMENTATION-AUDIT.md](./docs/BRAND-IMPLEMENTATION-AUDIT.md) — implemented brand evidence and drift guards
 - [TESTING.md](./TESTING.md) — quality strategy
-- [docs/ACCESSIBILITY.md](./docs/ACCESSIBILITY.md) — accessibility contract
-- [docs/SPRINT-B-QUALITY-GATE.md](./docs/SPRINT-B-QUALITY-GATE.md) — empirical release evidence
-- [docs/specs/](./docs/specs/) — detailed technical contracts
+- [docs/DATA-PERSISTENCE.md](./docs/DATA-PERSISTENCE.md) — storage and recovery contract
+- [docs/SPRINT-B-QUALITY-GATE.md](./docs/SPRINT-B-QUALITY-GATE.md) — human timing evidence contract
+- [docs/RETENTION-BETA-PLAYBOOK.md](./docs/RETENTION-BETA-PLAYBOOK.md) — real-store retention protocol
 
-When documentation and implementation disagree, the repository rule is to reconcile the contract rather than silently choosing one.
+Detailed specs remain under [docs/specs/](./docs/specs/).
+
+---
+
+## Design philosophy
+
+The interface follows a **Calm Utility** direction:
+
+- clear remaining-first hierarchy
+- warm neutral surfaces
+- one dominant action
+- restrained semantic colour
+- light mode suitable for bright stores
+- dark-mode equivalent
+- predictable focus
+- reduced-motion equivalence
+- no colour-only financial meaning
+
+The UI is intentionally less decorative than many portfolio demos because the product's job is to stay understandable while someone is actively shopping.
+
+---
+
+## What this project demonstrates to a reviewer
+
+This repository is primarily a case study in:
+
+- translating a real product constraint into domain rules
+- designing exact-money state instead of UI-level arithmetic
+- handling persistence failure honestly
+- keeping architecture proportional
+- separating product state from QA evidence
+- testing risky user journeys across browser engines
+- building accessibility into interaction contracts
+- using empirical gates to decide what **not** to build yet
+
+The goal is not framework breadth.
+
+It is a small product that is technically disciplined, testable, and explicit about what has — and has not — been validated.

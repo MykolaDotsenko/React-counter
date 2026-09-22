@@ -11,7 +11,7 @@ Implemented now:
 - strict Zod DTO validation
 - domain reconstruction
 - malformed/future-version recovery outcomes
-- safe legacy Pulse-key retirement after successful shopping bootstrap
+- safe historical non-shopping key retirement after successful shopping bootstrap
 
 Implemented beyond the original Phase 3 baseline:
 
@@ -33,7 +33,7 @@ This document continues to define those later persistence slices before they are
 - safe migration
 - deterministic validation
 - loss-avoiding completion flow
-- no reinterpretation of Pulse Counter data
+- no reinterpretation of historical non-shopping data
 - room for future price memory without polluting MVP records
 
 ## Namespace
@@ -56,7 +56,7 @@ budget-cart:price-memory
 Do not reuse:
 
 ~~~text
-pulse-counter:state
+historical versioned counter key
 counter
 ~~~
 
@@ -392,12 +392,12 @@ After reload:
 - restored cart reflects the undo result
 - Undo button may be unavailable
 
-## Legacy Pulse Counter policy
+## Historical non-shopping storage policy
 
 Keys:
 
 ~~~text
-pulse-counter:state
+historical versioned counter key
 counter
 ~~~
 
@@ -527,7 +527,7 @@ Required fixture classes:
 - quantity above 999
 - duplicate item ids
 - malformed price provenance
-- legacy Pulse state only
+- historical non-shopping state only
 - active + same completed id duplicate
 - write failure
 

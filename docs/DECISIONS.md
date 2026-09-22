@@ -22,7 +22,7 @@ Status: accepted
 
 ### Decision
 
-Evolve the current Pulse Counter into a focused shopping budget companion for people shopping under a hard per-trip spending limit.
+Build a focused shopping budget companion for people shopping under a hard per-trip spending limit.
 
 ### Rationale
 
@@ -200,7 +200,7 @@ Status: accepted
 
 ### Decision
 
-Unlike the old counter's silent memory fallback, shopping persistence failure must be surfaced to the user.
+Shopping persistence failure must be surfaced to the user rather than silently degrading to ephemeral memory.
 
 ### Rationale
 
@@ -1439,7 +1439,7 @@ Status: accepted
 
 ### Decision
 
-Separate the browser-level identity of guarded shopping builds from the legacy Pulse Counter identity.
+Keep internal QA/beta browser metadata distinct from the public product context without creating a second product identity.
 
 The guarded `/qa/` and `/beta/` builds use:
 
@@ -1449,9 +1449,9 @@ The guarded `/qa/` and `/beta/` builds use:
 - shopping-specific descriptions
 - noindex/nofollow/noarchive
 
-The public/default root remains Pulse Counter until the existing release gates permit an intentional shopping-shell switch.
+The public/default root is Shopping Budget Companion. QA and beta routes remain internal evidence surfaces.
 
-The provisional mark must follow the brand metaphor rather than inherit Pulse Counter spectacle:
+The provisional mark must follow the brand metaphor rather than decorative spectacle:
 
 - rounded boundary/container
 - intentionally open/remaining space
@@ -1463,7 +1463,7 @@ This decision does not lock `CartRoom`, the current accent hue, or a final produ
 
 ### Rationale
 
-The guarded shopping experience already implements Calm Utility, remaining-first hierarchy, and local-first trust. Continuing to show the Pulse neon favicon and Pulse/Budget Cart naming at browser level creates a visible identity contradiction.
+The guarded shopping experience already implements Calm Utility, remaining-first hierarchy, and local-first trust. Using an obsolete prototype favicon or inconsistent browser naming would create a visible identity contradiction.
 
 At the same time, promoting a working codename or provisional colour to final commercial identity before naming and recognition evidence would create a different form of premature lock-in.
 
@@ -1471,14 +1471,58 @@ A migration-specific product label and provisional metaphor-led mark resolve the
 
 ### Consequence
 
-- guarded shopping builds no longer inherit the Pulse favicon/title
+- QA and beta builds inherit the same core product identity while specializing their internal title/description
 - static post-build metadata and runtime React metadata must stay aligned
-- the public Pulse root is deliberately unchanged
+- the public root is the canonical Shopping Budget Companion
 - future brand PRs use `docs/BRAND-IMPLEMENTATION-AUDIT.md` as the anti-drift checklist
 - final naming, accent and production icon work remain evidence-gated
 - the shopping mark should not be added persistently to active-trip UI where it would compete with the remaining amount
 
 ### Revisit when
 
-The public shopping-shell switch is approved, final naming/conflict checks are complete, or user evidence requires a different visual identity direction.
+Final naming/conflict checks are complete, or user evidence requires a different visual identity direction.
 
+
+
+## D-045 — Retire the compatibility shell and publish one product
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+Shopping Budget Companion is the only application shell in the repository and the canonical public GitHub Pages root.
+
+Remove the obsolete prototype UI, its feature directory, presentation CSS, persistence implementation, component/model/storage tests, alternate favicon, and shell-selection feature flag.
+
+Keep only the minimal historical-storage retirement safeguard required to prevent unrelated old numeric state from being interpreted as shopping money.
+
+QA and retention-beta routes reuse the same shopping application. Their flags enable evidence instrumentation only; they do not select a different product.
+
+### Rationale
+
+Maintaining two products in one repository created avoidable cost:
+
+- the public demo did not represent the actual product work
+- README and architecture documentation needed migration disclaimers
+- CI built and deployed a product that was no longer the repository's purpose
+- legacy UI code, CSS, tests, branding, and feature flags obscured the architecture for reviewers
+- future contributors could accidentally preserve or extend compatibility code that had no product value
+
+The shopping implementation is already independently covered by exact-domain tests, application/controller tests, component tests, persistence/recovery tests, and the Chromium/Firefox/WebKit browser matrix.
+
+Retaining the old UI therefore adds noise without adding meaningful release safety.
+
+### Consequence
+
+- `src/App.jsx` always composes Shopping Budget Companion
+- no product-shell selection feature flag remains
+- the public root, QA route, and beta route share one product identity
+- the repository structure exposes only current product features
+- historical storage keys remain implementation details solely for safe retirement
+- B6 physical timing and Phase 8 retention evidence remain explicitly unverified and must not be fabricated or inferred from automation
+
+### Revisit when
+
+Only if a genuinely separate product shell becomes a validated product requirement. A demo or migration convenience is not sufficient reason to reintroduce one.

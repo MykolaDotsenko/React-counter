@@ -14,7 +14,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      "VITE_SHOPPING_SHELL=1 VITE_SHOPPING_BETA_EVIDENCE=1 npm run dev -- --host 127.0.0.1 --port 4173",
+      "VITE_SHOPPING_BETA_EVIDENCE=1 npm run dev -- --host 127.0.0.1 --port 4173",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
   },

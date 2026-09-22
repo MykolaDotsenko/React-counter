@@ -70,7 +70,7 @@ Do not rename the public product while the final brand-name gate remains unresol
 6. No mandatory metadata in the basic add flow.
 7. No visual redesign may weaken accessibility or one-hand ergonomics.
 8. No optional feature may slow the manual path.
-9. Pulse Counter compatibility may be removed only when the replacement path is fully covered.
+9. Remove compatibility code only when the shopping path is fully covered.
 10. README must not advertise target-only behaviour before it ships.
 
 # Sprint A — Phase 4: Core Budget Cart UI
@@ -283,7 +283,7 @@ Do not flash the start screen before restore completes.
 - no resume modal is required
 - corrupted/future-version data does not crash the app
 - degraded persistence is visible and actionable
-- legacy Pulse state is never rendered as money
+- historical non-shopping state is never rendered as money
 
 ## A3 — Start Trip screen
 
@@ -469,7 +469,7 @@ Evidence:
 - axe WCAG A/AA scans pass on start and active-trip screens
 - Chromium, Firefox, and WebKit pass the browser matrix
 
-A6 deliberately keeps the default/public Pulse Counter shell in place because Sprint A does not yet implement functional manual price entry. The shopping shell is exercised under `VITE_SHOPPING_SHELL=1` in the browser gate. Retire the default Pulse shell only after Sprint B makes the Add price path complete and passes its own quality gate.
+Historical note: A6 kept the then-current public shell stable because Sprint A did not yet implement functional manual price entry. That compatibility path has since been retired after the shopping flow became fully covered.
 
 The automated viewport evidence proves layout behavior at the documented dimensions; it does not by itself prove physical one-hand reach or bright-store readability on real hardware. Those empirical checks remain required before the production-shell switch and should be recorded alongside B6/manual timing evidence.
 
@@ -786,7 +786,7 @@ Pure application orchestration + tests.
 
 ## PR A2
 
-> feat: replace Pulse shell with trip bootstrap and start flow
+> feat: add trip bootstrap and start flow
 
 Bootstrap states + start trip.
 

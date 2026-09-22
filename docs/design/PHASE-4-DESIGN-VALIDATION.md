@@ -118,7 +118,7 @@ Exact amounts remain available in text, so the visual is reinforcement rather th
 ### Risks
 
 - can become visually generic if spacing/type/motion are mediocre
-- weaker immediate connection to the old Pulse Counter visual identity
+- weaker immediate connection to the earlier experimental visual identity
 
 ### Mitigation
 
@@ -162,12 +162,12 @@ Do not preserve the radial counter merely for continuity.
 - restrained glass/depth
 - partial radial capacity visual
 - stronger animated transitions
-- more obvious inheritance from Pulse Counter
+- more obvious inheritance from the earlier experimental UI
 
 ### Strengths
 
 - strongest visual identity
-- highest continuity with current Pulse work
+- highest continuity with earlier interaction work
 - potentially excellent portfolio screenshot
 - radial depletion can communicate finite capacity
 
@@ -245,7 +245,7 @@ Weights are chosen for in-store utility, not aesthetic preference.
 | Bright-store/light-mode resilience | 8 |
 | Trust / precision | 5 |
 | Visual differentiation | 4 |
-| Pulse/recruiter continuity | 3 |
+| Prior-work/recruiter continuity | 3 |
 
 ## Heuristic prototype scores
 
@@ -262,7 +262,7 @@ These are design-review scores, not user-study results.
 | Bright-store resilience | 99 | 89 | 98 |
 | Trust / precision | 100 | 94 | 97 |
 | Differentiation | 89 | 99 | 93 |
-| Pulse/recruiter continuity | 82 | 100 | 78 |
+| Prior-work/recruiter continuity | 82 | 100 | 78 |
 
 Weighted decision result:
 
@@ -299,7 +299,7 @@ Warm Everyday:
 
 ### Allowed inheritance
 
-The selected Calm Utility direction may retain small implementation qualities from Pulse Counter:
+The selected Calm Utility direction may retain small implementation qualities from earlier interaction work:
 
 - refined motion
 - subtle elevation

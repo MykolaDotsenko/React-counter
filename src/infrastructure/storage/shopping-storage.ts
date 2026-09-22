@@ -16,7 +16,7 @@ import {
   CURRENT_ACTIVE_TRIP_SCHEMA_VERSION,
   CURRENT_HISTORY_SCHEMA_VERSION,
   HISTORY_STORAGE_KEY,
-  LEGACY_PULSE_STORAGE_KEYS,
+  HISTORICAL_COUNTER_STORAGE_KEYS,
   activeTripDataV1Schema,
   completedTripDataV1Schema,
   historyDataEnvelopeV1Schema,
@@ -1142,14 +1142,14 @@ export const retireLegacyPulseKeys = (
       retired: false,
       issue: persistenceIssue(
         "storage-unavailable",
-        LEGACY_PULSE_STORAGE_KEYS[0],
+        HISTORICAL_COUNTER_STORAGE_KEYS[0],
       ),
     };
   }
 
   let failedKey: string | null = null;
 
-  for (const key of LEGACY_PULSE_STORAGE_KEYS) {
+  for (const key of HISTORICAL_COUNTER_STORAGE_KEYS) {
     try {
       storage.removeItem(key);
     } catch {

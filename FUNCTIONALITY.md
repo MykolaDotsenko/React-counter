@@ -4,7 +4,7 @@
 
 This document defines the functional behaviour of the shopping budget companion.
 
-The public/default build is still Pulse Counter until the guarded replacement passes its empirical release gate. In the guarded shopping shell, the core flow through Phase 8 engineering is implemented: start/restore, exact manual entry, edit/remove/Undo, active-trip budget and safety-buffer adjustment, loss-safe completion, optional checkout reconciliation, lightweight history, Shop again / repeat-budget acceleration, Recent Items, and local Price Memory. Real-user retention validation remains pending. Installed PWA support and scanning remain target behaviour until their evidence-gated roadmap phases land.
+The public/default build is Shopping Budget Companion. The core flow through Phase 8 engineering is implemented: start/restore, exact manual entry, edit/remove/Undo, active-trip budget and safety-buffer adjustment, loss-safe completion, optional checkout reconciliation, lightweight history, Shop again, Recent Items, and local Price Memory. Representative human timing evidence and real-user retention validation remain pending. Installed PWA support and scanning remain later evidence-gated work.
 
 This document answers:
 

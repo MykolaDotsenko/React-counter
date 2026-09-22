@@ -31,7 +31,7 @@ import {
 } from "../src/infrastructure/storage/shopping-storage";
 import {
   ACTIVE_TRIP_STORAGE_KEY,
-  LEGACY_PULSE_STORAGE_KEYS,
+  HISTORICAL_COUNTER_STORAGE_KEYS,
 } from "../src/infrastructure/storage/shopping-storage-schema";
 
 const START = "2026-09-21T09:00:00.000Z";
@@ -139,7 +139,7 @@ describe("shopping composition root", () => {
       recovery: null,
     });
     expect(storage.removals).toEqual([
-      ...LEGACY_PULSE_STORAGE_KEYS,
+      ...HISTORICAL_COUNTER_STORAGE_KEYS,
     ]);
   });
 
@@ -242,14 +242,14 @@ describe("shopping composition root", () => {
     );
   });
 
-  it("retires legacy Pulse values without interpreting them as a budget", () => {
+  it("retires historical counter values without interpreting them as a budget", () => {
     const storage = createStorage({
-      [LEGACY_PULSE_STORAGE_KEYS[0]]: JSON.stringify({
+      [HISTORICAL_COUNTER_STORAGE_KEYS[0]]: JSON.stringify({
         version: 1,
         value: 5_000,
         step: 25,
       }),
-      [LEGACY_PULSE_STORAGE_KEYS[1]]: "5000",
+      [HISTORICAL_COUNTER_STORAGE_KEYS[1]]: "5000",
     });
 
     const controller = bootstrapBrowserShoppingAppController({
@@ -261,15 +261,15 @@ describe("shopping composition root", () => {
     expect(controller.getSnapshot().lifecycle).toBe("idle");
     expect(controller.getSnapshot().activeTrip).toBeNull();
     expect(storage.values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
-    expect(storage.values.has(LEGACY_PULSE_STORAGE_KEYS[0])).toBe(false);
-    expect(storage.values.has(LEGACY_PULSE_STORAGE_KEYS[1])).toBe(false);
+    expect(storage.values.has(HISTORICAL_COUNTER_STORAGE_KEYS[0])).toBe(false);
+    expect(storage.values.has(HISTORICAL_COUNTER_STORAGE_KEYS[1])).toBe(false);
   });
 
   it("preserves malformed shopping data and enters recovery", () => {
     const raw = "{broken-json";
     const storage = createStorage({
       [ACTIVE_TRIP_STORAGE_KEY]: raw,
-      [LEGACY_PULSE_STORAGE_KEYS[0]]: "legacy-preserved",
+      [HISTORICAL_COUNTER_STORAGE_KEYS[0]]: "legacy-preserved",
     });
 
     const controller = bootstrapBrowserShoppingAppController({
@@ -298,7 +298,7 @@ describe("shopping composition root", () => {
       raw,
     });
     expect(storage.values.get(ACTIVE_TRIP_STORAGE_KEY)).toBe(raw);
-    expect(storage.values.get(LEGACY_PULSE_STORAGE_KEYS[0])).toBe(
+    expect(storage.values.get(HISTORICAL_COUNTER_STORAGE_KEYS[0])).toBe(
       "legacy-preserved",
     );
   });
@@ -387,7 +387,7 @@ describe("shopping composition root", () => {
   });
 
   it("keeps legacy-retirement failure as degraded idle, not recovery", () => {
-    const failedKey = LEGACY_PULSE_STORAGE_KEYS[0];
+    const failedKey = HISTORICAL_COUNTER_STORAGE_KEYS[0];
     const storage = createStorage(
       {
         [failedKey]: "legacy",

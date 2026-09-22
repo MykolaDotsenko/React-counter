@@ -9,7 +9,7 @@ import { MAX_ITEM_LABEL_CODE_POINTS } from "../../domain/shopping-trip";
 
 export const ACTIVE_TRIP_STORAGE_KEY = "budget-cart:active-trip";
 export const HISTORY_STORAGE_KEY = "budget-cart:history";
-export const LEGACY_PULSE_STORAGE_KEYS = [
+export const HISTORICAL_COUNTER_STORAGE_KEYS = [
   "pulse-counter:state",
   "counter",
 ] as const;

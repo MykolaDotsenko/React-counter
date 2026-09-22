@@ -4,7 +4,7 @@
 
 This document defines the target product direction for the repository.
 
-The current implementation is still Pulse Counter. The target evolution is a focused, mobile-first shopping budget companion. Code, README copy, and architecture must not claim target features until they are implemented.
+The current implementation is a focused, mobile-first Shopping Budget Companion. Code, README copy, and architecture must distinguish implemented behavior from future or evidence-gated capabilities.
 
 ## Product thesis
 

@@ -4,7 +4,7 @@
 
 Target brand strategy for the shopping-budget product.
 
-The shipped application is still Pulse Counter. The product name is not yet legally or commercially locked.
+The shipped application is Shopping Budget Companion. The descriptive product name is still not treated as a legally or commercially locked final brand.
 
 This document defines the brand system that should guide naming, visual identity, voice, messaging, product screenshots, app-store presentation, and future marketing.
 
@@ -708,7 +708,7 @@ Target:
 
 ## Implementation status
 
-The guarded shopping builds now use a provisional remaining-room mark and shopping-specific browser metadata rather than inheriting the Pulse Counter favicon/title.
+The public, QA, and beta builds use the same provisional remaining-room mark and shopping-specific browser identity.
 
 This does **not** lock:
 
@@ -716,7 +716,7 @@ This does **not** lock:
 - the current accent hue as the final brand colour
 - a production app-icon family
 
-The public/default root still intentionally represents Pulse Counter until the release gate permits the shopping-shell switch.
+The public/default root now represents Shopping Budget Companion. Evidence gates continue to govern performance and retention claims, not which product shell is published.
 
 See [docs/BRAND-IMPLEMENTATION-AUDIT.md](./docs/BRAND-IMPLEMENTATION-AUDIT.md) for the implementation evidence and anti-drift contract.
 

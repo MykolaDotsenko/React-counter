@@ -4,7 +4,7 @@
 
 Authoritative target technology stack for the shopping-budget product.
 
-The current repository still ships the Pulse Counter implementation. Dependencies in this document are target choices and should only be added when the roadmap phase that needs them begins.
+The repository ships Shopping Budget Companion. Dependencies described for later phases are target choices and should be added only when the roadmap phase that needs them begins.
 
 Detailed evaluation and alternatives live in:
 

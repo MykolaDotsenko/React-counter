@@ -4,7 +4,7 @@
 
 This file is the operating contract for AI-assisted work in this repository.
 
-The repository is evolving from Pulse Counter into a focused shopping budget companion. The current code and the target documentation are intentionally not identical during the migration.
+The repository ships a focused Shopping Budget Companion. Implementation and documentation must stay aligned; future capabilities remain phase-gated until they are implemented and validated.
 
 An agent must distinguish:
 
@@ -77,10 +77,10 @@ The repository is mid-migration.
 
 Default/public path:
 
-- Pulse Counter remains the default compatibility shell
+- Shopping Budget Companion is the only product shell
 - its JavaScript counter model/UI, native View Transition orchestration, and pointer-reactive effects remain in the repository
 
-Guarded shopping path behind `VITE_SHOPPING_SHELL=1`:
+Internal QA/beta variants use the same shopping product with evidence-only feature flags:
 
 - strict TypeScript EUR money domain
 - ShoppingTrip / CartItem domain and projections

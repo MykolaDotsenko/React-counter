@@ -4,7 +4,7 @@
 
 This document defines the target scenario model for the shopping budget companion.
 
-The current shipped application is still Pulse Counter. Scenarios below describe target behaviour and must not be represented as implemented until corresponding code lands.
+The shipped application is Shopping Budget Companion. Scenarios below mix implemented and later-phase behavior; each scenario must retain its explicit implementation/evidence status.
 
 This document is intentionally scenario-first: it tests whether the product remains coherent under normal use, interruption, uncertainty, mistakes, offline conditions, accessibility needs, and future scanning capabilities.
 

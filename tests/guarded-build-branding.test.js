@@ -5,24 +5,25 @@ import { describe, expect, it } from "vitest";
 
 import { applyGuardedBuildBrandingHtml } from "../scripts/guarded-build-branding.mjs";
 
-const legacyHtml = `<!doctype html>
+const publicHtml = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="theme-color" content="#070810" />
+    <meta name="theme-color" content="#f5f3ee" />
+    <meta name="application-name" content="Shopping Budget Companion" />
     <meta
       name="description"
-      content="Pulse Counter — a polished React micro-interaction case study focused on motion, accessibility and proportional architecture."
+      content="A mobile-first shopping budget companion with exact money, local-first persistence, fast price entry, and repeat-trip price memory."
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Pulse Counter — Interaction Lab</title>
+    <title>Shopping Budget Companion</title>
   </head>
   <body><div id="root"></div></body>
 </html>`;
 
-describe("guarded shopping build branding", () => {
-  it("replaces legacy Pulse identity without changing unrelated document content", () => {
-    const branded = applyGuardedBuildBrandingHtml(legacyHtml, {
+describe("internal shopping build metadata", () => {
+  it("specializes QA/beta metadata without changing unrelated document content", () => {
+    const branded = applyGuardedBuildBrandingHtml(publicHtml, {
       title: "Shopping Budget Companion — Retention Beta",
       description:
         "Internal Shopping Budget Companion real-store retention beta with privacy-safe local evidence.",
@@ -43,33 +44,11 @@ describe("guarded shopping build branding", () => {
     expect(branded).toContain(
       '<meta name="application-name" content="Shopping Budget Companion" />',
     );
-    expect(branded).toContain(
-      '<link rel="icon" type="image/svg+xml" href="./shopping-mark.svg" />',
-    );
-    expect(branded).not.toContain("Pulse Counter — Interaction Lab");
-    expect(branded).not.toContain('href="/favicon.svg"');
+    expect(branded).toContain('href="/favicon.svg"');
     expect(branded).toContain('<div id="root"></div>');
   });
 
-  it("replaces Vite base-prefixed legacy favicons in nested guarded builds", () => {
-    const builtHtml = legacyHtml.replace(
-      'href="/favicon.svg"',
-      'href="/shopping-budget-companion/qa/favicon.svg"',
-    );
-
-    const branded = applyGuardedBuildBrandingHtml(builtHtml, {
-      title: "Shopping Budget Companion — Empirical Timing QA",
-      description:
-        "Internal Shopping Budget Companion empirical timing and one-hand usability QA.",
-    });
-
-    expect(branded).toContain('href="./shopping-mark.svg"');
-    expect(branded).not.toContain(
-      "/shopping-budget-companion/qa/favicon.svg",
-    );
-  });
-
-  it("fails closed when the expected legacy shell changes unexpectedly", () => {
+  it("fails closed when the expected public metadata changes unexpectedly", () => {
     expect(() =>
       applyGuardedBuildBrandingHtml("<html></html>", {
         title: "Shopping Budget Companion — QA",
@@ -78,22 +57,23 @@ describe("guarded shopping build branding", () => {
     ).toThrow(/could not find expected title/i);
   });
 
-  it("keeps the public source shell on Pulse identity until the release switch", async () => {
+  it("keeps the public source metadata on the shopping product", async () => {
     const sourceIndex = await readFile(
       resolve(process.cwd(), "index.html"),
       "utf8",
     );
 
+    expect(sourceIndex).toContain("<title>Shopping Budget Companion</title>");
     expect(sourceIndex).toContain(
-      "<title>Pulse Counter — Interaction Lab</title>",
+      'name="application-name" content="Shopping Budget Companion"',
     );
     expect(sourceIndex).toContain('href="/favicon.svg"');
-    expect(sourceIndex).not.toContain('href="./shopping-mark.svg"');
+    expect(sourceIndex).not.toContain("noindex,nofollow,noarchive");
   });
 
-  it("keeps the provisional shopping mark aligned with the remaining-room identity", async () => {
+  it("keeps the favicon aligned with the remaining-room identity", async () => {
     const mark = await readFile(
-      resolve(process.cwd(), "public/shopping-mark.svg"),
+      resolve(process.cwd(), "public/favicon.svg"),
       "utf8",
     );
 
@@ -101,9 +81,6 @@ describe("guarded shopping build branding", () => {
     expect(mark).toContain('fill="#315f4f"');
     expect(mark).toContain('stroke="#fffdf9"');
     expect(mark).not.toMatch(/linearGradient|radialGradient/i);
-    expect(mark).not.toContain("#69f7ff");
-    expect(mark).not.toContain("#9a7cff");
-    expect(mark).not.toContain("#ff6eb6");
     expect(mark).not.toContain("€");
     expect(mark).not.toContain(">+<");
   });

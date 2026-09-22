@@ -6,8 +6,8 @@ This repository is in transition.
 
 Current repository reality:
 
-- the default/public shell is still Pulse Counter until Sprint B's final quality gate passes
-- the guarded shopping shell is implemented behind `VITE_SHOPPING_SHELL=1`
+- the public/default shell is Shopping Budget Companion
+- QA and retention-beta builds use the same product shell with evidence-only flags
 - React 19.3 + Vite 8 remain the runtime/build foundation
 - strict TypeScript 6 now covers the shopping money, domain, application, persistence, and shopping feature layers
 - exact EUR money and ShoppingTrip / CartItem domain are implemented
@@ -16,7 +16,7 @@ Current repository reality:
 - loss-safe completion, startup stale-active reconciliation, optional checkout reconciliation, and lightweight history are implemented
 - Calm Utility start, active-trip, persistence-health, recovery, manual price-entry, one-step Undo, Phase 6 edit/remove correction, atomic active-trip budget/buffer adjustment, and Phase 8 repeat-budget flows are implemented in the guarded shell
 - the first Phase 8 slice derives the repeat candidate from validated completed history; it does not introduce a duplicate recent-budget/settings persistence record
-- the legacy Pulse Counter UI, native typed View Transitions, and pointer-rendering adapter remain only on the default compatibility path
+- legacy counter UI/rendering code has been retired; only shopping product code remains
 - Vitest + React Testing Library + Playwright + axe remain the quality foundation
 
 Remaining target areas before the documented MVP is complete:
@@ -24,13 +24,13 @@ Remaining target areas before the documented MVP is complete:
 - optional user-facing store context and real-user Phase 8 retention validation
 - Phase 9 vite-plugin-pwa + Workbox generateSW and offline installed-shell validation
 - optional scanning adapters only in their evidence-gated later phases
-- eventual retirement of the Pulse Counter compatibility shell after the guarded replacement passes its release gates
+- empirical timing and retention gates remain evidence requirements, not alternate product shells
 
 This document describes both implemented shopping foundations and later target boundaries. Each section must be read together with its explicit phase/status language; target-only capabilities are not shipped merely because their architecture is documented.
 
 ## Architectural goal
 
-Preserve the proportional design quality of Pulse Counter while evolving from an arbitrary numeric counter into a real shopping domain.
+Keep interaction quality proportional to the product while the shopping domain remains the source of truth.
 
 The architecture should make the critical path:
 
@@ -451,15 +451,15 @@ IndexedDB is not automatically “more production-grade.” It becomes justified
 - storage errors are observable by the application
 - UI must surface inability to save an active trip
 
-### Legacy Pulse Counter state
+### Legacy non-shopping state
 
-Old counter values must not be reinterpreted as money.
+Legacy counter values must not be reinterpreted as money.
 
-Migration should deliberately retire the old counter storage key rather than invent financial meaning for historical counter data.
+Bootstrap deliberately retires the historical counter storage keys rather than inventing financial meaning for unrelated data.
 
 ## Persistence failure semantics
 
-The current Pulse Counter safely falls back to memory on storage errors because losing an arbitrary count is low impact.
+The retired counter tolerated silent in-memory fallback because its data was low impact. Shopping state uses an explicit persistence-health contract instead.
 
 That behaviour is no longer sufficient for a shopping trip.
 

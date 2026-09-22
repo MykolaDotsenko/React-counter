@@ -4,7 +4,7 @@
 
 This roadmap turns the product pivot into a sequence of small, reviewable changes.
 
-The repository should evolve from Pulse Counter into a focused shopping budget companion without a rewrite, feature explosion, or loss of the existing interaction-engineering quality.
+The repository evolves Shopping Budget Companion incrementally without feature explosion or loss of interaction-engineering quality.
 
 The roadmap is ordered by product dependency, not novelty.
 
@@ -113,7 +113,7 @@ Implementation evidence:
 - typecheck included in quality and Pages deployment gates
 - production dependency audit clean at merge
 - PR quality matrix green in Chromium, Firefox, and WebKit
-- existing Pulse Counter UI remained unchanged
+- the existing public shell remained stable during that implementation slice
 
 Suggested PR:
 
@@ -128,7 +128,7 @@ Suggested PR:
 - implement EUR-only parser/formatter from MONEY-SPEC.md
 - introduce explicit SupportedCurrency = 'EUR' boundary
 - add exact parsing/formatting/property-style tests
-- keep existing Pulse UI working during the migration where practical
+- keep the existing public UI stable during migration where practical
 
 ### Must not include
 
@@ -214,7 +214,7 @@ Implementation evidence:
 - unsupported future versions preserved and never overwritten during restore/bootstrap
 - canonical data rejects unexpected derived fields
 - active-trip write/restore/clear helpers with injected StorageLike boundary
-- legacy `pulse-counter:state` and `counter` values never interpreted as money
+- historical non-shopping storage values were never interpreted as money
 - legacy keys retired only after successful shopping-state bootstrap
 - valid in-memory trip survives simulated write failure unchanged
 - 33 dedicated persistence tests
@@ -231,14 +231,14 @@ Suggested PR:
 - add Zod 4 runtime validation at infrastructure boundaries
 - new storage schema
 - active-trip persistence
-- legacy Pulse storage retirement
+- historical non-shopping storage retirement
 - malformed-state recovery
 - unsupported-version handling
 - persistence-health state
 
 ### Acceptance criteria
 
-- old counter value is never reinterpreted as money
+- historical non-shopping values are never reinterpreted as money
 - committed shopping mutations survive reload
 - simulated write failure is visible to application/UI
 - no silent claim that an unsaved trip is safe
@@ -312,7 +312,7 @@ Key locks:
 - quiet linear capacity bar
 - Add price is the single primary action
 - light mode is first-class for bright-store use
-- subtle Pulse-quality motion may survive only as polish
+- subtle motion may survive only where it adds useful polish
 
 ## Phase 4 — core Budget Cart UI
 
@@ -342,7 +342,7 @@ Validation evidence:
 - Chromium, Firefox, and WebKit green
 - A6 caught and fixed a real 200% overflow defect and a WCAG contrast defect before merge
 
-The public/default Pulse Counter shell remains in place until Sprint B makes **Add price** genuinely functional. The replacement shopping shell is browser-gated with `VITE_SHOPPING_SHELL=1` during migration so every merged PR leaves the default product usable.
+Historical note: during the early migration, the new shopping shell stayed isolated until **Add price** and the core shopping path were functional. That compatibility shell has now been retired; the public root is the shopping product.
 
 **Next: Phase 5 / Sprint B — ultra-fast manual price entry.**
 
@@ -372,7 +372,7 @@ Suggested PR:
 - purpose is understandable in 3–5 seconds
 - no account/setup wall
 - mobile-first at compact viewport
-- current Pulse visual identity is simplified rather than discarded
+- the earlier experimental visual identity is simplified into task-focused product styling
 - remaining budget has strongest hierarchy
 
 ## Phase 5 — ultra-fast manual price entry

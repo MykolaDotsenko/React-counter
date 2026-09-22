@@ -88,8 +88,8 @@ const noticeCopy = (
         title: "Old app data could not be cleaned up",
         body:
           context === "active"
-            ? "Your current shopping trip is still available. Old Pulse Counter data was left untouched and was not converted into shopping money."
-            : "Old Pulse Counter data was left untouched and was not converted into shopping money.",
+            ? "Your current shopping trip is still available. Older unrelated local data was left untouched and was not converted into shopping money."
+            : "Older unrelated local data was left untouched and was not converted into shopping money.",
         risk: "cleanup",
       };
     case "storage-unavailable":

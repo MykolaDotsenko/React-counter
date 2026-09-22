@@ -59,7 +59,7 @@ Requirements:
 - Escape closes non-destructive overlays where appropriate
 - focus returns to a meaningful control after sheet/dialog close
 
-Do not preserve Pulse Counter arrow shortcuts if they conflict with natural shopping-form interaction.
+Do not introduce global arrow-key shortcuts that conflict with natural shopping-form interaction.
 
 ## Focus management
 
