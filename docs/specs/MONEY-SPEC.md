@@ -386,7 +386,7 @@ Requirements:
 
 The MVP does not need division.
 
-Do not add generic percentage or decimal arithmetic during Phase 1.
+Do not add generic percentage or decimal arithmetic without an explicit product/domain requirement and rounding contract.
 
 Future features that require rounding include:
 

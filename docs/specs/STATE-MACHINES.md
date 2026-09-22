@@ -352,7 +352,7 @@ Reconciliation rule for duplicate id:
 - duplicate/conflicting history ids are rejected as a history conflict instead of being guessed into one record
 - malformed or unsupported history is preserved rather than used as evidence to delete active data
 
-This deterministic reconciliation is implemented in the storage bootstrap path and covered by Phase 7 tests.
+This deterministic reconciliation is implemented in the storage bootstrap path and covered by persistence/application tests.
 
 ## 13. Forbidden states
 
