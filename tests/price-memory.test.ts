@@ -1,0 +1,247 @@
+import { describe, expect, it } from "vitest";
+
+import { mvpMinorUnits, type Result } from "../src/domain/money";
+import {
+  createPriceMemoryRecord,
+  priceMemoryAgeDays,
+  priceMemoryIdFor,
+  productIdFromLabel,
+  recentPriceMemories,
+  upsertPriceMemory,
+  type PriceMemoryRecord,
+} from "../src/domain/price-memory";
+import {
+  isoTimestamp,
+  storeId,
+  type IsoTimestamp,
+  type StoreId,
+} from "../src/domain/shopping-trip";
+
+const unwrap = <T, E>(result: Result<T, E>): T => {
+  expect(result.ok).toBe(true);
+
+  if (!result.ok) {
+    throw new Error("Expected successful Result");
+  }
+
+  return result.value;
+};
+
+const money = (value: number) => unwrap(mvpMinorUnits(value));
+const time = (value: string): IsoTimestamp => unwrap(isoTimestamp(value));
+const store = (value: string): StoreId => unwrap(storeId(value));
+
+const memory = ({
+  label,
+  price,
+  observedAt,
+  storeId: storeValue,
+}: {
+  label: string;
+  price: number;
+  observedAt: string;
+  storeId?: StoreId;
+}): PriceMemoryRecord =>
+  unwrap(
+    createPriceMemoryRecord({
+      label,
+      unitPriceMinor: money(price),
+      observedAt,
+      ...(storeValue === undefined
+        ? {}
+        : { storeId: storeValue }),
+      source: { kind: "manual" },
+    }),
+  );
+
+describe("price memory domain", () => {
+  it("normalizes local label identity without losing display casing", () => {
+    const result = createPriceMemoryRecord({
+      label: "  Valio   Milk 1L  ",
+      unitPriceMinor: money(139),
+      observedAt: "2026-09-21T09:00:00.000Z",
+      source: { kind: "manual" },
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected valid memory");
+    }
+
+    expect(result.value).toMatchObject({
+      label: "Valio Milk 1L",
+      productId: "label:valio milk 1l",
+      unitPriceMinor: 139,
+      currency: "EUR",
+      observedAt: "2026-09-21T09:00:00.000Z",
+      source: { kind: "manual" },
+    });
+    expect(result.value.id).toBe(
+      priceMemoryIdFor(result.value.productId),
+    );
+  });
+
+  it("keeps product identity stable across case and compatibility whitespace", () => {
+    expect(unwrap(productIdFromLabel("Milk 1L"))).toBe(
+      unwrap(productIdFromLabel("  MILK   1L  ")),
+    );
+  });
+
+  it("rejects invalid price, timestamp, store and unsupported currency", () => {
+    expect(
+      createPriceMemoryRecord({
+        label: "Milk",
+        unitPriceMinor: money(0),
+        observedAt: "2026-09-21T09:00:00.000Z",
+        source: { kind: "manual" },
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "invalid-price" },
+    });
+
+    expect(
+      createPriceMemoryRecord({
+        label: "Milk",
+        unitPriceMinor: money(139),
+        observedAt: "21.09.2026",
+        source: { kind: "manual" },
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "invalid-timestamp" },
+    });
+
+    expect(
+      createPriceMemoryRecord({
+        label: "Milk",
+        unitPriceMinor: money(139),
+        observedAt: "2026-09-21T09:00:00.000Z",
+        storeId: "   ",
+        source: { kind: "manual" },
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "invalid-store-id" },
+    });
+
+    expect(
+      createPriceMemoryRecord({
+        label: "Milk",
+        currency: "USD",
+        unitPriceMinor: money(139),
+        observedAt: "2026-09-21T09:00:00.000Z",
+        source: { kind: "manual" },
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "unsupported-currency" },
+    });
+  });
+
+  it("upserts one latest record per product/store context without mutating input", () => {
+    const first = memory({
+      label: "Milk",
+      price: 139,
+      observedAt: "2026-09-20T09:00:00.000Z",
+    });
+    const latest = memory({
+      label: "Milk",
+      price: 149,
+      observedAt: "2026-09-21T09:00:00.000Z",
+    });
+    const original = [first] as const;
+
+    const updated = upsertPriceMemory(original, latest);
+
+    expect(original).toEqual([first]);
+    expect(updated).toEqual([latest]);
+    expect(upsertPriceMemory(updated, latest)).toBe(updated);
+  });
+
+  it("prefers exact-store memory, then store-neutral memory, and hides another-store-only prices", () => {
+    const prisma = store("store-prisma");
+    const kCity = store("store-k-city");
+    const neutralMilk = memory({
+      label: "Milk",
+      price: 139,
+      observedAt: "2026-09-21T09:00:00.000Z",
+    });
+    const prismaMilk = memory({
+      label: "Milk",
+      price: 129,
+      observedAt: "2026-09-20T09:00:00.000Z",
+      storeId: prisma,
+    });
+    const kCityBread = memory({
+      label: "Bread",
+      price: 249,
+      observedAt: "2026-09-21T10:00:00.000Z",
+      storeId: kCity,
+    });
+    const neutralEggs = memory({
+      label: "Eggs",
+      price: 315,
+      observedAt: "2026-09-21T11:00:00.000Z",
+    });
+
+    const recent = recentPriceMemories(
+      [neutralMilk, prismaMilk, kCityBread, neutralEggs],
+      { storeId: prisma, limit: 4 },
+    );
+
+    expect(recent.map((record) => record.label)).toEqual([
+      "Eggs",
+      "Milk",
+    ]);
+    expect(recent.find((record) => record.label === "Milk")).toBe(
+      prismaMilk,
+    );
+  });
+
+  it("uses the newest observation per product when no store context is known", () => {
+    const old = memory({
+      label: "Milk",
+      price: 139,
+      observedAt: "2026-09-20T09:00:00.000Z",
+    });
+    const latest = memory({
+      label: "Milk",
+      price: 149,
+      observedAt: "2026-09-21T09:00:00.000Z",
+      storeId: store("store-prisma"),
+    });
+    const bread = memory({
+      label: "Bread",
+      price: 249,
+      observedAt: "2026-09-21T08:00:00.000Z",
+    });
+
+    expect(recentPriceMemories([old, latest, bread], { limit: 2 })).toEqual([
+      latest,
+      bread,
+    ]);
+  });
+
+  it("derives conservative whole-day age from canonical timestamps", () => {
+    const record = memory({
+      label: "Milk",
+      price: 139,
+      observedAt: "2026-09-20T08:00:00.000Z",
+    });
+
+    expect(
+      priceMemoryAgeDays(
+        record,
+        time("2026-09-22T07:59:59.999Z"),
+      ),
+    ).toBe(1);
+    expect(
+      priceMemoryAgeDays(
+        record,
+        time("2026-09-22T08:00:00.000Z"),
+      ),
+    ).toBe(2);
+  });
+});
