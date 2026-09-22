@@ -237,7 +237,7 @@ export function ShoppingTimingQaPanel({
                               ? "Gate failed; redesign before marking B6 passed or expanding input breadth."
                               : "Review evidence before marking B6 passed.";
   const copyResults = async (): Promise<void> => {
-    let report;
+    let report: ReturnType<typeof buildQaTimingExport>;
 
     try {
       report = buildQaTimingExport(session, new Date().toISOString());
@@ -278,6 +278,8 @@ export function ShoppingTimingQaPanel({
               type="button"
               onClick={() => {
                 setOpen(false);
+                setResetArmed(false);
+                setSessionResetArmed(false);
               }}
             >
               Close
@@ -474,11 +476,13 @@ export function ShoppingTimingQaPanel({
                 if (resetArmed) {
                   onResetSamples();
                   setResetArmed(false);
+                  setSessionResetArmed(false);
                   setCopyStatus("Timing samples reset");
                   return;
                 }
 
                 setResetArmed(true);
+                setSessionResetArmed(false);
                 setCopyStatus("Press Confirm reset to delete timing samples");
               }}
             >
