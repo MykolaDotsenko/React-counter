@@ -118,7 +118,7 @@ Exact amounts remain available in text, so the visual is reinforcement rather th
 ### Risks
 
 - can become visually generic if spacing/type/motion are mediocre
-- weaker immediate connection to the old Pulse Counter visual identity
+- weaker immediate connection to the earlier experimental visual identity
 
 ### Mitigation
 
@@ -162,7 +162,7 @@ Do not preserve the radial counter merely for continuity.
 - restrained glass/depth
 - partial radial capacity visual
 - stronger animated transitions
-- more obvious inheritance from Pulse Counter
+- more obvious inheritance from the earlier experimental UI
 
 ### Strengths
 
@@ -299,7 +299,7 @@ Warm Everyday:
 
 ### Allowed inheritance
 
-The selected Calm Utility direction may retain small implementation qualities from Pulse Counter:
+The selected Calm Utility direction may retain small implementation qualities from earlier interaction work:
 
 - refined motion
 - subtle elevation
