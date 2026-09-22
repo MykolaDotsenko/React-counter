@@ -4,7 +4,7 @@
 
 Target go-to-market and growth strategy for the shopping-budget product.
 
-The shipped product is still Pulse Counter. Marketing must not advertise target functionality before it exists.
+The shipped product is Shopping Budget Companion. Marketing must distinguish implemented functionality from unvalidated performance, retention, PWA, and scanning claims.
 
 This document is designed for an indie/portfolio launch first, with a path toward real consumer growth if the product proves retention.
 
