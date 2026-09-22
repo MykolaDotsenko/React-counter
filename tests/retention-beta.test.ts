@@ -161,6 +161,71 @@ describe("retention beta evidence", () => {
     expect(summarizeRetentionBeta(session).tripsStarted).toBe(0);
   });
 
+  it("treats restored and mid-beta trips as explicit resume evidence", () => {
+    let session = createRetentionBetaSession(START);
+
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "resume",
+      }),
+    );
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_restored",
+        tripOrdinal: 1,
+      }),
+    );
+
+    const summary = summarizeRetentionBeta(session);
+
+    expect(currentRetentionTripOrdinal(session)).toBe(1);
+    expect(summary.tripsStarted).toBe(1);
+    expect(summary.repeatTripStarts).toBe(0);
+    expect(summary.tripRestores).toBe(1);
+  });
+
+  it("derives the documented 7, 14 and 30 day second-trip windows", () => {
+    let session = createRetentionBetaSession(START);
+
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "new",
+        at: "2026-09-01T08:00:00.000Z",
+      }),
+    );
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_finished",
+        tripOrdinal: 1,
+        at: "2026-09-01T09:00:00.000Z",
+      }),
+    );
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 2,
+        source: "repeat",
+        at: "2026-09-11T08:00:00.000Z",
+      }),
+    );
+
+    expect(summarizeRetentionBeta(session)).toMatchObject({
+      daysToSecondTrip: 10,
+      secondTripWithin7Days: false,
+      secondTripWithin14Days: true,
+      secondTripWithin30Days: true,
+    });
+  });
+
   it("summarizes repeat retention and manual-entry friction without money", () => {
     let session = createRetentionBetaSession(START);
 
@@ -236,7 +301,12 @@ describe("retention beta evidence", () => {
       tripsFinished: 2,
       secondTripStarted: true,
       thirdTripStarted: true,
+      secondTripWithin7Days: true,
+      secondTripWithin14Days: true,
+      secondTripWithin30Days: true,
+      daysToSecondTrip: 0,
       repeatTripStarts: 2,
+      tripRestores: 0,
       firstItemTrips: 1,
       fifthItemTrips: 1,
       tenthItemTrips: 1,
