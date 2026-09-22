@@ -217,7 +217,6 @@
 }
 
 .repeatButton,
-.repeatButton,
 .historyButton {
   border: 1px solid var(--shopping-border);
   background: var(--shopping-panel);
