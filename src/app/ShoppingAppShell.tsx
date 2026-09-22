@@ -315,6 +315,32 @@ export function ShoppingAppShell({
 
   useEffect(() => {
     if (
+      !betaEvidenceEnabled ||
+      betaSession === null ||
+      state.activeTrip === null ||
+      currentRetentionTripOrdinal(betaSession) !== null
+    ) {
+      return;
+    }
+
+    const tripOrdinal = nextRetentionTripOrdinal(betaSession);
+
+    updateBetaSessionState((current) => {
+      if (currentRetentionTripOrdinal(current) !== null) {
+        return current;
+      }
+
+      return appendRetentionBetaEvent(current, {
+        type: "trip_started",
+        at: new Date().toISOString(),
+        tripOrdinal,
+        source: "resumed",
+      });
+    });
+  }, [betaSession, state.activeTrip]);
+
+  useEffect(() => {
+    if (
       !qaTimingEnabled ||
       overlay.kind === "add-price" ||
       qaPendingSampleRef.current === null ||
@@ -655,13 +681,11 @@ export function ShoppingAppShell({
               return false;
             }
 
-            if (tripOrdinal !== null) {
-              recordBetaEvent({
-                type: "trip_finished",
-                at: new Date().toISOString(),
-                tripOrdinal,
-              });
-            }
+            recordBetaEvent({
+              type: "trip_finished",
+              at: new Date().toISOString(),
+              tripOrdinal,
+            });
             setOverlay({ kind: "none" });
             return true;
           }}
@@ -833,7 +857,7 @@ export function ShoppingAppShell({
 
           const beforeCount =
             state.activeTrip === null ? 0 : itemCount(state.activeTrip);
-          const tripOrdinal = activeTripOrdinal();
+          const tripOrdinal = activeTripOrdinal() ?? 1;
           const result = controller.addRememberedItem({
             memoryId: record.id,
           });
