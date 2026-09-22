@@ -135,7 +135,7 @@
 
 .metrics {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
 }
@@ -181,6 +181,16 @@
 .backButton:focus-visible {
   outline: 3px solid var(--shopping-focus);
   outline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .metrics > div:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 380px) {
