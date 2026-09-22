@@ -2,7 +2,7 @@
 
 ## Status
 
-Target specification. The shipped application is still Pulse Counter until implementation work satisfies this document.
+Product specification. Shopping Budget Companion now implements the core MVP contract; later capabilities remain explicitly phase-gated.
 
 This is the executable product contract for the first shopping-budget release. It converts the higher-level product, UX, domain, scenario, and architecture documents into numbered requirements that can be implemented and verified.
 
@@ -295,7 +295,7 @@ Malformed/invalid active-trip storage:
 
 - must not crash startup
 - must not be partially guessed into valid money data
-- must not reinterpret Pulse Counter state as shopping state
+- must not reinterpret historical non-shopping state as shopping state
 - must expose a safe recovery path
 
 ### FR-021 — Finish trip
