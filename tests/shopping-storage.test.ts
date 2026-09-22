@@ -23,7 +23,7 @@ import {
   CURRENT_ACTIVE_TRIP_SCHEMA_VERSION,
   CURRENT_HISTORY_SCHEMA_VERSION,
   HISTORY_STORAGE_KEY,
-  LEGACY_PULSE_STORAGE_KEYS,
+  HISTORICAL_COUNTER_STORAGE_KEYS,
 } from "../src/infrastructure/storage/shopping-storage-schema";
 import {
   bootstrapShoppingPersistence,
@@ -1046,7 +1046,7 @@ describe("active trip persistence", () => {
     });
     const storage = createStorage({
       [ACTIVE_TRIP_STORAGE_KEY]: rawFuture,
-      [LEGACY_PULSE_STORAGE_KEYS[0]]: JSON.stringify({
+      [HISTORICAL_COUNTER_STORAGE_KEYS[0]]: JSON.stringify({
         version: 1,
         value: 9_999,
         step: 25,
@@ -1057,7 +1057,7 @@ describe("active trip persistence", () => {
 
     expect(bootstrap.health).toBe("degraded");
     expect(storage.values.get(ACTIVE_TRIP_STORAGE_KEY)).toBe(rawFuture);
-    expect(storage.values.has(LEGACY_PULSE_STORAGE_KEYS[0])).toBe(true);
+    expect(storage.values.has(HISTORICAL_COUNTER_STORAGE_KEYS[0])).toBe(true);
     expect(storage.writes).toHaveLength(0);
   });
 
@@ -1115,15 +1115,15 @@ describe("active trip persistence", () => {
   });
 });
 
-describe("legacy Pulse retirement", () => {
+describe("historical counter retirement", () => {
   it("removes both legacy counter keys without interpreting their values", () => {
     const storage = createStorage({
-      [LEGACY_PULSE_STORAGE_KEYS[0]]: JSON.stringify({
+      [HISTORICAL_COUNTER_STORAGE_KEYS[0]]: JSON.stringify({
         version: 1,
         value: 5_000,
         step: 25,
       }),
-      [LEGACY_PULSE_STORAGE_KEYS[1]]: "5000",
+      [HISTORICAL_COUNTER_STORAGE_KEYS[1]]: "5000",
     });
 
     const bootstrap = bootstrapShoppingPersistence(storage);
@@ -1135,8 +1135,8 @@ describe("legacy Pulse retirement", () => {
       completionCleanupPending: false,
       legacyKeysRetired: true,
     });
-    expect(storage.values.has(LEGACY_PULSE_STORAGE_KEYS[0])).toBe(false);
-    expect(storage.values.has(LEGACY_PULSE_STORAGE_KEYS[1])).toBe(false);
+    expect(storage.values.has(HISTORICAL_COUNTER_STORAGE_KEYS[0])).toBe(false);
+    expect(storage.values.has(HISTORICAL_COUNTER_STORAGE_KEYS[1])).toBe(false);
     expect(storage.values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
   });
 
@@ -1150,12 +1150,12 @@ describe("legacy Pulse retirement", () => {
 
     const storage = createStorage({
       [ACTIVE_TRIP_STORAGE_KEY]: encoded.raw,
-      [LEGACY_PULSE_STORAGE_KEYS[0]]: JSON.stringify({
+      [HISTORICAL_COUNTER_STORAGE_KEYS[0]]: JSON.stringify({
         version: 1,
         value: 99_999,
         step: 25,
       }),
-      [LEGACY_PULSE_STORAGE_KEYS[1]]: "99999",
+      [HISTORICAL_COUNTER_STORAGE_KEYS[1]]: "99999",
     });
 
     const bootstrap = bootstrapShoppingPersistence(storage);
@@ -1164,30 +1164,30 @@ describe("legacy Pulse retirement", () => {
     expect(bootstrap.activeTrip).toEqual(trip);
     expect(bootstrap.legacyKeysRetired).toBe(true);
     expect(storage.values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(true);
-    expect(storage.values.has(LEGACY_PULSE_STORAGE_KEYS[0])).toBe(false);
-    expect(storage.values.has(LEGACY_PULSE_STORAGE_KEYS[1])).toBe(false);
+    expect(storage.values.has(HISTORICAL_COUNTER_STORAGE_KEYS[0])).toBe(false);
+    expect(storage.values.has(HISTORICAL_COUNTER_STORAGE_KEYS[1])).toBe(false);
   });
 
   it("does not retire legacy keys when shopping-state validation fails", () => {
     const storage = createStorage({
       [ACTIVE_TRIP_STORAGE_KEY]: "{broken-json",
-      [LEGACY_PULSE_STORAGE_KEYS[0]]: "legacy-one",
-      [LEGACY_PULSE_STORAGE_KEYS[1]]: "legacy-two",
+      [HISTORICAL_COUNTER_STORAGE_KEYS[0]]: "legacy-one",
+      [HISTORICAL_COUNTER_STORAGE_KEYS[1]]: "legacy-two",
     });
 
     const bootstrap = bootstrapShoppingPersistence(storage);
 
     expect(bootstrap.health).toBe("degraded");
     expect(bootstrap.legacyKeysRetired).toBe(false);
-    expect(storage.values.get(LEGACY_PULSE_STORAGE_KEYS[0])).toBe("legacy-one");
-    expect(storage.values.get(LEGACY_PULSE_STORAGE_KEYS[1])).toBe("legacy-two");
+    expect(storage.values.get(HISTORICAL_COUNTER_STORAGE_KEYS[0])).toBe("legacy-one");
+    expect(storage.values.get(HISTORICAL_COUNTER_STORAGE_KEYS[1])).toBe("legacy-two");
   });
 
   it("reports partial legacy cleanup failure as degraded", () => {
-    const failedKey = LEGACY_PULSE_STORAGE_KEYS[1];
+    const failedKey = HISTORICAL_COUNTER_STORAGE_KEYS[1];
     const storage = createStorage(
       {
-        [LEGACY_PULSE_STORAGE_KEYS[0]]: "legacy-one",
+        [HISTORICAL_COUNTER_STORAGE_KEYS[0]]: "legacy-one",
         [failedKey]: "legacy-two",
       },
       {
@@ -1205,7 +1205,7 @@ describe("legacy Pulse retirement", () => {
       },
     });
 
-    expect(storage.values.has(LEGACY_PULSE_STORAGE_KEYS[0])).toBe(false);
+    expect(storage.values.has(HISTORICAL_COUNTER_STORAGE_KEYS[0])).toBe(false);
     expect(storage.values.get(failedKey)).toBe("legacy-two");
   });
 
@@ -1217,7 +1217,7 @@ describe("legacy Pulse retirement", () => {
       throw new Error("Expected encoded snapshot");
     }
 
-    const failedKey = LEGACY_PULSE_STORAGE_KEYS[0];
+    const failedKey = HISTORICAL_COUNTER_STORAGE_KEYS[0];
     const storage = createStorage(
       {
         [ACTIVE_TRIP_STORAGE_KEY]: encoded.raw,
