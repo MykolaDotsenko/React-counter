@@ -38,7 +38,7 @@ Preferred stronger signal:
 
 - users voluntarily return for a second trip
 
-Retention interpretation should follow docs/PRODUCT-SUCCESS-STRATEGY.md.
+Retention interpretation should follow docs/research/PRODUCT-SUCCESS-STRATEGY.md.
 
 Provisional internal decision bands:
 
