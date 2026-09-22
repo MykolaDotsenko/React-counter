@@ -38,7 +38,7 @@ Goal: make future AI-assisted development consistent.
 - docs/research/TECHNOLOGY-RESEARCH.md
 - docs/reference/BRAND.md
 - docs/reference/MARKETING.md
-- docs/marketing/RESEARCH.md
+- docs/research/MARKETING-RESEARCH.md
 - docs/marketing/STORE-LISTING-SPEC.md
 - docs/marketing/LAUNCH-CHECKLIST.md
 - docs/reference/UX.md
@@ -326,7 +326,7 @@ Progress:
 - A5 Persistence-health UX — **complete via PR #20**
 - A6 Mobile/a11y/E2E hardening — **complete via PR #21**
 
-Sprint A stop/go status: **passed for the guarded shopping shell**.
+Sprint A stop/go status: **passed for the shopping product**.
 
 Validation evidence:
 
@@ -712,7 +712,7 @@ Full retention contract:
 
 - docs/research/PRODUCT-SUCCESS-STRATEGY.md
 - docs/archive/CORE-UI-EXECUTION-BRIEF.md
-- docs/RETENTION-BETA-PLAYBOOK.md — facilitator workflow, export validation, cohort denominators, and anti-fabrication rules
+- docs/evidence/RETENTION-BETA-PLAYBOOK.md — facilitator workflow, export validation, cohort denominators, and anti-fabrication rules
 
 ## Phase 9 — offline PWA
 
@@ -948,7 +948,7 @@ Do not revise simply to accommodate an attractive technology.
 
 Phases 1, 2, and 3 are complete.
 
-Phase 4 / Sprint A is complete for the guarded shopping shell.
+Phase 4 / Sprint A is complete for the shopping product.
 
 Phase 5 / Sprint B has completed B0–B5 and the automated/code portion of B6; only the representative human B6 evidence gate remains.
 
@@ -980,7 +980,7 @@ PR #28 implements the B6 code/automated portion:
 
 The <=2.5 second KPI remains an empirical human interaction target. Automation must not be used as a substitute.
 
-Before the default/public shell makes speed/physical-usability claims, record the representative timing, one-hand reach, software-keyboard, typo/repeated-add, compact-device/equivalent, and bright-store checks defined in `docs/SPRINT-B-QUALITY-GATE.md`. The QA recorder must show the evidence as release-eligible; code/automation alone cannot satisfy this gate.
+Before the default/public shell makes speed/physical-usability claims, record the representative timing, one-hand reach, software-keyboard, typo/repeated-add, compact-device/equivalent, and bright-store checks defined in `docs/evidence/SPRINT-B-QUALITY-GATE.md`. The QA recorder must show the evidence as release-eligible; code/automation alone cannot satisfy this gate.
 
 D-039 explicitly waives this human gate only for **continued implementation sequencing**. It does not mark the gate passed and does not authorize claiming the <=2.5 second KPI.
 
