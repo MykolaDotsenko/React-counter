@@ -127,6 +127,14 @@ export interface AddItemProjectionDraft {
   readonly label?: string | null;
 }
 
+export interface SpendingPlanProjection {
+  readonly cartTotalMinor: SignedMinorUnits;
+  readonly remainingMinor: SignedMinorUnits;
+  readonly safeRemainingMinor: SignedMinorUnits;
+  readonly crossesSafeLimit: boolean;
+  readonly crossesNominalBudget: boolean;
+}
+
 export interface TripProjection {
   readonly lineTotalMinor: SignedMinorUnits;
   readonly cartTotalMinor: SignedMinorUnits;
@@ -686,6 +694,68 @@ const validateDraft = (
     ...(labelResult.value === undefined
       ? {}
       : { label: labelResult.value }),
+  });
+};
+
+export const projectSpendingPlan = (
+  trip: ActiveTrip,
+  budgetMinor: MinorUnits,
+  safetyBufferMinor: MinorUnits,
+): Result<SpendingPlanProjection, DomainError> => {
+  const budgetResult = validateBudget(budgetMinor);
+
+  if (!budgetResult.ok) {
+    return budgetResult;
+  }
+
+  const bufferResult = validateBuffer(
+    safetyBufferMinor,
+    budgetResult.value,
+  );
+
+  if (!bufferResult.ok) {
+    return bufferResult;
+  }
+
+  const totalResult = cartTotalResult(trip.items);
+
+  if (!totalResult.ok) {
+    return totalResult;
+  }
+
+  const remainingResult = subtractMoney(
+    budgetResult.value,
+    totalResult.value,
+  );
+
+  if (!remainingResult.ok) {
+    return domainError("unsafe-integer");
+  }
+
+  const safeLimitResult = subtractMoney(
+    budgetResult.value,
+    bufferResult.value,
+  );
+
+  if (!safeLimitResult.ok) {
+    return domainError("unsafe-integer");
+  }
+
+  const safeRemainingResult = subtractMoney(
+    safeLimitResult.value,
+    totalResult.value,
+  );
+
+  if (!safeRemainingResult.ok) {
+    return domainError("unsafe-integer");
+  }
+
+  return ok({
+    cartTotalMinor: totalResult.value,
+    remainingMinor: remainingResult.value,
+    safeRemainingMinor: safeRemainingResult.value,
+    crossesSafeLimit: totalResult.value > safeLimitResult.value,
+    crossesNominalBudget: totalResult.value > budgetResult.value,
   });
 };
 
