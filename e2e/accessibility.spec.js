@@ -233,6 +233,40 @@ test("has no detectable WCAG A/AA violations on finish, completed-summary, and h
   expect(results.violations).toEqual([]);
 });
 
+test("keeps history data confirmations accessible and restores trigger focus", async ({
+  page,
+  browserName,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page
+    .getByRole("button", { name: "View trip history" })
+    .click();
+
+  const clearHistory = page.getByRole("button", {
+    name: /Clear trip history/,
+  });
+  await clearHistory.focus();
+  await page.keyboard.press("Enter");
+
+  const confirmation = page.getByRole("region", {
+    name: "Confirm clearing trip history",
+  });
+  await expect(
+    confirmation.getByRole("button", { name: "Cancel" }),
+  ).toBeFocused();
+
+  if (browserName === "chromium") {
+    const results = await scan(page);
+    expect(results.violations).toEqual([]);
+  }
+
+  await page.keyboard.press("Escape");
+  await expect(clearHistory).toBeFocused();
+});
+
 test("returns focus to Finish trip when finish review is cancelled with Escape", async ({
   page,
 }) => {
