@@ -472,7 +472,7 @@ Required cases:
 
 ### Legacy data
 
-- old Pulse state present
+- historical non-shopping state present
 - no conversion to money
 
 ### Malformed JSON
