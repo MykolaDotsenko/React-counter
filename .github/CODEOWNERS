@@ -1,0 +1,8 @@
+# Keep workflow, domain and persistence changes explicitly owned.
+* @MykolaDotsenko
+
+/.github/workflows/ @MykolaDotsenko
+/src/domain/ @MykolaDotsenko
+/src/application/ @MykolaDotsenko
+/src/infrastructure/ @MykolaDotsenko
+/docs/ @MykolaDotsenko
