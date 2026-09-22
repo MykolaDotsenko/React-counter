@@ -95,6 +95,53 @@ test("starts with a safety buffer and makes safe remaining unambiguous", async (
   );
 });
 
+test("adjusts budget and safety buffer as one canonical mutation", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  await page.getByRole("button", { name: "Adjust budget" }).click();
+
+  const budget = page.getByRole("textbox", { name: "Budget" });
+  const buffer = page.getByRole("textbox", { name: /Safety buffer/ });
+
+  await budget.fill("4.00");
+  await buffer.fill("");
+
+  await expect(
+    page.getByText("Current cart will be €0.79 over this budget."),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Save budget" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Know what’s left" }),
+  ).toBeVisible();
+  await expect(page.getByText("€0.79", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("over your limit", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Budget updated. €0.79 over your limit.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  const persisted = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    ACTIVE_TRIP_KEY,
+  );
+
+  expect(persisted.data).toMatchObject({
+    budgetMinor: 400,
+    safetyBufferMinor: 0,
+  });
+  expect(persisted.data.items).toHaveLength(1);
+});
+
 test("keeps an added item in memory when its persistence write fails", async ({
   page,
 }) => {
@@ -217,7 +264,7 @@ test("edits price and quantity, removes the item, undoes removal, and restores t
   await page.getByRole("textbox", { name: "Price" }).fill("4.79");
   await page.getByRole("button", { name: "Add · €4.79" }).click();
 
-  await expect(page.getByText("Confirmed · Manual")).toBeVisible();
+  await expect(page.getByText("Confirmed · Manual")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Edit" }).click();
 
