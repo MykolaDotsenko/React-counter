@@ -9,6 +9,7 @@ import {
   type IsoTimestamp,
   type ItemId,
   type TripCommand,
+  type TripId,
 } from "../domain/shopping-trip";
 
 export interface PersistenceProblem {
@@ -157,7 +158,9 @@ export type ApplicationError =
         | "no-active-trip"
         | "no-completed-summary"
         | "completed-summary-open"
-        | "completion-not-saved";
+        | "completion-not-saved"
+        | "completed-trip-not-found"
+        | "repeat-source-unavailable";
     }
   | DomainError;
 
@@ -181,6 +184,7 @@ export interface ShoppingAppController {
   readonly subscribe: (listener: () => void) => () => void;
   readonly bootstrap: () => ShoppingAppState;
   readonly startTrip: (input: StartTripInput) => AppCommandResult;
+  readonly startTripFromCompleted: (tripId: TripId) => AppCommandResult;
   readonly addManualItem: (input: AddManualItemInput) => AppCommandResult;
   readonly updateSpendingPlan: (
     input: UpdateSpendingPlanInput,
@@ -371,23 +375,9 @@ export const createShoppingAppController = ({
     });
   };
 
-  const startTrip = (input: StartTripInput): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
-
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
-    }
-
-    if (state.lifecycle === "completed-summary") {
-      return failure(state, applicationError("completed-summary-open"));
-    }
-
-    if (state.activeTrip !== null) {
-      return failure(state, applicationError("active-trip-exists"));
-    }
-
+  const createAndPersistActiveTrip = (
+    input: StartTripInput,
+  ): AppCommandResult => {
     const now = clock.now();
     const tripResult = createActiveTrip({
       id: ids.tripId(),
@@ -421,6 +411,66 @@ export const createShoppingAppController = ({
       true,
       saveResult.ok ? "persisted" : "memory-only",
     );
+  };
+
+  const startTrip = (input: StartTripInput): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (state.lifecycle === "completed-summary") {
+      return failure(state, applicationError("completed-summary-open"));
+    }
+
+    if (state.activeTrip !== null) {
+      return failure(state, applicationError("active-trip-exists"));
+    }
+
+    return createAndPersistActiveTrip(input);
+  };
+
+  const startTripFromCompleted = (tripId: TripId): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (state.activeTrip !== null) {
+      return failure(state, applicationError("active-trip-exists"));
+    }
+
+    if (
+      state.persistence.status === "degraded" ||
+      state.completionCleanupPending
+    ) {
+      return failure(
+        state,
+        applicationError("repeat-source-unavailable"),
+      );
+    }
+
+    const source = state.completedTrips.find(
+      (trip) => trip.id === tripId,
+    );
+
+    if (source === undefined) {
+      return failure(
+        state,
+        applicationError("completed-trip-not-found"),
+      );
+    }
+
+    return createAndPersistActiveTrip({
+      budgetMinor: source.budgetMinor,
+      safetyBufferMinor: source.safetyBufferMinor,
+    });
   };
 
   const addManualItem = (
@@ -934,6 +984,7 @@ export const createShoppingAppController = ({
     subscribe,
     bootstrap,
     startTrip,
+    startTripFromCompleted,
     addManualItem,
     updateSpendingPlan,
     updateManualItem,

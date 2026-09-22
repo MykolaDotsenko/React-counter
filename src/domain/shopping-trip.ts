@@ -651,6 +651,20 @@ export const itemCount = (trip: ShoppingTrip): number => {
   return count;
 };
 
+export const mostRecentCompletedTrip = (
+  trips: readonly CompletedTrip[],
+): CompletedTrip | null => {
+  let latest: CompletedTrip | null = null;
+
+  for (const trip of trips) {
+    if (latest === null || trip.completedAt > latest.completedAt) {
+      latest = trip;
+    }
+  }
+
+  return latest;
+};
+
 const validateDraft = (
   draft: AddItemProjectionDraft,
 ): Result<

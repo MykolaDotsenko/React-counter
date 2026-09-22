@@ -1227,3 +1227,50 @@ This is a sequencing waiver, not evidence. Automated browser timing, Playwright,
 ### Revisit when
 
 Representative physical-device evidence is recorded, or when the project owner explicitly changes the release-quality policy with documented rationale.
+
+## D-040 — Repeat budget derives from completed history, not duplicate settings state
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+The first Phase 8 repeat-trip accelerator derives its source from validated completed-trip history.
+
+Shop again copies only:
+
+- budget
+- safety buffer
+
+into a newly created active trip with a fresh trip id, fresh start timestamp, and empty cart.
+
+Do not introduce a separate persisted `recentBudget` or repeat-settings record for this slice.
+
+### Rationale
+
+Completed history is already:
+
+- versioned
+- runtime validated
+- durable
+- locally available
+- the factual source of the user's previous spending plan
+
+Persisting the same plan again would create two sources of truth and a synchronization/migration problem without user value.
+
+A fresh trip is also materially safer than reopening a completed trip because it does not require a two-record history/active rollback transaction.
+
+### Consequence
+
+- later-launch recent-budget UI selects the newest valid completed trip
+- completed history remains immutable when Shop again is used
+- cart items and actual checkout totals are never copied into the new trip
+- repeat is rejected while history durability is degraded or completion cleanup is pending
+- Continue shopping remains a separate deferred capability
+- a dedicated settings record is added only if future adaptive defaults require state that cannot be derived safely from history
+
+### Revisit when
+
+Recent-budget preferences must intentionally diverge from completed history, or user research demonstrates a need for persistent defaults independent of the latest completed trip.
+

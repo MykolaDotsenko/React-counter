@@ -732,6 +732,92 @@ test("finishes a trip loss-safely, reconciles checkout, persists history, and re
   ).toBeVisible();
 });
 
+test("repeats the last spending plan immediately and after a later reload", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await page.getByText("Add a safety buffer", { exact: true }).click();
+  await page.getByLabel("Safety buffer").fill("2");
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Your shopping trip is complete",
+    }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Shop again" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Know what’s left" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("€48.00", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText("€0.00 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Nothing in your cart yet.", { exact: true }),
+  ).toBeVisible();
+
+  const repeated = await page.evaluate(
+    ({ activeKey, historyKey }) => ({
+      active: JSON.parse(localStorage.getItem(activeKey)),
+      history: JSON.parse(localStorage.getItem(historyKey)),
+    }),
+    { activeKey: ACTIVE_TRIP_KEY, historyKey: HISTORY_KEY },
+  );
+
+  expect(repeated.active.data).toMatchObject({
+    budgetMinor: 5000,
+    safetyBufferMinor: 200,
+    items: [],
+  });
+  expect(repeated.history.data.trips).toHaveLength(1);
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
+
+  await page.reload();
+
+  const repeatShortcut = page.getByRole("button", { name: /Shop again/i });
+  await expect(repeatShortcut).toContainText("€50.00 budget");
+  await expect(repeatShortcut).toContainText("€2.00 reserve");
+
+  await repeatShortcut.click();
+
+  await expect(
+    page.getByRole("heading", { name: "Know what’s left" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("€48.00", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText("€0.00 of €50.00", { exact: true }),
+  ).toBeVisible();
+
+  const laterRepeat = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    ACTIVE_TRIP_KEY,
+  );
+
+  expect(laterRepeat.data).toMatchObject({
+    budgetMinor: 5000,
+    safetyBufferMinor: 200,
+    items: [],
+  });
+});
+
 test("never clears the active trip when completed-history persistence fails", async ({
   page,
 }) => {

@@ -559,6 +559,29 @@ PR:
 
 ## Phase 8 — repeat-trip acceleration and price memory
 
+**Status: in progress — repeat-trip foundation implemented; Recent Items and Price Memory remain.**
+
+Implemented first slice:
+
+- one-action Shop again from a healthy completed summary
+- one-action recent-budget shortcut on later idle launches
+- repeats budget + safety buffer only
+- creates a fresh trip id/start time with an empty cart
+- preserves completed history unchanged
+- derives the recent plan from validated completed history rather than a second settings copy
+- blocks repeat when completed-history durability is degraded or cleanup is unresolved
+- component, controller, domain, E2E, accessibility, and cross-browser coverage
+
+Still remaining in Phase 8:
+
+- Recent Items
+- product identity abstraction
+- remembered price records
+- observed-date / freshness UX
+- optional store context
+- one/two-action remembered-item reuse
+- current-price override
+
 Suggested PR:
 
 > feat: make repeated shopping materially faster

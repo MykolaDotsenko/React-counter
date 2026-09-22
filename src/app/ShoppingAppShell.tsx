@@ -5,6 +5,7 @@ import type { ShoppingAppController } from "../application/shopping-app-controll
 import { formatEur, signedMinorUnits } from "../domain/money";
 import {
   lineTotal,
+  mostRecentCompletedTrip,
   remaining,
   safeRemaining,
   type ActiveTrip,
@@ -117,6 +118,9 @@ export function ShoppingAppShell({
   const qaPendingSampleRef = useRef<PendingQaSample | null>(null);
   const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
   const [lastAddedMessage, setLastAddedMessage] = useState("");
+  const recentCompletedTrip = mostRecentCompletedTrip(
+    state.completedTrips,
+  );
   const [qaSession, setQaSession] = useState<QaTimingSession | null>(() => {
     if (!qaTimingEnabled) {
       return null;
@@ -285,6 +289,7 @@ export function ShoppingAppShell({
         <StartTripScreen
           controller={controller}
           completedTripCount={state.completedTrips.length}
+          recentTrip={recentCompletedTrip}
           persistenceHealth={state.persistence}
           onOpenHistory={() => {
             qaStartedAtRef.current = null;
@@ -324,6 +329,12 @@ export function ShoppingAppShell({
             locale="en-FI"
             onDone={() => {
               setOverlay({ kind: "none" });
+            }}
+            onShopAgain={() => {
+              setOverlay({ kind: "none" });
+              setLastAddedMessage(
+                "New trip started with your previous budget.",
+              );
             }}
             onViewHistory={() => {
               setOverlay({ kind: "history" });

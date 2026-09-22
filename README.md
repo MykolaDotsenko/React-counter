@@ -74,7 +74,8 @@ Manual price entry remains the baseline.
 | Public shopping-shell switch | ⛔ blocked until empirical gate passes |
 | Completion/history/reconciliation | ✅ implemented |
 | Lightweight budget-outcome history | ✅ implemented |
-| Repeat-trip / price-memory acceleration | next roadmap phase |
+| Shop again / recent-budget shortcut | ✅ implemented |
+| Recent Items / Price Memory | Phase 8 remaining |
 | PWA cold offline launch | later roadmap phase |
 | Barcode / OCR scanning | evidence-gated later work |
 
@@ -96,6 +97,17 @@ It supports:
 - custom EUR budget
 - optional safety buffer
 - no account or profile setup
+
+### Returning trip
+
+When completed history exists, the guarded shell offers **Shop again** using the most recent validated spending plan.
+
+It reuses only:
+
+- budget
+- safety buffer
+
+It deliberately creates a new trip with a new id/time and an empty cart. The completed trip remains immutable history.
 
 ### Active trip
 

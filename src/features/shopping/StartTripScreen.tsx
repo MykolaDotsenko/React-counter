@@ -11,11 +11,13 @@ import type {
   StartTripInput,
 } from "../../application/shopping-app-controller";
 import {
+  formatEur,
   mvpMinorUnits,
   parseEurDraft,
   type MinorUnits,
   type MoneyInputErrorCode,
 } from "../../domain/money";
+import type { CompletedTrip } from "../../domain/shopping-trip";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./StartTripScreen.module.css";
 
@@ -92,6 +94,10 @@ const applicationErrorMessage = (
       return "Resolve the saved-trip issue before starting a new trip.";
     case "no-active-trip":
       return "No active shopping trip is available.";
+    case "completed-trip-not-found":
+      return "That previous trip is no longer available.";
+    case "repeat-source-unavailable":
+      return "Your previous trip cannot be reused until saved data is healthy.";
     default:
       return "Unable to start the shopping trip.";
   }
@@ -112,15 +118,19 @@ type BufferResult = ParsedBuffer | InvalidBuffer;
 export interface StartTripScreenProps {
   readonly controller: ShoppingAppController;
   readonly completedTripCount?: number;
+  readonly recentTrip?: CompletedTrip | null;
   readonly persistenceHealth?: PersistenceHealth;
   readonly onOpenHistory?: () => void;
+  readonly locale?: string;
 }
 
 export function StartTripScreen({
   controller,
   completedTripCount = 0,
+  recentTrip = null,
   persistenceHealth,
   onOpenHistory,
+  locale = "en-FI",
 }: StartTripScreenProps) {
   const customRegionId = useId();
   const reserveInputId = useId();
@@ -207,6 +217,19 @@ export function StartTripScreen({
     start(parsedBudget.value);
   };
 
+  const repeatRecentTrip = (): void => {
+    if (recentTrip === null) {
+      return;
+    }
+
+    setErrorMessage("");
+    const result = controller.startTripFromCompleted(recentTrip.id);
+
+    if (!result.ok) {
+      setErrorMessage(applicationErrorMessage(result));
+    }
+  };
+
   return (
     <main className={styles.screen}>
       <section
@@ -229,6 +252,31 @@ export function StartTripScreen({
             health={persistenceHealth}
             context="idle"
           />
+        ) : null}
+
+        {recentTrip !== null ? (
+          <button
+            type="button"
+            className={styles.repeatButton}
+            onClick={repeatRecentTrip}
+          >
+            <span className={styles.repeatCopy}>
+              <span className={styles.repeatEyebrow}>Last trip</span>
+              <strong>Shop again</strong>
+              <small>
+                {formatEur(recentTrip.budgetMinor, locale)} budget
+                {recentTrip.safetyBufferMinor > 0
+                  ? ` · ${formatEur(
+                      recentTrip.safetyBufferMinor,
+                      locale,
+                    )} reserve`
+                  : ""}
+              </small>
+            </span>
+            <span className={styles.repeatArrow} aria-hidden="true">
+              →
+            </span>
+          </button>
         ) : null}
 
         <div
