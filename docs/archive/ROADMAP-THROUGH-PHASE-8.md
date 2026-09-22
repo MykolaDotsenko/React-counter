@@ -35,10 +35,10 @@ Goal: make future AI-assisted development consistent.
 ### Deliverables
 
 - docs/PRODUCT.md
-- docs/reference/FUNCTIONALITY.md
+- docs/specs/RELEASE-SPEC.md
 - docs/reference/SCENARIOS.md
-- docs/specs/MVP-SPEC.md
-- docs/specs/CONTRACTS.md
+- docs/specs/RELEASE-SPEC.md
+- docs/reference/CODE-OWNERSHIP.md
 - docs/specs/STATE-MACHINES.md
 - docs/specs/STORAGE-SCHEMA.md
 - docs/specs/MONEY-SPEC.md
@@ -376,7 +376,7 @@ Suggested PR:
 
 ### Acceptance criteria
 
-- active-trip behaviour matches docs/reference/FUNCTIONALITY.md
+- active-trip behaviour matches docs/specs/RELEASE-SPEC.md
 - purpose is understandable in 3–5 seconds
 - no account/setup wall
 - mobile-first at compact viewport
@@ -920,10 +920,10 @@ Before implementing a roadmap item, an AI agent should read:
 
 1. AGENTS.md
 2. docs/PRODUCT.md
-3. relevant docs/reference/FUNCTIONALITY.md section
+3. relevant docs/specs/RELEASE-SPEC.md section
 4. relevant docs/reference/SCENARIOS.md entries
-5. relevant docs/specs/MVP-SPEC.md requirements
-6. relevant docs/specs/CONTRACTS.md interfaces
+5. relevant docs/specs/RELEASE-SPEC.md requirements
+6. relevant docs/reference/CODE-OWNERSHIP.md interfaces
 7. relevant docs/specs/STATE-MACHINES.md transitions
 8. docs/specs/STORAGE-SCHEMA.md when persistence is touched
 9. docs/specs/MONEY-SPEC.md for any price/budget/quantity/checkout work
