@@ -117,18 +117,31 @@ describe("retention beta cohort analysis", () => {
       medianManualEntryMs: 3_000,
       rememberedItemUses: 1,
       rememberedItemParticipants: 1,
-      rememberedItemParticipantRate: 1,
+      rememberedItemParticipantRate: 0.5,
     });
   });
 
-  it("keeps remembered-item participant rate undefined before any second trip exists", () => {
+  it("measures remembered-item reach across activated participants", () => {
     const firstTripOnly = session([
       at("trip_started", 1, "2026-09-01T08:00:00.000Z", { source: "new" }),
+      at("remembered_item_used", 1, "2026-09-01T08:01:00.000Z"),
     ]);
 
     expect(
       summarizeRetentionBetaCohort([firstTripOnly])
         .rememberedItemParticipantRate,
-    ).toBeNull();
+    ).toBe(1);
+  });
+
+  it("does not count orphan finish evidence as a completed started trip", () => {
+    const partial = session([
+      at("trip_finished", 1, "2026-09-01T09:00:00.000Z"),
+    ]);
+
+    const summary = summarizeRetentionBetaCohort([partial]);
+
+    expect(summary.totalTripsStarted).toBe(0);
+    expect(summary.totalTripsFinished).toBe(0);
+    expect(summary.tripCompletionRate).toBeNull();
   });
 });
