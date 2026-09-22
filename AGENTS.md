@@ -19,22 +19,19 @@ Never present target documentation as shipped functionality.
 Before changing code, read:
 
 1. AGENTS.md
-2. PRODUCT.md
-3. FUNCTIONALITY.md and relevant SCENARIOS.md entries
-4. DOMAIN.md
-5. ARCHITECTURE.md
-6. TECH-STACK.md
-7. relevant docs/specs/* contracts
-8. TESTING.md
-9. docs/PRODUCT-SUCCESS-STRATEGY.md for onboarding, entry speed, repeat use, retention, scanner sequencing, distribution, or analytics work
-10. docs/CORE-UI-EXECUTION-BRIEF.md for Phase 4–5 implementation, PR slicing, dependencies, stop/go gates, and Definition of Done
-11. UX.md / DESIGN.md for user-facing work
-12. BRAND.md / MARKETING.md / docs/marketing/* for naming, copy, store, or launch work
-13. docs/tech/TECHNOLOGY-RESEARCH.md when changing dependencies, frameworks, scanner/OCR, storage, PWA, hosting, or platform architecture
-14. ROADMAP.md for the current implementation phase
-15. other relevant docs/* for the concern being changed
+2. docs/README.md to identify the owning source of truth
+3. docs/PRODUCT.md
+4. docs/DOMAIN.md and relevant docs/specs/* contracts
+5. docs/ARCHITECTURE.md
+6. docs/ROADMAP.md for the current phase and evidence gates
+7. docs/TESTING.md for the applicable quality contract
+8. docs/DESIGN.md for user-facing visual/interaction-system work
+9. relevant supporting reference under docs/reference/* when deeper UX, scenario, technology, brand, or marketing context is needed
+10. relevant specialized contracts such as docs/architecture/DATA-PERSISTENCE.md or docs/quality/ACCESSIBILITY.md
+11. docs/research/* only when the change depends on research, alternatives, product strategy, or platform evidence
+12. docs/archive/* only for historical traceability; archived execution plans are not current instructions
 
-For a narrow change, do not reread every long document once the relevant contract is known. Never skip PRODUCT.md, the relevant domain/spec contract, ARCHITECTURE.md, TECH-STACK.md, and the current roadmap phase.
+For a narrow change, do not reread every long document once the relevant contract is known. Never skip docs/PRODUCT.md, the relevant domain/spec contract, docs/ARCHITECTURE.md, and the current docs/ROADMAP.md phase. Use docs/README.md to resolve documentation authority.
 
 ## Product in one sentence
 
@@ -276,34 +273,40 @@ When behaviour changes:
 - keep current vs target status explicit
 - update README only for shipped behaviour
 
-Authoritative roles:
+Documentation roles:
 
-- PRODUCT.md — what and why
-- docs/PRODUCT-SUCCESS-STRATEGY.md — retention-first sequencing, second-trip validation, and product-success decision gates
-- docs/CORE-UI-EXECUTION-BRIEF.md — concrete Phase 4–5 tasks, dependency graph, PR decomposition, stop/go gates, and release blockers
-- FUNCTIONALITY.md — what the product does, user-state flows, fallbacks, and P0/P1/P2 behaviour
-- SCENARIOS.md — scenario matrix, edge cases, risk prioritisation, and target UX scores
-- UX.md — interaction principles and usability rules
-- DESIGN.md — visual system, hierarchy, branding restraint, and product storytelling
-- DOMAIN.md — business rules
-- ARCHITECTURE.md — software boundaries and trade-offs
-- TESTING.md — quality contract
+Current authority is defined in docs/README.md.
+
+Authoritative current contracts:
+
+- docs/PRODUCT.md — product thesis, scope, principles, and success criteria
+- docs/DESIGN.md — current visual and interaction-system direction
+- docs/DOMAIN.md — business rules and invariants
+- docs/ARCHITECTURE.md — software boundaries and trade-offs
+- docs/TESTING.md — quality contract
+- docs/ROADMAP.md — delivery order and evidence gates
 - docs/specs/MVP-SPEC.md — executable MVP requirements
 - docs/specs/CONTRACTS.md — implementation contracts and ports
 - docs/specs/STATE-MACHINES.md — valid transitions and forbidden states
 - docs/specs/STORAGE-SCHEMA.md — exact persisted schema and completion recovery
 - docs/specs/MONEY-SPEC.md — EUR-only parsing, formatting, arithmetic, limits, and money tests
-- TECH-STACK.md — authoritative selected technologies, dependency budget, and phase admission
-- docs/tech/TECHNOLOGY-RESEARCH.md — scored alternatives and current platform evidence
-- BRAND.md — positioning, naming rules, voice, identity, and trust system
-- MARKETING.md — acquisition, ASO, content, launch, pricing, and experimentation strategy
-- docs/marketing/RESEARCH.md — platform guidance, competitor cases, and evidence quality
-- docs/marketing/STORE-LISTING-SPEC.md — exact store metadata/assets contract
-- docs/marketing/LAUNCH-CHECKLIST.md — marketing/release readiness gates
-- ROADMAP.md — delivery order
-- docs/COMPETITIVE-RESEARCH.md — external evidence and product lessons
-- docs/DATA-PERSISTENCE.md — storage contract
-- docs/ACCESSIBILITY.md — detailed accessibility contract
+- docs/architecture/DATA-PERSISTENCE.md — specialized storage contract
+- docs/quality/ACCESSIBILITY.md — specialized accessibility contract
+- docs/DECISIONS.md — accepted product/architecture decisions
+
+Supporting reference:
+
+- docs/reference/reference/FUNCTIONALITY.md — extended functional catalogue and fallbacks
+- docs/reference/reference/SCENARIOS.md — scenario matrix, edge cases, and risk analysis
+- docs/reference/reference/UX.md — detailed interaction heuristics
+- docs/reference/reference/TECH-STACK.md — technology rationale and future candidates
+- docs/reference/reference/BRAND.md — positioning, naming, voice, identity, and trust system
+- docs/reference/reference/MARKETING.md — acquisition, ASO, content, launch, pricing, and experimentation strategy
+- docs/research/* — external evidence, alternatives, and strategic research
+- docs/marketing/* — store and launch material
+- docs/archive/* — historical execution context only
+
+Supporting/reference material must not independently redefine current implementation status or override an authoritative contract.
 
 ## Scope-control questions
 
@@ -314,13 +317,13 @@ Before adding a feature ask:
 3. Can the simple manual workflow remain intact?
 4. Does the core still work offline?
 5. Is the feature proportionate to the problem?
-6. Is this already scheduled later in ROADMAP.md?
+6. Is this already scheduled later in docs/ROADMAP.md?
 
 If the answer to question 1 is no, stop and justify the feature before implementing it.
 
 ## Prohibited opportunistic expansion
 
-Do not add, unless PRODUCT.md is intentionally revised with evidence:
+Do not add, unless docs/PRODUCT.md is intentionally revised with evidence:
 
 - bank sync
 - income tracking
@@ -341,7 +344,7 @@ Do not add, unless PRODUCT.md is intentionally revised with evidence:
 
 ## Dependency policy
 
-TECH-STACK.md is authoritative.
+docs/reference/reference/TECH-STACK.md is supporting technology rationale. Current dependency reality is defined by package.json/package-lock.json, current architecture decisions, and the applicable authoritative contracts.
 
 Prefer native platform capabilities and existing dependencies when they satisfy requirements cleanly.
 
@@ -378,7 +381,7 @@ Do not add these in MVP without a new documented decision:
 
 Scanner/OCR dependencies are phase-gated and must stay out of the initial critical bundle.
 
-Exception: after Phase 5, an isolated experimental scanner benchmark may be built exactly as defined by ROADMAP.md and D-037. That experiment must not become a required production path or justify shipping scanner breadth without evidence.
+Exception: after Phase 5, an isolated experimental scanner benchmark may be built exactly as defined by docs/ROADMAP.md and D-037. That experiment must not become a required production path or justify shipping scanner breadth without evidence.
 
 ## Code review checklist for AI
 
@@ -408,7 +411,7 @@ Before presenting work as complete verify:
 
 ### Technology
 
-- change matches TECH-STACK.md
+- change is compatible with the actual package/runtime configuration and docs/reference/TECH-STACK.md rationale
 - new dependency has a documented requirement and current-phase justification
 - native/platform alternative was considered
 - scanner/OCR code is lazy and optional
@@ -416,13 +419,13 @@ Before presenting work as complete verify:
 
 ### Functionality
 
-- feature behaviour matches FUNCTIONALITY.md
-- relevant scenarios in SCENARIOS.md are covered
+- feature behaviour matches docs/PRODUCT.md, applicable specs, and relevant docs/reference/FUNCTIONALITY.md reference
+- relevant scenarios in docs/reference/SCENARIOS.md are covered
 - Tier 0 scenarios are not weakened
 - optional services have a manual fallback
 - no new metadata is required without clear value
 - P0/P1/P2 scope is respected
-- repeat-trip work follows docs/PRODUCT-SUCCESS-STRATEGY.md
+- repeat-trip work follows docs/research/PRODUCT-SUCCESS-STRATEGY.md
 - scanner/OCR production work does not bypass the retention validation gate
 - any early scanner work is limited to the D-037 benchmark contract
 
