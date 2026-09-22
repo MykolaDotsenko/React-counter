@@ -129,6 +129,7 @@ Evidence documents define how claims become validated:
 - [evidence/RETENTION-BETA.md](./evidence/RETENTION-BETA.md)
 - [evidence/RETENTION-BETA-PLAYBOOK.md](./evidence/RETENTION-BETA-PLAYBOOK.md)
 - [evidence/PHASE-4-DESIGN-VALIDATION.md](./evidence/PHASE-4-DESIGN-VALIDATION.md)
+- [evidence/BRAND-IMPLEMENTATION-AUDIT.md](./evidence/BRAND-IMPLEMENTATION-AUDIT.md)
 
 Automation does not substitute for explicitly required human/device evidence.
 
