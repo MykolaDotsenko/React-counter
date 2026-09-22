@@ -1431,3 +1431,54 @@ Preserving valid v2 timing evidence avoids throwing away legitimate measurements
 
 The B6 physical-device protocol changes materially, or real testing shows that different structured context is needed to explain timing variance.
 
+## D-044 — Guarded shopping builds use provisional product identity without locking the final brand
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+Separate the browser-level identity of guarded shopping builds from the legacy Pulse Counter identity.
+
+The guarded `/qa/` and `/beta/` builds use:
+
+- the descriptive migration label `Shopping Budget Companion`
+- a provisional remaining-room favicon/mark
+- warm shopping theme metadata
+- shopping-specific descriptions
+- noindex/nofollow/noarchive
+
+The public/default root remains Pulse Counter until the existing release gates permit an intentional shopping-shell switch.
+
+The provisional mark must follow the brand metaphor rather than inherit Pulse Counter spectacle:
+
+- rounded boundary/container
+- intentionally open/remaining space
+- no gradient
+- no euro symbol
+- no cart/calculator/AI-sparkle cliché
+
+This decision does not lock `CartRoom`, the current accent hue, or a final production icon family.
+
+### Rationale
+
+The guarded shopping experience already implements Calm Utility, remaining-first hierarchy, and local-first trust. Continuing to show the Pulse neon favicon and Pulse/Budget Cart naming at browser level creates a visible identity contradiction.
+
+At the same time, promoting a working codename or provisional colour to final commercial identity before naming and recognition evidence would create a different form of premature lock-in.
+
+A migration-specific product label and provisional metaphor-led mark resolve the current drift while preserving reversibility.
+
+### Consequence
+
+- guarded shopping builds no longer inherit the Pulse favicon/title
+- static post-build metadata and runtime React metadata must stay aligned
+- the public Pulse root is deliberately unchanged
+- future brand PRs use `docs/BRAND-IMPLEMENTATION-AUDIT.md` as the anti-drift checklist
+- final naming, accent and production icon work remain evidence-gated
+- the shopping mark should not be added persistently to active-trip UI where it would compete with the remaining amount
+
+### Revisit when
+
+The public shopping-shell switch is approved, final naming/conflict checks are complete, or user evidence requires a different visual identity direction.
+
