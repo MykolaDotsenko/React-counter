@@ -112,7 +112,7 @@ export interface QaEmpiricalGateSummary {
   readonly secondarySpotCheckFailures: number;
   readonly ignoredSampleCount: number;
   readonly status: "pending" | "target-met" | "release-floor" | "fail";
-  readonly releaseEligible: boolean;
+  readonly b6Eligible: boolean;
 }
 
 export interface QaTimingExport {
@@ -720,7 +720,7 @@ export const summarizeQaEmpiricalGate = (
     secondarySpotCheckFailures,
     ignoredSampleCount,
     status,
-    releaseEligible:
+    b6Eligible:
       status === "target-met" || status === "release-floor",
   };
 };
