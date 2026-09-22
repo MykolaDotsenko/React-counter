@@ -133,6 +133,30 @@ describe("retention beta evidence", () => {
     expect(nextRetentionTripOrdinal(session)).toBe(2);
   });
 
+  it("keeps mid-trip evidence partial and advances the next observed trip ordinal", () => {
+    let session = createRetentionBetaSession(START);
+
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "manual_entry_completed",
+        tripOrdinal: 1,
+        durationMs: 2_300,
+      }),
+    );
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_finished",
+        tripOrdinal: 1,
+      }),
+    );
+
+    expect(currentRetentionTripOrdinal(session)).toBeNull();
+    expect(nextRetentionTripOrdinal(session)).toBe(2);
+    expect(summarizeRetentionBeta(session).tripsStarted).toBe(0);
+  });
+
   it("summarizes repeat retention and manual-entry friction without money", () => {
     let session = createRetentionBetaSession(START);
 
