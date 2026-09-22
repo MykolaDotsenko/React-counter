@@ -146,16 +146,23 @@ export function useShoppingTimingEvidence(
         return null;
       }
 
-      const next = appendQaTimingSample(current, {
-        id: crypto.randomUUID(),
-        durationMs,
-        unitPriceMinor: pending.unitPriceMinor,
-        quantity: pending.quantity,
-        lineTotalMinor: pending.lineTotalMinor,
-        budgetMinor: pending.budgetMinor,
-        safetyBufferMinor: pending.safetyBufferMinor,
-        completedAt: new Date().toISOString(),
-      });
+      let next: QaTimingSession;
+
+      try {
+        next = appendQaTimingSample(current, {
+          id: crypto.randomUUID(),
+          durationMs,
+          unitPriceMinor: pending.unitPriceMinor,
+          quantity: pending.quantity,
+          lineTotalMinor: pending.lineTotalMinor,
+          budgetMinor: pending.budgetMinor,
+          safetyBufferMinor: pending.safetyBufferMinor,
+          completedAt: new Date().toISOString(),
+        });
+      } catch {
+        // Invalid QA evidence must never destabilize the shopping flow.
+        return current;
+      }
 
       try {
         persistQaTimingSession(sessionStorage, next);
