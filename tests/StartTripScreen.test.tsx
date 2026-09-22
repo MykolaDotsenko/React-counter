@@ -52,14 +52,16 @@ const createCompletedTrip = (): CompletedTrip => {
       startedAt: START,
     }),
   );
+  const completedAt = isoTimestamp("2026-09-21T10:00:00.000Z");
+
+  if (!completedAt.ok) {
+    throw new Error("Invalid completion timestamp");
+  }
+
   const completed = unwrap(
     reduceTrip(active, {
       type: "complete-trip",
-      completedAt: isoTimestamp("2026-09-21T10:00:00.000Z").ok
-        ? isoTimestamp("2026-09-21T10:00:00.000Z").value
-        : (() => {
-            throw new Error("Invalid completion timestamp");
-          })(),
+      completedAt: completedAt.value,
     }),
   );
 
