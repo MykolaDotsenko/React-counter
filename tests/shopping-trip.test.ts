@@ -17,6 +17,7 @@ import {
   itemId,
   lineTotal,
   nominalOverage,
+  mostRecentCompletedTrip,
   projectAddItem,
   projectSpendingPlan,
   reduceTrip,
@@ -134,6 +135,45 @@ const expectDomainError = (
     },
   });
 };
+
+describe("completed-trip selectors", () => {
+  it("returns the newest completed trip without mutating source order", () => {
+    const complete = (
+      tripId: string,
+      completedAt: string,
+      budgetMinor: number,
+    ) => {
+      const active = unwrap(
+        createActiveTrip({
+          id: tripId,
+          budgetMinor: money(budgetMinor),
+          startedAt: START,
+        }),
+      );
+      const result = unwrap(
+        reduceTrip(active, {
+          type: "complete-trip",
+          completedAt: time(completedAt),
+        }),
+      );
+
+      if (result.status !== "completed") {
+        throw new Error("Expected completed trip");
+      }
+
+      return result;
+    };
+
+    const middle = complete("middle", "2026-09-21T11:00:00.000Z", 5_000);
+    const newest = complete("newest", "2026-09-21T12:00:00.000Z", 7_500);
+    const oldest = complete("oldest", "2026-09-21T10:00:00.000Z", 2_500);
+    const trips = [middle, newest, oldest] as const;
+
+    expect(mostRecentCompletedTrip(trips)).toBe(newest);
+    expect(trips).toEqual([middle, newest, oldest]);
+    expect(mostRecentCompletedTrip([])).toBeNull();
+  });
+});
 
 describe("shopping trip construction", () => {
   it("creates an empty EUR trip with exact budget and buffer", () => {
