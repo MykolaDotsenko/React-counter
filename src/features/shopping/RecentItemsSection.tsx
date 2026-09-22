@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { formatEur, signedMinorUnits } from "../../domain/money";
 import {
@@ -86,6 +86,13 @@ export function RecentItemsSection({
   );
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const confirmationCancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (pendingId !== null) {
+      confirmationCancelRef.current?.focus();
+    }
+  }, [pendingId]);
 
   if (recent.length === 0) {
     return null;
@@ -146,6 +153,12 @@ export function RecentItemsSection({
                 <div
                   className={styles.confirmation}
                   aria-label={`Confirm remembered price for ${record.label}`}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      setPendingId(null);
+                    }
+                  }}
                 >
                   <p>
                     This remembered price would put you{" "}
@@ -159,6 +172,7 @@ export function RecentItemsSection({
                   </p>
                   <div className={styles.confirmationActions}>
                     <button
+                      ref={confirmationCancelRef}
                       type="button"
                       className={styles.secondaryButton}
                       onClick={() => {
