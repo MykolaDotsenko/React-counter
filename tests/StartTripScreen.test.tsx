@@ -130,7 +130,7 @@ describe("StartTripScreen", () => {
     ).not.toBeNull();
   });
 
-  it("offers local history as a secondary action only when completed trips exist", async () => {
+  it("offers completed history as a secondary action when trips exist", async () => {
     const user = userEvent.setup();
     const controller = createController();
     const onOpenHistory = vi.fn();
@@ -147,6 +147,29 @@ describe("StartTripScreen", () => {
       name: "View trip history · 2",
     });
     await user.click(history);
+
+    expect(onOpenHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps degraded Price Memory recovery reachable with zero valid records", async () => {
+    const user = userEvent.setup();
+    const controller = createController();
+    const onOpenHistory = vi.fn();
+
+    render(
+      <StartTripScreen
+        controller={controller}
+        completedTripCount={0}
+        rememberedPriceCount={0}
+        priceMemoryNeedsAttention
+        onOpenHistory={onOpenHistory}
+      />,
+    );
+
+    const repair = screen.getByRole("button", {
+      name: "Repair remembered prices",
+    });
+    await user.click(repair);
 
     expect(onOpenHistory).toHaveBeenCalledTimes(1);
   });
