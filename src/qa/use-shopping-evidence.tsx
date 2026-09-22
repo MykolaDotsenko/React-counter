@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { ShoppingAppController } from "../application/shopping-app-controller";
-import type { PriceMemoryRecord } from "../domain/price-memory";
 import {
   itemCount,
   lineTotal,
@@ -80,7 +79,6 @@ export interface ShoppingEvidence {
   ) => void;
   readonly recordTripFinished: () => void;
   readonly recordRememberedItemUsed: (
-    record: PriceMemoryRecord,
     trip: ActiveTrip,
     beforeCount: number,
   ) => void;
@@ -312,7 +310,6 @@ export function useShoppingEvidence({
   };
 
   const recordRememberedItemUsed = (
-    _record: PriceMemoryRecord,
     trip: ActiveTrip,
     beforeCount: number,
   ): void => {
