@@ -30,7 +30,7 @@ export function RetentionBetaPanel({
   );
 
   useEffect(() => {
-    document.title = "Budget Cart — Retention Beta";
+    document.title = "Shopping Budget Companion — Retention Beta";
 
     const robots =
       document.querySelector<HTMLMetaElement>('meta[name="robots"]') ??
@@ -48,7 +48,7 @@ export function RetentionBetaPanel({
 
     if (description !== null) {
       description.content =
-        "Internal Budget Cart real-store retention beta with privacy-safe local evidence.";
+        "Internal Shopping Budget Companion real-store retention beta with privacy-safe local evidence.";
     }
   }, []);
 
