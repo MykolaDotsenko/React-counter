@@ -86,6 +86,29 @@
   font-weight: 800;
 }
 
+.field > span small {
+  margin-left: 6px;
+  color: var(--shopping-muted);
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+.field > input {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid var(--shopping-border);
+  border-radius: 14px;
+  padding: 0 13px;
+  background: var(--shopping-soft);
+  color: var(--shopping-text);
+  font: inherit;
+}
+
+.field > input:focus-visible {
+  outline: 3px solid var(--shopping-focus);
+  outline-offset: 3px;
+}
+
 .priceInput {
   min-height: 64px;
   display: flex;
@@ -239,6 +262,7 @@
 
 @media (forced-colors: active) {
   .sheet,
+  .field > input,
   .priceInput,
   .projection,
   .cancelButton,
