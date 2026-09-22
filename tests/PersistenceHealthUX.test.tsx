@@ -281,7 +281,7 @@ describe("persistence-health UX", () => {
     expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
   });
 
-  it("does not misreport legacy cleanup as current-trip data loss", () => {
+  it("does not misreport historical cleanup as current-trip data loss", () => {
     const controller = createShoppingAppController({
       persistence: createPersistence({
         ok: false,
