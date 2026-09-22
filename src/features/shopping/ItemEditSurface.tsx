@@ -7,6 +7,7 @@ import {
   type SignedMinorUnits,
 } from "../../domain/money";
 import {
+  MAX_ITEM_LABEL_CODE_POINTS,
   cartTotal,
   reduceTrip,
   remaining,
@@ -106,6 +107,7 @@ export function ItemEditSurface({
   }));
   const [quantity, setQuantity] = useState(item.quantity);
   const [label, setLabel] = useState(item.label ?? "");
+  const [labelError, setLabelError] = useState("");
   const [submissionError, setSubmissionError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -145,7 +147,12 @@ export function ItemEditSurface({
       canonicalLabel !== item.label);
 
   const submit = (): void => {
-    if (validPrice === null || !changed || submitted) {
+    if (
+      validPrice === null ||
+      !changed ||
+      submitted ||
+      labelError !== ""
+    ) {
       return;
     }
 
@@ -245,10 +252,26 @@ export function ItemEditSurface({
             autoComplete="off"
             spellCheck={false}
             placeholder="Milk 1L"
+            aria-invalid={Boolean(labelError)}
             onChange={(event) => {
-              setLabel(event.currentTarget.value);
+              const next = event.currentTarget.value;
+
+              if ([...next].length > MAX_ITEM_LABEL_CODE_POINTS) {
+                setLabelError(
+                  `Keep the name within ${MAX_ITEM_LABEL_CODE_POINTS} characters.`,
+                );
+                return;
+              }
+
+              setLabel(next);
+              setLabelError("");
             }}
           />
+          {labelError ? (
+            <small className={styles.error} role="alert">
+              {labelError}
+            </small>
+          ) : null}
         </label>
 
         <label className={styles.field}>
@@ -352,7 +375,12 @@ export function ItemEditSurface({
         <button
           type="button"
           className={styles.saveButton}
-          disabled={!changed || validPrice === null || submitted}
+          disabled={
+            !changed ||
+            validPrice === null ||
+            submitted ||
+            labelError !== ""
+          }
           onClick={submit}
         >
           {submitted ? "Saving…" : "Save correction"}
