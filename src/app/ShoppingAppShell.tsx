@@ -3,7 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { useShoppingAppState } from "../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../application/shopping-app-controller";
 import { formatEur, signedMinorUnits } from "../domain/money";
-import type { PriceMemoryRecord } from "../domain/price-memory";
+import type {
+  PriceMemoryId,
+  PriceMemoryRecord,
+} from "../domain/price-memory";
 import {
   lineTotal,
   mostRecentCompletedTrip,
@@ -57,7 +60,11 @@ const qaTimingEnabled =
 
 type OverlayState =
   | { readonly kind: "none" }
-  | { readonly kind: "add-price"; readonly initialLabel?: string }
+  | {
+      readonly kind: "add-price";
+      readonly initialLabel?: string;
+      readonly sourceMemoryId?: PriceMemoryId;
+    }
   | { readonly kind: "budget-settings" }
   | { readonly kind: "edit-item"; readonly itemId: ItemId }
   | { readonly kind: "finish-trip" }
@@ -138,6 +145,30 @@ export function ShoppingAppShell({
 
   const returnFocusToAddPrice = (): void => {
     queueMicrotask(() => {
+      addPriceButtonRef.current?.focus();
+    });
+  };
+
+  const returnFocusToPriceTrigger = (
+    sourceMemoryId: PriceMemoryId | undefined,
+  ): void => {
+    if (sourceMemoryId === undefined) {
+      returnFocusToAddPrice();
+      return;
+    }
+
+    queueMicrotask(() => {
+      const buttons = document.querySelectorAll<HTMLButtonElement>(
+        "[data-current-price-memory-id]",
+      );
+
+      for (const button of buttons) {
+        if (button.dataset.currentPriceMemoryId === sourceMemoryId) {
+          button.focus();
+          return;
+        }
+      }
+
       addPriceButtonRef.current?.focus();
     });
   };
@@ -357,8 +388,9 @@ export function ShoppingAppShell({
           onCancel={() => {
             qaStartedAtRef.current = null;
             qaPendingSampleRef.current = null;
+            const sourceMemoryId = overlay.sourceMemoryId;
             setOverlay({ kind: "none" });
-            returnFocusToAddPrice();
+            returnFocusToPriceTrigger(sourceMemoryId);
           }}
           onValidatedItem={(intent: ValidatedItemIntent) => {
             const result = controller.addManualItem(intent);
@@ -392,8 +424,9 @@ export function ShoppingAppShell({
               };
             }
 
+            const sourceMemoryId = overlay.sourceMemoryId;
             setOverlay({ kind: "none" });
-            returnFocusToAddPrice();
+            returnFocusToPriceTrigger(sourceMemoryId);
             return true;
           }}
         />
@@ -653,6 +686,7 @@ export function ShoppingAppShell({
           setOverlay({
             kind: "add-price",
             initialLabel: record.label,
+            sourceMemoryId: record.id,
           });
         }}
         onRemoveItem={(item) => {
