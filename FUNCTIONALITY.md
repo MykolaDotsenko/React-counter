@@ -141,6 +141,23 @@ Over time, quick budgets may adapt to the user's recent choices locally.
 
 Do not require a settings screen to change them.
 
+## Returning launch and Shop again
+
+When validated completed history exists, the product may offer a one-action repeat shortcut before the generic quick budgets.
+
+The repeat action:
+
+- copies the completed trip's budget and safety buffer
+- creates a new active trip with a new id and start time
+- starts with an empty cart
+- leaves completed history unchanged
+- does not copy actual checkout totals or cart items
+- does not require account, network, camera, or a second settings record
+
+If completed-history durability is degraded or completion cleanup is unresolved, the repeat action must not create a new trip from that source until persistence is healthy.
+
+This is distinct from **Continue shopping**. Shop again starts a fresh trip. It never reopens or mutates a completed trip.
+
 ## Starting a trip
 
 Required:
