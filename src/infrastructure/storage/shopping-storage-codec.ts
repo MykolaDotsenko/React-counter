@@ -23,7 +23,9 @@ import {
   storageEnvelopeHeaderSchema,
   storageEnvelopeV1Schema,
   type ActiveTripDataV1,
+  type ActiveTripEnvelopeV1,
   type CompletedTripDataV1,
+  type HistoryEnvelopeV1,
   type PriceConfidenceV1,
   type PriceSourceV1,
 } from "./shopping-storage-schema";
