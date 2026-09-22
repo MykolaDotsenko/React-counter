@@ -103,6 +103,21 @@ const decodeRecord = (
     return null;
   }
 
+  const source =
+    value.source.kind === "manual"
+      ? ({ kind: "manual" } as const)
+      : value.source.kind === "shelf-scan"
+        ? value.source.captureId === undefined
+          ? ({ kind: "shelf-scan" } as const)
+          : ({
+              kind: "shelf-scan",
+              captureId: value.source.captureId,
+            } as const)
+        : ({
+            kind: "retailer-feed",
+            provider: value.source.provider,
+          } as const);
+
   const record = createPriceMemoryRecord({
     productId: value.productId,
     label: value.label,
@@ -112,7 +127,7 @@ const decodeRecord = (
     ...(value.storeId === undefined
       ? {}
       : { storeId: value.storeId }),
-    source: value.source,
+    source,
   });
 
   if (!record.ok || record.value.id !== value.id) {
