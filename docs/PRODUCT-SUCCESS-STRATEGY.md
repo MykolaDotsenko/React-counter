@@ -590,6 +590,40 @@ Exceptions:
 - accessibility failure
 - a repeatedly observed missing capability preventing the core job
 
+## Retention beta evidence harness
+
+A guarded local-first beta build is implemented at:
+
+> `/shopping-budget-companion/beta/`
+
+Its purpose is to make the real-store validation gate measurable without introducing a production analytics platform.
+
+Recorded locally:
+
+- trip start ordinal and whether the start used repeat acceleration
+- trip completion
+- 1 / 5 / 10 item milestones
+- completed manual-entry duration
+- manual-entry abandonment
+- remembered-item reuse
+- current-price override starts
+
+Explicitly excluded from the evidence schema:
+
+- budget values
+- item prices
+- line totals
+- item names
+- product IDs
+- memory IDs
+- store IDs/history
+- checkout totals
+- camera content
+
+No evidence is transmitted over the network. The tester/researcher manually copies a privacy-safe JSON report from the beta panel.
+
+The harness is an **instrument**, not evidence by itself. Second-trip and third-trip conclusions require real shoppers using the app in real shopping contexts.
+
 ## Real-store beta
 
 Minimum recommended cohort:
