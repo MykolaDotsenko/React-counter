@@ -1373,7 +1373,7 @@ Keeping evidence separate from shopping persistence also prevents validation inf
 
 A later validated product needs aggregate telemetry across a larger cohort and has an explicit privacy/consent design.
 
-## D-043 — Structured physical evidence is required for B6 release eligibility
+## D-043 — Structured physical evidence is required for B6 eligibility
 
 Date: 2026-09-22
 
@@ -1398,7 +1398,7 @@ Dark appearance, 200%/large text, and reduced-motion physical checks are recorde
 - `pass`
 - `fail`
 
-A recorded secondary physical failure blocks release eligibility immediately.
+A recorded secondary physical failure blocks B6 eligibility immediately.
 
 A `not-run` value remains visible and must never be interpreted as a physical pass.
 
@@ -1423,8 +1423,8 @@ Preserving valid v2 timing evidence avoids throwing away legitimate measurements
 
 - B6 remains human-unverified until the v3 primary context is explicitly completed
 - the same input-method label must accompany comparable timing samples
-- a migrated v2 session cannot become release-eligible merely because its old checklist was complete
-- secondary physical checks are optional to run where unavailable, but any recorded failure is a release blocker
+- a migrated v2 session cannot become B6-eligible merely because its old checklist was complete
+- secondary physical checks are optional to run where unavailable, but any recorded failure is a B6 blocker
 - automation may verify the recorder and migration logic but still cannot prove the <=2.5 second human KPI
 
 ### Revisit when
@@ -1561,3 +1561,51 @@ This created two risks:
 - Documentation conflicts have an explicit resolution path.
 - Future planning documents do not automatically become permanent sources of truth.
 
+---
+
+## D-047 — B6 timing evidence must be internally verifiable
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+The B6 timing recorder treats empirical evidence as a validated artifact rather than a free-form clipboard dump.
+
+Each timing sample must have:
+
+- a non-empty unique sample ID
+- a positive finite duration
+- a positive integer minor-unit price
+- a positive safe-integer quantity
+- an exact safe-integer line total equal to unit price × quantity
+- a positive budget and non-negative safety buffer
+- a canonical ISO completion timestamp
+
+Stored sessions reject duplicate sample IDs. Representative KPI summaries re-check sample integrity before counting a sample.
+
+Copied evidence uses a versioned `shopping-timing-evidence` export. The export contains the validated QA session plus a derived B6 gate summary. Import validation recomputes the gate from the session and rejects a tampered derived summary.
+
+The export privacy declaration is explicit: no network transmission, item names, or store history are included, while device metadata is intentionally present because physical-test context is part of the evidence.
+
+A separate two-step **Start fresh QA session** action clears empirical QA state and recaptures the current environment. Resetting only timing samples deliberately preserves the existing environment and checklist context.
+
+### Rationale
+
+Human evidence is useful only if later reviewers can tell whether the recorded measurements are internally coherent and whether a copied summary was derived from the same underlying samples.
+
+The previous recorder already separated QA state from product state, but it trusted several sample fields independently and exported an unversioned report. That left avoidable opportunities for malformed, duplicate, stale-environment, or manually altered evidence to look legitimate.
+
+### Consequence
+
+- invalid or mathematically inconsistent timing samples fail closed
+- duplicate sample IDs cannot inflate a timing cohort
+- stale environment metadata can be intentionally discarded without clearing browser product data
+- copied evidence has a stable machine-readable envelope
+- derived B6 status is never trusted independently from the validated session
+- none of these checks substitutes for the required physical human test
+
+### Revisit when
+
+The empirical protocol, timing schema, or cross-device evidence model changes materially.
