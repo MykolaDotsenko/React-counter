@@ -9,5 +9,5 @@ A document belongs here when its execution purpose is complete but deleting it w
 
 Current archived execution material includes:
 
-- `CORE-UI-EXECUTION-BRIEF.md` — completed core UI execution decomposition
-- `ROADMAP-THROUGH-PHASE-8.md` — historical phase/gate plan preserved when the active roadmap was condensed
+- [CORE-UI-EXECUTION-BRIEF.md](./CORE-UI-EXECUTION-BRIEF.md) — completed core UI execution decomposition
+- [ROADMAP-THROUGH-PHASE-8.md](./ROADMAP-THROUGH-PHASE-8.md) — historical phase/gate plan preserved when the active roadmap was condensed
