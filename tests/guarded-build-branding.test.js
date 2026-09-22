@@ -51,6 +51,24 @@ describe("guarded shopping build branding", () => {
     expect(branded).toContain('<div id="root"></div>');
   });
 
+  it("replaces Vite base-prefixed legacy favicons in nested guarded builds", () => {
+    const builtHtml = legacyHtml.replace(
+      'href="/favicon.svg"',
+      'href="/shopping-budget-companion/qa/favicon.svg"',
+    );
+
+    const branded = applyGuardedBuildBrandingHtml(builtHtml, {
+      title: "Shopping Budget Companion — Empirical Timing QA",
+      description:
+        "Internal Shopping Budget Companion empirical timing and one-hand usability QA.",
+    });
+
+    expect(branded).toContain('href="./shopping-mark.svg"');
+    expect(branded).not.toContain(
+      "/shopping-budget-companion/qa/favicon.svg",
+    );
+  });
+
   it("fails closed when the expected legacy shell changes unexpectedly", () => {
     expect(() =>
       applyGuardedBuildBrandingHtml("<html></html>", {
