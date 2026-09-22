@@ -320,33 +320,48 @@ export function ShoppingAppShell({
       !betaEvidenceEnabled ||
       betaRestoreRecordedRef.current ||
       !betaInitialActiveTripRef.current ||
-      betaSession === null ||
       state.activeTrip === null
     ) {
       return;
     }
 
-    const observedOrdinal = currentRetentionTripOrdinal(betaSession);
-    const tripOrdinal =
-      observedOrdinal ?? nextRetentionTripOrdinal(betaSession);
-
     betaRestoreRecordedRef.current = true;
 
-    if (observedOrdinal === null) {
-      recordBetaEvent({
-        type: "trip_started",
-        at: new Date().toISOString(),
-        tripOrdinal,
-        source: "resume",
-      });
-    }
+    setBetaSession((current) => {
+      if (current === null) {
+        return null;
+      }
 
-    recordBetaEvent({
-      type: "trip_restored",
-      at: new Date().toISOString(),
-      tripOrdinal,
+      const observedOrdinal = currentRetentionTripOrdinal(current);
+      const tripOrdinal =
+        observedOrdinal ?? nextRetentionTripOrdinal(current);
+      const at = new Date().toISOString();
+      let next = current;
+
+      if (observedOrdinal === null) {
+        next = appendRetentionBetaEvent(next, {
+          type: "trip_started",
+          at,
+          tripOrdinal,
+          source: "resume",
+        });
+      }
+
+      next = appendRetentionBetaEvent(next, {
+        type: "trip_restored",
+        at,
+        tripOrdinal,
+      });
+
+      try {
+        persistRetentionBetaSession(localStorage, next);
+      } catch {
+        // Restore evidence must never change shopping product behaviour.
+      }
+
+      return next;
     });
-  }, [betaSession, state.activeTrip]);
+  }, [state.activeTrip]);
 
   useEffect(() => {
     if (
