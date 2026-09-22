@@ -2,16 +2,16 @@
 
 ## Status
 
-Authoritative product-success strategy for increasing the probability that the shopping-budget product becomes a repeatedly used consumer utility rather than only a technically strong portfolio project.
+**SUPPORTING RESEARCH STRATEGY.** This document contains retention hypotheses, decision heuristics, and evidence framing. Current product scope and shipped behaviour remain owned by authoritative contracts.
 
 This document complements:
 
-- PRODUCT.md — product thesis and scope
-- FUNCTIONALITY.md — user-facing behaviour
-- ROADMAP.md — implementation order
-- MARKETING.md — acquisition and growth
-- SCENARIOS.md — scenario priorities
-- docs/DECISIONS.md — durable product decisions
+- ../PRODUCT.md — product thesis and scope
+- ../ROADMAP.md — current sequencing and evidence gates
+- ../specs/RELEASE-SPEC.md — current release behaviour
+- ../reference/MARKETING.md — acquisition/growth guidance
+- ../reference/SCENARIOS.md — scenario challenge matrix
+- ../DECISIONS.md — durable product decisions
 
 The percentages in this document are **decision heuristics, not measured forecasts**. They exist to compare risk and sequencing. Real retention data overrides them.
 
