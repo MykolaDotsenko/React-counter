@@ -614,10 +614,7 @@ export function PriceEntrySurface({
               : `Add${projection === null ? "" : ` · ${formatAbsoluteSigned(projection.lineTotalMinor, locale)}`}`}
           </button>
 
-          <details
-            className={styles.labelDetails}
-            open={initialLabel !== undefined ? true : undefined}
-          >
+          <details className={styles.labelDetails}>
             <summary>Name for next time <span>Optional</span></summary>
             <label className={styles.labelField}>
               <span>Item name</span>
