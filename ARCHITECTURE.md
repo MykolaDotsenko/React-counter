@@ -112,6 +112,8 @@ src/
 │       └── price-memory-persistence-port.ts
 └── qa/
     ├── use-shopping-evidence.tsx
+    ├── use-shopping-timing-evidence.tsx
+    ├── use-retention-beta-evidence.tsx
     ├── shopping-timing.ts
     ├── ShoppingTimingQaPanel.tsx
     ├── retention-beta.ts
@@ -125,7 +127,7 @@ Architectural rules for growth:
 - completed history currently shares the versioned shopping-storage adapter because active/completed reconciliation is one durability concern
 - Price Memory remains a separate persistence port because advisory-memory failure must not downgrade a healthy cart/history write
 - feature screens may own transient form/focus/confirmation state, while canonical shopping state stays in ShoppingAppController
-- ShoppingAppShell owns cross-screen product orchestration, while QA/retention measurement state is isolated behind useShoppingEvidence so evidence code cannot become a second product-state owner
+- ShoppingAppShell owns cross-screen product orchestration, while useShoppingEvidence is a thin facade over separate timing-QA and retention-beta hooks so measurement state cannot become a second product-state owner
 - feature-specific commands should move down into the relevant feature when this reduces prop plumbing without duplicating canonical state
 - optional scanning and PWA adapters should be added only after their roadmap gates justify concrete interfaces
 
