@@ -9,6 +9,7 @@ import {
 } from "../../domain/money";
 import {
   cartTotal,
+  projectSpendingPlan,
   type ActiveTrip,
 } from "../../domain/shopping-trip";
 import styles from "./BudgetSettingsSurface.module.css";
@@ -137,17 +138,21 @@ export function BudgetSettingsSurface({
       return null;
     }
 
-    const total = cartTotal(trip);
-    const nominalRemaining = parsedPlan.budgetMinor - total;
-    const safeLimit =
-      parsedPlan.budgetMinor - parsedPlan.safetyBufferMinor;
-    const safeRemaining = safeLimit - total;
+    const projection = projectSpendingPlan(
+      trip,
+      parsedPlan.budgetMinor,
+      parsedPlan.safetyBufferMinor,
+    );
 
-    if (nominalRemaining < 0) {
+    if (!projection.ok) {
+      return null;
+    }
+
+    if (projection.value.crossesNominalBudget) {
       return {
         status: "over" as const,
         primary: `Current cart will be ${formatAbsoluteEur(
-          nominalRemaining,
+          projection.value.remainingMinor,
           locale,
         )} over this budget.`,
         secondary:
@@ -155,15 +160,12 @@ export function BudgetSettingsSurface({
       };
     }
 
-    if (
-      parsedPlan.safetyBufferMinor > 0 &&
-      safeRemaining < 0
-    ) {
+    if (projection.value.crossesSafeLimit) {
       return {
         status: "reserve" as const,
         primary: "The current cart already uses part of this safety buffer.",
         secondary: `${formatAbsoluteEur(
-          nominalRemaining,
+          projection.value.remainingMinor,
           locale,
         )} remains before the nominal budget.`,
       };
@@ -174,11 +176,11 @@ export function BudgetSettingsSurface({
       primary:
         parsedPlan.safetyBufferMinor > 0
           ? `${formatAbsoluteEur(
-              safeRemaining,
+              projection.value.safeRemainingMinor,
               locale,
             )} safe to spend after saving`
           : `${formatAbsoluteEur(
-              nominalRemaining,
+              projection.value.remainingMinor,
               locale,
             )} left after saving`,
       secondary:
