@@ -1274,3 +1274,48 @@ A fresh trip is also materially safer than reopening a completed trip because it
 
 Recent-budget preferences must intentionally diverge from completed history, or user research demonstrates a need for persistent defaults independent of the latest completed trip.
 
+## D-041 — Price Memory learns only from durably completed confirmed items
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+Create or refresh a Price Memory record only after the source trip has been durably persisted as completed history.
+
+Eligible source items must:
+
+- have a non-empty product label
+- carry confirmed price confidence
+- have a provenance that represents a current observation rather than an old remembered value
+
+Do not learn Price Memory at Add/Edit time.
+
+Do not refresh observation age merely because an unchanged remembered price appears in another completed trip.
+
+### Rationale
+
+Learning at mutation time creates false memories from:
+
+- typing mistakes later undone
+- removed items
+- abandoned corrections
+- failed completion
+- remembered prices that were never verified as current
+
+Completed-history durability is already the product's strongest local evidence that the shopping observation survived the user's correction flow.
+
+### Consequence
+
+- Price Memory remains advisory and independent from active-cart durability
+- a Price Memory write failure cannot invalidate a successfully completed trip
+- remembered reuse stays explicitly `remembered`
+- manual current-price correction can create a new confirmed observation after completion
+- baseline price-only entry remains label-optional
+- unknown/future/corrupt price-memory storage is preserved rather than overwritten
+
+### Revisit when
+
+Real usage requires remembering an item before trip completion, with an explicit user action and a data-integrity model that is at least as clear as the completed-trip rule.
+
