@@ -364,7 +364,7 @@ describe("retention beta evidence", () => {
     });
   });
 
-  it("parses a valid export and recomputes the summary instead of trusting imported totals", () => {
+  it("accepts a valid export and rejects inconsistent imported summaries", () => {
     let session = createRetentionBetaSession(START);
     session = appendRetentionBetaEvent(
       session,
@@ -376,16 +376,26 @@ describe("retention beta evidence", () => {
     );
 
     const report = buildRetentionBetaExport(session, LATER);
-    const parsed = parseRetentionBetaExport({
-      ...report,
-      summary: {
-        ...report.summary,
-        tripsStarted: 999,
-      },
-    });
 
-    expect(parsed).not.toBeNull();
-    expect(parsed?.summary.tripsStarted).toBe(1);
+    expect(parseRetentionBetaExport(report)).toEqual(report);
+    expect(
+      parseRetentionBetaExport({
+        ...report,
+        summary: {
+          ...report.summary,
+          tripsStarted: 999,
+        },
+      }),
+    ).toBeNull();
+    expect(
+      parseRetentionBetaExport({
+        ...report,
+        summary: {
+          ...report.summary,
+          budgetMinor: 5_000,
+        },
+      }),
+    ).toBeNull();
   });
 
   it("rejects exported evidence when privacy claims or schema shape are altered", () => {
