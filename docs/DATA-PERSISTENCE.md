@@ -221,8 +221,9 @@ Ordering:
 If the write fails:
 
 - keep the previous visible history unchanged
-- enter degraded core-persistence state
+- preserve the previous persistence-health state because the canonical durable snapshot did not change
 - tell the user that nothing was removed
+- let the user retry the explicit deletion action rather than exposing a generic persistence retry that cannot reconstruct the rejected intent
 - do not fake a successful deletion or non-durable Undo
 
 ### Clear Price Memory
@@ -231,7 +232,7 @@ Clearing Price Memory writes an empty valid Price Memory snapshot through the in
 
 This may repair a degraded Price Memory record when storage itself is writable.
 
-Price Memory failure must remain isolated from healthy active-trip/completed-history durability.
+A failed clear attempt keeps the previous Price Memory records and their prior durability status unchanged; the failed intent is reported locally. Price Memory failure must remain isolated from healthy active-trip/completed-history durability.
 
 ### Disclosure rule
 
