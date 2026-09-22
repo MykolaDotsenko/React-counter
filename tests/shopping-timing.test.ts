@@ -8,8 +8,10 @@ import {
   LEGACY_QA_TIMING_STORAGE_KEY,
   QA_TIMING_STORAGE_KEY,
   appendQaTimingSample,
+  buildQaTimingExport,
   createQaTimingSession,
   loadQaTimingSession,
+  parseQaTimingExport,
   qaChecklistComplete,
   resetQaTimingSamples,
   summarizeQaEmpiricalGate,
@@ -87,6 +89,83 @@ describe("shopping timing QA model", () => {
     expect(session.samples).toHaveLength(0);
     expect(next.samples).toHaveLength(1);
     expect(next.environment).toBe(environment);
+  });
+
+  it("rejects internally inconsistent or non-canonical timing samples", () => {
+    const session = createQaTimingSession(environment);
+
+    expect(() =>
+      appendQaTimingSample(
+        session,
+        sample("bad-total", QA_TARGET_PRICE_479, 2_100, {
+          unitPriceMinor: 500,
+          lineTotalMinor: QA_TARGET_PRICE_479,
+        }),
+      ),
+    ).toThrow("Invalid QA timing sample");
+
+    expect(() =>
+      appendQaTimingSample(
+        session,
+        sample("zero-duration", QA_TARGET_PRICE_479, 0),
+      ),
+    ).toThrow("Invalid QA timing sample");
+
+    expect(() =>
+      appendQaTimingSample(
+        session,
+        sample("bad-time", QA_TARGET_PRICE_479, 2_100, {
+          completedAt: "2026-09-21 12:00:00",
+        }),
+      ),
+    ).toThrow("Invalid QA timing sample");
+  });
+
+  it("rejects duplicate timing sample ids", () => {
+    const first = appendQaTimingSample(
+      createQaTimingSession(environment),
+      sample("same-id", QA_TARGET_PRICE_479, 2_100),
+    );
+
+    expect(() =>
+      appendQaTimingSample(
+        first,
+        sample("same-id", QA_TARGET_PRICE_1250, 2_200),
+      ),
+    ).toThrow("Duplicate QA timing sample id");
+  });
+
+  it("exports versioned evidence and rejects tampered summaries", () => {
+    const session = appendQaTimingSample(
+      createQaTimingSession(environment),
+      sample("exported", QA_TARGET_PRICE_479, 2_100),
+    );
+    const exported = buildQaTimingExport(
+      session,
+      "2026-09-22T12:00:00.000Z",
+    );
+
+    expect(exported).toMatchObject({
+      schemaVersion: 1,
+      kind: "shopping-timing-evidence",
+      privacy: {
+        networkTransmission: false,
+        containsItemNames: false,
+        containsStoreHistory: false,
+        containsDeviceMetadata: true,
+      },
+    });
+    expect(parseQaTimingExport(exported)).not.toBeNull();
+
+    const tampered = {
+      ...exported,
+      gate: {
+        ...exported.gate,
+        releaseEligible: true,
+      },
+    };
+
+    expect(parseQaTimingExport(tampered)).toBeNull();
   });
 
   it("reports pending until ten representative samples exist", () => {
