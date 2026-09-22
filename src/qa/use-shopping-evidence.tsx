@@ -6,8 +6,9 @@ import type {
 const noop = (): void => undefined;
 
 export function useShoppingEvidence(
-  _input: ShoppingEvidenceInput,
+  input: ShoppingEvidenceInput,
 ): ShoppingEvidence {
+  void input;
   return {
     panel: null,
     resetQaTiming: noop,
