@@ -7,6 +7,7 @@ import {
   type SignedMinorUnits,
 } from "../../domain/money";
 import {
+  MAX_ITEM_LABEL_CODE_POINTS,
   cartTotal,
   reduceTrip,
   remaining,
@@ -29,6 +30,7 @@ import styles from "./ItemEditSurface.module.css";
 export interface ItemEditIntent {
   readonly unitPriceMinor: MinorUnits;
   readonly quantity: number;
+  readonly label?: string | null;
 }
 
 export interface ItemEditSurfaceProps {
@@ -104,6 +106,8 @@ export function ItemEditSurface({
     mode: "decimal",
   }));
   const [quantity, setQuantity] = useState(item.quantity);
+  const [label, setLabel] = useState(item.label ?? "");
+  const [labelError, setLabelError] = useState("");
   const [submissionError, setSubmissionError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -134,12 +138,21 @@ export function ItemEditSurface({
       : null;
   }, [item.id, item.updatedAt, quantity, trip, validPrice]);
 
+  const normalizedLabel = label.trim();
+  const canonicalLabel = normalizedLabel === "" ? undefined : normalizedLabel;
   const changed =
     validPrice !== null &&
-    (validPrice !== item.unitPriceMinor || quantity !== item.quantity);
+    (validPrice !== item.unitPriceMinor ||
+      quantity !== item.quantity ||
+      canonicalLabel !== item.label);
 
   const submit = (): void => {
-    if (validPrice === null || !changed || submitted) {
+    if (
+      validPrice === null ||
+      !changed ||
+      submitted ||
+      labelError !== ""
+    ) {
       return;
     }
 
@@ -147,6 +160,9 @@ export function ItemEditSurface({
     const accepted = onSave({
       unitPriceMinor: validPrice,
       quantity,
+      ...(canonicalLabel === item.label
+        ? {}
+        : { label: canonicalLabel ?? null }),
     });
 
     if (accepted === false) {
@@ -228,6 +244,35 @@ export function ItemEditSurface({
         <p className={styles.trust}>
           {confidenceLabel(item)} · {sourceLabel(item)}
         </p>
+
+        <label className={styles.field}>
+          <span>Item name <small>Optional · helps Recent Items</small></span>
+          <input
+            value={label}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="Milk 1L"
+            aria-invalid={Boolean(labelError)}
+            onChange={(event) => {
+              const next = event.currentTarget.value;
+
+              if ([...next].length > MAX_ITEM_LABEL_CODE_POINTS) {
+                setLabelError(
+                  `Keep the name within ${MAX_ITEM_LABEL_CODE_POINTS} characters.`,
+                );
+                return;
+              }
+
+              setLabel(next);
+              setLabelError("");
+            }}
+          />
+          {labelError ? (
+            <small className={styles.error} role="alert">
+              {labelError}
+            </small>
+          ) : null}
+        </label>
 
         <label className={styles.field}>
           <span>Price</span>
@@ -330,7 +375,12 @@ export function ItemEditSurface({
         <button
           type="button"
           className={styles.saveButton}
-          disabled={!changed || validPrice === null || submitted}
+          disabled={
+            !changed ||
+            validPrice === null ||
+            submitted ||
+            labelError !== ""
+          }
           onClick={submit}
         >
           {submitted ? "Saving…" : "Save correction"}

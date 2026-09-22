@@ -574,16 +574,55 @@ interface ShelfPriceScanner {
 
 No candidate directly enters ShoppingTrip.
 
-## Price-memory adapter
+## Price-memory domain and persistence contract
 
-Future P1:
+**Implemented in Phase 8.**
+
+The current local/offline identity model is deliberately narrow:
 
 ~~~ts
-interface PriceMemoryRepository {
-  find(productId: ProductId, storeId?: StoreId): Result<PriceMemoryRecord[], PersistenceReadError>
-  remember(record: PriceMemoryRecord): Result<void, PersistenceWriteError>
+type ProductId = Brand<string, 'ProductId'>
+type PriceMemoryId = Brand<string, 'PriceMemoryId'>
+
+interface PriceMemoryRecord {
+  id: PriceMemoryId
+  productId: ProductId
+  label: string
+  currency: 'EUR'
+  unitPriceMinor: MinorUnits
+  observedAt: IsoTimestamp
+  storeId?: StoreId
+  source:
+    | { kind: 'manual' }
+    | { kind: 'shelf-scan'; captureId?: string }
+    | { kind: 'retailer-feed'; provider: string }
 }
 ~~~
+
+For manually named products, the initial ProductId is derived deterministically from the normalized label. This is a local recognition abstraction, not a global catalogue identity claim.
+
+Application persistence is independent from active-trip persistence:
+
+~~~ts
+interface PriceMemoryPersistencePort {
+  bootstrap(): PriceMemoryBootstrapResult
+  save(
+    records: readonly PriceMemoryRecord[],
+    savedAt: IsoTimestamp,
+  ): PriceMemorySaveResult
+}
+~~~
+
+Rules:
+
+- Price Memory is advisory
+- its failure cannot make an otherwise healthy active-cart write degraded
+- records are learned only from named + confirmed items after durable trip completion
+- remembered reuse creates `source=price-memory` + `confidence=remembered`
+- unchanged remembered values never refresh `observedAt`
+- a manual current-price correction may become the next confirmed observation after completion
+- store-aware selection prefers exact store, then store-neutral fallback, when store context is supplied
+- unsupported/corrupt future storage must not be overwritten merely to recover convenience
 
 ## React adapter rules
 

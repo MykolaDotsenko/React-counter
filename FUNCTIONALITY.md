@@ -346,6 +346,26 @@ A price-only item is complete.
 
 ## Add item: remembered price
 
+### Implemented Phase 8 behaviour
+
+Recent Items is shown on the active-trip surface when validated price-memory records exist.
+
+A memory is created from a cart item only after:
+
+1. the item has a non-empty product label
+2. its price is currently confirmed
+3. the trip is durably completed in history
+
+This deliberately avoids learning from:
+
+- cancelled entries
+- items later removed before completion
+- undo-only mistakes
+- unchanged remembered prices
+- failed trip completion
+
+The baseline price-only flow does not require a name. Naming is an optional collapsed control so repeat-shopping acceleration does not slow first-trip entry.
+
 ### Trigger
 
 The app recognises a previously used product identity or the user selects a recent/favourite item.
@@ -354,8 +374,15 @@ Show:
 
 - item label
 - remembered price
-- observed date
-- store if known
+- visible age derived from observed date
+- store-specific status if known
+
+Primary choices:
+
+- **Use remembered price** — one action when within budget
+- **Enter current price** — opens the normal manual price entry with the product label preserved
+
+If remembered reuse would cross the nominal budget, require a second explicit **Add anyway** confirmation rather than bypassing the manual-flow safety rule.
 
 Example:
 

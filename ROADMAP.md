@@ -559,7 +559,7 @@ PR:
 
 ## Phase 8 — repeat-trip acceleration and price memory
 
-**Status: in progress — repeat-trip foundation implemented; Recent Items and Price Memory remain.**
+**Status: in progress — repeat-trip foundation, Recent Items, local product identity, and Price Memory are implemented; user-facing store context remains optional follow-up.**
 
 Implemented first slice:
 
@@ -572,15 +572,26 @@ Implemented first slice:
 - blocks repeat when completed-history durability is degraded or cleanup is unresolved
 - component, controller, domain, E2E, accessibility, and cross-browser coverage
 
+Implemented second slice:
+
+- Recent Items on the active-trip surface
+- label-derived local product identity for manual/offline use
+- independent versioned `budget-cart:price-memory` persistence
+- remembered price records with observation timestamp and provenance
+- visible freshness age
+- one-tap remembered-item reuse when within budget
+- two-step confirmation when remembered reuse would exceed nominal budget
+- explicit `Enter current price` override using the normal manual price flow
+- optional item naming that does not slow the baseline price-only path
+- memory creation only after durable trip completion
+- remembered cart items remain `source=price-memory` + `confidence=remembered`
+- advisory memory persistence failure remains isolated from active-cart durability
+- store-aware selector semantics for future known-store context
+
 Still remaining in Phase 8:
 
-- Recent Items
-- product identity abstraction
-- remembered price records
-- observed-date / freshness UX
-- optional store context
-- one/two-action remembered-item reuse
-- current-price override
+- optional user-facing store context if validation shows it materially improves repeat shopping
+- real-user measurement proving the second/third trip is materially lighter
 
 Suggested PR:
 

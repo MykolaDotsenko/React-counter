@@ -21,7 +21,7 @@ Current repository reality:
 
 Remaining target areas before the documented MVP is complete:
 
-- remaining Phase 8 Recent Items / product identity / price-memory slices
+- optional user-facing store context and real-user Phase 8 retention validation
 - Phase 9 vite-plugin-pwa + Workbox generateSW and offline installed-shell validation
 - optional scanning adapters only in their evidence-gated later phases
 - eventual retirement of the Pulse Counter compatibility shell after the guarded replacement passes its release gates
@@ -481,23 +481,21 @@ Choose the smallest approach that supports the UX contract.
 
 ## Price memory boundary
 
-Price memory is separate from active-trip canonical state.
+Phase 8 now implements Price Memory as a separate advisory subsystem.
 
-A remembered-price store may be keyed by:
+The application composition root provides two independent persistence ports:
 
-- product identity
-- optional store identity
-- currency
+~~~text
+ShoppingAppController
+  ├─ core shopping persistence → active trip + completed history
+  └─ advisory price-memory persistence → recent product/price observations
+~~~
 
-Records retain:
+A price-memory failure must not downgrade a healthy active-cart write.
 
-- last observed price
-- observed date
-- source metadata
+Memories are learned only from confirmed named items after completed history is durable. This prevents undone, removed, cancelled, or failed-completion items from becoming future suggestions.
 
-Price memory is advisory.
-
-It never changes cart totals until a value is selected/confirmed through the application flow.
+The initial manual/offline product identity is deterministic and label-derived. It is intentionally modest: enough to recognize a user-named familiar product without requiring network lookup or barcode infrastructure.
 
 ## Scanner technology
 

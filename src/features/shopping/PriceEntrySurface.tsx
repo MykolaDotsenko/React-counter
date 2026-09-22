@@ -9,6 +9,7 @@ import {
   type MoneyDraftMode,
 } from "../../domain/money";
 import {
+  MAX_ITEM_LABEL_CODE_POINTS,
   projectAddItem,
   type ActiveTrip,
   type TripProjection,
@@ -37,6 +38,7 @@ import styles from "./PriceEntrySurface.module.css";
 export interface ValidatedItemIntent {
   readonly unitPriceMinor: MinorUnits;
   readonly quantity: number;
+  readonly label?: string;
 }
 
 export interface PriceEntrySurfaceProps {
@@ -45,6 +47,7 @@ export interface PriceEntrySurfaceProps {
   readonly onValidatedItem: (
     intent: ValidatedItemIntent,
   ) => boolean | void;
+  readonly initialLabel?: string;
   readonly locale?: string;
 }
 
@@ -146,6 +149,7 @@ export function PriceEntrySurface({
   trip,
   onCancel,
   onValidatedItem,
+  initialLabel,
   locale = "en-FI",
 }: PriceEntrySurfaceProps) {
   const amountInputId = useId();
@@ -163,6 +167,8 @@ export function PriceEntrySurface({
     initialPriceEntryDraft,
   );
   const [quantity, setQuantity] = useState(defaultQuantity);
+  const [label, setLabel] = useState(initialLabel ?? "");
+  const [labelError, setLabelError] = useState("");
 
   useEffect(() => {
     if (prefersCustomKeypad()) {
@@ -258,9 +264,13 @@ export function PriceEntrySurface({
       return;
     }
 
+    const normalizedLabel = label.trim();
     const intent: ValidatedItemIntent = {
       unitPriceMinor: validPrice,
       quantity,
+      ...(normalizedLabel === ""
+        ? {}
+        : { label: normalizedLabel }),
     };
 
     if (projection?.crossesNominalBudget === true) {
@@ -339,6 +349,12 @@ export function PriceEntrySurface({
             Cancel
           </button>
         </header>
+
+        {initialLabel !== undefined ? (
+          <p className={styles.currentPriceContext}>
+            Current price for <strong>{initialLabel}</strong>
+          </p>
+        ) : null}
 
         <div className={styles.modeGroup}>
           <div
@@ -597,6 +613,41 @@ export function PriceEntrySurface({
               ? "Adding…"
               : `Add${projection === null ? "" : ` · ${formatAbsoluteSigned(projection.lineTotalMinor, locale)}`}`}
           </button>
+
+          <details className={styles.labelDetails}>
+            <summary>Name for next time <span>Optional</span></summary>
+            <label className={styles.labelField}>
+              <span>Item name</span>
+              <input
+                value={label}
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="Milk 1L"
+                aria-invalid={Boolean(labelError)}
+                onChange={(event) => {
+                  const next = event.currentTarget.value;
+
+                  if ([...next].length > MAX_ITEM_LABEL_CODE_POINTS) {
+                    setLabelError(
+                      `Keep the name within ${MAX_ITEM_LABEL_CODE_POINTS} characters.`,
+                    );
+                    return;
+                  }
+
+                  setLabel(next);
+                  setLabelError("");
+                }}
+              />
+            </label>
+            <p className={styles.labelHint}>
+              Named confirmed items can appear in Recent Items after this trip is finished.
+            </p>
+            {labelError ? (
+              <p className={styles.labelError} role="alert">
+                {labelError}
+              </p>
+            ) : null}
+          </details>
           </>
         ) : (
           <section

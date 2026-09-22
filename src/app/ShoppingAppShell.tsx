@@ -3,6 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { useShoppingAppState } from "../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../application/shopping-app-controller";
 import { formatEur, signedMinorUnits } from "../domain/money";
+import type {
+  PriceMemoryId,
+  PriceMemoryRecord,
+} from "../domain/price-memory";
 import {
   lineTotal,
   mostRecentCompletedTrip,
@@ -56,7 +60,11 @@ const qaTimingEnabled =
 
 type OverlayState =
   | { readonly kind: "none" }
-  | { readonly kind: "add-price" }
+  | {
+      readonly kind: "add-price";
+      readonly initialLabel?: string;
+      readonly sourceMemoryId?: PriceMemoryId;
+    }
   | { readonly kind: "budget-settings" }
   | { readonly kind: "edit-item"; readonly itemId: ItemId }
   | { readonly kind: "finish-trip" }
@@ -137,6 +145,30 @@ export function ShoppingAppShell({
 
   const returnFocusToAddPrice = (): void => {
     queueMicrotask(() => {
+      addPriceButtonRef.current?.focus();
+    });
+  };
+
+  const returnFocusToPriceTrigger = (
+    sourceMemoryId: PriceMemoryId | undefined,
+  ): void => {
+    if (sourceMemoryId === undefined) {
+      returnFocusToAddPrice();
+      return;
+    }
+
+    queueMicrotask(() => {
+      const buttons = document.querySelectorAll<HTMLButtonElement>(
+        "[data-current-price-memory-id]",
+      );
+
+      for (const button of buttons) {
+        if (button.dataset.currentPriceMemoryId === sourceMemoryId) {
+          button.focus();
+          return;
+        }
+      }
+
       addPriceButtonRef.current?.focus();
     });
   };
@@ -351,12 +383,16 @@ export function ShoppingAppShell({
       <>
         <PriceEntrySurface
           trip={state.activeTrip}
+          {...(overlay.initialLabel === undefined
+            ? {}
+            : { initialLabel: overlay.initialLabel })}
           locale="en-FI"
           onCancel={() => {
             qaStartedAtRef.current = null;
             qaPendingSampleRef.current = null;
+            const sourceMemoryId = overlay.sourceMemoryId;
             setOverlay({ kind: "none" });
-            returnFocusToAddPrice();
+            returnFocusToPriceTrigger(sourceMemoryId);
           }}
           onValidatedItem={(intent: ValidatedItemIntent) => {
             const result = controller.addManualItem(intent);
@@ -390,8 +426,9 @@ export function ShoppingAppShell({
               };
             }
 
+            const sourceMemoryId = overlay.sourceMemoryId;
             setOverlay({ kind: "none" });
-            returnFocusToAddPrice();
+            returnFocusToPriceTrigger(sourceMemoryId);
             return true;
           }}
         />
@@ -522,6 +559,9 @@ export function ShoppingAppShell({
                 itemId: item.id,
                 unitPriceMinor: intent.unitPriceMinor,
                 quantity: intent.quantity,
+                ...(intent.label === undefined
+                  ? {}
+                  : { label: intent.label }),
               });
 
               if (
@@ -614,6 +654,41 @@ export function ShoppingAppShell({
           qaPendingSampleRef.current = null;
           setLastAddedMessage("");
           setOverlay({ kind: "edit-item", itemId: item.id });
+        }}
+        onUseRemembered={(record: PriceMemoryRecord) => {
+          qaStartedAtRef.current = null;
+          qaPendingSampleRef.current = null;
+          setLastAddedMessage("");
+
+          const result = controller.addRememberedItem({
+            memoryId: record.id,
+          });
+
+          if (
+            !result.ok ||
+            !result.changed ||
+            result.state.activeTrip === null
+          ) {
+            return false;
+          }
+
+          setLastAddedMessage(
+            `${record.label} added from a remembered price. ${remainingFeedback(
+              result.state.activeTrip,
+              "en-FI",
+            )}`,
+          );
+          return true;
+        }}
+        onEnterCurrentPrice={(record: PriceMemoryRecord) => {
+          qaStartedAtRef.current = null;
+          qaPendingSampleRef.current = null;
+          setLastAddedMessage("");
+          setOverlay({
+            kind: "add-price",
+            initialLabel: record.label,
+            sourceMemoryId: record.id,
+          });
         }}
         onRemoveItem={(item) => {
           qaStartedAtRef.current = null;

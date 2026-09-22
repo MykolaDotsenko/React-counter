@@ -3,6 +3,7 @@ import type { CSSProperties, Ref } from "react";
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
 import { formatEur, signedMinorUnits } from "../../domain/money";
+import type { PriceMemoryRecord } from "../../domain/price-memory";
 import {
   cartTotal,
   itemCount,
@@ -13,6 +14,7 @@ import {
   type CartItem,
 } from "../../domain/shopping-trip";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
+import { RecentItemsSection } from "./RecentItemsSection";
 import styles from "./ActiveTripScreen.module.css";
 
 export interface ActiveTripScreenProps {
@@ -27,6 +29,10 @@ export interface ActiveTripScreenProps {
   readonly onUndo?: () => void;
   readonly onEditItem?: (item: CartItem) => void;
   readonly onRemoveItem?: (item: CartItem) => void;
+  readonly onUseRemembered?: (
+    record: PriceMemoryRecord,
+  ) => boolean | void;
+  readonly onEnterCurrentPrice?: (record: PriceMemoryRecord) => void;
   readonly locale?: string;
 }
 
@@ -92,6 +98,8 @@ export function ActiveTripScreen({
   onUndo,
   onEditItem,
   onRemoveItem,
+  onUseRemembered,
+  onEnterCurrentPrice,
   locale = "en-FI",
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
@@ -305,6 +313,21 @@ export function ActiveTripScreen({
             </button>
           ) : null}
         </div>
+
+        {state.priceMemories.length > 0 &&
+        onUseRemembered &&
+        onEnterCurrentPrice ? (
+          <RecentItemsSection
+            trip={trip}
+            records={state.priceMemories}
+            persistenceDegraded={
+              state.priceMemoryPersistence.status === "degraded"
+            }
+            onUseRemembered={onUseRemembered}
+            onEnterCurrentPrice={onEnterCurrentPrice}
+            locale={locale}
+          />
+        ) : null}
 
         <section className={styles.cart} aria-labelledby="cart-title">
           <div className={styles.cartHeading}>

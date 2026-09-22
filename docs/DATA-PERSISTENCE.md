@@ -27,7 +27,7 @@ The guarded shopping shell is now wired to this adapter through the ShoppingAppC
 
 The default/public build still remains Pulse Counter. The automated/code portion of Sprint B / B6 is implemented; representative human one-hand timing, software-keyboard, and bright-store evidence remain the release gate before switching the public shell.
 
-Settings and price-memory persistence remain later slices. Completed-trip history and completion transactions are implemented in Phase 7.
+Settings remain a later slice. Phase 8 now implements independent versioned `budget-cart:price-memory` persistence; completed-trip history and completion transactions remain the Phase 7 durable core.
 
 The old numeric counter value is never interpreted as money.
 
@@ -300,6 +300,20 @@ Recovery hierarchy:
 Never silently reinterpret malformed cents, quantities, or currency.
 
 ## Price-memory persistence
+
+**Status: implemented in Phase 8.**
+
+Key:
+
+~~~text
+budget-cart:price-memory
+~~~
+
+Schema version:
+
+~~~text
+1
+~~~
 
 Price memory is advisory and independent from active-trip durability.
 

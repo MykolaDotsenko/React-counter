@@ -255,6 +255,8 @@ describe("ShoppingAppController snapshot contract", () => {
       completedTrips: [],
       completionCleanupPending: false,
       persistence: { status: "healthy" },
+      priceMemories: [],
+      priceMemoryPersistence: { status: "healthy" },
       undo: null,
       recovery: null,
     });

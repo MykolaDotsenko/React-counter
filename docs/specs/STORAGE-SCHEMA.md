@@ -13,12 +13,16 @@ Implemented now:
 - malformed/future-version recovery outcomes
 - safe legacy Pulse-key retirement after successful shopping bootstrap
 
-Still target-only in this document:
+Implemented beyond the original Phase 3 baseline:
 
 - completed-trip history
+- loss-safe completion transaction/reconciliation
+- independent Phase 8 price-memory record
+
+Still target-only in this document:
+
 - settings
 - optional meta record
-- completion transaction/reconciliation
 
 This document continues to define those later persistence slices before they are implemented.
 
@@ -43,7 +47,7 @@ budget-cart:settings
 budget-cart:meta
 ~~~
 
-Future:
+Implemented Phase 8:
 
 ~~~text
 budget-cart:price-memory
@@ -159,6 +163,49 @@ Use one snapshot list for MVP.
 History may retain full item lists.
 
 Do not optimise into summary-only records until there is evidence storage size matters.
+
+## Price-memory schema v1
+
+Key:
+
+~~~text
+budget-cart:price-memory
+~~~
+
+Price Memory is a separate advisory snapshot:
+
+~~~json
+{
+  "schemaVersion": 1,
+  "savedAt": "2026-09-22T08:00:00.000Z",
+  "data": {
+    "records": [
+      {
+        "id": "memory:label%3Amilk%201l:*",
+        "productId": "label:milk 1l",
+        "label": "Milk 1L",
+        "currency": "EUR",
+        "unitPriceMinor": 139,
+        "observedAt": "2026-09-20T08:00:00.000Z",
+        "source": {
+          "kind": "manual"
+        }
+      }
+    ]
+  }
+}
+~~~
+
+Rules:
+
+- one deterministic memory id represents one product/store context
+- product identity is validated independently from display label
+- `observedAt` is authoritative freshness context; storage `savedAt` is not
+- malformed individual records are quarantined while valid records remain readable
+- unsupported future versions are preserved and never overwritten
+- duplicate deterministic ids are treated as integrity conflicts
+- write failure is advisory and must not affect active-trip persistence health
+- only safe transient write failure may be retried without first replacing unknown/corrupt raw data
 
 ## Settings schema v1
 

@@ -119,6 +119,70 @@ describe("ItemEditSurface", () => {
     });
   });
 
+  it("can name an item for future Recent Items without requiring a price change", async () => {
+    const user = userEvent.setup();
+    const item = createItem();
+    const onSave = vi.fn(() => true);
+
+    render(
+      <ItemEditSurface
+        trip={createTrip(item)}
+        item={item}
+        onCancel={vi.fn()}
+        onSave={onSave}
+        onRemove={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    await user.type(
+      screen.getByRole("textbox", { name: /Item name/i }),
+      "Milk 1L",
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Save correction" }),
+    );
+
+    expect(onSave).toHaveBeenCalledWith({
+      unitPriceMinor: 479,
+      quantity: 1,
+      label: "Milk 1L",
+    });
+  });
+
+  it("rejects an overlong Recent Items label before application commit", async () => {
+    const user = userEvent.setup();
+    const item = createItem();
+    const onSave = vi.fn(() => true);
+
+    render(
+      <ItemEditSurface
+        trip={createTrip(item)}
+        item={item}
+        onCancel={vi.fn()}
+        onSave={onSave}
+        onRemove={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    await user.type(
+      screen.getByRole("textbox", { name: /Item name/i }),
+      "x".repeat(121),
+    );
+
+    expect(
+      screen.getByText(/Keep the name within 120 characters/i),
+    ).not.toBeNull();
+    expect(
+      (screen.getByRole("button", {
+        name: "Save correction",
+      }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   it("allows a truthful correction that reveals a nominal overage without a destructive modal", async () => {
     const user = userEvent.setup();
     const item = createItem(479);
