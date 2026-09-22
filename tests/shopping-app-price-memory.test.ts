@@ -104,6 +104,9 @@ const createCorePersistence = (
     saveCompleted(): ActiveTripSaveResult {
       return { ok: true };
     },
+    replaceCompletedHistory(): ActiveTripSaveResult {
+      return { ok: true };
+    },
     clearCompletedActive(): ActiveTripSaveResult {
       return { ok: true };
     },
