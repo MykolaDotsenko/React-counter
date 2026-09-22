@@ -67,64 +67,67 @@ Adapters translate browser or external capabilities into validated data.
 
 No scanner, storage API, animation API, or React component may become a source of financial truth.
 
-## Target source shape
+## Current source shape and intended boundaries
 
-Exact file names may evolve, but responsibilities should remain recognisable.
+The repository deliberately keeps the implementation smaller than the earlier aspirational folder sketch. Responsibilities matter more than manufacturing one directory per concept.
+
+Current shopping structure:
 
 ~~~text
 src/
 ├── app/
-│   ├── App.tsx
+│   ├── ShoppingAppShell.tsx
 │   ├── composition-root.ts
-│   └── use-shopping-app.ts
+│   └── shopping-theme.css
 ├── application/
-│   ├── app-state.ts
-│   ├── bootstrap.ts
-│   ├── commands.ts
-│   ├── shopping-session.ts
-│   ├── errors.ts
-│   └── ports/
-│       ├── active-trip-repository.ts
-│       ├── history-repository.ts
-│       ├── settings-repository.ts
-│       ├── clock.ts
-│       └── id-generator.ts
+│   ├── shopping-app-controller.ts
+│   ├── price-memory-port.ts
+│   └── react/
+│       └── use-shopping-app-state.ts
 ├── domain/
 │   ├── money.ts
-│   ├── currency.ts
 │   ├── shopping-trip.ts
-│   ├── cart-item.ts
-│   ├── price-provenance.ts
-│   ├── commands.ts
-│   ├── projection.ts
-│   └── selectors.ts
+│   └── price-memory.ts
 ├── features/
-│   ├── active-trip/
-│   ├── price-entry/
-│   ├── cart-items/
-│   ├── checkout/
-│   ├── history/
-│   ├── price-memory/      # P1
-│   └── scanning/          # P1
+│   └── shopping/
+│       ├── StartTripScreen.tsx
+│       ├── ActiveTripScreen.tsx
+│       ├── PriceEntrySurface.tsx
+│       ├── ItemEditSurface.tsx
+│       ├── BudgetSettingsSurface.tsx
+│       ├── FinishTripSurface.tsx
+│       ├── CompletedSummaryScreen.tsx
+│       ├── HistoryScreen.tsx
+│       ├── RecentItemsSection.tsx
+│       └── PersistenceHealthNotice.tsx
 ├── infrastructure/
-│   ├── storage/
-│   │   ├── shopping-storage-schema.ts   # active-trip v1 shipped
-│   │   ├── shopping-storage.ts          # active-trip adapter shipped
-│   │   ├── local-storage-history.ts     # later checkout/history phase
-│   │   └── local-storage-settings.ts    # later settings phase
-│   ├── barcode/           # P1
-│   ├── price-scan/        # P1
-│   └── pwa/
-└── ui/
-    ├── primitives/
-    └── visual-effects/
+│   ├── runtime/
+│   │   └── browser-boundaries.ts
+│   └── storage/
+│       ├── shopping-storage-schema.ts
+│       ├── shopping-storage.ts
+│       ├── active-trip-persistence-port.ts
+│       ├── price-memory-storage-schema.ts
+│       ├── price-memory-storage.ts
+│       └── price-memory-persistence-port.ts
+└── qa/
+    ├── shopping-timing.ts
+    ├── ShoppingTimingQaPanel.tsx
+    ├── retention-beta.ts
+    └── RetentionBetaPanel.tsx
 ~~~
 
-Do not create empty P1 folders during Phase 1 merely to match the diagram. The structure is a responsibility map, not scaffolding theatre.
+Architectural rules for growth:
 
-Do not force this tree mechanically if implementation proves a smaller structure clearer.
+- split by responsibility only when a file has a stable boundary worth naming
+- do not create empty history, settings, scanning, or pwa folders merely to resemble a diagram
+- completed history currently shares the versioned shopping-storage adapter because active/completed reconciliation is one durability concern
+- Price Memory remains a separate persistence port because advisory-memory failure must not downgrade a healthy cart/history write
+- feature screens may own transient form/focus/confirmation state, while canonical shopping state stays in ShoppingAppController
+- ShoppingAppShell owns cross-screen orchestration and evidence hooks; feature-specific commands should move down into the relevant feature when this reduces prop plumbing without duplicating canonical state
+- optional scanning and PWA adapters should be added only after their roadmap gates justify concrete interfaces
 
-
+This is a responsibility map, not scaffolding theatre.
 ## Layer responsibilities
 
 ### Domain
@@ -166,12 +169,12 @@ Implements application ports.
 
 MVP infrastructure target includes:
 
-- localStorage active-trip repository — implemented in Phase 3
-- localStorage history repository — later checkout/history phase
-- localStorage settings repository — later settings phase
+- versioned localStorage active-trip + completed-history persistence — implemented through Phases 3 and 7
+- independent versioned localStorage Price Memory persistence — implemented in Phase 8
+- localStorage settings repository — later settings phase only if settings earn persistent state
 - production clock
 - UUID generator
-- service worker/PWA setup
+- service worker/PWA setup — Phase 9 target
 
 Future P1 infrastructure includes barcode/product/OCR adapters.
 
