@@ -106,22 +106,34 @@ describe("ShoppingTimingQaPanel", () => {
     await user.click(screen.getByRole("button", { name: "QA 0/20" }));
 
     expect(
-      screen.getByRole("textbox", {
-        name: "Comparable timing input method",
-      }),
-    ).toHaveValue("Custom keypad · one thumb");
+      (
+        screen.getByRole("textbox", {
+          name: "Comparable timing input method",
+        }) as HTMLInputElement
+      ).value,
+    ).toBe("Custom keypad · one thumb");
 
     expect(
-      screen.getByRole("checkbox", {
-        name: "Primary timing set was completed one-handed",
-      }),
-    ).toBeChecked();
+      (
+        screen.getByRole("checkbox", {
+          name: "Primary timing set was completed one-handed",
+        }) as HTMLInputElement
+      ).checked,
+    ).toBe(true);
 
     expect(
-      screen.getByRole("combobox", { name: "Dark appearance" }),
-    ).toHaveValue("pass");
+      (
+        screen.getByRole("combobox", {
+          name: "Dark appearance",
+        }) as HTMLSelectElement
+      ).value,
+    ).toBe("pass");
     expect(
-      screen.getByRole("combobox", { name: "Reduced motion" }),
-    ).toHaveValue("fail");
+      (
+        screen.getByRole("combobox", {
+          name: "Reduced motion",
+        }) as HTMLSelectElement
+      ).value,
+    ).toBe("fail");
   });
 });
