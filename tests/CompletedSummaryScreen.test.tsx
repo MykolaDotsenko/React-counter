@@ -125,6 +125,7 @@ describe("CompletedSummaryScreen", () => {
         controller={controller}
         trip={trip}
         onDone={vi.fn()}
+        onShopAgain={vi.fn()}
         onViewHistory={vi.fn()}
         locale="en-IE"
       />,
@@ -138,6 +139,39 @@ describe("CompletedSummaryScreen", () => {
     ).not.toBeNull();
   });
 
+  it("starts a fresh trip from the completed budget in one action", async () => {
+    const user = userEvent.setup();
+    const { controller, trip } = createController();
+    const onShopAgain = vi.fn();
+
+    render(
+      <CompletedSummaryScreen
+        controller={controller}
+        trip={trip}
+        onDone={vi.fn()}
+        onShopAgain={onShopAgain}
+        onViewHistory={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Shop again" }));
+
+    expect(onShopAgain).toHaveBeenCalledTimes(1);
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "active",
+      completedSummary: null,
+      activeTrip: {
+        id: "unused-trip",
+        budgetMinor: 5_000,
+        safetyBufferMinor: 0,
+        items: [],
+        startedAt: RECONCILE,
+      },
+    });
+    expect(controller.getSnapshot().completedTrips).toHaveLength(1);
+  });
+
   it("persists actual checkout and derives the exact reconciliation difference", async () => {
     const user = userEvent.setup();
     const { controller, trip } = createController();
@@ -147,6 +181,7 @@ describe("CompletedSummaryScreen", () => {
         controller={controller}
         trip={trip}
         onDone={vi.fn()}
+        onShopAgain={vi.fn()}
         onViewHistory={vi.fn()}
         locale="en-IE"
       />,
@@ -192,6 +227,7 @@ describe("CompletedSummaryScreen", () => {
         controller={controller}
         trip={trip}
         onDone={onDone}
+        onShopAgain={vi.fn()}
         onViewHistory={vi.fn()}
         locale="en-IE"
       />,
