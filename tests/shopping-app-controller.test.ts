@@ -256,6 +256,11 @@ const writeFailure: PersistenceProblem = {
   storageKey: "budget-cart:active-trip",
 };
 
+const historyWriteFailure: PersistenceProblem = {
+  code: "write-failed",
+  storageKey: "budget-cart:history",
+};
+
 describe("ShoppingAppController snapshot contract", () => {
   it("returns one cached immutable booting snapshot until state changes", () => {
     const controller = createShoppingAppController({
