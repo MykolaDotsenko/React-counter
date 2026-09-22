@@ -1319,3 +1319,57 @@ Completed-history durability is already the product's strongest local evidence t
 
 Real usage requires remembering an item before trip completion, with an explicit user action and a data-integrity model that is at least as clear as the completed-trip rule.
 
+## D-042 — Retention beta evidence stays local and content-free
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+Use a guarded beta build with a separate local evidence record:
+
+~~~text
+budget-cart:qa:retention-v1
+~~~
+
+The evidence schema may contain only behavioural structure required for the retention gate:
+
+- trip ordinal
+- new/repeat trip start
+- trip finish
+- 1/5/10 item milestones
+- manual-entry completion duration
+- manual-entry abandonment
+- remembered-item reuse
+- current-price override start
+
+It must not contain:
+
+- budgets
+- prices or line totals
+- item names
+- product/memory/store identifiers
+- checkout totals
+- camera content
+
+The application sends no beta telemetry. Evidence export is an explicit manual action.
+
+### Rationale
+
+The retention question can be answered from behavioural structure without collecting shopping content. A remote analytics platform would add privacy, consent, operational, and architectural complexity before product retention is proven.
+
+Keeping evidence separate from shopping persistence also prevents validation infrastructure from becoming business-state authority.
+
+### Consequence
+
+- beta evidence failure never affects the active shopping trip
+- old shopping history does not define beta trip ordinals
+- starting evidence collection mid-trip does not fabricate a trip start
+- a guarded `/beta/` build may be published while the default public shell remains unchanged
+- human beta evidence is still required before Phase 9 breadth
+
+### Revisit when
+
+A later validated product needs aggregate telemetry across a larger cohort and has an explicit privacy/consent design.
+
