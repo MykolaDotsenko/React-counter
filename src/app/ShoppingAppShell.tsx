@@ -676,7 +676,6 @@ export function ShoppingAppShell({
               "en-FI",
             )}`,
           );
-          returnFocusToAddPrice();
           return true;
         }}
         onEnterCurrentPrice={(record: PriceMemoryRecord) => {
