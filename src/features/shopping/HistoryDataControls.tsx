@@ -95,6 +95,7 @@ export function HistoryDataControls({
         <button
           type="button"
           className={styles.dataAction}
+          data-clear-trip-history-trigger
           disabled={tripCount === 0 || !canChangeHistory}
           onClick={onRequestClearHistory}
         >
@@ -150,6 +151,7 @@ export function HistoryDataControls({
         <button
           type="button"
           className={styles.dataAction}
+          data-clear-price-memory-trigger
           disabled={priceMemoryCount === 0 && !priceMemoryDegraded}
           onClick={onRequestClearPriceMemory}
         >
