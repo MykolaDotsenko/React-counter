@@ -29,6 +29,7 @@ import styles from "./ItemEditSurface.module.css";
 export interface ItemEditIntent {
   readonly unitPriceMinor: MinorUnits;
   readonly quantity: number;
+  readonly label?: string | null;
 }
 
 export interface ItemEditSurfaceProps {
@@ -104,6 +105,7 @@ export function ItemEditSurface({
     mode: "decimal",
   }));
   const [quantity, setQuantity] = useState(item.quantity);
+  const [label, setLabel] = useState(item.label ?? "");
   const [submissionError, setSubmissionError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -134,9 +136,13 @@ export function ItemEditSurface({
       : null;
   }, [item.id, item.updatedAt, quantity, trip, validPrice]);
 
+  const normalizedLabel = label.trim();
+  const canonicalLabel = normalizedLabel === "" ? undefined : normalizedLabel;
   const changed =
     validPrice !== null &&
-    (validPrice !== item.unitPriceMinor || quantity !== item.quantity);
+    (validPrice !== item.unitPriceMinor ||
+      quantity !== item.quantity ||
+      canonicalLabel !== item.label);
 
   const submit = (): void => {
     if (validPrice === null || !changed || submitted) {
@@ -147,6 +153,7 @@ export function ItemEditSurface({
     const accepted = onSave({
       unitPriceMinor: validPrice,
       quantity,
+      label: canonicalLabel ?? null,
     });
 
     if (accepted === false) {
@@ -228,6 +235,19 @@ export function ItemEditSurface({
         <p className={styles.trust}>
           {confidenceLabel(item)} · {sourceLabel(item)}
         </p>
+
+        <label className={styles.field}>
+          <span>Item name <small>Optional · helps Recent Items</small></span>
+          <input
+            value={label}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="Milk 1L"
+            onChange={(event) => {
+              setLabel(event.currentTarget.value);
+            }}
+          />
+        </label>
 
         <label className={styles.field}>
           <span>Price</span>
