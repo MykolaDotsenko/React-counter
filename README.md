@@ -34,6 +34,8 @@ https://mykoladotsenko.github.io/shopping-budget-companion/qa/
 
 The QA route is a separate internal build used for real-device timing and usability validation. It is statically marked noindex/nofollow/noarchive and does not change the public Pulse Counter bundle.
 
+The guarded shopping builds use a separate provisional remaining-room favicon and the descriptive browser label **Shopping Budget Companion**. They no longer inherit the Pulse Counter neon icon/title. This is migration identity only; the final commercial name and final accent colour remain evidence-gated.
+
 Its v3 evidence contract records the primary/compact device labels, the comparable input method, explicit one-handed + bright-store-like + default-text context, the required usability checklist, and optional dark/large-text/reduced-motion physical spot-check results. Valid v2 timing samples migrate forward without being mistaken for the new physical evidence.
 
 ---
@@ -612,6 +614,8 @@ Start here:
 - [FUNCTIONALITY.md](./FUNCTIONALITY.md) — product behavior
 - [UX.md](./UX.md) — interaction rules
 - [DESIGN.md](./DESIGN.md) — Calm Utility visual system
+- [BRAND.md](./BRAND.md) — positioning, voice, naming and identity strategy
+- [docs/BRAND-IMPLEMENTATION-AUDIT.md](./docs/BRAND-IMPLEMENTATION-AUDIT.md) — implemented brand evidence and drift guards
 - [TESTING.md](./TESTING.md) — quality strategy
 - [docs/ACCESSIBILITY.md](./docs/ACCESSIBILITY.md) — accessibility contract
 - [docs/SPRINT-B-QUALITY-GATE.md](./docs/SPRINT-B-QUALITY-GATE.md) — empirical release evidence
