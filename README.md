@@ -186,7 +186,7 @@ Key current contracts:
 - [Design](./docs/DESIGN.md)
 - [Roadmap](./docs/ROADMAP.md)
 - [Testing](./docs/TESTING.md)
-- [Data persistence](./docs/DATA-PERSISTENCE.md)
+- [Data persistence](./docs/architecture/DATA-PERSISTENCE.md)
 - [Decision log](./docs/DECISIONS.md)
 - [Detailed specs](./docs/specs/)
 

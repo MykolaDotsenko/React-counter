@@ -718,7 +718,7 @@ This does **not** lock:
 
 The public/default root now represents Shopping Budget Companion. Evidence gates continue to govern performance and retention claims, not which product shell is published.
 
-See [docs/BRAND-IMPLEMENTATION-AUDIT.md](./BRAND-IMPLEMENTATION-AUDIT.md) for the implementation evidence and anti-drift contract.
+See [docs/BRAND-IMPLEMENTATION-AUDIT.md](../evidence/BRAND-IMPLEMENTATION-AUDIT.md) for the implementation evidence and anti-drift contract.
 
 ## Maintenance rule
 
