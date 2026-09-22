@@ -153,7 +153,9 @@ export function ItemEditSurface({
     const accepted = onSave({
       unitPriceMinor: validPrice,
       quantity,
-      label: canonicalLabel ?? null,
+      ...(canonicalLabel === item.label
+        ? {}
+        : { label: canonicalLabel ?? null }),
     });
 
     if (accepted === false) {
