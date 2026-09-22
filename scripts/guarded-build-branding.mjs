@@ -1,33 +1,23 @@
-import { access, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
-const LEGACY = Object.freeze({
-  title: "<title>Pulse Counter — Interaction Lab</title>",
+const PUBLIC_METADATA = Object.freeze({
+  title: "<title>Shopping Budget Companion</title>",
   description:
-    'content="Pulse Counter — a polished React micro-interaction case study focused on motion, accessibility and proportional architecture."',
-  theme: '<meta name="theme-color" content="#070810" />',
+    'content="A mobile-first shopping budget companion with exact money, local-first persistence, fast price entry, and repeat-trip price memory."',
+  theme: '<meta name="theme-color" content="#f5f3ee" />',
+  applicationName:
+    '<meta name="application-name" content="Shopping Budget Companion" />',
 });
-
-const SHOPPING_MARK_FILE = "shopping-mark.svg";
 
 const replaceRequired = (html, from, to, label) => {
   if (!html.includes(from)) {
     throw new Error(
-      `Guarded build branding could not find expected ${label}: ${from}`,
+      `Internal build metadata could not find expected ${label}: ${from}`,
     );
   }
 
   return html.replace(from, to);
-};
-
-const replaceRequiredPattern = (html, pattern, to, label) => {
-  if (!pattern.test(html)) {
-    throw new Error(
-      `Guarded build branding could not find expected ${label}`,
-    );
-  }
-
-  return html.replace(pattern, to);
 };
 
 export const applyGuardedBuildBrandingHtml = (
@@ -43,44 +33,39 @@ export const applyGuardedBuildBrandingHtml = (
 
   next = replaceRequired(
     next,
-    LEGACY.title,
+    PUBLIC_METADATA.title,
     `<title>${title}</title>`,
     "title",
   );
   next = replaceRequired(
     next,
-    LEGACY.description,
+    PUBLIC_METADATA.description,
     `content="${description}"`,
     "description",
   );
   next = replaceRequired(
     next,
-    LEGACY.theme,
+    PUBLIC_METADATA.theme,
     [
       `<meta name="theme-color" content="${themeColor}" />`,
       '<meta name="robots" content="noindex,nofollow,noarchive" />',
-      `<meta name="application-name" content="${applicationName}" />`,
     ].join("\n    "),
     "theme metadata",
   );
-  next = replaceRequiredPattern(
+  next = replaceRequired(
     next,
-    /<link rel="icon" type="image\/svg\+xml" href="[^"]*favicon\.svg" \/>/,
-    `<link rel="icon" type="image/svg+xml" href="./${SHOPPING_MARK_FILE}" />`,
-    "favicon",
+    PUBLIC_METADATA.applicationName,
+    `<meta name="application-name" content="${applicationName}" />`,
+    "application name",
   );
 
   if (
     !next.includes(`<title>${title}</title>`) ||
     !next.includes(`content="${description}"`) ||
     !next.includes('name="robots" content="noindex,nofollow,noarchive"') ||
-    !next.includes(
-      `name="application-name" content="${applicationName}"`,
-    ) ||
-    !next.includes(`href="./${SHOPPING_MARK_FILE}"`) ||
-    next.includes("Pulse Counter — Interaction Lab")
+    !next.includes(`name="application-name" content="${applicationName}"`)
   ) {
-    throw new Error("Guarded build branding verification failed");
+    throw new Error("Internal build metadata verification failed");
   }
 
   return next;
@@ -102,6 +87,5 @@ export const prepareGuardedBuildBranding = async ({
     ...(themeColor === undefined ? {} : { themeColor }),
   });
 
-  await access(resolve(dirname(resolvedTarget), SHOPPING_MARK_FILE));
   await writeFile(resolvedTarget, next, "utf8");
 };
