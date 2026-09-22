@@ -14,7 +14,7 @@ import {
   type CartItem,
 } from "../../domain/shopping-trip";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
-import { RecentItemsPanel } from "./RecentItemsPanel";
+import { RecentItemsSection } from "./RecentItemsSection";
 import styles from "./ActiveTripScreen.module.css";
 
 export interface ActiveTripScreenProps {
@@ -317,10 +317,12 @@ export function ActiveTripScreen({
         {state.priceMemories.length > 0 &&
         onUseRemembered &&
         onEnterCurrentPrice ? (
-          <RecentItemsPanel
+          <RecentItemsSection
             trip={trip}
             records={state.priceMemories}
-            persistenceHealth={state.priceMemoryPersistence}
+            persistenceDegraded={
+              state.priceMemoryPersistence.status === "degraded"
+            }
             onUseRemembered={onUseRemembered}
             onEnterCurrentPrice={onEnterCurrentPrice}
             locale={locale}
