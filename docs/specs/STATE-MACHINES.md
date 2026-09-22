@@ -41,6 +41,8 @@ Events:
 
 - START_TRIP(valid) → ACTIVE
 - START_TRIP(invalid) → IDLE + validation error
+- SHOP_AGAIN(valid completed source + healthy persistence) → ACTIVE with a fresh empty trip using the source budget/buffer
+- SHOP_AGAIN(degraded history/cleanup pending) → IDLE + repeat-source error
 - OPEN_HISTORY → IDLE with history UI state
 
 ### ACTIVE
@@ -72,6 +74,7 @@ Meaning:
 Events:
 
 - SET_ACTUAL_CHECKOUT → COMPLETED_SUMMARY
+- SHOP_AGAIN(healthy completed source) → ACTIVE with a fresh empty trip using the source budget/buffer
 - START_NEW_TRIP → ACTIVE
 - DISMISS_SUMMARY → IDLE
 - CONTINUE_SHOPPING → ACTIVE only through the explicitly defined immediate-recovery path
@@ -193,7 +196,34 @@ A history-write failure must never destroy the active trip.
 
 If history succeeds but active clear fails, duplicated durable state is safer than lost state. Startup reconciliation must prefer preserving information and avoiding duplicate history insertion.
 
-## 6. Immediate continue-shopping recovery
+## 6. Shop again versus Continue shopping
+
+These are different transitions.
+
+**Shop again** is implemented as a fresh-trip transition:
+
+~~~text
+IDLE or COMPLETED_SUMMARY
+  └─ SHOP_AGAIN(completedTripId)
+       ↓
+read validated completed source
+       ↓
+copy budget + safety buffer only
+       ↓
+generate new trip id + startedAt
+       ↓
+persist fresh empty ACTIVE trip
+       ↓
+ACTIVE
+~~~
+
+Shop again never removes, rewrites, or reactivates the completed history record.
+
+If persistence health is degraded or completion cleanup remains pending, the transition is rejected so an unsafely persisted history source cannot be turned into a misleadingly healthy new session.
+
+**Continue shopping** means reopening the same completed trip and remains deferred because that requires coordinated active/history rollback.
+
+## 7. Immediate continue-shopping recovery
 
 This is intentionally narrow.
 
@@ -216,7 +246,7 @@ Because this touches two persistence records, implementation must define rollbac
 
 If that complexity threatens reliability, MVP may instead require starting a new trip and defer Continue shopping. The UI must not promise a reversible finish until the persistence operation is safe.
 
-## 7. Scanner capability state (future)
+## 8. Scanner capability state (future)
 
 Scanner state is not canonical.
 
@@ -246,7 +276,7 @@ FAILED
 
 No scanner state directly changes ShoppingTrip.
 
-## 8. Barcode lookup state (future)
+## 9. Barcode lookup state (future)
 
 Detection and lookup are separate.
 
@@ -263,7 +293,7 @@ All three terminal branches offer manual current-price entry.
 
 PRODUCT_KNOWN may additionally surface remembered price data.
 
-## 9. Shelf OCR review state (future)
+## 10. Shelf OCR review state (future)
 
 ~~~text
 SCAN_PENDING
@@ -279,7 +309,7 @@ Rules:
 - multiple → user selects or enters manually
 - candidate never commits automatically
 
-## 10. UI sheet/navigation state
+## 11. UI sheet/navigation state
 
 Avoid boolean soup such as:
 
@@ -304,7 +334,7 @@ type OverlayState =
 
 This prevents impossible combinations.
 
-## 11. App startup reconciliation
+## 12. App startup reconciliation
 
 Startup sequence:
 
@@ -325,7 +355,7 @@ Reconciliation rule for duplicate id:
 
 This deterministic reconciliation is implemented in the storage bootstrap path and covered by Phase 7 tests.
 
-## 12. Forbidden states
+## 13. Forbidden states
 
 Implementation should make these impossible or immediately reject them:
 
