@@ -974,13 +974,8 @@ export const createShoppingAppController = ({
     );
 
     if (!saveResult.ok) {
-      const nextState = publish({
-        ...state,
-        persistence: degradedPersistence(saveResult.issue, now),
-      });
-
       return failure(
-        nextState,
+        state,
         applicationError("history-write-unavailable"),
       );
     }
@@ -1054,16 +1049,8 @@ export const createShoppingAppController = ({
     const saveResult = priceMemoryPersistence.save([], now);
 
     if (!saveResult.ok) {
-      const nextState = publish({
-        ...state,
-        priceMemoryPersistence: degradedPersistence(
-          saveResult.issue,
-          now,
-        ),
-      });
-
       return failure(
-        nextState,
+        state,
         applicationError("price-memory-write-unavailable"),
       );
     }
