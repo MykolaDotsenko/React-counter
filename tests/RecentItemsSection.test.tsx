@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -219,7 +219,7 @@ describe("RecentItemsSection", () => {
     );
 
     const trigger = screen.getByRole("button", {
-      name: "Use remembered price",
+      name: "Use remembered price for Milk 1L",
     });
     await user.click(trigger);
 
@@ -229,11 +229,12 @@ describe("RecentItemsSection", () => {
     await user.keyboard("{Escape}");
 
     const restored = screen.getByRole("button", {
-      name: "Use remembered price",
+      name: "Use remembered price for Milk 1L",
     });
 
-    await Promise.resolve();
-    expect(document.activeElement).toBe(restored);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(restored);
+    });
   });
 
   it("keeps advisory persistence failure separate and explicit", () => {
