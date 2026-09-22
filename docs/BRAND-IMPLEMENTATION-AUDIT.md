@@ -155,7 +155,7 @@ A branding PR should fail review if it introduces any of the following without a
 - the shopping mark has no legacy neon gradient
 - the mark contains no euro symbol
 
-QA and retention panel component tests also protect runtime title/description so React cannot silently reintroduce `Budget Cart` or Pulse identity after page load.
+QA and retention panel component tests also protect runtime title/description so React cannot silently reintroduce stale or inconsistent product identity after page load.
 
 Automation protects implementation consistency. It does not validate final naming recall, brand recognition, or colour perception.
 
