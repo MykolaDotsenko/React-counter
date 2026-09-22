@@ -61,6 +61,66 @@ describe("PriceEntrySurface", () => {
     expect(trip.items).toHaveLength(0);
   });
 
+  it("keeps naming optional but includes a chosen name in the validated intent", async () => {
+    const user = userEvent.setup();
+    const onValidatedItem = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={onValidatedItem}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "1.39");
+    await user.click(
+      screen.getByText("Name for next time", { exact: false }),
+    );
+    await user.type(screen.getByLabelText("Item name"), "Milk 1L");
+    await user.click(
+      screen.getByRole("button", { name: "Add · €1.39" }),
+    );
+
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 139,
+      quantity: 1,
+      label: "Milk 1L",
+    });
+  });
+
+  it("carries a Recent Item label into manual current-price override without pre-filling a stale price", async () => {
+    const user = userEvent.setup();
+    const onValidatedItem = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        initialLabel="Milk 1L"
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={onValidatedItem}
+      />,
+    );
+
+    expect(
+      screen.getByText("Current price for", { exact: false }).textContent,
+    ).toContain("Milk 1L");
+    expect((screen.getByLabelText("Price") as HTMLInputElement).value).toBe("");
+
+    await user.type(screen.getByLabelText("Price"), "1.49");
+    await user.click(
+      screen.getByRole("button", { name: "Add · €1.49" }),
+    );
+
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 149,
+      quantity: 1,
+      label: "Milk 1L",
+    });
+  });
+
   it("previews safe remaining first when a safety buffer exists", async () => {
     const user = userEvent.setup();
 
