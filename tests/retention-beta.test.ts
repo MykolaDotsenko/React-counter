@@ -10,6 +10,7 @@ import {
   loadRetentionBetaSession,
   nextRetentionTripOrdinal,
   persistRetentionBetaSession,
+  parseRetentionBetaExport,
   summarizeRetentionBeta,
   type RetentionBetaEvent,
 } from "../src/qa/retention-beta";
@@ -361,6 +362,62 @@ describe("retention beta evidence", () => {
       rememberedItemUses: 1,
       currentPriceOverrides: 1,
     });
+  });
+
+  it("accepts a valid export and rejects inconsistent imported summaries", () => {
+    let session = createRetentionBetaSession(START);
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "new",
+      }),
+    );
+
+    const report = buildRetentionBetaExport(session, LATER);
+
+    expect(parseRetentionBetaExport(report)).toEqual(report);
+    expect(
+      parseRetentionBetaExport({
+        ...report,
+        summary: {
+          ...report.summary,
+          tripsStarted: 999,
+        },
+      }),
+    ).toBeNull();
+    expect(
+      parseRetentionBetaExport({
+        ...report,
+        summary: {
+          ...report.summary,
+          budgetMinor: 5_000,
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects exported evidence when privacy claims or schema shape are altered", () => {
+    const session = createRetentionBetaSession(START);
+    const report = buildRetentionBetaExport(session, LATER);
+
+    expect(
+      parseRetentionBetaExport({
+        ...report,
+        privacy: {
+          ...report.privacy,
+          containsMoney: true,
+        },
+      }),
+    ).toBeNull();
+
+    expect(
+      parseRetentionBetaExport({
+        ...report,
+        participantId: "person-123",
+      }),
+    ).toBeNull();
   });
 
   it("exports only event structure and explicit privacy claims", () => {

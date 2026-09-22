@@ -712,6 +712,7 @@ Full retention contract:
 
 - docs/PRODUCT-SUCCESS-STRATEGY.md
 - docs/CORE-UI-EXECUTION-BRIEF.md
+- docs/RETENTION-BETA-PLAYBOOK.md — facilitator workflow, export validation, cohort denominators, and anti-fabrication rules
 
 ## Phase 9 — offline PWA
 
