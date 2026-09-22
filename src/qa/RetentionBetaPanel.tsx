@@ -10,6 +10,7 @@ import styles from "./RetentionBetaPanel.module.css";
 export interface RetentionBetaPanelProps {
   readonly session: RetentionBetaSession;
   readonly onReset: () => void;
+  readonly resetDisabled?: boolean;
 }
 
 const seconds = (milliseconds: number | null): string =>
@@ -18,6 +19,7 @@ const seconds = (milliseconds: number | null): string =>
 export function RetentionBetaPanel({
   session,
   onReset,
+  resetDisabled = false,
 }: RetentionBetaPanelProps) {
   const [open, setOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
@@ -153,6 +155,12 @@ export function RetentionBetaPanel({
             <button
               type="button"
               className={styles.reset}
+              disabled={resetDisabled}
+              title={
+                resetDisabled
+                  ? "Finish or leave the active trip before resetting evidence."
+                  : undefined
+              }
               onClick={() => {
                 if (!resetArmed) {
                   setResetArmed(true);
@@ -167,6 +175,11 @@ export function RetentionBetaPanel({
             >
               {resetArmed ? "Confirm reset" : "Reset evidence"}
             </button>
+            {resetDisabled ? (
+              <p className={styles.resetHint}>
+                Finish or leave the active trip before resetting evidence.
+              </p>
+            ) : null}
           </div>
 
           {copyStatus ? (
