@@ -101,7 +101,7 @@ describe("RecentItemsSection", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "Use remembered price" }),
+      screen.getByRole("button", { name: "Use remembered price for Milk 1L" }),
     );
 
     expect(onUseRemembered).toHaveBeenCalledTimes(1);
@@ -151,7 +151,7 @@ describe("RecentItemsSection", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "Use remembered price" }),
+      screen.getByRole("button", { name: "Use remembered price for Milk 1L" }),
     );
 
     expect(onUseRemembered).not.toHaveBeenCalled();
@@ -188,7 +188,7 @@ describe("RecentItemsSection", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "Use remembered price" }),
+      screen.getByRole("button", { name: "Use remembered price for Milk 1L" }),
     );
 
     expect(document.activeElement).toBe(
