@@ -161,7 +161,7 @@ describe("shopping timing QA model", () => {
       ...exported,
       gate: {
         ...exported.gate,
-        releaseEligible: true,
+        b6Eligible: true,
       },
     };
 
@@ -349,7 +349,7 @@ describe("shopping timing QA model", () => {
 
     expect(summarizeQaEmpiricalGate(session)).toMatchObject({
       status: "pending",
-      releaseEligible: false,
+      b6Eligible: false,
       inputMethodPresent: false,
       physicalContextComplete: false,
     });
@@ -358,7 +358,7 @@ describe("shopping timing QA model", () => {
 
     expect(summarizeQaEmpiricalGate(session)).toMatchObject({
       status: "target-met",
-      releaseEligible: true,
+      b6Eligible: true,
       inputMethodPresent: true,
       physicalContextComplete: true,
       secondarySpotChecksRecorded: 0,
@@ -394,7 +394,7 @@ describe("shopping timing QA model", () => {
 
     expect(summarizeQaEmpiricalGate(session)).toMatchObject({
       status: "target-met",
-      releaseEligible: true,
+      b6Eligible: true,
       secondarySpotChecksRecorded: 0,
     });
 
@@ -406,7 +406,7 @@ describe("shopping timing QA model", () => {
 
     expect(summarizeQaEmpiricalGate(session)).toMatchObject({
       status: "fail",
-      releaseEligible: false,
+      b6Eligible: false,
       secondarySpotChecksRecorded: 1,
       secondarySpotCheckFailures: 1,
     });
@@ -428,7 +428,7 @@ describe("shopping timing QA model", () => {
 
     expect(summarizeQaEmpiricalGate(session)).toMatchObject({
       status: "pending",
-      releaseEligible: false,
+      b6Eligible: false,
       deviceLabelPresent: false,
       checklistComplete: false,
     });
@@ -449,7 +449,7 @@ describe("shopping timing QA model", () => {
 
     expect(summarizeQaEmpiricalGate(session)).toMatchObject({
       status: "target-met",
-      releaseEligible: true,
+      b6Eligible: true,
       deviceLabelPresent: true,
       compactDeviceLabelPresent: true,
       lightAppearanceRecorded: true,
@@ -495,7 +495,7 @@ describe("shopping timing QA model", () => {
 
     expect(summarizeQaEmpiricalGate(releaseFloor)).toMatchObject({
       status: "release-floor",
-      releaseEligible: true,
+      b6Eligible: true,
       ignoredSampleCount: 1,
     });
 
@@ -526,7 +526,7 @@ describe("shopping timing QA model", () => {
 
     expect(summarizeQaEmpiricalGate(failed)).toMatchObject({
       status: "fail",
-      releaseEligible: false,
+      b6Eligible: false,
     });
   });
 
@@ -584,7 +584,7 @@ describe("shopping timing QA model", () => {
     const dark = summarizeQaEmpiricalGate(
       completeSession({ ...environment, colorScheme: "dark" }),
     );
-    expect(dark.releaseEligible).toBe(false);
+    expect(dark.b6Eligible).toBe(false);
     expect(dark.lightAppearanceRecorded).toBe(false);
 
     const desktop = summarizeQaEmpiricalGate(
@@ -594,7 +594,7 @@ describe("shopping timing QA model", () => {
         viewportHeight: 800,
       }),
     );
-    expect(desktop.releaseEligible).toBe(false);
+    expect(desktop.b6Eligible).toBe(false);
     expect(desktop.phonePortraitViewport).toBe(false);
   });
 
@@ -622,7 +622,7 @@ describe("shopping timing QA model", () => {
 
     const gate = summarizeQaEmpiricalGate(session);
     expect(gate.compactDeviceLabelPresent).toBe(false);
-    expect(gate.releaseEligible).toBe(false);
+    expect(gate.b6Eligible).toBe(false);
   });
 
   it("tracks the manual checklist independently from timing samples", () => {
