@@ -244,7 +244,7 @@ This created two risks:
 - Move the long-form product/engineering Markdown set under `docs/`.
 - Use `docs/README.md` as the documentation map and authority model.
 - Treat `PRODUCT.md`, `ARCHITECTURE.md`, `DOMAIN.md`, `DESIGN.md`, `ROADMAP.md`, and `TESTING.md` as the current high-level authoritative documents.
-- Treat `docs/reference/FUNCTIONALITY.md`, `docs/reference/UX.md`, `docs/reference/BRAND.md`, `docs/reference/SCENARIOS.md`, `docs/reference/TECH-STACK.md`, and `docs/reference/MARKETING.md` as supporting reference. They may add context but must not independently redefine current implementation status.
+- Treat `docs/reference/UX.md`, `docs/reference/BRAND.md`, `docs/reference/SCENARIOS.md`, `docs/reference/TECH-STACK.md`, `docs/reference/CODE-OWNERSHIP.md`, and `docs/reference/MARKETING.md` as supporting reference. They may add context but must not independently redefine current implementation status.
 - Keep detailed contracts under `docs/specs/` and specialized contracts such as persistence/accessibility alongside the current docs.
 - Move completed sprint decomposition such as `CORE-UI-EXECUTION-BRIEF.md` under `docs/archive/` instead of leaving it mixed with current contracts.
 - Avoid duplicating current-status checklists across multiple documents. Update the smallest owning authoritative document and reconcile supporting reference only where it would otherwise mislead.
