@@ -16,7 +16,7 @@ Phase 3 implements the shopping active-trip persistence boundary, and Phase 7 ex
 - complete active-trip snapshot writes
 - explicit `healthy` / `degraded` outcomes
 - malformed and unsupported-future data preservation for recovery
-- explicit safe retirement of `pulse-counter:state` and `counter` only after shopping-state bootstrap succeeds
+- explicit safe retirement of historical non-shopping storage keys only after shopping-state bootstrap succeeds
 - strict versioned `budget-cart:history` v1 persistence
 - completed-trip reconstruction through the domain
 - history-before-active-clear completion ordering
@@ -25,11 +25,11 @@ Phase 3 implements the shopping active-trip persistence boundary, and Phase 7 ex
 
 The guarded shopping shell is now wired to this adapter through the ShoppingAppController. Start-trip and active-cart mutations attempt persistence synchronously through the application boundary, and degraded writes are surfaced through the Phase 4 persistence-health UX.
 
-The default/public build still remains Pulse Counter. The automated/code portion of Sprint B / B6 is implemented; representative human one-hand timing, software-keyboard, and bright-store evidence remain the release gate before switching the public shell.
+The public build is Shopping Budget Companion. The automated/code portion of Sprint B / B6 is implemented; representative human one-hand timing, software-keyboard, and bright-store evidence remain unverified release-quality evidence.
 
 Settings remain a later slice. Phase 8 now implements independent versioned `budget-cart:price-memory` persistence; completed-trip history and completion transactions remain the Phase 7 durable core.
 
-The old numeric counter value is never interpreted as money.
+Historical non-shopping numeric state is never interpreted as money.
 
 ## Persistence goals
 
@@ -312,12 +312,12 @@ If stored version is newer than the running application understands:
 
 This protects data if a user opens an older cached application build.
 
-## Legacy Pulse Counter migration
+## Historical non-shopping state retirement
 
 Old keys:
 
-- pulse-counter:state
-- counter
+- historical versioned counter key
+- historical unversioned counter key
 
 Policy:
 
@@ -326,7 +326,7 @@ Policy:
 - after shopping migration is safely established, legacy keys may be removed intentionally
 - migration/removal must be tested
 
-The old counter and new shopping data represent different domains.
+Historical counter data and shopping data represent different domains.
 
 ## Malformed data
 
