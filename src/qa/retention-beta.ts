@@ -430,7 +430,6 @@ export const buildRetentionBetaExport = (
   });
 };
 
-
 export const parseRetentionBetaExport = (
   value: unknown,
 ): RetentionBetaExport | null => {
@@ -455,7 +454,12 @@ export const parseRetentionBetaExport = (
     return null;
   }
 
-  if (typeof record.privacy !== "object" || record.privacy === null) {
+  if (
+    typeof record.privacy !== "object" ||
+    record.privacy === null ||
+    typeof record.summary !== "object" ||
+    record.summary === null
+  ) {
     return null;
   }
 
@@ -476,6 +480,19 @@ export const parseRetentionBetaExport = (
     return null;
   }
 
+  const importedSummary = record.summary as Record<string, unknown>;
+  const summary = summarizeRetentionBeta(record.session);
+  const summaryKeys = Object.keys(summary);
+
+  if (
+    !hasExactKeys(importedSummary, summaryKeys) ||
+    !summaryKeys.every((key) =>
+      Object.is(importedSummary[key], summary[key as keyof RetentionBetaSummary]),
+    )
+  ) {
+    return null;
+  }
+
   return Object.freeze({
     schemaVersion: 1,
     generatedAt: record.generatedAt,
@@ -486,6 +503,6 @@ export const parseRetentionBetaExport = (
       containsStoreHistory: false,
     }),
     session: record.session,
-    summary: summarizeRetentionBeta(record.session),
+    summary,
   });
 };
