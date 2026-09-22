@@ -75,7 +75,11 @@ Manual price entry remains the baseline.
 | Completion/history/reconciliation | ✅ implemented |
 | Lightweight budget-outcome history | ✅ implemented |
 | Shop again / recent-budget shortcut | ✅ implemented |
-| Recent Items / Price Memory | Phase 8 remaining |
+| Recent Items | ✅ implemented |
+| Local product identity + Price Memory | ✅ implemented |
+| Freshness + current-price override | ✅ implemented |
+| Store-aware matching foundation | ✅ implemented |
+| User-facing store context | optional Phase 8 follow-up |
 | PWA cold offline launch | later roadmap phase |
 | Barcode / OCR scanning | evidence-gated later work |
 
@@ -108,6 +112,24 @@ It reuses only:
 - safety buffer
 
 It deliberately creates a new trip with a new id/time and an empty cart. The completed trip remains immutable history.
+
+### Recent Items and Price Memory
+
+After a named, confirmed item is part of a **durably completed trip**, the guarded shopping shell can remember its last observed price locally.
+
+Rules:
+
+- the remembered price is advisory, not live
+- observation age is visible
+- one tap can reuse a familiar remembered price
+- crossing the nominal budget still requires explicit confirmation
+- **Enter current price** always remains available
+- choosing the current-price path preserves the product name while using the ordinary manual confirmed-price flow
+- using a remembered price keeps `priceSource=price-memory` and `priceConfidence=remembered`
+- simply finishing a trip with an unchanged remembered price does not falsely refresh its observation date
+- Price Memory has its own versioned storage record and cannot make the active cart unsavable
+
+Manual price entry remains the universal baseline.
 
 ### Active trip
 
