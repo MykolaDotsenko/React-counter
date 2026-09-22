@@ -203,9 +203,11 @@ export function ShoppingTimingQaPanel({
     Math.min(summary1250.count, QA_TARGET_SAMPLE_COUNT);
 
   const nextStep =
-    summary479.count < QA_TARGET_SAMPLE_COUNT
-      ? `Next: €4.79 sample ${summary479.count + 1}/${QA_TARGET_SAMPLE_COUNT}`
-      : summary1250.count < QA_TARGET_SAMPLE_COUNT
+    gate.secondarySpotCheckFailures > 0
+      ? "A secondary spot-check failed; resolve it before release."
+      : summary479.count < QA_TARGET_SAMPLE_COUNT
+        ? `Next: €4.79 sample ${summary479.count + 1}/${QA_TARGET_SAMPLE_COUNT}`
+        : summary1250.count < QA_TARGET_SAMPLE_COUNT
         ? `Next: €12.50 sample ${summary1250.count + 1}/${QA_TARGET_SAMPLE_COUNT}`
         : !gate.deviceLabelPresent
           ? "Add the primary device/browser label."
@@ -221,10 +223,8 @@ export function ShoppingTimingQaPanel({
                     ? "Confirm the one-handed, bright-store and default-text primary context."
                     : !gate.checklistComplete
                       ? "Complete every empirical checklist item."
-                      : gate.secondarySpotCheckFailures > 0
-                        ? "A secondary spot-check failed; resolve it before release."
-                        : gate.status === "target-met"
-                          ? "Empirical target met."
+                      : gate.status === "target-met"
+                        ? "Empirical target met."
                           : gate.status === "release-floor"
                             ? "Release floor met; speed target still missed."
                             : gate.status === "fail"
