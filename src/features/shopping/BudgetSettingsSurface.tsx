@@ -2,7 +2,6 @@ import { useId, useMemo, useRef, useState } from "react";
 
 import {
   formatEur,
-  mvpMinorUnits,
   parseEurDraft,
   signedMinorUnits,
   type MinorUnits,
@@ -52,16 +51,6 @@ const inputErrorMessage = (code: MoneyInputErrorCode): string => {
       return exhaustive;
     }
   }
-};
-
-const zeroMinor = (): MinorUnits => {
-  const result = mvpMinorUnits(0);
-
-  if (!result.ok) {
-    throw new Error("Zero minor units must be valid");
-  }
-
-  return result.value;
 };
 
 const formatAbsoluteEur = (value: number, locale: string): string => {
@@ -173,10 +162,8 @@ export function BudgetSettingsSurface({
       return {
         status: "reserve" as const,
         primary: "The current cart already uses part of this safety buffer.",
-        secondary: `${formatEur(
-          signedMinorUnits(nominalRemaining).ok
-            ? signedMinorUnits(nominalRemaining).value
-            : zeroMinor(),
+        secondary: `${formatAbsoluteEur(
+          nominalRemaining,
           locale,
         )} remains before the nominal budget.`,
       };
