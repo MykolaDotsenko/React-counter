@@ -1474,7 +1474,7 @@ A migration-specific product label and provisional metaphor-led mark resolve the
 - QA and beta builds inherit the same core product identity while specializing their internal title/description
 - static post-build metadata and runtime React metadata must stay aligned
 - the public root is the canonical Shopping Budget Companion
-- future brand PRs use `docs/BRAND-IMPLEMENTATION-AUDIT.md` as the anti-drift checklist
+- future brand PRs use `docs/evidence/BRAND-IMPLEMENTATION-AUDIT.md` as the anti-drift checklist
 - final naming, accent and production icon work remain evidence-gated
 - the shopping mark should not be added persistently to active-trip UI where it would compete with the remaining amount
 
@@ -1549,7 +1549,7 @@ This created two risks:
 - Move the long-form product/engineering Markdown set under `docs/`.
 - Use `docs/README.md` as the documentation map and authority model.
 - Treat `PRODUCT.md`, `ARCHITECTURE.md`, `DOMAIN.md`, `DESIGN.md`, `ROADMAP.md`, and `TESTING.md` as the current high-level authoritative documents.
-- Treat `FUNCTIONALITY.md`, `UX.md`, `BRAND.md`, `SCENARIOS.md`, `TECH-STACK.md`, and `MARKETING.md` as supporting reference. They may add context but must not independently redefine current implementation status.
+- Treat `docs/reference/FUNCTIONALITY.md`, `docs/reference/UX.md`, `docs/reference/BRAND.md`, `docs/reference/SCENARIOS.md`, `docs/reference/TECH-STACK.md`, and `docs/reference/MARKETING.md` as supporting reference. They may add context but must not independently redefine current implementation status.
 - Keep detailed contracts under `docs/specs/` and specialized contracts such as persistence/accessibility alongside the current docs.
 - Move completed sprint decomposition such as `CORE-UI-EXECUTION-BRIEF.md` under `docs/archive/` instead of leaving it mixed with current contracts.
 - Avoid duplicating current-status checklists across multiple documents. Update the smallest owning authoritative document and reconcile supporting reference only where it would otherwise mislead.
