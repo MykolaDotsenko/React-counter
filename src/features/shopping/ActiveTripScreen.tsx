@@ -292,25 +292,29 @@ export function ActiveTripScreen({
             <span aria-hidden="true">+</span>
             <span>Add price</span>
           </button>
-          {onAdjustBudget ? (
-            <button
-              ref={adjustBudgetButtonRef}
-              type="button"
-              className={styles.adjustBudgetButton}
-              onClick={onAdjustBudget}
-            >
-              Adjust budget
-            </button>
-          ) : null}
-          {onFinishTrip ? (
-            <button
-              ref={finishTripButtonRef}
-              type="button"
-              className={styles.finishButton}
-              onClick={onFinishTrip}
-            >
-              Finish trip
-            </button>
+          {onAdjustBudget || onFinishTrip ? (
+            <div className={styles.secondaryTripActions}>
+              {onAdjustBudget ? (
+                <button
+                  ref={adjustBudgetButtonRef}
+                  type="button"
+                  className={styles.adjustBudgetButton}
+                  onClick={onAdjustBudget}
+                >
+                  Adjust budget
+                </button>
+              ) : null}
+              {onFinishTrip ? (
+                <button
+                  ref={finishTripButtonRef}
+                  type="button"
+                  className={styles.finishButton}
+                  onClick={onFinishTrip}
+                >
+                  Finish trip
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
