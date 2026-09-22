@@ -40,6 +40,17 @@ describe("ShoppingTimingQaPanel", () => {
       />,
     );
 
+    expect(document.title).toBe(
+      "Shopping Budget Companion — Empirical Timing QA",
+    );
+    expect(
+      document.querySelector<HTMLMetaElement>(
+        'meta[name="description"]',
+      )?.content,
+    ).toBe(
+      "Internal Shopping Budget Companion empirical timing and one-hand usability QA.",
+    );
+
     await user.click(screen.getByRole("button", { name: "QA 0/20" }));
 
     const inputMethod = screen.getByRole("textbox", {
