@@ -249,11 +249,16 @@ Prefer extraction when one file owns multiple reasons to change, for example:
 
 Do not introduce micro-files that make a single use case harder to trace.
 
-Current direction:
+Current structure:
 
 - public application contracts are separated from controller implementation
-- future controller extraction should be by cohesive use-case boundary (for example completion/history or recovery), not arbitrary line counts
-- storage extraction should separate codec/schema concerns from transactional persistence only when that split reduces reasoning cost without weakening failure semantics
+- completion / checkout reconciliation is a cohesive application use-case module rather than part of the central controller body
+- controller-wide state/result helpers live in a small support module and remain presentation-agnostic
+- storage codec/schema reconstruction is separated from transactional persistence/recovery while preserving the existing public storage exports
+- shell focus restoration is isolated from product orchestration
+- price-entry presentation copy/calculation and the dumb keypad are separated from the stateful price-entry flow
+
+Future extraction should continue by cohesive use-case boundary (for example history or recovery), not arbitrary line counts.
 
 ## UI architecture
 
