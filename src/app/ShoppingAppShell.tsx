@@ -552,7 +552,6 @@ export function ShoppingAppShell({
             )}`,
           );
           evidence.recordRememberedItemUsed(
-            record,
             result.state.activeTrip,
             beforeCount,
           );
