@@ -23,7 +23,7 @@
     "noEmit": true,
     "paths": {
       "#shopping-evidence": [
-        "src/qa/use-shopping-evidence.tsx"
+        "./src/qa/use-shopping-evidence.tsx"
       ]
     },
     "types": [
