@@ -7,8 +7,12 @@ import {
   type Clock,
   type IdGenerator,
 } from "../src/application/shopping-app-controller";
+import { mvpMinorUnits, type Result } from "../src/domain/money";
 import {
+  createActiveTrip,
   isoTimestamp,
+  reduceTrip,
+  type CompletedTrip,
   type IsoTimestamp,
 } from "../src/domain/shopping-trip";
 import { StartTripScreen } from "../src/features/shopping/StartTripScreen";
@@ -27,18 +31,59 @@ const clock: Clock = {
   },
 };
 
+const unwrap = <T, E>(result: Result<T, E>): T => {
+  expect(result.ok).toBe(true);
+
+  if (!result.ok) {
+    throw new Error("Expected successful Result");
+  }
+
+  return result.value;
+};
+
+const money = (value: number) => unwrap(mvpMinorUnits(value));
+
+const createCompletedTrip = (): CompletedTrip => {
+  const active = unwrap(
+    createActiveTrip({
+      id: "recent-trip",
+      budgetMinor: money(3_750),
+      safetyBufferMinor: money(200),
+      startedAt: START,
+    }),
+  );
+  const completed = unwrap(
+    reduceTrip(active, {
+      type: "complete-trip",
+      completedAt: isoTimestamp("2026-09-21T10:00:00.000Z").ok
+        ? isoTimestamp("2026-09-21T10:00:00.000Z").value
+        : (() => {
+            throw new Error("Invalid completion timestamp");
+          })(),
+    }),
+  );
+
+  if (completed.status !== "completed") {
+    throw new Error("Expected completed trip");
+  }
+
+  return completed;
+};
+
 const ids: IdGenerator = {
   tripId: () => "trip-start-screen",
   itemId: () => "item-start-screen",
 };
 
-const createController = () => {
+const createController = (
+  completedTrips: readonly CompletedTrip[] = [],
+) => {
   const controller = createShoppingAppController({
     persistence: {
       bootstrap: () => ({
         ok: true,
         activeTrip: null,
-        completedTrips: [],
+        completedTrips,
         completionCleanupPending: false,
       }),
       save: () => ({ ok: true }),
@@ -101,6 +146,37 @@ describe("StartTripScreen", () => {
     await user.click(history);
 
     expect(onOpenHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers the most recent spending plan as a one-action repeat shortcut", async () => {
+    const user = userEvent.setup();
+    const recentTrip = createCompletedTrip();
+    const controller = createController([recentTrip]);
+
+    render(
+      <StartTripScreen
+        controller={controller}
+        recentTrip={recentTrip}
+        completedTripCount={1}
+        locale="en-IE"
+      />,
+    );
+
+    const repeat = screen.getByRole("button", { name: /Shop again/i });
+    expect(repeat.textContent).toContain("€37.50 budget");
+    expect(repeat.textContent).toContain("€2.00 reserve");
+
+    await user.click(repeat);
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "active",
+      activeTrip: {
+        budgetMinor: 3_750,
+        safetyBufferMinor: 200,
+        items: [],
+      },
+    });
+    expect(controller.getSnapshot().completedTrips).toEqual([recentTrip]);
   });
 
   it("starts a €50 trip in one action", async () => {
