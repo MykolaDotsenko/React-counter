@@ -202,6 +202,9 @@ export function ShoppingAppShell({
           onTripStarted={evidence.recordTripStarted}
           completedTripCount={state.completedTrips.length}
           rememberedPriceCount={state.priceMemories.length}
+          priceMemoryNeedsAttention={
+            state.priceMemoryPersistence.status === "degraded"
+          }
           recentTrip={recentCompletedTrip}
           persistenceHealth={state.persistence}
           onOpenHistory={() => {
