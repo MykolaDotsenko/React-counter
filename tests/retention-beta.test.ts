@@ -73,6 +73,51 @@ describe("retention beta evidence", () => {
     expect(restored.createdAt).toBe(START);
   });
 
+  it("rejects retained events that contain undeclared shopping-content fields", () => {
+    const store = storage();
+    store.setItem(
+      RETENTION_BETA_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        variant: "repeat-acceleration",
+        createdAt: START,
+        events: [
+          {
+            type: "trip_started",
+            at: LATER,
+            tripOrdinal: 1,
+            source: "new",
+            budgetMinor: 5000,
+          },
+        ],
+      }),
+    );
+
+    const restored = loadRetentionBetaSession(store, START);
+
+    expect(restored.events).toEqual([]);
+    expect(restored.createdAt).toBe(START);
+  });
+
+  it("rejects retained sessions that contain undeclared identity fields", () => {
+    const store = storage();
+    store.setItem(
+      RETENTION_BETA_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        variant: "repeat-acceleration",
+        createdAt: START,
+        events: [],
+        participantId: "person-123",
+      }),
+    );
+
+    const restored = loadRetentionBetaSession(store, START);
+
+    expect(restored.events).toEqual([]);
+    expect(restored.createdAt).toBe(START);
+  });
+
   it("deduplicates item milestones for one trip", () => {
     const base = createRetentionBetaSession(START);
     const milestone = event({
