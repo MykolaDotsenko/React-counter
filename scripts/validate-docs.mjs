@@ -32,6 +32,8 @@ const retiredPaths = [
   "docs/reference/FUNCTIONALITY.md",
 ];
 
+const allowedRepoRootMarkdown = new Set(["README.md", "AGENTS.md"]);
+
 const allowedDocsRootFiles = new Set([
   "README.md",
   "PRODUCT.md",
@@ -80,6 +82,18 @@ for (const retiredPath of retiredPaths) {
   }
 }
 
+for (const entry of await readdir(root, { withFileTypes: true })) {
+  if (
+    entry.isFile() &&
+    entry.name.endsWith(".md") &&
+    !allowedRepoRootMarkdown.has(entry.name)
+  ) {
+    failures.push(
+      `Unexpected repository-root Markdown file: ${entry.name}. Keep root documentation limited to README.md and AGENTS.md.`,
+    );
+  }
+}
+
 for (const entry of await readdir(docsRoot, { withFileTypes: true })) {
   if (
     entry.isFile() &&
@@ -92,64 +106,114 @@ for (const entry of await readdir(docsRoot, { withFileTypes: true })) {
   }
 }
 
+const docsMarkdown = await walkMarkdown(docsRoot);
 const markdownFiles = [
   path.join(root, "README.md"),
   path.join(root, "AGENTS.md"),
-  ...(await walkMarkdown(docsRoot)),
+  ...docsMarkdown,
 ];
+const markdownSet = new Set(markdownFiles.map((file) => path.resolve(file)));
+const linkGraph = new Map(
+  markdownFiles.map((file) => [path.resolve(file), new Set()]),
+);
 
-const markdownLinkPattern = /!?\[[^\]]*\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
+const markdownLinkPattern =
+  /!?\[[^\]]*\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
+
+const resolveLocalTarget = (sourceFile, rawTarget) => {
+  if (
+    rawTarget.startsWith("#") ||
+    rawTarget.startsWith("/") ||
+    /^[a-z][a-z0-9+.-]*:/i.test(rawTarget)
+  ) {
+    return null;
+  }
+
+  const pathOnly = rawTarget.split("#", 1)[0].split("?", 1)[0];
+
+  if (pathOnly.length === 0) {
+    return null;
+  }
+
+  let decodedTarget;
+
+  try {
+    decodedTarget = decodeURIComponent(pathOnly);
+  } catch {
+    failures.push(
+      `Invalid encoded Markdown link in ${toRepoPath(sourceFile)}: ${rawTarget}`,
+    );
+    return null;
+  }
+
+  const absoluteTarget = path.resolve(path.dirname(sourceFile), decodedTarget);
+  const relativeToRoot = path.relative(root, absoluteTarget);
+
+  if (
+    relativeToRoot === ".." ||
+    relativeToRoot.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativeToRoot)
+  ) {
+    failures.push(
+      `Markdown link escapes repository in ${toRepoPath(sourceFile)}: ${rawTarget}`,
+    );
+    return null;
+  }
+
+  if (!existsSync(absoluteTarget)) {
+    failures.push(
+      `Broken relative Markdown link in ${toRepoPath(sourceFile)}: ${rawTarget}`,
+    );
+    return null;
+  }
+
+  const directoryReadme = path.join(absoluteTarget, "README.md");
+
+  if (existsSync(directoryReadme)) {
+    return path.resolve(directoryReadme);
+  }
+
+  return path.resolve(absoluteTarget);
+};
 
 for (const file of markdownFiles) {
   const source = await readFile(file, "utf8");
 
   for (const match of source.matchAll(markdownLinkPattern)) {
-    const rawTarget = match[1];
+    const target = resolveLocalTarget(file, match[1]);
 
-    if (
-      rawTarget.startsWith("#") ||
-      rawTarget.startsWith("/") ||
-      /^[a-z][a-z0-9+.-]*:/i.test(rawTarget)
-    ) {
+    if (target !== null && markdownSet.has(target)) {
+      linkGraph.get(path.resolve(file))?.add(target);
+    }
+  }
+}
+
+const docsEntry = path.resolve(docsRoot, "README.md");
+const reachableDocs = new Set([docsEntry]);
+const queue = [docsEntry];
+
+while (queue.length > 0) {
+  const current = queue.shift();
+
+  for (const target of linkGraph.get(current) ?? []) {
+    if (!target.startsWith(`${path.resolve(docsRoot)}${path.sep}`)) {
       continue;
     }
 
-    const pathOnly = rawTarget.split("#", 1)[0].split("?", 1)[0];
-
-    if (pathOnly.length === 0) {
-      continue;
+    if (!reachableDocs.has(target)) {
+      reachableDocs.add(target);
+      queue.push(target);
     }
+  }
+}
 
-    let decodedTarget;
+for (const file of docsMarkdown) {
+  const absolute = path.resolve(file);
 
-    try {
-      decodedTarget = decodeURIComponent(pathOnly);
-    } catch {
-      failures.push(
-        `Invalid encoded Markdown link in ${toRepoPath(file)}: ${rawTarget}`,
-      );
-      continue;
-    }
-
-    const absoluteTarget = path.resolve(path.dirname(file), decodedTarget);
-    const relativeToRoot = path.relative(root, absoluteTarget);
-
-    if (
-      relativeToRoot === ".." ||
-      relativeToRoot.startsWith(`..${path.sep}`) ||
-      path.isAbsolute(relativeToRoot)
-    ) {
-      failures.push(
-        `Markdown link escapes repository in ${toRepoPath(file)}: ${rawTarget}`,
-      );
-      continue;
-    }
-
-    if (!existsSync(absoluteTarget)) {
-      failures.push(
-        `Broken relative Markdown link in ${toRepoPath(file)}: ${rawTarget}`,
-      );
-    }
+  if (!reachableDocs.has(absolute)) {
+    failures.push(
+      `Documentation file is not reachable from docs/README.md: ${toRepoPath(file)}`,
+    );
   }
 }
 
