@@ -787,7 +787,12 @@ test("keeps trip-history deletion independent from remembered prices", async ({
   });
 
   await page.getByRole("button", { name: "Back" }).click();
-  await page.getByRole("button", { name: "Done" }).click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "How much can you spend today?",
+    }),
+  ).toBeVisible();
 
   const rememberedDataEntry = page.getByRole("button", {
     name: "Manage remembered prices · 1",
