@@ -142,6 +142,7 @@ export function ShoppingAppShell({
   const qaPendingSampleRef = useRef<PendingQaSample | null>(null);
   const betaManualStartedAtRef = useRef<number | null>(null);
   const betaRestoreRecordedRef = useRef(false);
+  const betaInitialActiveTripRef = useRef(state.activeTrip !== null);
   const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
   const [lastAddedMessage, setLastAddedMessage] = useState("");
   const recentCompletedTrip = mostRecentCompletedTrip(
@@ -318,19 +319,28 @@ export function ShoppingAppShell({
     if (
       !betaEvidenceEnabled ||
       betaRestoreRecordedRef.current ||
+      !betaInitialActiveTripRef.current ||
       betaSession === null ||
       state.activeTrip === null
     ) {
       return;
     }
 
-    const tripOrdinal = currentRetentionTripOrdinal(betaSession);
-
-    if (tripOrdinal === null) {
-      return;
-    }
+    const observedOrdinal = currentRetentionTripOrdinal(betaSession);
+    const tripOrdinal =
+      observedOrdinal ?? nextRetentionTripOrdinal(betaSession);
 
     betaRestoreRecordedRef.current = true;
+
+    if (observedOrdinal === null) {
+      recordBetaEvent({
+        type: "trip_started",
+        at: new Date().toISOString(),
+        tripOrdinal,
+        source: "resume",
+      });
+    }
+
     recordBetaEvent({
       type: "trip_restored",
       at: new Date().toISOString(),
