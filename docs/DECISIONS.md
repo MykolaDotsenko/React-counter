@@ -22,7 +22,7 @@ Status: accepted
 
 ### Decision
 
-Evolve the current Pulse Counter into a focused shopping budget companion for people shopping under a hard per-trip spending limit.
+Build a focused shopping budget companion for people shopping under a hard per-trip spending limit.
 
 ### Rationale
 
@@ -200,7 +200,7 @@ Status: accepted
 
 ### Decision
 
-Unlike the old counter's silent memory fallback, shopping persistence failure must be surfaced to the user.
+Shopping persistence failure must be surfaced to the user rather than silently degrading to ephemeral memory.
 
 ### Rationale
 
@@ -1439,7 +1439,7 @@ Status: accepted
 
 ### Decision
 
-Separate the browser-level identity of guarded shopping builds from the legacy Pulse Counter identity.
+Keep internal QA/beta browser metadata distinct from the public product context without creating a second product identity.
 
 The guarded `/qa/` and `/beta/` builds use:
 
@@ -1449,9 +1449,9 @@ The guarded `/qa/` and `/beta/` builds use:
 - shopping-specific descriptions
 - noindex/nofollow/noarchive
 
-The public/default root remains Pulse Counter until the existing release gates permit an intentional shopping-shell switch.
+The public/default root is Shopping Budget Companion. QA and beta routes remain internal evidence surfaces.
 
-The provisional mark must follow the brand metaphor rather than inherit Pulse Counter spectacle:
+The provisional mark must follow the brand metaphor rather than decorative spectacle:
 
 - rounded boundary/container
 - intentionally open/remaining space
