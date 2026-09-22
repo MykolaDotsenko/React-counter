@@ -169,7 +169,7 @@ Show the one-number remaining view.
 
 Explain:
 
-- Pulse Counter → real product
+- experimental prototype → focused real product
 - exact integer money
 - one-hand UX
 - local-first reliability
