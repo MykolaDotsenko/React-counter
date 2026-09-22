@@ -32,7 +32,12 @@ const retiredPaths = [
   "docs/reference/FUNCTIONALITY.md",
 ];
 
-const allowedRepoRootMarkdown = new Set(["README.md", "AGENTS.md"]);
+const allowedRepoRootMarkdown = new Set([
+  "README.md",
+  "AGENTS.md",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+]);
 
 const allowedDocsRootFiles = new Set([
   "README.md",
