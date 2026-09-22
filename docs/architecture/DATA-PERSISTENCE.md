@@ -23,7 +23,7 @@ Phase 3 implements the shopping active-trip persistence boundary, and Phase 7 ex
 - interrupted-completion startup reconciliation
 - partial invalid-history quarantine without deleting valid completed trips
 
-The guarded shopping shell is now wired to this adapter through the ShoppingAppController. Start-trip and active-cart mutations attempt persistence synchronously through the application boundary, and degraded writes are surfaced through the Phase 4 persistence-health UX.
+The shopping product is wired to this adapter through the ShoppingAppController. Start-trip and active-cart mutations attempt persistence synchronously through the application boundary, and degraded writes are surfaced through the Phase 4 persistence-health UX.
 
 The public build is Shopping Budget Companion. The automated/code portion of Sprint B / B6 is implemented; representative human one-hand timing, software-keyboard, and bright-store evidence remain unverified release-quality evidence.
 

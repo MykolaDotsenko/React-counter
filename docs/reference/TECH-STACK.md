@@ -11,7 +11,7 @@ The repository ships Shopping Budget Companion. Dependencies described for later
 
 Detailed evaluation and alternatives live in:
 
-- docs/tech/TECHNOLOGY-RESEARCH.md
+- docs/research/TECHNOLOGY-RESEARCH.md
 
 ## Stack philosophy
 

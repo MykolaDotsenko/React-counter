@@ -2,7 +2,7 @@
 
 ## Status
 
-B6 code and automated evidence are implemented in PR #28 on the guarded shopping shell.
+B6 code and automated evidence are implemented in PR #28 on the shopping product.
 
 The automated code head has passed:
 

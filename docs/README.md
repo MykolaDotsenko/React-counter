@@ -40,7 +40,7 @@ If a supporting document conflicts with a current authoritative contract, the au
 - [RETENTION-BETA.md](./evidence/RETENTION-BETA.md) — retention instrumentation contract
 - [RETENTION-BETA-PLAYBOOK.md](./evidence/RETENTION-BETA-PLAYBOOK.md) — real-store retention study protocol
 - [BRAND-IMPLEMENTATION-AUDIT.md](./evidence/BRAND-IMPLEMENTATION-AUDIT.md) — implementation audit evidence
-- [design/PHASE-4-DESIGN-VALIDATION.md](./evidence/PHASE-4-DESIGN-VALIDATION.md) — design validation evidence
+- [PHASE-4-DESIGN-VALIDATION.md](./evidence/PHASE-4-DESIGN-VALIDATION.md) — design validation evidence
 
 Automated tests are evidence of implementation behavior; they are not substitutes for explicitly required human/device evidence.
 
@@ -48,8 +48,8 @@ Automated tests are evidence of implementation behavior; they are not substitute
 
 - [COMPETITIVE-RESEARCH.md](./research/COMPETITIVE-RESEARCH.md)
 - [PRODUCT-SUCCESS-STRATEGY.md](./research/PRODUCT-SUCCESS-STRATEGY.md)
-- [tech/TECHNOLOGY-RESEARCH.md](./research/TECHNOLOGY-RESEARCH.md)
-- [marketing/RESEARCH.md](./research/MARKETING-RESEARCH.md)
+- [TECHNOLOGY-RESEARCH.md](./research/TECHNOLOGY-RESEARCH.md)
+- [MARKETING-RESEARCH.md](./research/MARKETING-RESEARCH.md)
 - [marketing/LAUNCH-CHECKLIST.md](./marketing/LAUNCH-CHECKLIST.md)
 - [marketing/STORE-LISTING-SPEC.md](./marketing/STORE-LISTING-SPEC.md)
 

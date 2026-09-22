@@ -208,7 +208,7 @@ Also inspect:
 - restore frequency
 - trust/data-loss complaints
 
-Use the interpretation bands in `docs/PRODUCT-SUCCESS-STRATEGY.md`.
+Use the interpretation bands in `docs/research/PRODUCT-SUCCESS-STRATEGY.md`.
 
 ## Gate rule
 

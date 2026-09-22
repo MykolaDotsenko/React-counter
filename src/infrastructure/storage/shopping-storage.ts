@@ -16,7 +16,7 @@ import {
   CURRENT_ACTIVE_TRIP_SCHEMA_VERSION,
   CURRENT_HISTORY_SCHEMA_VERSION,
   HISTORY_STORAGE_KEY,
-  HISTORICAL_COUNTER_STORAGE_KEYS,
+  HISTORICAL_NON_SHOPPING_STORAGE_KEYS,
   activeTripDataV1Schema,
   completedTripDataV1Schema,
   historyDataEnvelopeV1Schema,
@@ -1133,7 +1133,7 @@ export const clearActiveTrip = (
   };
 };
 
-export const retireLegacyPulseKeys = (
+export const retireHistoricalNonShoppingKeys = (
   storage: StorageLike | null | undefined,
 ): LegacyRetirementResult => {
   if (storage === null || storage === undefined) {
@@ -1142,14 +1142,14 @@ export const retireLegacyPulseKeys = (
       retired: false,
       issue: persistenceIssue(
         "storage-unavailable",
-        HISTORICAL_COUNTER_STORAGE_KEYS[0],
+        HISTORICAL_NON_SHOPPING_STORAGE_KEYS[0],
       ),
     };
   }
 
   let failedKey: string | null = null;
 
-  for (const key of HISTORICAL_COUNTER_STORAGE_KEYS) {
+  for (const key of HISTORICAL_NON_SHOPPING_STORAGE_KEYS) {
     try {
       storage.removeItem(key);
     } catch {
@@ -1226,7 +1226,7 @@ export const bootstrapShoppingPersistence = (
     };
   }
 
-  const retirement = retireLegacyPulseKeys(storage);
+  const retirement = retireHistoricalNonShoppingKeys(storage);
 
   if (reconciliationIssue !== null) {
     return {

@@ -67,7 +67,7 @@ The product is not validated merely because a first trip works. It becomes meani
 
 Initial decision thresholds and the full retention strategy are defined in:
 
-- docs/PRODUCT-SUCCESS-STRATEGY.md
+- docs/research/PRODUCT-SUCCESS-STRATEGY.md
 
 ## Product principles
 
@@ -359,7 +359,7 @@ Healthy third-trip behaviour is required before treating early retention as stro
 
 The common manual price-only flow should target a median of <=2.5 seconds in representative one-hand testing, with approximately 3 seconds or less as a minimum release-quality expectation.
 
-See docs/PRODUCT-SUCCESS-STRATEGY.md for the full model.
+See docs/research/PRODUCT-SUCCESS-STRATEGY.md for the full model.
 
 ## Product risks
 

@@ -16,8 +16,8 @@ It complements:
 - PRODUCT.md — product problem and scope
 - DESIGN.md — interface visual system
 - MARKETING.md — acquisition and growth strategy
-- docs/marketing/RESEARCH.md — external evidence and case studies
-- docs/BRAND-IMPLEMENTATION-AUDIT.md — implementation evidence, provisional identity boundary, and drift checks
+- docs/research/MARKETING-RESEARCH.md — external evidence and case studies
+- docs/evidence/BRAND-IMPLEMENTATION-AUDIT.md — implementation evidence, provisional identity boundary, and drift checks
 
 ## Brand job
 
@@ -721,7 +721,7 @@ This does **not** lock:
 
 The public/default root now represents Shopping Budget Companion. Evidence gates continue to govern performance and retention claims, not which product shell is published.
 
-See [docs/BRAND-IMPLEMENTATION-AUDIT.md](../evidence/BRAND-IMPLEMENTATION-AUDIT.md) for the implementation evidence and anti-drift contract.
+See [Brand implementation audit](../evidence/BRAND-IMPLEMENTATION-AUDIT.md) for the implementation evidence and anti-drift contract.
 
 ## Maintenance rule
 

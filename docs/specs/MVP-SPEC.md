@@ -514,7 +514,7 @@ Optional browser capabilities may improve the experience but cannot own core cor
 
 ### NFR-005 — Accessibility
 
-Meet the detailed contract in docs/ACCESSIBILITY.md.
+Meet the detailed contract in docs/quality/ACCESSIBILITY.md.
 
 ### NFR-006 — Mobile-first
 
