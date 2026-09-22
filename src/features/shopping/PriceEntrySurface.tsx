@@ -5,6 +5,7 @@ import {
   MIN_MVP_QUANTITY,
   formatEur,
   type MinorUnits,
+  type MoneyDraftMode,
 } from "../../domain/money";
 import {
   MAX_ITEM_LABEL_CODE_POINTS,
