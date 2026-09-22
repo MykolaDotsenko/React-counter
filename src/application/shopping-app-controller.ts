@@ -12,7 +12,6 @@ import {
   type CompletedTrip,
   type IsoTimestamp,
   type ItemId,
-  type TripCommand,
   type TripId,
 } from "../domain/shopping-trip";
 import {
