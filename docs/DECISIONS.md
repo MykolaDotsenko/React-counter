@@ -1517,7 +1517,7 @@ Retaining the old UI therefore adds noise without adding meaningful release safe
 ### Consequence
 
 - `src/App.jsx` always composes Shopping Budget Companion
-- `VITE_SHOPPING_SHELL` no longer exists
+- no product-shell selection feature flag remains
 - the public root, QA route, and beta route share one product identity
 - the repository structure exposes only current product features
 - historical storage keys remain implementation details solely for safe retirement
