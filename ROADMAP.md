@@ -559,7 +559,7 @@ PR:
 
 ## Phase 8 — repeat-trip acceleration and price memory
 
-**Status: in progress — repeat-trip foundation, Recent Items, local product identity, and Price Memory are implemented; user-facing store context remains optional follow-up.**
+**Status: engineering complete for the current Phase 8 scope — repeat-trip foundation, Recent Items, local product identity, Price Memory, and a guarded privacy-safe retention-beta evidence harness are implemented; real-user validation remains pending.**
 
 Implemented first slice:
 
