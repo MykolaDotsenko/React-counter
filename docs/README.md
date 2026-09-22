@@ -40,7 +40,7 @@ Detailed executable specs:
 Specialized contracts:
 
 - [architecture/DATA-PERSISTENCE.md](./architecture/DATA-PERSISTENCE.md)
-- [quality/ACCESSIBILITY.md](./quality/ACCESSIBILITY.md)
+- [quality/ACCESSIBILITY.md](./quality/ACCESSIBILITY.md) — current accessibility/release-quality contract
 
 Cross-cutting durable decisions:
 

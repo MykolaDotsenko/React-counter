@@ -2,164 +2,148 @@
 
 ## Status
 
-Target behavioural state specification.
+**IMPLEMENTED current behavioural contract.**
 
-These state machines make transitions explicit so UI logic does not grow into scattered boolean combinations.
+This file defines current application/persistence/interaction transitions. Planned scanner/OCR/PWA capability states are kept out of the current contract until they ship.
 
 ## Principle
 
-Canonical trip lifecycle and ephemeral UI/capability state are separate machines.
+Canonical shopping lifecycle and ephemeral UI state are separate.
 
-Do not encode:
+Do not encode dialogs, focus, animation or optional capability loading inside ShoppingTrip.
 
-- open dialogs
-- scanner loading
-- animation phases
-- toast visibility
-- focus state
+## Application lifecycle
 
-inside ShoppingTrip.
-
-## 1. Application lifecycle
-
-~~~text
+```text
 BOOTING
-  ├─ valid active trip found ───────────────→ ACTIVE
-  ├─ no active trip ───────────────────────→ IDLE
-  └─ unrecoverable/malformed active data ─→ RECOVERY
-~~~
+  ├─ valid active trip ───────────────→ ACTIVE
+  ├─ no active trip ─────────────────→ IDLE
+  └─ unsafe persisted active state ──→ RECOVERY
+```
 
 ### IDLE
 
 Meaning:
 
-- no active trip
-- user may start one
-- completed history may exist
+- no active trip;
+- history/Price Memory may exist.
 
-Events:
+Transitions:
 
-- START_TRIP(valid) → ACTIVE
-- START_TRIP(invalid) → IDLE + validation error
-- SHOP_AGAIN(valid completed source + healthy persistence) → ACTIVE with a fresh empty trip using the source budget/buffer
-- SHOP_AGAIN(degraded history/cleanup pending) → IDLE + repeat-source error
-- OPEN_HISTORY → IDLE with history UI state
+- START_TRIP(valid) → ACTIVE;
+- START_TRIP(invalid) → IDLE + validation error;
+- SHOP_AGAIN(valid completed source + safe persistence) → ACTIVE with a fresh empty trip;
+- OPEN_HISTORY → IDLE + history overlay state.
 
 ### ACTIVE
 
 Meaning:
 
-- exactly one active trip
-- all shopping mutations operate here
+- exactly one active trip;
+- active-trip mutations are allowed.
 
-Events:
+Transitions:
 
-- ADD_ITEM → ACTIVE
-- EDIT_ITEM → ACTIVE
-- REMOVE_ITEM → ACTIVE
-- UNDO → ACTIVE
-- SET_BUDGET → ACTIVE
-- SET_BUFFER → ACTIVE
-- FINISH_TRIP(success) → COMPLETED_SUMMARY
-- FINISH_TRIP(history-write-failure) → ACTIVE + persistence degraded
-- STORAGE_WRITE_FAILURE → ACTIVE + persistence degraded
+- ADD_ITEM / EDIT_ITEM / REMOVE_ITEM / UNDO → ACTIVE;
+- SET_BUDGET / SET_BUFFER → ACTIVE;
+- FINISH_TRIP(success) → COMPLETED_SUMMARY;
+- FINISH_TRIP(history-write failure) → ACTIVE + persistence DEGRADED;
+- active-state write failure → ACTIVE + persistence DEGRADED.
 
 ### COMPLETED_SUMMARY
 
 Meaning:
 
-- trip has completed
-- no active-trip mutation is permitted
+- current trip is completed;
+- active-trip mutations are not allowed.
 
-Events:
+Transitions:
 
-- SET_ACTUAL_CHECKOUT → COMPLETED_SUMMARY
-- SHOP_AGAIN(healthy completed source) → ACTIVE with a fresh empty trip using the source budget/buffer
-- DISMISS_SUMMARY → IDLE; a normal new trip may then start from IDLE
-- CONTINUE_SHOPPING → ACTIVE only through the explicitly defined deferred immediate-recovery path
+- SET_ACTUAL_CHECKOUT → COMPLETED_SUMMARY;
+- SHOP_AGAIN(valid completed source) → ACTIVE with a new trip id and empty cart;
+- DISMISS_SUMMARY → IDLE.
+
+Reopening the same completed trip is **PLANNED / GATED** and is not a current transition.
 
 ### RECOVERY
 
 Meaning:
 
-Stored active data cannot safely become a valid ShoppingTrip.
+Persisted active data cannot safely become a valid ShoppingTrip.
 
-Allowed actions:
+Allowed behaviour:
 
-- discard invalid active record and continue to IDLE
-- export/copy raw recovery data if supported
-- retry read if failure was capability-related
+- explicit recovery/reset actions supported by the product;
+- retry where failure is capability-related;
+- preserve raw recovery material where the persistence contract requires it.
 
-RECOVERY must never invent prices/budgets from malformed data.
+RECOVERY never invents prices/budgets from malformed data.
 
-## 2. Persistence health
+## Persistence health
 
-Persistence health is orthogonal to application lifecycle.
+Persistence health is orthogonal to lifecycle.
 
-~~~text
+```text
 HEALTHY
-  └─ write/read durability failure → DEGRADED
+  └─ required durability failure → DEGRADED
 
 DEGRADED
-  ├─ later successful canonical write → HEALTHY
-  └─ continued failure ───────────────→ DEGRADED
-~~~
+  ├─ successful canonical retry/write → HEALTHY
+  └─ continued failure ──────────────→ DEGRADED
+```
 
 ### HEALTHY
 
-Latest canonical state that requires durability is known to have persisted successfully.
+Latest required durable state is known to be persisted.
 
 ### DEGRADED
 
-In-memory state may be newer than durable storage.
+In-memory state may be newer than durable storage, or cleanup/recovery requires attention.
 
 Requirements:
 
-- warning visible
-- no “saved” claim
-- local arithmetic remains usable
-- retry on subsequent mutations or explicit Retry action
+- visible warning;
+- no false “saved” claim;
+- arithmetic/UI can remain usable where safe;
+- retry/recovery remains explicit.
 
-Do not introduce a global blocking ERROR state for storage failure.
+Do not create a generic blocking ERROR lifecycle for ordinary storage failure.
 
-## 3. Add-price interaction
+## Add-price interaction
 
-Ephemeral state machine:
+Ephemeral UI state:
 
-~~~text
+```text
 CLOSED
   └─ OPEN_ADD → EDITING
 
 EDITING
-  ├─ valid draft ─────────────→ EDITING_VALID
-  ├─ invalid draft ───────────→ EDITING_INVALID
+  ├─ valid draft ─────────────→ VALID
+  ├─ invalid/incomplete ──────→ EDITING
   └─ CANCEL ──────────────────→ CLOSED
 
-EDITING_VALID
-  ├─ COMMIT within safe limit ───────────→ COMMITTING
-  ├─ COMMIT crosses safe only ───────────→ COMMITTING
-  ├─ COMMIT crosses nominal budget ──────→ OVER_WARNING
-  ├─ edit draft ─────────────────────────→ EDITING*
-  └─ CANCEL ──────────────────────────────→ CLOSED
-
-Crossing only the safety buffer is an informational projected state inside EDITING_VALID. The UI explains reserve use before commit, but does not add a second confirmation step while the item remains within the nominal budget.
+VALID
+  ├─ COMMIT within nominal budget ─→ COMMITTING
+  ├─ COMMIT over nominal budget ───→ OVER_WARNING
+  ├─ edit draft ───────────────────→ EDITING
+  └─ CANCEL ───────────────────────→ CLOSED
 
 OVER_WARNING
-  ├─ ADD_ANYWAY ──────────────→ COMMITTING
-  └─ CANCEL/EDIT ─────────────→ EDITING_VALID
+  ├─ ADD_ANYWAY → COMMITTING
+  └─ CANCEL/EDIT → EDITING
 
 COMMITTING
-  ├─ domain valid + save ok ──→ CLOSED
-  └─ domain valid + save fail → CLOSED + persistence DEGRADED
-~~~
+  ├─ application command accepted → CLOSED
+  └─ rejected/failure → remain/recover according to application result
+```
 
-Note:
+Crossing only the safety buffer is informational, not a second confirmation step.
 
-For localStorage MVP, COMMITTING should be extremely brief and should not require a loading spinner.
+Projection never mutates canonical trip state.
 
-## 4. Undo state
+## Undo
 
-~~~text
+```text
 NO_UNDO
   └─ undoable mutation → UNDO_AVAILABLE
 
@@ -168,212 +152,162 @@ UNDO_AVAILABLE
   ├─ new undoable mutation → UNDO_AVAILABLE (replace snapshot)
   ├─ finish trip → NO_UNDO
   └─ reload → NO_UNDO
-~~~
+```
 
-Undo state is intentionally ephemeral.
+Undo is intentionally bounded/ephemeral.
 
-## 5. Finish-trip orchestration
+## Finish-trip orchestration
 
-~~~text
+```text
 ACTIVE
   └─ FINISH_REQUEST
        ↓
-CREATE_COMPLETED_SNAPSHOT
+CREATE_COMPLETED_DOMAIN_STATE
        ↓
 WRITE_HISTORY
   ├─ fail → ACTIVE + DEGRADED
   └─ success
        ↓
 CLEAR_ACTIVE_STORAGE
-  ├─ fail → COMPLETED_SUMMARY + DEGRADED + duplicate-safe recovery required
+  ├─ fail → COMPLETED_SUMMARY + DEGRADED + cleanup pending
   └─ success → COMPLETED_SUMMARY
-~~~
+```
 
-Important:
+Invariant:
 
-A history-write failure must never destroy the active trip.
+> durable history before active cleanup
 
-If history succeeds but active clear fails, duplicated durable state is safer than lost state. Startup reconciliation must prefer preserving information and avoiding duplicate history insertion.
+A history-write failure must not destroy the active trip.
 
-## 6. Shop again versus Continue shopping
+If history succeeds and active cleanup fails, duplicated durable state is safer than lost state.
 
-These are different transitions.
+## Shop again
 
-**Shop again** is implemented as a fresh-trip transition:
+Shop again is not historical reopen.
 
-~~~text
+```text
 IDLE or COMPLETED_SUMMARY
   └─ SHOP_AGAIN(completedTripId)
        ↓
-read validated completed source
+validate completed source
        ↓
-copy budget + safety buffer only
+copy budget + safety buffer
        ↓
-generate new trip id + startedAt
+new trip id + start time
        ↓
 persist fresh empty ACTIVE trip
        ↓
 ACTIVE
-~~~
+```
 
-Shop again never removes, rewrites, or reactivates the completed history record.
+Reject the transition when persistence/recovery state makes the source unsafe.
 
-If persistence health is degraded or completion cleanup remains pending, the transition is rejected so an unsafely persisted history source cannot be turned into a misleadingly healthy new session.
+The completed history record remains unchanged.
 
-**Continue shopping** means reopening the same completed trip and remains deferred because that requires coordinated active/history rollback.
+## Checkout reconciliation
 
-## 7. Immediate continue-shopping recovery
+From COMPLETED_SUMMARY:
 
-This is intentionally narrow.
-
-From COMPLETED_SUMMARY, before leaving the summary context:
-
-~~~text
-COMPLETED_SUMMARY
-  └─ CONTINUE_SHOPPING
-       ↓
-convert completed snapshot back to active
-       ↓
-persist active
-       ↓
-remove/reconcile completed history record
-       ↓
-ACTIVE
-~~~
-
-Because this touches two persistence records, implementation must define rollback/reconciliation before shipping.
-
-If that complexity threatens reliability, MVP may instead require starting a new trip and defer Continue shopping. The UI must not promise a reversible finish until the persistence operation is safe.
-
-## 8. Scanner capability state (future)
-
-Scanner state is not canonical.
-
-~~~text
-UNAVAILABLE
-AVAILABLE_IDLE
-  └─ START_SCAN → REQUESTING_PERMISSION / SCANNING
-
-REQUESTING_PERMISSION
-  ├─ granted → SCANNING
-  └─ denied → FAILED(permission-denied)
-
-SCANNING
-  ├─ candidate(s) → REVIEW
-  ├─ cancel → AVAILABLE_IDLE
-  └─ failure → FAILED
-
-REVIEW
-  ├─ confirm candidate → CLOSED / return to add draft
-  ├─ edit manually → CLOSED / manual draft
-  └─ rescan → SCANNING
-
-FAILED
-  ├─ ENTER_MANUALLY → CLOSED / manual draft
-  └─ TRY_AGAIN → SCANNING
-~~~
-
-No scanner state directly changes ShoppingTrip.
-
-## 9. Barcode lookup state (future)
-
-Detection and lookup are separate.
-
-~~~text
-BARCODE_DETECTED
+```text
+SET_ACTUAL_CHECKOUT
   ↓
-LOOKUP_PENDING
-  ├─ product found → PRODUCT_KNOWN
-  ├─ not found → PRODUCT_UNKNOWN
-  └─ service failure → LOOKUP_FAILED
-~~~
+validate completed trip transition
+  ↓
+persist matching completed history entry
+  ↓
+COMPLETED_SUMMARY
+```
 
-All three terminal branches offer manual current-price entry.
+This changes optional checkout reconciliation only; item prices remain historical observations.
 
-PRODUCT_KNOWN may additionally surface remembered price data.
+## History / local-data state
 
-## 10. Shelf OCR review state (future)
+History UI is ephemeral presentation state over canonical completed history.
 
-~~~text
-SCAN_PENDING
-  ├─ no price → NO_CANDIDATE
-  ├─ one candidate → SINGLE_CANDIDATE
-  └─ multiple → MULTIPLE_CANDIDATES
-~~~
+Deleting one/all completed trips:
 
-Rules:
+- requires safe application state;
+- persists the new history snapshot;
+- does not implicitly clear Price Memory.
 
-- no candidate → manual fallback
-- one candidate → still requires confirmation
-- multiple → user selects or enters manually
-- candidate never commits automatically
+Clearing Price Memory:
 
-## 11. UI sheet/navigation state
+- is independent;
+- does not mutate completed history.
 
-Avoid boolean soup such as:
+## Overlay state
 
-~~~ts
-isAddOpen
-isEditOpen
-isHistoryOpen
-isSettingsOpen
-~~~
+Avoid multiple unrelated booleans for mutually exclusive primary surfaces.
 
-Prefer one discriminated state:
+Prefer one discriminated UI state, conceptually:
 
-~~~ts
+```ts
 type OverlayState =
-  | { kind: 'none' }
-  | { kind: 'add-price' }
-  | { kind: 'edit-item'; itemId: ItemId }
-  | { kind: 'history' }
-  | { kind: 'settings' }
-  | { kind: 'persistence-help' }
-~~~
+  | { kind: "none" }
+  | { kind: "add-price" }
+  | { kind: "edit-item"; itemId: ItemId }
+  | { kind: "budget-settings" }
+  | { kind: "finish-trip" }
+  | { kind: "history" }
+```
 
-This prevents impossible combinations.
+Overlay state is UI state, not ShoppingTrip lifecycle.
 
-## 12. App startup reconciliation
+## Startup reconciliation
 
-Startup sequence:
+Startup:
 
-1. read active-trip envelope
-2. read history envelope
-3. validate versions
-4. validate domain data
-5. reconcile obvious duplicate-completion edge case if the exact same trip id is both active and completed
-6. derive application lifecycle state
-7. render
+1. restore active-trip state;
+2. restore history;
+3. validate envelopes/data/domain invariants;
+4. detect stale active copy of an already completed trip;
+5. reconcile safely;
+6. derive application lifecycle;
+7. render.
 
-Reconciliation rule for duplicate id:
+If the same valid trip id exists in completed history and as stale active state:
 
-- if a valid active record exists and the same trip id already exists in valid completed history, completed history is treated as durable completion evidence
-- startup attempts to clear the stale active record; if cleanup fails, the completed trip remains available and the application exposes degraded persistence with cleanup pending
-- duplicate/conflicting history ids are rejected as a history conflict instead of being guessed into one record
-- malformed or unsupported history is preserved rather than used as evidence to delete active data
+- completed history is durability authority;
+- attempt to clear stale active storage;
+- do not duplicate history;
+- if clear fails, expose cleanup-pending/degraded state.
 
-This deterministic reconciliation is implemented in the storage bootstrap path and covered by persistence/application tests.
+Conflicting history is not guessed into one record.
 
-## 13. Forbidden states
+Malformed/unsupported history is not used as permission to delete active data.
 
-Implementation should make these impossible or immediately reject them:
+## Forbidden states
 
-- active trip with completedAt
-- completed trip without completedAt
-- zero-quantity cart item
-- buffer > budget
-- scanner candidate stored as cart item before confirmation
-- two simultaneously open primary sheets
-- persistence status “healthy” after a failed latest write
-- canonical item with unsupported currency-specific interpretation
-- completed trip mutated through active-trip commands
+Implementation should reject/prevent:
 
-## State-machine readiness score
+- active trip with completedAt;
+- completed trip without completedAt;
+- zero/invalid quantity;
+- safety buffer > budget;
+- two primary overlays open simultaneously;
+- persistence marked healthy after the latest required write failed;
+- completed trip mutated with active-trip commands;
+- remembered/candidate price silently represented as confirmed current price;
+- completed history cleared as a side effect of Price Memory deletion.
 
-**97/100**
+## Planned transitions
 
-Remaining uncertainty:
+Not current behaviour:
 
-- exact safe rollback/reconciliation for a future Continue shopping action after completion
+- reopen/continue the same completed trip;
+- scanner lifecycle;
+- barcode provider lookup lifecycle;
+- shelf-OCR candidate review;
+- PWA update/install lifecycle;
+- cloud/multi-device conflict resolution.
 
-The duplicate active/history recovery rule is implemented. A Continue shopping action remains intentionally deferred until its two-record rollback/reconciliation semantics are specified and tested; the UI must not imply that completed trips are reversible today.
+Define and test these only when the roadmap approves the capability.
+
+## Review checklist
+
+- Is this state canonical product state or ephemeral UI state?
+- Can two lifecycle states accidentally be true at once?
+- Can a failure path misrepresent durability?
+- Is completion still history-first?
+- Did a planned capability leak into current lifecycle?
+- Did UI state enter the domain model unnecessarily?

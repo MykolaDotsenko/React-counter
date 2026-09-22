@@ -1,383 +1,364 @@
 # Accessibility Contract
 
-## Purpose
+## Status
 
-Accessibility is part of the core shopping workflow, not a post-release polish task.
+**IMPLEMENTED current accessibility contract.**
 
-The product is used while moving through a store, often one-handed, under distraction, and potentially with large text, reduced motion, low vision, motor constraints, or assistive technology.
+Accessibility is part of release quality and premium product quality, not post-release polish.
 
-The accessibility goal is not merely “zero axe violations.” The goal is equivalent task completion.
+This contract applies to the current shopping product. Future PWA/camera/scanner-specific requirements live in [../reference/FUTURE-QUALITY-PLANS.md](../reference/FUTURE-QUALITY-PLANS.md) until those capabilities ship.
 
-## Scope
+## Goal
 
-This contract applies first to the critical path:
+Equivalent completion of the core job under:
 
-1. start a trip
-2. understand remaining budget
-3. add a price
-4. change quantity
-5. edit/remove/undo
-6. understand warnings
-7. finish the trip
+- keyboard-only use;
+- screen reader;
+- low vision / forced colours;
+- large text;
+- reduced motion;
+- motor constraints;
+- compact mobile viewport;
+- one-handed distracted use.
 
-Optional scanners and advanced features must not weaken this path.
+Zero axe violations alone are not sufficient.
 
-## Interaction targets
+## Critical flow
 
-Frequent touch targets should be at least 48 by 48 CSS pixels.
+Accessibility coverage prioritises:
 
-This includes:
+1. start trip;
+2. understand remaining amount;
+3. add price;
+4. change quantity;
+5. edit/remove/Undo;
+6. understand reserve/over-budget consequence;
+7. adjust budget/buffer;
+8. finish trip;
+9. completed summary/history;
+10. repeat-trip/remembered-price actions.
 
-- Add price
-- keypad controls
-- quantity controls
-- undo
-- remove/edit triggers
-- warning actions
-- finish trip
+## Touch targets
+
+Frequent controls should meet the product target of at least 48 × 48 CSS px where practical.
+
+Includes:
+
+- Add price;
+- keypad keys;
+- quantity controls;
+- Undo;
+- edit/remove triggers;
+- warning actions;
+- finish trip.
 
 Do not rely on tiny icon-only hit areas.
 
 ## One-handed use
 
-Primary frequent actions should remain in reachable regions on compact phone screens.
+Frequent actions should remain comfortably reachable on compact phone layouts.
 
-Do not force the user to stretch repeatedly to top-corner controls during active shopping.
+Avoid repeated top-corner reach during active shopping.
 
-One-handed usability benefits many users, including users with temporary or permanent motor limitations.
+One-hand ergonomics is both usability and accessibility.
 
-## Keyboard support
+## Keyboard
 
-Every core action must be reachable and operable by keyboard.
+Every core action must be keyboard-operable.
 
 Requirements:
 
-- logical tab order
-- visible focus
-- Enter/Space activation for buttons
-- no keyboard traps
-- Escape closes non-destructive overlays where appropriate
-- focus returns to a meaningful control after sheet/dialog close
+- logical tab order;
+- visible focus;
+- semantic button activation;
+- no traps;
+- Escape closes non-destructive overlays where appropriate;
+- focus returns to a meaningful control after overlay close.
 
-Do not introduce global arrow-key shortcuts that conflict with natural shopping-form interaction.
+Avoid custom keyboard shortcuts that conflict with normal form interaction.
 
 ## Focus management
 
-Opening a price-entry sheet/dialog should move focus to the first meaningful input.
+Opening a primary interaction surface should focus the first meaningful control when appropriate.
 
-Closing it should return focus to the Add price trigger or the most contextually relevant control.
+Closing/cancelling should restore focus to:
 
-After destructive confirmation, focus should move to a stable location rather than disappear.
+- Add price;
+- relevant item edit trigger;
+- budget/finish trigger;
+- another stable contextual control.
 
-## Screen-reader information hierarchy
+After destructive state changes, focus must not disappear.
 
-The visible hero may show:
+## Semantic information hierarchy
 
-> EUR 18.58 LEFT
+Critical numbers need semantic meaning.
 
-Accessible naming should communicate meaning, not typography.
+A visually dominant value such as:
 
-Prefer semantic output equivalent to:
+> €18.58
 
-> Safe remaining: 18 euros and 58 cents.
+must have accessible meaning equivalent to:
 
-When no safety buffer is active:
+> Safe remaining: 18 euros and 58 cents
 
-> Remaining budget: 18 euros and 58 cents.
+or:
 
-Do not require the user to infer the meaning of an unlabeled number.
+> Remaining budget: 18 euros and 58 cents
+
+according to the active buffer context.
+
+Do not expose important money as an unlabeled number.
 
 ## Live announcements
 
-Announce meaningful committed changes, not animation frames.
+Announce committed consequences, not every visual animation frame.
 
-After adding an item, a polite announcement might communicate:
+Useful example:
 
-> EUR 4.79 added. EUR 13.79 remaining.
+> €4.79 added. €13.79 remaining.
 
-Avoid announcing every intermediate keystroke unless the input control naturally does so.
+Avoid duplicate announcements from multiple status regions.
 
-Avoid repeated announcements from both the keypad and summary that create duplicate speech.
+Do not announce every keypad digit beyond normal control/input behaviour.
 
 ## Currency speech
 
-Currency formatting must remain understandable to assistive technology.
+Currency output must remain understandable to assistive technology.
 
-Do not rely on visually abbreviated symbols alone when the accessible label could be ambiguous.
+Visual symbols may be accompanied by clearer accessible labels where needed.
 
-Test at least the primary target currency and architecture for other ISO currencies.
+The current product is EUR-only, but formatting should not block future explicit currency extension.
 
-## Colour
+## Colour and contrast
 
-No state may rely on colour alone.
+No state is colour-only.
 
-Examples:
+Reserve/over-budget states require text meaning in addition to colour/shape.
 
-Near-limit state should combine:
+Meet WCAG AA contrast for critical text/controls.
 
-- colour
-- text
-- icon or shape
-
-Over-budget state should explicitly say:
-
-> EUR 2.14 over your limit.
-
-Do not expect the user to interpret a red ring without text.
-
-## Contrast
-
-Meet WCAG AA contrast for text and meaningful controls.
-
-The existing spectral visual language can remain decorative, but critical text and boundaries must not depend on translucent low-contrast effects.
-
-Glass/backdrop treatments require explicit contrast checks against every supported background state.
+Decorative translucency/gradients must never reduce financial-text readability.
 
 ## Forced colours
 
-Core workflow must remain understandable when browser/OS forced-colour mode overrides visual styling.
+Core workflow remains understandable when system/browser colours override styling.
 
-Test:
+Verify:
 
-- hero amount
-- progress representation
-- Add button
-- keypad
-- warning state
-- item actions
-- focus
+- remaining amount;
+- capacity/status cue;
+- Add action;
+- keypad;
+- warning/over-budget state;
+- item actions;
+- focus indicator.
 
-Decorative gradients may disappear without loss of meaning.
+Decorative effects may disappear without losing meaning.
 
 ## Reduced motion
 
-Respect prefers-reduced-motion.
+Respect `prefers-reduced-motion`.
 
 Reduced-motion mode must:
 
-- keep every state change functional
-- avoid large movement/parallax
-- remove unnecessary looping/ambient animation
-- preserve immediate confirmation through static or minimal feedback
+- preserve all state changes;
+- remove unnecessary large/looping motion;
+- keep immediate static feedback;
+- never change financial mutation semantics.
 
-Financial state updates must never depend on animation regardless of preference.
+A commit must never depend on animation completion.
 
 ## Text scaling
 
-At 200% text zoom / equivalent large-text conditions:
+At 200% / large text:
 
-- remaining amount remains visible
-- primary Add action remains reachable
-- no horizontal scrolling for the core page
-- keypad remains usable
-- warning copy does not overlap actions
-- item rows can grow vertically rather than truncate essential values
+- remaining amount stays visible;
+- Add price remains reachable;
+- no horizontal scroll for the core page;
+- keypad remains usable;
+- warnings/actions do not overlap;
+- item rows may grow vertically;
+- secondary content may reflow rather than shrink below legibility.
 
-Do not lock critical containers to fixed heights that assume default text size.
+Avoid fixed heights that assume default text size.
 
 ## Compact viewport
 
-Test at least a 320px-class width plus a modern 390px-class phone width.
+Support at least:
 
-The product should prioritise vertical flow over shrinking controls below usable size.
+- ~320px-class width;
+- ~390px-class modern phone width.
 
-## Price keypad
+Prefer vertical reflow over shrinking touch targets.
 
-The keypad needs:
+## Price entry
 
-- real button semantics or an equally robust native input strategy
-- large targets
-- clear current value
-- accessible backspace label
-- explicit Add action
-- predictable decimal/auto-cents behaviour
+Custom keypad/native input path must preserve:
 
-If a custom keypad is used, do not remove native keyboard accessibility without replacement.
+- semantic controls;
+- accessible labels;
+- large targets;
+- clear current value;
+- backspace label;
+- explicit Add;
+- predictable draft mode;
+- keyboard-equivalent completion.
 
-## Quantity control
+A custom keypad must not remove native keyboard accessibility without replacement.
 
-Minus and plus controls require accessible names that include context when necessary.
+## Quantity
+
+Increase/decrease controls need meaningful accessible names.
+
+Use item label context when available.
+
+For unlabeled items, avoid overly verbose/repetitive speech while still making target identity clear enough.
+
+## Item actions
+
+Edit/remove cannot exist only as swipe gestures.
+
+Visible/focusable alternatives are required.
+
+Undo feedback should be discoverable and announced appropriately.
+
+## Warnings / confirmation
+
+Over-budget confirmation must:
+
+- state exact consequence;
+- provide explicit actions;
+- manage focus correctly;
+- remain dismissible/correctable without precision gestures.
 
 Example:
 
-- Decrease quantity for Milk
-- Increase quantity for Milk
-
-If no item label exists, use stable list-position or price context carefully without creating verbose repetitive speech.
-
-## Item list actions
-
-Edit/remove actions must not exist only as swipe gestures.
-
-Swipe may be an enhancement, but equivalent visible/focusable controls are required.
-
-Undo feedback must be reachable and announced appropriately.
-
-## Warnings and dialogs
-
-Over-budget warning must:
-
-- have a clear heading/message
-- state the amount of overage
-- provide explicit actions
-- not trap focus incorrectly
-- not close accidentally through ambiguous gestures
-
-Example:
-
-> This item puts you EUR 3.41 over your limit.
+> This item puts you €3.41 over your limit.
 
 Actions:
 
-- Add anyway
-- Cancel
+- Add anyway;
+- Cancel/edit.
 
 ## Safety-buffer communication
 
-Do not create a confusing experience where screen-reader users hear one remaining value while sighted users interpret another.
-
 When safe remaining is primary, label it explicitly.
 
-Nominal remaining can be exposed as secondary detail.
+Do not make assistive-technology users hear a different conceptual metric from the visual hierarchy.
 
-## Price origin and uncertainty
+Nominal remaining may be secondary context.
 
-Remembered/scanned/estimated status must be available to assistive technology.
+## Price provenance / uncertainty
 
-Example:
+Remembered values must expose that status semantically, not only visually.
 
-> EUR 1.39, remembered price, last paid 8 days ago at Prisma.
+Useful accessible context:
 
-Avoid icon-only confidence states.
+> €1.39, remembered price, last observed 8 days ago
 
-## Barcode/camera accessibility
+where that data exists.
 
-Scanning is optional.
+Do not imply currentness through iconography alone.
 
-Users who cannot or do not want to use the camera must retain the complete manual workflow.
-
-Camera permission denial must not create a dead end.
-
-Scanner controls require text labels, not icon-only camera glyphs.
-
-## Error handling
+## Persistence / recovery errors
 
 Errors must be:
 
-- associated with the relevant control where possible
-- stated in text
-- announced when they prevent progress
-- recoverable without losing entered data
+- stated in text;
+- associated with the relevant scope;
+- announced when they materially change durability/recovery;
+- recoverable without losing current entered data where possible.
 
-Persistence failure is a page/application-level state and should be announced once clearly, not on every render.
-
-## Humour and accessibility
-
-Humour must not obscure the factual message.
-
-Good:
-
-> EUR 2.20 left. We have entered the snack-decision zone.
-
-The amount remains first and explicit.
-
-Bad:
-
-> Uh-oh, snack danger!
-
-without stating the actual remaining amount.
+Persistence failure should be announced clearly, not repeatedly on every render.
 
 ## Semantic structure
 
-Target page semantics should include:
+Prefer native HTML semantics.
 
-- one main landmark
-- clear heading hierarchy
-- form labels
-- buttons for actions
-- output/status semantics only where appropriate
-- lists for cart items when semantically useful
+Use:
 
-Do not add ARIA where native HTML already provides the correct semantics.
+- one main landmark;
+- meaningful heading hierarchy;
+- form labels;
+- buttons for actions;
+- lists for cart/history where appropriate;
+- status/output semantics only when they improve meaning.
 
-## Progress visualisation
+Do not add ARIA when native semantics already solve the problem.
 
-If a progress bar/ring is meaningful rather than decorative, expose an accessible equivalent.
+## Capacity visual
 
-For example:
+If the budget capacity cue is meaningful, expose equivalent text/numeric context.
 
-- current cart total
-- budget maximum
-- percentage only if useful
-
-Do not force screen-reader users to navigate a decorative SVG.
-
-## PWA/installability
-
-Installed mode must preserve:
-
-- system font scaling
-- focus behaviour
-- screen-reader operation
-- safe-area layout
-
-Do not hide browser accessibility affordances for the sake of a “native-looking” shell.
+Screen-reader users must not need to navigate decorative SVG/canvas content to understand remaining/overage.
 
 ## Automated checks
 
-Keep axe checks in Chromium and expand tags/tooling as dependencies support newer WCAG criteria.
+Cover representative states with axe/semantic assertions:
 
-Automated checks cover representative states and primary correction surfaces:
+- start;
+- active trip;
+- price entry;
+- item correction;
+- budget adjustment;
+- over-budget review;
+- finish confirmation;
+- completed summary;
+- history.
 
-- start and active-trip screens
-- manual price entry
-- item correction
-- active-trip budget adjustment
-- nominal over-budget review
-- finish-trip confirmation
-- completed summary
-- trip history
-
-Near-limit semantics are additionally asserted through active-trip and price-projection tests.
+Also test focus restoration and keyboard journeys where browser automation is reliable.
 
 ## Manual checks
 
-For major UI releases, manually verify:
+For meaningful UI releases, verify:
 
-- keyboard-only flow
-- VoiceOver/TalkBack or equivalent spot-check of primary flow
-- 200% zoom
-- reduced motion
-- forced colours/high contrast where available
-- compact viewport
-- touch-target sizing
+- keyboard-only flow;
+- VoiceOver/TalkBack or equivalent spot-check;
+- 200% / large text;
+- reduced motion;
+- forced colours/high contrast where available;
+- compact viewport;
+- touch targets;
+- one-hand/bright-store physical usability when the evidence gate calls for it.
 
-Automated testing cannot validate usability of spoken order, verbosity, or one-handed physical interaction.
+Automation cannot prove spoken-order quality or physical ergonomics.
 
-## Accessibility acceptance criteria for MVP
+## Acceptance
 
-A user must be able to complete a trip without:
+The current core shopping job must be completable without relying on:
 
-- colour perception
-- precise pointer input
-- animation
-- default text size
-- camera
-- network
+- colour perception;
+- precise pointer input;
+- animation;
+- default text size;
+- camera;
+- a mandatory external network service.
 
-The manual price flow is the accessibility baseline.
+Manual price entry is the accessibility baseline.
+
+## Premium accessibility rule
+
+A premium interface is not premium if:
+
+- focus is lost;
+- text truncates at large sizes;
+- contrast is weak;
+- motion cannot be reduced;
+- important states are icon/colour-only;
+- tap targets are tiny.
+
+Accessibility quality is part of perceived product quality.
 
 ## Review checklist
 
-For each user-facing PR ask:
-
-1. Can the new action be reached by keyboard?
-2. Is its accessible name meaningful?
-3. Is state expressed in text as well as colour?
-4. Does focus go somewhere predictable?
-5. Does large text break the flow?
-6. Does reduced motion preserve feedback?
-7. Is camera/scanning optional?
-8. Are live announcements concise and non-duplicative?
-9. Is the critical number labelled by meaning?
-10. Can a user recover from error without precision gestures?
+- Can the action be reached by keyboard?
+- Is the accessible name meaningful?
+- Is state expressed in text as well as colour?
+- Does focus return predictably?
+- Does large text preserve the task?
+- Does reduced motion preserve feedback?
+- Is the critical money value labelled by meaning?
+- Can errors be corrected without precision gestures?
+- Are repeated announcements concise?
+- Does premium styling preserve contrast/clarity?

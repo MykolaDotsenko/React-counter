@@ -72,3 +72,60 @@ If sync/auth/backend ever becomes approved:
 - test offline/local edits against synchronization;
 - never allow stale remote state to silently overwrite newer committed local shopping state;
 - add explicit privacy/security tests for transmitted shopping data.
+
+## Future capability accessibility
+
+These requirements become current only when the corresponding capability ships.
+
+### Installable PWA
+
+Verify installed mode preserves:
+
+- system text scaling;
+- safe-area layout;
+- keyboard/focus behaviour;
+- screen-reader semantics;
+- update/reload flows without trapping or losing the user.
+
+Do not hide browser/platform accessibility affordances merely to imitate a native shell.
+
+### Barcode / camera
+
+Camera/scanning remains optional.
+
+Provide:
+
+- text-labelled controls;
+- permission-denied recovery;
+- complete manual fallback;
+- no gesture-only critical action;
+- review/confirmation state usable by keyboard and assistive technology where the platform permits it.
+
+### Shelf OCR
+
+Candidate review must expose:
+
+- detected candidate values as text;
+- ambiguity clearly;
+- manual entry/edit;
+- no auto-commit from visual recognition alone.
+
+### Cloud / multi-device
+
+Any future conflict/recovery UI must state:
+
+- which version is current/local/remote;
+- what will be overwritten;
+- a safe user-controlled resolution path.
+
+## Future state-machine rule
+
+Do not add future capability states to the current `STATE-MACHINES.md` until the roadmap approves implementation.
+
+Before shipping a new capability, define:
+
+- idle/loading/review/failure/cancel states;
+- manual fallback;
+- durability ownership;
+- accessibility recovery;
+- explicit boundary between candidate data and canonical financial mutation.
