@@ -13,7 +13,8 @@ export const useShoppingShellFocus = () => {
     fallback?: () => HTMLButtonElement | null,
   ): void => {
     queueMicrotask(() => {
-      findTarget()?.focus() ?? fallback?.()?.focus();
+      const target = findTarget() ?? fallback?.() ?? null;
+      target?.focus();
     });
   };
 
