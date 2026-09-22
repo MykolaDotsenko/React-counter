@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -45,7 +45,9 @@ describe("ShoppingTimingQaPanel", () => {
     const inputMethod = screen.getByRole("textbox", {
       name: "Comparable timing input method",
     });
-    await user.type(inputMethod, "Custom keypad");
+    fireEvent.change(inputMethod, {
+      target: { value: "Custom keypad" },
+    });
 
     expect(onInputMethodLabelChange).toHaveBeenLastCalledWith(
       "Custom keypad",
