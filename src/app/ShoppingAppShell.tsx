@@ -510,8 +510,6 @@ export function ShoppingAppShell({
         <>
           <HistoryScreen
             controller={controller}
-            persistenceHealth={state.persistence}
-            trips={state.completedTrips}
             onBack={() => {
               setOverlay({ kind: "none" });
             }}
@@ -547,8 +545,6 @@ export function ShoppingAppShell({
         <>
           <HistoryScreen
             controller={controller}
-            persistenceHealth={state.persistence}
-            trips={state.completedTrips}
             onBack={() => {
               setOverlay({ kind: "none" });
             }}
