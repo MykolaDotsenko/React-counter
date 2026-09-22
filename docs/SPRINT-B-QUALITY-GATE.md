@@ -39,7 +39,7 @@ This document separates:
 
 The two must not be conflated.
 
-The default/public shell must remain Pulse Counter until the B6 automated gate is green **and** the required representative one-hand/manual checks are recorded.
+The public Shopping Budget Companion may ship while this evidence remains pending, but the B6 human speed/usability target must stay labelled unverified until the required representative one-hand/manual checks are recorded.
 
 ## Contract
 
@@ -133,7 +133,7 @@ This does **not** claim offline cold-launch/installability. That remains the lat
 
 ## Real-device QA build
 
-The public/default GitHub Pages root remains Pulse Counter.
+The public/default GitHub Pages root is Shopping Budget Companion.
 
 A separate guarded empirical build is published at:
 
@@ -141,7 +141,6 @@ A separate guarded empirical build is published at:
 
 Build flags:
 
-- `VITE_SHOPPING_SHELL=1`
 - `VITE_SHOPPING_QA_TIMING=1`
 
 The QA build:
