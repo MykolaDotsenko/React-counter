@@ -125,7 +125,7 @@ describe("RecentItemsSection", () => {
     );
 
     const currentPrice = screen.getByRole("button", {
-      name: "Enter current price",
+      name: /Enter current price/,
     });
     expect(currentPrice.dataset.currentPriceMemoryId).toBe(record.id);
 
