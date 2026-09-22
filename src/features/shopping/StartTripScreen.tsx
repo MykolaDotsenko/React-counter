@@ -121,6 +121,7 @@ export interface StartTripScreenProps {
   readonly recentTrip?: CompletedTrip | null;
   readonly persistenceHealth?: PersistenceHealth;
   readonly onOpenHistory?: () => void;
+  readonly locale?: string;
 }
 
 export function StartTripScreen({
@@ -129,6 +130,7 @@ export function StartTripScreen({
   recentTrip = null,
   persistenceHealth,
   onOpenHistory,
+  locale = "en-FI",
 }: StartTripScreenProps) {
   const customRegionId = useId();
   const reserveInputId = useId();
@@ -262,11 +264,11 @@ export function StartTripScreen({
               <span className={styles.repeatEyebrow}>Last trip</span>
               <strong>Shop again</strong>
               <small>
-                {formatEur(recentTrip.budgetMinor, "en-FI")} budget
+                {formatEur(recentTrip.budgetMinor, locale)} budget
                 {recentTrip.safetyBufferMinor > 0
                   ? ` · ${formatEur(
                       recentTrip.safetyBufferMinor,
-                      "en-FI",
+                      locale,
                     )} reserve`
                   : ""}
               </small>
