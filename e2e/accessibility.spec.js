@@ -113,7 +113,7 @@ test("has no detectable WCAG A/AA violations on Recent Items and restores curren
   await page.keyboard.press("Escape");
 
   await expect(
-    page.getByRole("button", { name: "Enter current price" }),
+    page.getByRole("button", { name: "Enter current price for Milk 1L" }),
   ).toBeFocused();
 });
 
