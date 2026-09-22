@@ -702,6 +702,34 @@ describe("trip reducer", () => {
     );
   });
 
+  it("updates budget and safety buffer atomically against the final pair", () => {
+    const trip = createTrip(5_000, 4_000);
+
+    const updated = expectActive(
+      unwrap(
+        reduceTrip(trip, {
+          type: "set-spending-plan",
+          budgetMinor: money(3_000),
+          safetyBufferMinor: money(1_000),
+        }),
+      ),
+    );
+
+    expect(updated).toMatchObject({
+      budgetMinor: 3_000,
+      safetyBufferMinor: 1_000,
+    });
+
+    expectDomainError(
+      reduceTrip(trip, {
+        type: "set-spending-plan",
+        budgetMinor: money(3_000),
+        safetyBufferMinor: money(3_001),
+      }),
+      "invalid-buffer",
+    );
+  });
+
   it("updates the safety buffer without changing item totals", () => {
     let trip = createTrip(5_000, 0);
     trip = addItem(
