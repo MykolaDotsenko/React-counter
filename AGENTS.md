@@ -70,32 +70,34 @@ MUST NOT:
 
 ## Current repository reality
 
-The repository is mid-migration.
+The repository ships one product: Shopping Budget Companion.
 
-Default/public path:
-
-- Shopping Budget Companion is the only product shell
-- its JavaScript counter model/UI, native View Transition orchestration, and pointer-reactive effects remain in the repository
-
-Internal QA/beta variants use the same shopping product with evidence-only feature flags:
+Implemented product and engineering scope includes:
 
 - strict TypeScript EUR money domain
 - ShoppingTrip / CartItem domain and projections
-- Zod-validated active-trip localStorage persistence
+- Zod-validated local-first persistence and recovery
 - plain-TypeScript ShoppingAppController + React `useSyncExternalStore`
-- Calm Utility start/active/recovery/persistence-health UI
-- manual price-entry flow, exact consequence projection, one-step Undo, Phase 6 edit/remove correction and trust metadata, browser/a11y hardening, and the automated/code portion of Phase 5 / B6
+- Calm Utility start, active-trip, completion, history, and recovery UI
+- fast manual price entry, exact consequence projection, Undo, edit/remove, and budget adjustment
+- Shop again, Recent Items, and local Price Memory
+- independent local-data controls for history and remembered prices
+- privacy-safe timing and retention evidence tooling
+- cohort-level retention analysis
+- browser/a11y hardening across Chromium, Firefox, and WebKit
 
-Still target-only or incomplete:
+Internal QA/beta routes use the same shopping product with evidence-only feature flags. They are not alternate product shells and must not own canonical product state.
 
-- representative human B6 timing, physical one-hand, software-keyboard, and bright-store evidence required before the public-shell switch
-- repeat-trip acceleration / price memory
-- PWA installability and later scanner/OCR phases
-- repeat-trip acceleration and price memory
+Evidence or later-phase work still pending:
+
+- representative human B6 timing, physical one-hand, software-keyboard, and bright-store evidence
+- 20–50 real-shopper retention validation and observed second-/third-trip behaviour
 - installable offline PWA
-- production scanner/OCR breadth
+- production barcode/OCR breadth, which remains evidence-gated
 
-When modifying any area, inspect actual current code and the current roadmap slice. Never infer implementation solely from a target document.
+The historical counter UI/domain has been retired. Keep only the narrow storage-compatibility safeguard that prevents unrelated historical values from being interpreted as shopping money.
+
+When modifying any area, inspect actual current code and the current roadmap slice. Never infer implementation solely from a target or archived document.
 
 ## Architecture principles
 
@@ -245,22 +247,20 @@ Automated axe success is necessary but not sufficient.
 
 ## Testing rules
 
-Before finishing a change, run the strongest currently available local quality gates.
+Before finishing a change, run the strongest currently available quality gates.
 
-Current baseline before TypeScript migration:
+Baseline:
 
-- npm run lint
-- npm test
-- npm run build
-- relevant Playwright tests
-
-If npm run check already covers lint/tests/build, use it as the baseline aggregate.
-
-After a typecheck script is introduced, typecheck becomes mandatory.
+- `npm run check` — ESLint, strict TypeScript, unit/component tests, production build
+- relevant Playwright tests for browser-visible behaviour
+- full Chromium / Firefox / WebKit matrix for changes that affect shared UI, persistence, accessibility, build routing, or critical shopping flows
+- guarded QA and retention-beta builds when evidence tooling or build metadata changes
 
 Every confirmed bug should gain a regression test at the lowest useful layer.
 
-Money and persistence bugs require tests before the fix is considered complete.
+Money, persistence, recovery, and evidence-integrity bugs require tests before the fix is considered complete.
+
+Do not replace required human evidence with automated timing or synthetic retention data.
 
 ## Documentation rules
 
