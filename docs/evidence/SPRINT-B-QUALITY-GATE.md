@@ -48,17 +48,20 @@ The public Shopping Budget Companion may ship while this evidence remains pendin
 
 ## Contract
 
-Authoritative sources:
+Current contract inputs:
 
 - docs/PRODUCT.md
-- docs/reference/FUNCTIONALITY.md
-- docs/reference/SCENARIOS.md
-- docs/reference/UX.md
 - docs/DESIGN.md
 - docs/TESTING.md
 - docs/quality/ACCESSIBILITY.md
-- docs/archive/CORE-UI-EXECUTION-BRIEF.md
 - docs/ROADMAP.md
+- docs/specs/RELEASE-SPEC.md
+
+Supporting scenario/rationale inputs:
+
+- docs/reference/SCENARIOS.md
+- docs/reference/UX.md
+- docs/archive/CORE-UI-EXECUTION-BRIEF.md
 
 ## Automated B6 evidence
 
