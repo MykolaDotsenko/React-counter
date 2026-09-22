@@ -8,7 +8,7 @@ It complements:
 
 - `docs/specs/MONEY-SPEC.md`
 - `FUNCTIONALITY.md`
-- `docs/CORE-UI-EXECUTION-BRIEF.md`
+- `docs/archive/CORE-UI-EXECUTION-BRIEF.md`
 
 The Phase 1 money parser remains authoritative. The price-entry UI must not implement a second money parser.
 
