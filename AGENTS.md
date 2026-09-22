@@ -296,12 +296,12 @@ Authoritative current contracts:
 
 Supporting reference:
 
-- docs/reference/reference/FUNCTIONALITY.md — extended functional catalogue and fallbacks
-- docs/reference/reference/SCENARIOS.md — scenario matrix, edge cases, and risk analysis
-- docs/reference/reference/UX.md — detailed interaction heuristics
-- docs/reference/reference/TECH-STACK.md — technology rationale and future candidates
-- docs/reference/reference/BRAND.md — positioning, naming, voice, identity, and trust system
-- docs/reference/reference/MARKETING.md — acquisition, ASO, content, launch, pricing, and experimentation strategy
+- docs/reference/FUNCTIONALITY.md — extended functional catalogue and fallbacks
+- docs/reference/SCENARIOS.md — scenario matrix, edge cases, and risk analysis
+- docs/reference/UX.md — detailed interaction heuristics
+- docs/reference/TECH-STACK.md — technology rationale and future candidates
+- docs/reference/BRAND.md — positioning, naming, voice, identity, and trust system
+- docs/reference/MARKETING.md — acquisition, ASO, content, launch, pricing, and experimentation strategy
 - docs/research/* — external evidence, alternatives, and strategic research
 - docs/marketing/* — store and launch material
 - docs/archive/* — historical execution context only
@@ -344,7 +344,7 @@ Do not add, unless docs/PRODUCT.md is intentionally revised with evidence:
 
 ## Dependency policy
 
-docs/reference/reference/TECH-STACK.md is supporting technology rationale. Current dependency reality is defined by package.json/package-lock.json, current architecture decisions, and the applicable authoritative contracts.
+docs/reference/TECH-STACK.md is supporting technology rationale. Current dependency reality is defined by package.json/package-lock.json, current architecture decisions, and the applicable authoritative contracts.
 
 Prefer native platform capabilities and existing dependencies when they satisfy requirements cleanly.
 
