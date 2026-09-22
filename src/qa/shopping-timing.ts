@@ -615,14 +615,11 @@ export const summarizeQaEmpiricalGate = (
     lightAppearanceRecorded &&
     phonePortraitViewport;
 
-  let status: QaEmpiricalGateSummary["status"] = "pending";
+  let status: QaEmpiricalGateSummary["status"] =
+    secondarySpotCheckFailures > 0 ? "fail" : "pending";
 
-  if (evidenceComplete) {
-    if (
-      eur479.status === "fail" ||
-      eur1250.status === "fail" ||
-      secondarySpotCheckFailures > 0
-    ) {
+  if (evidenceComplete && secondarySpotCheckFailures === 0) {
+    if (eur479.status === "fail" || eur1250.status === "fail") {
       status = "fail";
     } else if (
       eur479.status === "release-floor" ||
