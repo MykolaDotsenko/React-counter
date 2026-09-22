@@ -19,6 +19,11 @@ export type RetentionBetaEvent =
       readonly itemCount: 1 | 5 | 10;
     }
   | {
+      readonly type: "trip_restored";
+      readonly at: string;
+      readonly tripOrdinal: number;
+    }
+  | {
       readonly type: "manual_entry_completed";
       readonly at: string;
       readonly tripOrdinal: number;
@@ -57,7 +62,12 @@ export interface RetentionBetaSummary {
   readonly tripsFinished: number;
   readonly secondTripStarted: boolean;
   readonly thirdTripStarted: boolean;
+  readonly secondTripWithin7Days: boolean;
+  readonly secondTripWithin14Days: boolean;
+  readonly secondTripWithin30Days: boolean;
+  readonly daysToSecondTrip: number | null;
   readonly repeatTripStarts: number;
+  readonly tripRestores: number;
   readonly firstItemTrips: number;
   readonly fifthItemTrips: number;
   readonly tenthItemTrips: number;
@@ -111,6 +121,7 @@ const isEvent = (value: unknown): value is RetentionBetaEvent => {
         Number.isFinite(candidate.durationMs) &&
         candidate.durationMs >= 0
       );
+    case "trip_restored":
     case "manual_entry_abandoned":
     case "remembered_item_used":
     case "current_price_override_started":
@@ -298,6 +309,16 @@ export const summarizeRetentionBeta = (
   const manualDurations = session.events.flatMap((event) =>
     event.type === "manual_entry_completed" ? [event.durationMs] : [],
   );
+  const firstTripStart = started.find((event) => event.tripOrdinal === 1);
+  const secondTripStart = started.find((event) => event.tripOrdinal === 2);
+  const daysToSecondTrip =
+    firstTripStart === undefined || secondTripStart === undefined
+      ? null
+      : Math.max(
+          0,
+          (Date.parse(secondTripStart.at) - Date.parse(firstTripStart.at)) /
+            86_400_000,
+        );
 
   return {
     tripsStarted: uniqueTripCount(
@@ -310,8 +331,18 @@ export const summarizeRetentionBeta = (
     ),
     secondTripStarted: started.some((event) => event.tripOrdinal >= 2),
     thirdTripStarted: started.some((event) => event.tripOrdinal >= 3),
+    secondTripWithin7Days:
+      daysToSecondTrip !== null && daysToSecondTrip <= 7,
+    secondTripWithin14Days:
+      daysToSecondTrip !== null && daysToSecondTrip <= 14,
+    secondTripWithin30Days:
+      daysToSecondTrip !== null && daysToSecondTrip <= 30,
+    daysToSecondTrip,
     repeatTripStarts: started.filter((event) => event.source === "repeat")
       .length,
+    tripRestores: session.events.filter(
+      (event) => event.type === "trip_restored",
+    ).length,
     firstItemTrips: uniqueTripCount(
       session.events,
       (event) =>
