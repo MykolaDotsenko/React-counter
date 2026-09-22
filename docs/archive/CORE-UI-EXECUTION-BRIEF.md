@@ -454,7 +454,7 @@ Check one-hand reach and bright/light-mode readability.
 
 ### Sprint A stop/go gate
 
-**Result: passed for the guarded shopping shell.**
+**Historical result: the shopping shell passed this implementation gate.**
 
 Evidence:
 
