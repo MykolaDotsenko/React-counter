@@ -1,5 +1,8 @@
 # Brand Strategy
 
+> [!NOTE]
+> **Documentation role: supporting reference.** Use [../README.md](../README.md) for the authority model. Brand and messaging guidance must stay compatible with the shipped product and current authoritative design/product contracts.
+
 ## Status
 
 Target brand strategy for the shopping-budget product.
