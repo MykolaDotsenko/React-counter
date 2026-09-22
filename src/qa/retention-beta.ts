@@ -3,7 +3,7 @@ export const RETENTION_BETA_STORAGE_KEY =
 
 export const RETENTION_BETA_EVENT_LIMIT = 5_000;
 
-export type RetentionBetaTripSource = "new" | "repeat" | "resumed";
+export type RetentionBetaTripSource = "new" | "repeat";
 
 export type RetentionBetaEvent =
   | {
@@ -98,11 +98,7 @@ const isEvent = (value: unknown): value is RetentionBetaEvent => {
 
   switch (candidate.type) {
     case "trip_started":
-      return (
-        candidate.source === "new" ||
-        candidate.source === "repeat" ||
-        candidate.source === "resumed"
-      );
+      return candidate.source === "new" || candidate.source === "repeat";
     case "item_milestone":
       return (
         candidate.itemCount === 1 ||
@@ -259,9 +255,7 @@ const uniqueTripCount = (
 export const nextRetentionTripOrdinal = (
   session: RetentionBetaSession,
 ): number => {
-  const ordinals = session.events.flatMap((event) =>
-    event.type === "trip_started" ? [event.tripOrdinal] : [],
-  );
+  const ordinals = session.events.map((event) => event.tripOrdinal);
 
   return ordinals.length === 0 ? 1 : Math.max(...ordinals) + 1;
 };
