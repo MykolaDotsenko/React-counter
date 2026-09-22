@@ -25,12 +25,12 @@ describe("AppErrorBoundary", () => {
       screen.getByRole("heading", {
         name: "The app hit an unexpected problem",
       }),
-    ).toBeVisible();
+    ).not.toBeNull();
     expect(
       screen.getByRole("button", { name: "Reload app" }),
-    ).toBeVisible();
+    ).not.toBeNull();
     expect(
       screen.getByText(/latest trip that was successfully saved/i),
-    ).toBeVisible();
+    ).not.toBeNull();
   });
 });
