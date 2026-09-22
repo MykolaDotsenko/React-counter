@@ -1764,6 +1764,38 @@ describe("ShoppingAppController dispatch", () => {
     });
   });
 
+  it("persists budget and buffer as one atomic spending-plan mutation", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 4_000),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.updateSpendingPlan({
+      budgetMinor: money(3_000),
+      safetyBufferMinor: money(1_000),
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error("Expected spending-plan update");
+    }
+
+    expect(result.changed).toBe(true);
+    expect(result.state.activeTrip).toMatchObject({
+      budgetMinor: 3_000,
+      safetyBufferMinor: 1_000,
+    });
+    expect(persistence.saveCalls).toHaveLength(1);
+    expect(persistence.saveCalls[0]?.trip).toBe(result.state.activeTrip);
+  });
+
   it("returns to healthy after a later successful canonical write", () => {
     const persistence = createPersistence({
       ok: true,
