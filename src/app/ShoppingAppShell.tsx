@@ -420,10 +420,11 @@ export function ShoppingAppShell({
         }}
       />
       )}
-      {betaSession === null ? null : (
+      {betaSession === null ||
+      state.activeTrip !== null ||
+      overlay.kind !== "none" ? null : (
         <RetentionBetaPanel
           session={betaSession}
-          resetDisabled={state.activeTrip !== null}
           onReset={() => {
             const next = createRetentionBetaSession(
               new Date().toISOString(),
