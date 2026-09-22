@@ -20,6 +20,7 @@ export interface CompletedSummaryScreenProps {
   readonly controller: ShoppingAppController;
   readonly trip: CompletedTrip;
   readonly onDone: () => void;
+  readonly onShopAgain: () => void;
   readonly onViewHistory: () => void;
   readonly locale?: string;
 }
@@ -74,6 +75,7 @@ export function CompletedSummaryScreen({
   controller,
   trip,
   onDone,
+  onShopAgain,
   onViewHistory,
   locale = "en-FI",
 }: CompletedSummaryScreenProps) {
@@ -138,6 +140,23 @@ export function CompletedSummaryScreen({
         ? "Checkout total saved."
         : "Checkout total updated here, but it is not safely saved yet.",
     );
+  };
+
+  const shopAgain = (): void => {
+    setStatusMessage("");
+    const result = controller.startTripFromCompleted(currentTrip.id);
+
+    if (!result.ok) {
+      setStatusMessage(
+        result.error.kind === "application" &&
+        result.error.code === "repeat-source-unavailable"
+          ? "Retry saving before starting another trip from this budget."
+          : "Could not start another trip from this budget.",
+      );
+      return;
+    }
+
+    onShopAgain();
   };
 
   const done = (): void => {
@@ -260,6 +279,13 @@ export function CompletedSummaryScreen({
         ) : null}
 
         <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.repeatButton}
+            onClick={shopAgain}
+          >
+            Shop again
+          </button>
           <button
             type="button"
             className={styles.historyButton}
