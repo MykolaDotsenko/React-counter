@@ -35,7 +35,7 @@ A persistent logo is not required inside the shopping task. The shopping informa
 | Privacy as trust proof | local-first state + visible “No account” message + content-free beta evidence | ✅ aligned |
 | Manual path remains universal | Add price is dominant; remembered prices never remove current-price entry | ✅ aligned |
 | Brand mark uses remaining-room metaphor | `public/shopping-mark.svg` | ✅ provisional |
-| Guarded browser identity is not Pulse Counter | shared guarded-build metadata transform + runtime title/description | ✅ aligned |
+| Public and internal build identity are product-consistent | shared metadata transform + runtime title/description | ✅ aligned |
 | Final product naming | commercial name remains intentionally unlocked | ⏳ pending evidence/legal checks |
 | Final accent hue | current accent is implementation-provisional | ⏳ pending bright-store/recognition evidence |
 | Localization | product copy remains English-first | ⏳ later launch work |
@@ -70,14 +70,14 @@ Do not add the mark persistently to the active-shopping header. `DESIGN.md` expl
 
 ## Browser identity boundary
 
-The repository intentionally has two identity layers during migration.
+The repository has one product identity with specialized internal QA/beta metadata.
 
 ### Public root
 
 `/shopping-budget-companion/`
 
-- still ships Pulse Counter
-- may retain the legacy Pulse favicon and metadata until the public-shell switch
+- ships Shopping Budget Companion
+- uses the same remaining-room favicon and product metadata as the main product
 - must not be described as the released shopping product
 
 ### Guarded shopping builds
@@ -95,7 +95,7 @@ These must use:
 - noindex/nofollow/noarchive
 - shopping-specific description
 
-They must not inherit the Pulse neon favicon or Pulse product title.
+They must not diverge into a second product identity.
 
 “Shopping Budget Companion” is a descriptive migration label. It does not supersede the naming work in `BRAND.md`.
 
@@ -133,7 +133,7 @@ Therefore:
 A branding PR should fail review if it introduces any of the following without an explicit evidence-led decision:
 
 - neon/spectral gradient as the shopping identity
-- persistent Pulse Counter icon on guarded shopping builds
+- inconsistent legacy or experimental iconography on QA/beta builds
 - piggy bank, bank card, wallet, calculator, euro-symbol or AI-sparkle primary logo
 - scanner/AI messaging above the core remaining-budget promise
 - guilt or moral judgement about spending
@@ -147,8 +147,8 @@ A branding PR should fail review if it introduces any of the following without a
 
 `tests/guarded-build-branding.test.js` protects the highest-risk migration boundary:
 
-- Pulse title is removed from guarded HTML
-- Pulse favicon is replaced
+- internal title/description are specialized without changing the product identity
+- public favicon remains consistent
 - guarded robots metadata remains present
 - application name is the neutral shopping migration label
 - warm theme colour is applied
