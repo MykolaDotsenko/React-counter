@@ -40,11 +40,12 @@ Then load only the owning contract:
 
 | Change | Required context |
 | --- | --- |
-| product scope / feature | `PRODUCT.md`, relevant spec |
+| product scope / release behaviour | `PRODUCT.md`, `specs/RELEASE-SPEC.md` when acceptance detail matters |
 | money / trip rules | `DOMAIN.md`, relevant money/state spec |
-| controller / lifecycle | `ARCHITECTURE.md`, state machine |
-| persistence / recovery | `ARCHITECTURE.md`, data-persistence + storage schema |
-| UI / interaction | `PRODUCT.md`, `DESIGN.md`, accessibility contract |
+| controller / lifecycle | `ARCHITECTURE.md`, `specs/STATE-MACHINES.md` |
+| persistence / recovery | `ARCHITECTURE.md`, `architecture/DATA-PERSISTENCE.md`, `specs/STORAGE-SCHEMA.md` |
+| UI / interaction | `PRODUCT.md`, `DESIGN.md`, `quality/ACCESSIBILITY.md`, relevant interaction spec |
+| architecture refactor / ownership | `ARCHITECTURE.md`, `reference/CODE-OWNERSHIP.md` |
 | tests / CI | `TESTING.md` |
 | new capability / sequencing | `ROADMAP.md`, relevant decision/research |
 | brand / marketing | `PRODUCT.md` first, then brand/marketing reference |
