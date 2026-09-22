@@ -419,12 +419,12 @@ export const buildRetentionBetaExport = (
   return Object.freeze({
     schemaVersion: 1,
     generatedAt,
-    privacy: {
+    privacy: Object.freeze({
       networkTransmission: false,
       containsMoney: false,
       containsItemNames: false,
       containsStoreHistory: false,
-    },
+    }),
     session,
     summary: summarizeRetentionBeta(session),
   });
