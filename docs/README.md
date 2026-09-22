@@ -35,6 +35,7 @@ Detailed executable specs:
 - [specs/MVP-SPEC.md](./specs/MVP-SPEC.md)
 - [specs/STATE-MACHINES.md](./specs/STATE-MACHINES.md)
 - [specs/STORAGE-SCHEMA.md](./specs/STORAGE-SCHEMA.md)
+- [specs/PRICE-ENTRY-CONTRACT.md](./specs/PRICE-ENTRY-CONTRACT.md)
 
 Specialized contracts:
 
@@ -65,11 +66,11 @@ Do not read all docs for a narrow change.
 
 Reference adds rationale or future planning; it does not redefine current implementation status.
 
-- [reference/FUNCTIONALITY.md](./reference/FUNCTIONALITY.md)
-- [reference/UX.md](./reference/UX.md)
+- [reference/FUNCTIONALITY.md](./reference/FUNCTIONALITY.md) — compact capability map
+- [reference/UX.md](./reference/UX.md) — practical interaction heuristics
 - [reference/BRAND.md](./reference/BRAND.md)
 - [reference/SCENARIOS.md](./reference/SCENARIOS.md)
-- [reference/TECH-STACK.md](./reference/TECH-STACK.md)
+- [reference/TECH-STACK.md](./reference/TECH-STACK.md) — current stack intent and dependency admission
 - [reference/MARKETING.md](./reference/MARKETING.md)
 - [reference/DESIGN-RATIONALE.md](./reference/DESIGN-RATIONALE.md)
 - [reference/FUTURE-QUALITY-PLANS.md](./reference/FUTURE-QUALITY-PLANS.md)

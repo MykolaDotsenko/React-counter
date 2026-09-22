@@ -1,1387 +1,177 @@
-# Functionality and User Experience Contract
-
-> [!NOTE]
-> **Documentation role: supporting reference.** Use [../README.md](../README.md) for the authority model. This file may preserve extended flows and edge cases, but it must not override current authoritative product, domain, architecture, design, roadmap, testing, or spec contracts.
+# Functional Reference
 
 ## Status
 
-This document defines the functional behaviour of the shopping budget companion.
+**SUPPORTING REFERENCE.**
 
-The public/default build is Shopping Budget Companion. The core flow through Phase 8 engineering is implemented: start/restore, exact manual entry, edit/remove/Undo, active-trip budget and safety-buffer adjustment, loss-safe completion, optional checkout reconciliation, lightweight history, Shop again, Recent Items, and local Price Memory. Representative human timing evidence and real-user retention validation remain pending. Installed PWA support and scanning remain later evidence-gated work.
+This file is a compact map of current user-facing capabilities and important future boundaries. It is not an executable specification.
 
-This document answers:
+Authoritative sources:
 
-- what the user can do
-- in what order
-- what the system should show
-- what happens when something goes wrong
-- which features are core versus optional
-- how the experience becomes faster with repeated use
+- [../PRODUCT.md](../PRODUCT.md)
+- [../DOMAIN.md](../DOMAIN.md)
+- [../DESIGN.md](../DESIGN.md)
+- [../specs/MVP-SPEC.md](../specs/MVP-SPEC.md)
 
-It complements:
+## Current user flows
 
-- PRODUCT.md — problem, positioning, and scope
-- UX.md — interaction principles
-- DESIGN.md — visual system
-- DOMAIN.md — business rules
-- ARCHITECTURE.md — software boundaries
-- TESTING.md — quality contract
+### Start trip
 
-## Experience principle
+User provides:
 
-The product should feel useful before it feels powerful.
+- EUR budget;
+- optional safety buffer.
 
-The user should never have to “set up the system” before receiving value.
+Result:
 
-The default journey is deliberately short:
+- fresh active trip;
+- remaining-first screen;
+- state persisted locally.
 
-> Set budget → add price → see what is left → repeat → finish
+### Add manual price
 
-Everything else exists to make that loop faster, safer, or more trustworthy.
+Fast path:
 
-## Core user state model
+```text
+Add price → enter value → optional quantity/label → inspect consequence → Add
+```
 
-At the product level, a user is normally in one of four states:
+No product metadata is required.
 
-### 1. No active trip
+### Adjust spending plan
 
-The user needs to start a shopping session.
+Budget/buffer can change during an active trip.
 
-Primary action:
+Changes may create a valid reserve/over-budget state.
 
-> Start shopping
+### Correct cart
 
-### 2. Active trip — comfortable
+Current flow supports:
 
-The user is shopping within the safe budget range.
+- edit;
+- remove;
+- Undo.
 
-Primary action:
+Correction should remain cheaper than restarting a trip.
 
-> Add price
+### Finish trip
 
-### 3. Active trip — near/over limit
+Completion:
 
-The user still controls the trip, but the application increases clarity around the remaining constraint.
+- writes history before active cleanup;
+- shows completed summary;
+- permits optional actual checkout total.
 
-Primary actions remain:
+### History
 
-- add/cancel pending item
-- edit/remove items
-- adjust budget if intentional
+Lightweight completed-trip history.
 
-### 4. Completed trip
+Not a general expense dashboard.
 
-The user has finished shopping.
+### Shop again
 
-Primary actions:
+Creates a fresh empty trip from appropriate prior spending-plan context.
 
-- view summary
-- optionally enter actual checkout total
-- start another trip
+### Recent Items / Price Memory
 
-The application should not introduce additional lifecycle states unless a real workflow requires them.
+Repeat-use accelerators.
 
-## Quick Cart
+Remembered value remains remembered until a current observation is explicitly confirmed according to the domain contract.
 
-Quick Cart is a later secondary acquisition path.
+### Local data controls
 
-It allows a user to track a running cart total without first setting a hard budget.
+Completed history and Price Memory can be cleared independently.
 
-Primary action remains:
+## Important state semantics
 
-> Set a budget
+### Comfortable
 
-Secondary option may become:
+Safe remaining >= 0.
 
-> Quick total
+### Reserve use
 
-Rules:
+Safe remaining < 0 while nominal remaining >= 0.
 
-- Quick Cart must not replace the remaining-first hard-limit product promise
-- it must reuse exact-money/cart foundations
-- it should be tested only after the basic Budget Cart interaction is stable
-- later UX may invite the user to set a limit on a future trip
+### Nominal over-budget
 
-## First launch
+Nominal remaining < 0.
 
-### Goal
+All are valid states.
 
-Reach first useful state in under 10 seconds.
+## Current UX invariants
 
-### Flow
+- remaining-first;
+- manual entry always available;
+- item label optional;
+- exact projected consequences;
+- user can correct mistakes;
+- no mandatory account/network service;
+- degraded persistence visible;
+- uncertain price provenance honest.
 
-1. open app
-2. choose or enter spending limit
-3. optionally set safety buffer
-4. start trip
+## Current evidence tooling
 
-No mandatory onboarding.
+Internal QA/beta routes may record:
 
-No account.
+- timing/evidence structure;
+- retention behaviour structure.
 
-No financial profile.
+They must not own business state or collect forbidden shopping content.
 
-No notification permission.
+## Planned / gated capability boundaries
 
-No store selection.
+### Installable PWA
 
-No tutorial carousel.
+May add offline application-shell launch after caching.
 
-### Quick budgets
+Must not own canonical shopping state.
 
-The start screen may offer common values such as:
+### Barcode
 
-- EUR 25
-- EUR 50
-- EUR 75
-- EUR 100
+May identify product context.
 
-These are accelerators, not assumptions.
+Must not be treated as authoritative current price.
 
-Custom entry remains obvious.
+### Shelf OCR
 
-Over time, quick budgets may adapt to the user's recent choices locally.
+May propose current-price candidates.
 
-Do not require a settings screen to change them.
+Candidates require confirmation where appropriate.
 
-## Returning launch and Shop again
+### Weighted goods / discounts / tax mechanics
 
-When validated completed history exists, the product may offer a one-action repeat shortcut before the generic quick budgets.
+Require explicit exact-money/rounding contracts before production UI.
 
-The repeat action:
+### Cloud/backend
 
-- copies the completed trip's budget and safety buffer
-- creates a new active trip with a new id and start time
-- starts with an empty cart
-- leaves completed history unchanged
-- does not copy actual checkout totals or cart items
-- does not require account, network, camera, or a second settings record
+Requires a concrete sync/collaboration/server capability need.
 
-If completed-history durability is degraded or completion cleanup is unresolved, the repeat action must not create a new trip from that source until persistence is healthy.
+Do not introduce it for architectural appearance.
 
-This is distinct from **Continue shopping**. Shop again starts a fresh trip. It never reopens or mutates a completed trip.
+## Explicitly outside the core product
 
-## Starting a trip
+- general personal finance;
+- banking;
+- investment/net worth;
+- meal planning/nutrition;
+- grocery delivery;
+- coupon marketplace;
+- social network;
+- household operating system.
 
-Required:
+## Functional decision rule
 
-- budget
-- currency
+A user-facing capability should normally:
 
-Optional:
+1. help pre-checkout budget control;
+2. reduce friction, increase confidence or improve repeat use;
+3. improve or preserve premium product quality;
+4. preserve manual/local-first fallback;
+5. preserve exact-money/durability/accessibility;
+6. avoid category expansion.
 
-- safety buffer
-- store
+## When to use this file
 
-### Default behaviour
+Use this file for a quick capability overview.
 
-If a preferred currency exists locally, preselect it.
-
-If a default safety buffer exists, show it transparently rather than silently hiding spendable money.
-
-Store selection must never delay trip creation.
-
-### Validation
-
-Reject:
-
-- zero budget
-- negative budget
-- invalid money input
-
-Explain the correction inline.
-
-Example:
-
-> Enter an amount greater than EUR 0.
-
-Do not use generic messages such as “Invalid input.”
-
-## Active-trip dashboard
-
-The active screen is not a dashboard in the analytical sense.
-
-It is a live decision surface.
-
-Always visible:
-
-1. safe remaining amount when a safety buffer is active, otherwise nominal remaining
-2. cart total / budget
-3. remaining-capacity visual
-4. primary Add price action
-5. recent cart items or empty-state guidance
-
-Available but secondary:
-
-- edit budget
-- edit safety buffer
-- finish trip
-- history
-- settings
-- alternate add methods
-
-## Add item: manual price
-
-Manual entry is the reference flow.
-
-### Happy path
-
-1. tap Add price
-2. numeric input opens
-3. enter price
-4. optional quantity adjustment
-5. projected remaining updates live
-6. tap Add
-7. item commits
-8. app returns to active summary
-9. brief confirmation with Undo appears
-
-### Functional target
-
-A common single-price item should require:
-
-- one tap to open entry
-- numeric entry
-- one tap to commit
-
-No required name, category, photo, or store.
-
-### Projected result
-
-While entering:
-
-> After adding: EUR 13.79 left
-
-If safety buffer is active, preview safe remaining first.
-
-This prevents the user from having to calculate the consequence mentally.
-
-## Numeric input behaviour
-
-### Input mode
-
-Use a numeric-appropriate keyboard/input strategy.
-
-Apple guidance recommends matching keyboard type to the content, and Baymard research shows numeric-optimised keyboards reduce errors and effort on mobile.
-
-### Locale
-
-Parsing must respect locale conventions.
-
-Examples may include:
-
-- 4.79
-- 4,79
-
-The app should format the committed value according to the selected currency/locale.
-
-Do not force US formatting globally.
-
-### Auto-cents
-
-Optional accelerator.
-
-For a two-decimal currency:
-
-- 4 → 0.04
-- 47 → 0.47
-- 479 → 4.79
-
-Only enable when the interaction clearly communicates the rule.
-
-Do not silently guess between “479 euros” and “4.79 euros.”
-
-### Clear/backspace
-
-The user must be able to:
-
-- remove one digit
-- clear the entire value quickly
-
-Do not force repeated delete taps for a full reset.
-
-## Add item: quantity
-
-Quantity defaults to 1.
-
-The quantity control should update:
-
-- line total
-- projected remaining
-- warning state
-
-immediately.
-
-Preferred interaction:
-
-- minus
-- current quantity
-- plus
-
-For larger quantities, an editable numeric quantity can be offered.
-
-Baymard research supports immediate cart-summary updates and large quantity controls, and recommends an undo path when quantity reaches removal. 
-
-### Quantity zero
-
-If the user decrements from 1 to 0:
-
-- interpret as remove
-- show Undo
-
-Do not silently keep a zero-quantity item.
-
-## Add item: optional label
-
-Product name is optional.
-
-The app may allow adding a label before or after commit.
-
-Use cases:
-
-- easier later editing
-- price memory
-- barcode association
-
-Do not block the Add action if label is empty.
-
-A price-only item is complete.
-
-## Add item: remembered price
-
-### Implemented Phase 8 behaviour
-
-Recent Items is shown on the active-trip surface when validated price-memory records exist.
-
-A memory is created from a cart item only after:
-
-1. the item has a non-empty product label
-2. its price is currently confirmed
-3. the trip is durably completed in history
-
-This deliberately avoids learning from:
-
-- cancelled entries
-- items later removed before completion
-- undo-only mistakes
-- unchanged remembered prices
-- failed trip completion
-
-The baseline price-only flow does not require a name. Naming is an optional collapsed control so repeat-shopping acceleration does not slow first-trip entry.
-
-### Trigger
-
-The app recognises a previously used product identity or the user selects a recent/favourite item.
-
-Show:
-
-- item label
-- remembered price
-- visible age derived from observed date
-- store-specific status if known
-
-Primary choices:
-
-- **Use remembered price** — one action when within budget
-- **Enter current price** — opens the normal manual price entry with the product label preserved
-
-If remembered reuse would cross the nominal budget, require a second explicit **Add anyway** confirmation rather than bypassing the manual-flow safety rule.
-
-Example:
-
-> Milk 1L  
-> Last paid EUR 1.39 at Prisma · 8 days ago
-
-Actions:
-
-- Use EUR 1.39
-- Enter current price
-
-### Rule
-
-Selecting the remembered price adds an item whose origin remains remembered unless the user explicitly confirms it as current.
-
-This allows the final cart to communicate uncertainty honestly.
-
-## Add item: barcode
-
-Barcode scanning is optional.
-
-Before production barcode UX is implemented, the product may run a small post-Phase-5 benchmark prototype to compare scan -> confirm against the stable manual baseline. Experimental scanner access must not become a dependency of the core flow.
-
-### Known barcode + remembered price
-
-1. scan
-2. identify product
-3. show remembered price context
-4. allow one-tap reuse or current-price entry
-5. commit only after user action
-
-### Known barcode, no price history
-
-1. scan
-2. identify product
-3. focus current-price entry
-4. user enters price
-5. optionally remember price for future
-
-### Unknown barcode
-
-1. scan
-2. explain product was not recognised
-3. preserve barcode identifier locally if useful
-4. jump directly to price entry
-5. optional label later
-
-Do not turn unknown barcode handling into a multi-field setup form.
-
-### Scanner failure
-
-If:
-
-- camera denied
-- scanner unsupported
-- product service unavailable
-- lookup times out
-
-show a concise explanation and offer:
-
-> Enter price instead
-
-Manual flow remains one tap away.
-
-## Add item: shelf-price scan
-
-This is potentially more useful than barcode for the core job because it can capture the current price.
-
-A benchmark prototype may test this interaction early, but production OCR remains later and evidence-gated.
-
-### Flow
-
-1. open Price tag scan
-2. camera sees label
-3. scanner returns candidate prices
-4. user confirms one candidate
-5. projected remaining appears
-6. add
-
-### One candidate
-
-Example:
-
-> Detected EUR 3.79
-
-Actions:
-
-- Add EUR 3.79
-- Edit
-
-### Multiple candidates
-
-Example:
-
-> Which price is the item price?
-
-- EUR 3.79
-- EUR 7.58/kg
-- EUR 4.49
-
-Never silently choose when ambiguity is known.
-
-### OCR principle
-
-Scanner confidence is not user confidence.
-
-The product should prefer one extra confirmation tap over silently corrupting the cart total.
-
-## Add item: discounts
-
-Discount support is secondary but useful.
-
-Entry may offer:
-
-- 10%
-- 20%
-- 30%
-- custom
-
-The effective final price must be shown before commit.
-
-Example:
-
-> EUR 4.99  
-> -30%  
-> Final EUR 3.49
-
-The cart stores the effective exact price plus any metadata needed to explain it.
-
-Do not require discount fields on normal items.
-
-## Weighted goods
-
-Two valid flows:
-
-### Exact/known weight
-
-- price per unit
-- weight
-- calculated line total
-
-### Approximate price
-
-The user enters an approximate total directly.
-
-Mark as:
-
-> Estimated
-
-The app must not pretend estimated fruit/vegetable totals are exact before checkout.
-
-## Safety buffer
-
-Safety buffer protects against uncertainty.
-
-The user may:
-
-- set at trip start
-- change during active trip
-- disable
-
-Example:
-
-- budget EUR 50
-- buffer EUR 2
-- safe limit EUR 48
-
-Primary remaining metric becomes:
-
-> EUR 7.20 safe to spend
-
-Secondary detail can expose nominal remaining.
-
-### Buffer suggestions
-
-Future feature.
-
-If enough reconciliation history exists, the app may suggest a buffer.
-
-Example:
-
-> Your recent checkout differences were usually under EUR 0.60. Consider a EUR 1 buffer.
-
-Rules:
-
-- explain basis
-- never silently enable
-- never silently change
-- do not overclaim from a tiny sample
-
-## Near-limit experience
-
-The product should increase information, not stress.
-
-### Safe limit approaching
-
-Show:
-
-- remaining value
-- concise status
-- progress state
-
-Example:
-
-> EUR 3.20 safe to spend  
-> Close to your safety buffer.
-
-### At safe limit but under nominal budget
-
-Example:
-
-> Safety buffer reached.  
-> EUR 2.00 remains in your nominal budget.
-
-Do not describe this as overspending.
-
-## Pending item over safe limit
-
-Before commit, show the consequence inline:
-
-> This item uses EUR 1.25 of your safety buffer.
-
-The normal **Add** action remains available. Crossing only the safety buffer does not introduce a second confirmation step.
-
-Reserve use is intentionally frictionless because the item remains within the user's nominal budget. Only a projected nominal-budget overage requires the explicit **Add anyway / Cancel** confirmation.
-
-The user owns the buffer.
-
-## Pending item over nominal budget
-
-Before commit:
-
-> This puts you EUR 3.41 over your limit.
-
-Actions:
-
-- Add anyway
-- Cancel
-
-If Add anyway is chosen, the app moves to an over-budget state without scolding.
-
-## Over-budget state
-
-Primary information:
-
-> EUR 3.41 over your limit
-
-Useful secondary actions:
-
-- Review cart
-- Change budget
-
-Do not force either action.
-
-Do not disable adding more items.
-
-The app provides control, not enforcement.
-
-## Editing an item
-
-Tap an item to open edit context.
-
-Editable:
-
-- price
-- quantity
-- optional label
-- discount
-- price-confidence state when meaningful
-
-Changes update totals immediately after commit.
-
-### Editing price origin
-
-If a remembered or estimated item is manually verified against the shelf:
-
-> Mark as confirmed current price
-
-This changes origin explicitly.
-
-Never upgrade trust state silently.
-
-## Removing an item
-
-Removal should be fast.
-
-Preferred:
-
-- visible remove action in item edit
-- optional swipe accelerator
-
-Swipe must never be the only removal path.
-
-After remove:
-
-> Item removed · Undo
-
-Baymard and NN/g both support undo-based recovery for frequent reversible actions rather than adding confirmation dialogs to every ordinary action.
-
-## Undo
-
-Undo should restore the full previous item state, including:
-
-- price
-- quantity
-- label
-- origin
-- relevant metadata
-
-At minimum, support the latest add/remove/edit mutation.
-
-A future bounded multi-step undo can be considered if real usage shows value.
-
-Do not add event-sourcing complexity solely to extend undo depth.
-
-## Duplicate/repeat items
-
-If the user adds the same remembered/barcoded product again during the current trip, the app may offer:
-
-> Increase quantity to 2?
-
-This should be an accelerator, not automatic behaviour.
-
-If there is any ambiguity, create a separate item rather than silently merging.
-
-## Recent items / quick repeat
-
-Repeated shoppers benefit from recognition rather than recall.
-
-A lightweight recent-item picker may show:
-
-- label
-- last price
-- store context
-- freshness
-
-This is P1 immediately after the core manual/correction/completion flow is excellent.
-
-Recent Items and remembered prices are retention accelerators and should be implemented before barcode/OCR breadth.
-
-Do not turn the home screen into a grocery catalogue.
-
-## Store context
-
-Optional.
-
-Ways to set:
-
-- at trip start
-- during trip
-- remembered from recent trip
-
-Benefits:
-
-- better price-memory suggestions
-- clearer history
-
-No core function depends on it.
-
-If store is unknown:
-
-- price memory still works generically
-- manual add remains unchanged
-
-## Budget edit
-
-During active trip, the user may change budget.
-
-Show impact immediately.
-
-Example:
-
-> Current cart EUR 42.50  
-> New budget EUR 40.00  
-> You will be EUR 2.50 over.
-
-Allow save.
-
-Do not force a restart.
-
-## Currency edit
-
-If cart is empty, currency can be changed directly.
-
-If items exist:
-
-- explain that numeric values cannot safely be reinterpreted
-- offer start-new-trip / clear-cart path
-
-Do not convert existing item values automatically unless a future explicitly designed FX feature exists.
-
-## Active-trip recovery
-
-When reopening the app with an active trip:
-
-- restore directly to active trip
-- do not show start screen first
-- show current remaining immediately
-
-If persistence is healthy, no dialog is needed.
-
-The user's interrupted shopping session is the priority.
-
-## Persistence degraded state
-
-If write fails:
-
-- keep in-memory cart usable
-- show persistent but non-blocking warning
-- no false saved indicator
-- offer retry
-- offer copy/export if available
-
-Example:
-
-> This trip is not being saved right now. Keep this page open until checkout.
-
-Do not show humour.
-
-## Offline behaviour
-
-Offline should feel normal.
-
-Works offline:
-
-- open previously installed/cached app
-- active-trip restore
-- manual add
-- quantity
-- edit/remove
-- undo
-- safety buffer
-- finish trip
-- local history
-
-May be unavailable offline:
-
-- remote barcode product lookup
-- remote OCR if chosen architecture requires server processing
-- cloud sync
-- retailer integrations
-
-If an optional service is unavailable:
-
-> Product lookup is offline. Enter the price manually.
-
-Do not display a generic “You are offline” blocking screen when the core app can still function.
-
-web.dev recommends that PWA functionality that does not require connectivity remain usable offline, with service workers treated as an enhancement rather than a dependency for correctness.
-
-## Finish trip
-
-### Default
-
-Tap:
-
-> Finish trip
-
-Show summary:
-
-- estimated cart total
-- budget
-- remaining/overage
-- item count
-- number of uncertain prices if any
-
-Then offer:
-
-> Enter checkout total
-
-as optional.
-
-Do not force checkout reconciliation.
-
-## Checkout reconciliation
-
-If actual total is entered:
-
-Show:
-
-- estimated
-- actual
-- difference
-
-Example:
-
-> Estimated EUR 46.37  
-> Checkout EUR 46.72  
-> Difference +EUR 0.35
-
-Tone:
-
-> Very close.
-
-No accuracy “score.”
-
-No shame.
-
-### Learning from reconciliation
-
-Later features may use the data for:
-
-- suggested safety buffer
-- price-memory updates
-- estimated-item calibration
-
-Any derived suggestion remains explainable.
-
-## Completed-trip history
-
-History is lightweight.
-
-Each trip:
-
-- date/time
-- optional store
-- budget
-- estimated total
-- actual total if entered
-- remaining/over
-- item count
-
-Useful actions:
-
-- view details
-- repeat budget
-- start similar trip
-
-Not included:
-
-- income
-- bills
-- monthly financial planning
-- net worth
-- broad spending categories
-
-## Repeat-trip shortcut
-
-After previous usage, first launch with no active trip should be able to offer:
-
-> Shop again with EUR 50
-
-and:
-
-> Choose another amount
-
-The previous budget should be restartable in one action.
-
-Repeated trips should feel materially lighter than the first trip, especially when combined with Recent Items and Price Memory.
-
-This reduces setup without hiding user control.
-
-## History and local-data controls
-
-Users should be able to:
-
-- inspect item-level details for a completed trip without entering a finance-dashboard flow
-- start a similar trip directly from any valid completed trip
-- delete one completed trip
-- clear all completed-trip history
-- clear remembered item prices independently
-
-Completed-trip history and Price Memory are separate durable records.
-
-Therefore the UI must not imply that deleting trip history also deletes remembered item names/prices, or vice versa. Each destructive action must state exactly which local record it affects.
-
-Deleting a single trip and clearing all history use explicit inline confirmation. These are rare destructive actions, and the product does not offer a fake or non-durable Undo.
-
-A history deletion is committed only after the replacement history snapshot is persisted successfully. If persistence fails, the visible history remains unchanged and the user is told that nothing was removed.
-
-Clearing Price Memory writes an empty, versioned Price Memory snapshot. This control may also be used to recover from a degraded Price Memory record without affecting healthy trip history.
-
-If completed-trip history is empty but Price Memory still contains records, the idle/start screen must retain a secondary entry point to these local-data controls. The same reachability applies when Price Memory is degraded even if zero valid records could be reconstructed, so the user can explicitly repair/reset the damaged local record. Clearing history must never make remaining Price Memory unreachable.
-
-## Settings
-
-Keep settings small.
-
-Good candidates:
-
-- preferred currency
-- default safety buffer
-- auto-cents
-- quick-budget values
-- theme: system/light/dark if manual override is offered
-- haptic feedback
-- data export/delete
-
-Avoid a giant preference surface.
-
-Defaults should work well without configuration.
-
-## Notifications
-
-Not part of MVP.
-
-The product's main job occurs while open in the store.
-
-Do not ask notification permission without a concrete user-initiated feature.
-
-Possible future notification:
-
-- none is currently important enough to justify permission
-
-Therefore the default product design should assume zero notifications.
-
-## Haptics
-
-Optional enhancement.
-
-Potential events:
-
-- successful add
-- threshold crossing
-- scanner capture
-
-Rules:
-
-- subtle
-- user-controllable
-- never required to understand state
-- avoid repeated warning vibration for every item near the limit
-
-## Sound
-
-No default sound effects.
-
-A supermarket is a public context.
-
-Do not create social friction.
-
-## Smart suggestions
-
-The application may become faster through deterministic suggestions:
-
-- recent budget
-- recent store
-- recent item
-- remembered price
-- safety-buffer suggestion
-
-These should be:
-
-- local where possible
-- explainable
-- dismissible
-- never required
-
-Do not use an AI model where simple recency/frequency rules solve the same problem.
-
-## Search
-
-Not required for MVP.
-
-Search becomes useful only when price memory/history grows enough to justify it.
-
-If introduced, search should find:
-
-- saved/recent products
-- historical trips
-
-Do not add a global search icon before there is meaningful content to search.
-
-## Empty states
-
-### No trip
-
-> How much can you spend today?
-
-### Empty cart
-
-> EUR 50.00 left  
-> Add the first price when you pick something up.
-
-### No history
-
-> Finished trips will appear here.
-
-Do not use empty states to advertise unrelated features.
-
-## Error strategy
-
-### Prevent where possible
-
-Examples:
-
-- numeric input prevents letters
-- projected total catches over-budget before commit
-- scanner ambiguity is resolved before commit
-
-### Correct inline
-
-Examples:
-
-- invalid budget
-- invalid quantity
-- malformed price
-
-Apple recommends dynamic validation when it helps users correct errors immediately rather than forcing them to return later.
-
-### Undo frequent reversible actions
-
-Examples:
-
-- add
-- remove
-- quantity change where practical
-
-### Confirm rare destructive actions
-
-Examples:
-
-- clear entire active trip
-- delete all history
-- change currency on non-empty trip
-
-Do not use confirmation dialogs for every normal correction.
-
-## Loading strategy
-
-Core local interactions:
-
-- no spinners
-- no skeletons
-- no artificial delay
-
-Optional network actions may show local progress.
-
-Example:
-
-> Looking up product…
-
-with immediate:
-
-> Enter price instead
-
-Never trap the user behind a scanner lookup.
-
-## Performance experience contract
-
-The user should experience:
-
-### Instant
-
-- add/remove/edit
-- remaining recalculation
-- quantity changes
-- undo
-- history opening from local data
-
-### Fast but asynchronous
-
-- product lookup
-- OCR
-- optional remote services
-
-Heavy optional features should load lazily.
-
-## Accessibility functional equivalence
-
-Every core task must work without:
-
-- camera
-- colour perception
-- animation
-- precise swipe
-- network
-- sound
-- haptics
-
-Manual price flow is the universal baseline.
-
-## Privacy experience
-
-Core use requires no account and no bank connection.
-
-The user should not need to understand a privacy policy before performing basic arithmetic.
-
-If external product/OCR services are added later, clearly communicate when camera/data leaves the device.
-
-Do not silently upload shopping history.
-
-## Functional analytics
-
-For the portfolio product, analytics are optional.
-
-If product analytics are later added, useful privacy-conscious metrics would be aggregate interaction measures such as:
-
-- trip started
-- trip completed
-- manual vs scanner add method
-- undo used
-- scanner fallback used
-
-Do not collect actual:
-
-- budgets
-- item prices
-- product lists
-- stores
-
-without a strong reason and explicit privacy review.
-
-## Key user stories
-
-### Story 1 — hard cash limit
-
-> I have EUR 50 and cannot exceed it.
-
-Flow:
-
-- start EUR 50 trip
-- add prices
-- remaining is always visible
-- pending over-budget item warns before commit
-- finish under limit
-
-### Story 2 — cautious shopper
-
-> I have EUR 50 but want EUR 2 spare.
-
-Flow:
-
-- EUR 50 budget
-- EUR 2 buffer
-- safe remaining drives hero
-- app warns when buffer begins being consumed
-
-### Story 3 — repeated weekly shop
-
-> I buy many of the same products every week.
-
-Flow:
-
-- start previous budget quickly
-- scan/select remembered item
-- see last price/date/store
-- confirm or update current price
-- fewer keystrokes over time
-
-### Story 4 — scanner fails
-
-> Product lookup is unavailable in this store.
-
-Flow:
-
-- scan fails
-- one-tap manual fallback
-- budget workflow never breaks
-
-### Story 5 — distracted mistake
-
-> I entered EUR 8.90 instead of EUR 6.90.
-
-Flow:
-
-- tap recent item
-- edit price
-- total updates immediately
-- no trip reset
-
-### Story 6 — checkout discrepancy
-
-> My app said EUR 46.37 but the register says EUR 46.72.
-
-Flow:
-
-- finish trip
-- enter actual total
-- see +EUR 0.35 difference
-- future buffer suggestion may learn from repeated differences
-
-## Feature priority
-
-### P0 — complete core value
-
-- start trip
-- budget
-- safety buffer
-- remaining-first active screen
-- manual price input
-- projected remaining
-- quantity
-- item list
-- edit
-- remove
-- undo
-- over-limit preview
-- local persistence
-- visible persistence failure
-- finish trip
-- mobile accessibility
-
-### P1 — make repeated use materially faster
-
-First retention tier:
-
-- completed-trip history
-- repeat previous budget / Shop again
-- Recent Items
-- price memory
-- optional item labels
-- optional store context
-
-Then, only after real-store retention validation:
-
-- PWA offline installation
-- barcode identity
-- price-tag scanning
-- weighted goods
-- discounts
-- data export
-
-### P2 — only after evidence
-
-- voice input
-- receipt import
-- cross-device sync
-- household sharing
-- deeper price trends
-- retailer integrations
-- adaptive buffer suggestions
-
-## Explicitly rejected as core functionality
-
-Do not add to the main product loop:
-
-- bank sync
-- expense categories
-- monthly budgeting dashboard
-- income tracking
-- bills
-- savings goals
-- meal planning
-- recipes
-- nutrition
-- shopping delivery
-- coupons marketplace
-- loyalty-card management
-- AI chat
-- financial coaching
-- social feed
-- achievements/streaks
-
-## Functional acceptance test
-
-A target MVP is functionally coherent when a first-time user can:
-
-1. open the app
-2. set EUR 50
-3. add several prices
-4. change quantity
-5. see exact remaining amount
-6. remove one item and undo
-7. attempt an item that exceeds the limit and understand the consequence
-8. reload without losing committed state
-9. continue offline
-10. finish the trip
-11. optionally reconcile checkout total
-
-without:
-
-- creating an account
-- naming products
-- selecting categories
-- connecting a bank
-- learning a special workflow
-- using a scanner
-
-## Functional review checklist
-
-Before accepting a feature:
-
-1. Does it reduce time, uncertainty, or error in the pre-checkout workflow?
-2. Does it preserve manual/offline fallback?
-3. Is it discoverable without cluttering the main screen?
-4. Does it avoid requiring new metadata?
-5. Can the user undo or recover from mistakes?
-6. Does it preserve exact money arithmetic?
-7. Does it preserve price-confidence honesty?
-8. Does it degrade gracefully if an optional API fails?
-9. Does it remain accessible without gestures/camera?
-10. Does it improve repeated use enough to justify its complexity?
-11. Is it P0/P1/P2 according to this contract?
-12. Would the app still be excellent if this feature disappeared?
-
-If the answer to question 1 is no, the feature should normally be rejected.
-
-## Research references
-
-- Apple HIG — Entering Data: https://developer.apple.com/design/human-interface-guidelines/entering-data
-- Apple HIG — Text Fields: https://developer.apple.com/design/human-interface-guidelines/text-fields
-- Nielsen Norman Group — 10 Usability Heuristics: https://www.nngroup.com/articles/ten-usability-heuristics/
-- Nielsen Norman Group — Accelerators: https://www.nngroup.com/articles/ui-accelerators/
-- Baymard — Cart Quantity Controls and Undo: https://baymard.com/research-articles/auto-update-users-quantity-changes
-- Baymard — Mobile Touch Keyboards: https://baymard.com/research-articles/mobile-touch-keyboards
-- Baymard — Mobile Form Usability: https://baymard.com/research-articles/mobile-form-usability-single-input-fields
-- web.dev — PWA optimal checklist: https://web.dev/articles/pwa-checklist
-- web.dev — Service workers: https://web.dev/learn/pwa/service-workers
+For implementation decisions, immediately switch to the owning current contract rather than extending this file with detailed duplicate requirements.
