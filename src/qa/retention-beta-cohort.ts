@@ -91,10 +91,24 @@ export const summarizeRetentionBetaCohort = (
     (sum, summary) => sum + summary.tripsStarted,
     0,
   );
-  const totalTripsFinished = activated.reduce(
-    (sum, summary) => sum + summary.tripsFinished,
-    0,
-  );
+  const totalTripsFinished = sessions.reduce((sum, session) => {
+    const startedOrdinals = new Set(
+      session.events
+        .filter((event) => event.type === "trip_started")
+        .map((event) => event.tripOrdinal),
+    );
+    const completedStartedTrips = new Set(
+      session.events
+        .filter(
+          (event) =>
+            event.type === "trip_finished" &&
+            startedOrdinals.has(event.tripOrdinal),
+        )
+        .map((event) => event.tripOrdinal),
+    );
+
+    return sum + completedStartedTrips.size;
+  }, 0);
 
   const firstItemParticipants = activated.filter(
     (summary) => summary.firstItemTrips > 0,
@@ -185,7 +199,7 @@ export const summarizeRetentionBetaCohort = (
     rememberedItemParticipants,
     rememberedItemParticipantRate: rate(
       rememberedItemParticipants,
-      secondTripParticipants,
+      activatedParticipants,
     ),
     currentPriceOverrides: activated.reduce(
       (sum, summary) => sum + summary.currentPriceOverrides,
