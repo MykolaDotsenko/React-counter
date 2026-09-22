@@ -558,6 +558,71 @@ describe("PriceEntrySurface", () => {
     });
   });
 
+  it("keeps optional naming out of the baseline path but includes it when chosen", async () => {
+    const user = userEvent.setup();
+    const onValidatedItem = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={onValidatedItem}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("textbox", { name: "Item name" }),
+    ).toBeNull();
+
+    await user.click(
+      screen.getByText("Name for next time", { exact: false }),
+    );
+
+    const name = screen.getByRole("textbox", { name: "Item name" });
+    await user.type(name, "Milk 1L");
+    await user.type(screen.getByLabelText("Price"), "1.39");
+    await user.click(
+      screen.getByRole("button", { name: "Add · €1.39" }),
+    );
+
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 139,
+      quantity: 1,
+      label: "Milk 1L",
+    });
+  });
+
+  it("preserves a recent-item label when the user enters the current price", async () => {
+    const user = userEvent.setup();
+    const onValidatedItem = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        initialLabel="Milk 1L"
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={onValidatedItem}
+      />,
+    );
+
+    expect(
+      screen.getByText("Current price for", { exact: false }).textContent,
+    ).toContain("Milk 1L");
+
+    await user.type(screen.getByLabelText("Price"), "1.49");
+    await user.click(
+      screen.getByRole("button", { name: "Add · €1.49" }),
+    );
+
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 149,
+      quantity: 1,
+      label: "Milk 1L",
+    });
+  });
+
   it("accepts comma input and paste through the real text field", async () => {
     const user = userEvent.setup();
     const onValidatedItem = vi.fn();
