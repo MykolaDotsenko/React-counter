@@ -211,6 +211,50 @@ describe("CompletedSummaryScreen", () => {
     ).toBe(500);
   });
 
+  it("blocks Shop again while completed history has unsaved changes", async () => {
+    const user = userEvent.setup();
+    const { controller, trip } = createController({
+      ok: false,
+      issue: {
+        code: "write-failed",
+        storageKey: "budget-cart:history",
+      },
+    });
+    const onShopAgain = vi.fn();
+
+    render(
+      <CompletedSummaryScreen
+        controller={controller}
+        trip={trip}
+        onDone={vi.fn()}
+        onShopAgain={onShopAgain}
+        onViewHistory={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    await user.type(
+      screen.getByRole("textbox", {
+        name: "Actual checkout total",
+      }),
+      "5.00",
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Save checkout total",
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "Shop again" }));
+
+    expect(onShopAgain).not.toHaveBeenCalled();
+    expect(controller.getSnapshot().lifecycle).toBe("completed-summary");
+    expect(
+      screen.getByText(
+        "Retry saving before starting another trip from this budget.",
+      ),
+    ).not.toBeNull();
+  });
+
   it("never calls Done navigation when persistence is still degraded", async () => {
     const user = userEvent.setup();
     const { controller, trip } = createController({
