@@ -217,7 +217,9 @@ describe("HistoryScreen", () => {
       within(confirmation).getByRole("button", { name: "Cancel" }),
     );
 
-    expect(document.activeElement).toBe(clearHistoryButton);
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: /Clear trip history/ }),
+    );
   });
 
   it("provides a single explicit Back action", async () => {
