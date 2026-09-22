@@ -79,9 +79,11 @@ describe("BudgetSettingsSurface", () => {
     const budget = screen.getByLabelText("Budget");
     const buffer = screen.getByLabelText(/Safety buffer/);
 
-    expect(budget).toHaveValue("50.00");
-    expect(buffer).toHaveValue("2.00");
-    expect(screen.getByText(/Current tracked total:/)).toHaveTextContent("€4.79");
+    expect((budget as HTMLInputElement).value).toBe("50.00");
+    expect((buffer as HTMLInputElement).value).toBe("2.00");
+    expect(screen.getByText(/Current tracked total:/).textContent).toContain(
+      "€4.79",
+    );
 
     await user.clear(budget);
     await user.type(budget, "40");
@@ -155,9 +157,7 @@ describe("BudgetSettingsSurface", () => {
     await user.type(buffer, "4");
     await user.click(screen.getByRole("button", { name: "Save budget" }));
 
-    expect(
-      screen.getByRole("alert"),
-    ).toHaveTextContent(
+    expect(screen.getByRole("alert").textContent).toContain(
       "Safety buffer: Safety buffer cannot be larger than the budget.",
     );
     expect(onSave).not.toHaveBeenCalled();
