@@ -1,4 +1,4 @@
-name: Publish Pulse Counter and guarded builds
+name: Publish Shopping Budget Companion
 
 on:
   push:
@@ -41,12 +41,11 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Build public Pulse Counter
+      - name: Build public shopping app
         run: npm run build -- --base=/shopping-budget-companion/
 
       - name: Build guarded shopping timing QA
         env:
-          VITE_SHOPPING_SHELL: "1"
           VITE_SHOPPING_QA_TIMING: "1"
         run: |
           npm run build -- --base=/shopping-budget-companion/qa/ --outDir=dist-qa
@@ -54,7 +53,6 @@ jobs:
 
       - name: Build guarded retention beta
         env:
-          VITE_SHOPPING_SHELL: "1"
           VITE_SHOPPING_BETA_EVIDENCE: "1"
         run: |
           npm run build -- --base=/shopping-budget-companion/beta/ --outDir=dist-beta
@@ -79,5 +77,5 @@ jobs:
           git rm -rf . || true
           cp -R /tmp/shopping-budget-companion-pages/. .
           git add -A
-          git commit -m "deploy: Pulse Counter + guarded QA/beta ${GITHUB_SHA}"
+          git commit -m "deploy: shopping app + QA/beta ${GITHUB_SHA}"
           git push --force origin gh-pages
