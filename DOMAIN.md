@@ -343,31 +343,58 @@ The application should preview the overage and request clear confirmation.
 
 ## Price memory
 
-Price memory is separate from the active cart.
+Price Memory is implemented as a separate advisory domain from the active cart.
 
-A remembered-price record may contain:
+A remembered-price record contains:
 
-- product identity
+- deterministic product identity
+- display label
 - optional store identity
-- price
-- currency
-- observed or confirmed date
-- source
-- confidence
+- exact EUR minor-unit price
+- observation timestamp
+- observation provenance
+
+The first manual/offline product identity is derived from the normalized user label. This is intentionally a local recognition key, not a claim that two globally distinct products with the same label are universally identical.
+
+### Learning rule
+
+Memory is created or refreshed only when a named item:
+
+1. has confirmed price confidence
+2. belongs to a trip whose completed history write succeeded
+
+This excludes undone, removed, cancelled, failed-completion, and unchanged remembered observations.
 
 ### Freshness
 
-Remembered prices retain their observation timestamp.
+Remembered prices retain their original observation timestamp.
 
 No rule may reinterpret a remembered price as a live current price.
 
+Using an unchanged remembered value in a later trip does not refresh its age.
+
 ### Store-aware lookup
 
-If store context exists, prefer matching:
+When store context exists, selection prefers:
 
-product + store + currency
+1. product + exact store + currency
+2. product + store-neutral + currency
 
-Fallback rules can be considered later.
+A price observed only at a different known store is not silently suggested as if it were the current store price.
+
+User-facing store capture remains optional until real-user evidence shows that the extra setup friction is justified.
+
+### Cart reuse rule
+
+Adding a remembered value creates a normal cart item with:
+
+- `priceSource.kind = 'price-memory'`
+- `priceConfidence.kind = 'remembered'`
+- the original `observedAt`
+
+The UI always offers **Enter current price** as an alternative.
+
+If reuse would cross the nominal budget, it requires explicit second-step confirmation rather than bypassing the ordinary over-budget safety rule.
 
 ## Barcode identity
 
