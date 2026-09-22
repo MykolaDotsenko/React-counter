@@ -9,6 +9,7 @@ import {
   MAX_ITEM_LABEL_CODE_POINTS,
   isoTimestamp,
   storeId as parseStoreId,
+  type CompletedTrip,
   type IsoTimestamp,
   type StoreId,
 } from "./shopping-trip";
@@ -267,6 +268,81 @@ export const upsertPriceMemory = (
       candidateIndex === index ? record : candidate,
     ),
   );
+};
+
+export const mergePriceMemories = (
+  records: readonly PriceMemoryRecord[],
+  incoming: readonly PriceMemoryRecord[],
+): readonly PriceMemoryRecord[] => {
+  let next = records;
+
+  for (const record of incoming) {
+    next = upsertPriceMemory(next, record);
+  }
+
+  return next;
+};
+
+export const priceMemoryRecordsFromCompletedTrip = (
+  trip: CompletedTrip,
+): readonly PriceMemoryRecord[] => {
+  const records: PriceMemoryRecord[] = [];
+
+  for (const item of trip.items) {
+    if (
+      item.label === undefined ||
+      item.priceConfidence.kind !== "confirmed"
+    ) {
+      continue;
+    }
+
+    let source: PriceMemoryObservationSource | null = null;
+
+    switch (item.priceSource.kind) {
+      case "manual":
+        source = { kind: "manual" };
+        break;
+      case "shelf-scan":
+        source =
+          item.priceSource.captureId === undefined
+            ? { kind: "shelf-scan" }
+            : {
+                kind: "shelf-scan",
+                captureId: item.priceSource.captureId,
+              };
+        break;
+      case "retailer-feed":
+        source = {
+          kind: "retailer-feed",
+          provider: item.priceSource.provider,
+        };
+        break;
+      case "price-memory":
+      case "encoded-barcode":
+        break;
+      default: {
+        const exhaustive: never = item.priceSource;
+        return exhaustive;
+      }
+    }
+
+    if (source === null) {
+      continue;
+    }
+
+    const record = createPriceMemoryRecord({
+      label: item.label,
+      unitPriceMinor: item.unitPriceMinor,
+      observedAt: item.priceConfidence.confirmedAt,
+      source,
+    });
+
+    if (record.ok) {
+      records.push(record.value);
+    }
+  }
+
+  return Object.freeze(records);
 };
 
 const observedAtMs = (record: PriceMemoryRecord): number =>
