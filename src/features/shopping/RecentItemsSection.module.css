@@ -18,6 +18,7 @@
 .heading h2,
 .intro,
 .error,
+.memoryWarning,
 .confirmation p {
   margin: 0;
 }
@@ -52,6 +53,24 @@
   color: var(--shopping-danger);
   font-size: 0.82rem;
   font-weight: 760;
+  line-height: 1.4;
+}
+
+.memoryWarning {
+  padding: 9px 10px;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--shopping-warning) 45%,
+    var(--shopping-border)
+  );
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--shopping-warning) 8%,
+    var(--shopping-panel)
+  );
+  color: var(--shopping-muted-strong);
+  font-size: 0.78rem;
   line-height: 1.4;
 }
 
