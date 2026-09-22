@@ -12,12 +12,19 @@ import {
   mvpMinorUnits,
   type Result,
 } from "../src/domain/money";
+import { createPriceMemoryRecord } from "../src/domain/price-memory";
 import {
   createActiveTrip,
   isoTimestamp,
   type ActiveTrip,
   type IsoTimestamp,
 } from "../src/domain/shopping-trip";
+import {
+  encodePriceMemorySnapshot,
+} from "../src/infrastructure/storage/price-memory-storage";
+import {
+  PRICE_MEMORY_STORAGE_KEY,
+} from "../src/infrastructure/storage/price-memory-storage-schema";
 import {
   encodeActiveTripSnapshot,
   type StorageLike,
@@ -164,6 +171,74 @@ describe("shopping composition root", () => {
     expect(restored.persistence).toEqual({ status: "healthy" });
     expect(restored.activeTrip).toEqual(
       started.ok ? started.state.activeTrip : null,
+    );
+  });
+
+  it("restores independent price memory through the composition root", () => {
+    const record = unwrap(
+      createPriceMemoryRecord({
+        label: "Milk 1L",
+        unitPriceMinor: money(139),
+        observedAt: START,
+        source: { kind: "manual" },
+      }),
+    );
+    const encoded = encodePriceMemorySnapshot([record], NEXT);
+
+    if (!encoded.ok) {
+      throw new Error("Expected encoded price memory");
+    }
+
+    const storage = createStorage({
+      [PRICE_MEMORY_STORAGE_KEY]: encoded.raw,
+    });
+
+    const controller = bootstrapBrowserShoppingAppController({
+      storage,
+      clock: clockAt(NEXT),
+      ids,
+    });
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "idle",
+      persistence: { status: "healthy" },
+      priceMemoryPersistence: { status: "healthy" },
+      priceMemories: [
+        {
+          label: "Milk 1L",
+          unitPriceMinor: 139,
+          observedAt: START,
+        },
+      ],
+    });
+  });
+
+  it("keeps malformed advisory price memory separate from healthy core shopping state", () => {
+    const storage = createStorage({
+      [PRICE_MEMORY_STORAGE_KEY]: "{broken-memory",
+    });
+
+    const controller = bootstrapBrowserShoppingAppController({
+      storage,
+      clock: clockAt(START),
+      ids,
+    });
+
+    const state = controller.getSnapshot();
+
+    expect(state.lifecycle).toBe("idle");
+    expect(state.persistence).toEqual({ status: "healthy" });
+    expect(state.priceMemories).toEqual([]);
+    expect(state.priceMemoryPersistence).toMatchObject({
+      status: "degraded",
+      issue: {
+        code: "malformed-json",
+        storageKey: PRICE_MEMORY_STORAGE_KEY,
+      },
+      since: START,
+    });
+    expect(storage.values.get(PRICE_MEMORY_STORAGE_KEY)).toBe(
+      "{broken-memory",
     );
   });
 
