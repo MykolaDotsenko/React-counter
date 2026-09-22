@@ -74,12 +74,30 @@ export function HistoryScreen({
     });
   };
 
+  const restoreDataControlFocus = (
+    selector: string,
+  ): void => {
+    queueMicrotask(() => {
+      document.querySelector<HTMLButtonElement>(selector)?.focus();
+    });
+  };
+
   const cancelConfirmation = (): void => {
     const previous = confirmation;
     setConfirmation({ kind: "none" });
 
     if (previous.kind === "delete-trip") {
       restoreDeleteTripFocus(previous.tripId);
+      return;
+    }
+
+    if (previous.kind === "clear-history") {
+      restoreDataControlFocus("[data-clear-trip-history-trigger]");
+      return;
+    }
+
+    if (previous.kind === "clear-price-memory") {
+      restoreDataControlFocus("[data-clear-price-memory-trigger]");
     }
   };
 
