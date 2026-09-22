@@ -490,7 +490,7 @@ Required cases:
 
 - in-memory state correct — implemented and tested
 - persistence health degraded — implemented and tested
-- UI warned — pending shopping UI/application wiring
+- UI warns and exposes recovery/retry behaviour where meaningful — implemented and tested
 
 ### Completion failure
 

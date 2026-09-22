@@ -2,986 +2,265 @@
 
 ## Purpose
 
-This roadmap turns the product pivot into a sequence of small, reviewable changes.
-
-The repository evolves Shopping Budget Companion incrementally without feature explosion or loss of interaction-engineering quality.
-
-The roadmap is ordered by product dependency, not novelty.
-
-## Delivery principles
-
-- one clear responsibility per PR
-- every PR leaves main in a working state
-- domain correctness lands before visual expansion
-- manual price entry is complete before any scanner benchmark
-- an early scanner benchmark may test interaction value, but production scanner breadth stays phase-gated
-- optional smart features never block the core workflow
-- TypeScript migration is incremental
-- documentation changes ship with the behaviour they describe
-- no target-only README claims before implementation
-
-## Phase 0 — documentation and product lock
-
-Goal: make future AI-assisted development consistent.
-
-### Deliverables
-
-- docs/PRODUCT.md
-- docs/reference/FUNCTIONALITY.md
-- docs/reference/SCENARIOS.md
-- docs/specs/MVP-SPEC.md
-- docs/specs/CONTRACTS.md
-- docs/specs/STATE-MACHINES.md
-- docs/specs/STORAGE-SCHEMA.md
-- docs/specs/MONEY-SPEC.md
-- docs/reference/TECH-STACK.md
-- docs/research/TECHNOLOGY-RESEARCH.md
-- docs/reference/BRAND.md
-- docs/reference/MARKETING.md
-- docs/research/MARKETING-RESEARCH.md
-- docs/marketing/STORE-LISTING-SPEC.md
-- docs/marketing/LAUNCH-CHECKLIST.md
-- docs/reference/UX.md
-- docs/DESIGN.md
-- docs/DOMAIN.md
-- docs/ARCHITECTURE.md
-- docs/TESTING.md
-- docs/ROADMAP.md
-- AGENTS.md
-- docs/research/COMPETITIVE-RESEARCH.md
-- docs/architecture/DATA-PERSISTENCE.md
-- docs/quality/ACCESSIBILITY.md
-- docs/DECISIONS.md or ADRs as decisions accumulate
-
-### Exit criteria
-
-- product scope is explicit
-- non-goals are explicit
-- money model is explicit
-- target/current architecture distinction is explicit
-- AI agent instructions point to authoritative docs
-- visual design direction and prototype evaluation criteria are explicit
-- Tier 0 scenario coverage and unresolved scenario risks are explicit
-- exact MVP requirements, contracts, state machines, and storage schema are explicit
-- technology stack, dependency budget, and rejected alternatives are explicit
-- brand positioning, naming constraints, store assets, growth strategy, and launch gates are explicit
-
-## Technical specification gate — before Phase 1
-
-Before code migration begins, confirm:
-
-- MVP currency scope is locked to EUR
-- exact EUR parser/formatter contract is agreed
-- application/domain/infrastructure boundaries match docs/ARCHITECTURE.md
-- state-machine forbidden states remain impossible
-- v1 storage schema is internally consistent
-- no unresolved spec contradiction exists
-
-Current technical spec readiness: **98–99/100** depending on the concern.
-
-The previous currency-scope blocker is resolved by D-018 and docs/specs/MONEY-SPEC.md.
-
-## Technology gate — before Phase 1
-
-Confirm before adding dependencies:
-
-- React 19.3 + Vite 8 remain the UI/build foundation
-- TypeScript migration starts on strict TypeScript 6.0.x
-- no router/global-state/form/UI/animation framework is added
-- Phase 1 adds only TypeScript/tooling and fast-check
-- Zod waits until persistence runtime validation is implemented
-- PWA/scanner/OCR dependencies remain phase-gated
-- docs/reference/TECH-STACK.md and docs/research/TECHNOLOGY-RESEARCH.md have no unresolved contradiction
-
-Current stack fit: **98/100**.
-
-## Phase 1 — exact money foundation
-
-**Status: complete — merged via PR #11 on 2026-09-21.**
-
-Implementation evidence:
-
-- TypeScript 6.0.3 strict incremental configuration
-- TypeScript-aware ESLint
-- exact EUR integer-cent domain
-- decimal and auto-cents parsing
-- explicit product/quantity guardrails
-- safe-integer overflow protection
-- Intl-based EUR presentation boundary
-- 43 dedicated money tests
-- 4 property tests × 2,000 generated cases = 8,000 generated invariant cases per test run
-- typecheck included in quality and Pages deployment gates
-- production dependency audit clean at merge
-- PR quality matrix green in Chromium, Firefox, and WebKit
-- the existing public shell remained stable during that implementation slice
-
-Suggested PR:
-
-> refactor: introduce strict TypeScript money domain
-
-### Scope
-
-- add TypeScript 6.0.x configuration with strict compiler options
-- add compatible typescript-eslint tooling
-- add fast-check for property-style invariants
-- introduce integer-cent money helpers/types
-- implement EUR-only parser/formatter from MONEY-SPEC.md
-- introduce explicit SupportedCurrency = 'EUR' boundary
-- add exact parsing/formatting/property-style tests
-- keep the existing public UI stable during migration where practical
-
-### Must not include
-
-- shopping redesign
-- barcode scanning
-- OCR
-- PWA
-- history dashboard
-
-### Acceptance criteria
-
-- no canonical floating-point money
-- no parseFloat-based canonical conversion
-- EUR-only product limits and fraction rules enforced
-- typecheck in CI
-- domain tests cover representative and boundary values
-- existing quality gates remain green
-
-## Phase 2 — shopping trip domain
-
-**Status: complete — merged via PR #13 on 2026-09-21.**
-
-Implementation evidence:
-
-- pure strict-TypeScript ShoppingTrip / CartItem domain
-- ActiveTrip / CompletedTrip discriminated union
-- separate PriceSource and PriceConfidence dimensions
-- branded trip/item/store/timestamp boundaries
-- exact EUR budget, safety-buffer, unit-price and quantity validation
-- exact line/cart totals and nominal/safe remaining selectors
-- nominal and safe overage represented without rejecting over-budget state
-- pure add-item projection with no canonical mutation
-- pure add/edit/remove/budget/buffer/complete/checkout command reducer
-- completed trips reject active-cart mutations
-- item IDs unique inside a trip
-- item labels normalized and bounded to 120 Unicode code points
-- canonical UTC timestamps use exact Date.toISOString() form
-- edit/completion timestamp ordering enforced
-- derived totals remain non-canonical
-- no React, DOM, storage, network or animation dependency
-- 36 dedicated shopping-domain tests
-- 4 property tests × 1,500 generated cases = 6,000 generated invariant cases per test run
-- 95 tests green across the full repository at merge
-- production dependency audit clean at merge
-- PR quality matrix green in Chromium, Firefox, and WebKit
-
-Suggested PR:
-
-> feat: add shopping trip and cart domain
-
-### Scope
-
-- ShoppingTrip
-- CartItem
-- budget
-- safety buffer
-- quantity
-- price source
-- price confidence
-- pure selectors for totals and remaining values
-- reducer or equivalent pure state transition layer
-
-### Acceptance criteria
-
-- EUR 50 budget scenarios calculate exactly
-- over-budget is representable, not rejected
-- safe and nominal remaining are distinct
-- derived totals are not canonical state
-- domain remains React/browser independent
-
-## Phase 3 — persistence migration
-
-**Status: complete — delivered via PR #14 on 2026-09-21.**
-
-Implementation evidence:
-
-- Zod 4.6.5 runtime validation at the storage boundary
-- strict `budget-cart:active-trip` v1 DTO/envelope
-- DTO → domain reconstruction through Phase 2 constructors/reducer
-- domain → DTO complete-snapshot serialization
-- explicit healthy/degraded persistence outcomes
-- malformed JSON and invalid-data recovery without startup crash
-- unsupported future versions preserved and never overwritten during restore/bootstrap
-- canonical data rejects unexpected derived fields
-- active-trip write/restore/clear helpers with injected StorageLike boundary
-- historical non-shopping storage values were never interpreted as money
-- legacy keys retired only after successful shopping-state bootstrap
-- valid in-memory trip survives simulated write failure unchanged
-- 33 dedicated persistence tests
-- full repository suite at PR validation: 128 tests
-- production dependency audit clean
-- browser/accessibility matrix retained as regression gate
-
-Suggested PR:
-
-> feat: persist versioned shopping trips safely
-
-### Scope
-
-- add Zod 4 runtime validation at infrastructure boundaries
-- new storage schema
-- active-trip persistence
-- historical non-shopping storage retirement
-- malformed-state recovery
-- unsupported-version handling
-- persistence-health state
-
-### Acceptance criteria
-
-- historical non-shopping values are never reinterpreted as money
-- committed shopping mutations survive reload
-- simulated write failure is visible to application/UI
-- no silent claim that an unsaved trip is safe
-
-## Scenario validation gate — before Phase 4
-
-Before building the final core UI, review the Tier 0 scenarios in docs/reference/SCENARIOS.md and verify that the proposed interaction model supports them without contradictory behaviour.
-
-At minimum, walkthrough/prototype:
-
-- first launch
-- active-trip resume
-- basic manual add
-- typo before and after commit
-- quantity
-- safety buffer
-- safe-limit crossing
-- nominal over-budget preview
-- intentional over-budget state
-- persistence failure
-- reload durability
-- offline launch
-- one-hand use
-
-No Tier 0 scenario may fall below the documented target quality without an explicit decision and updated documentation.
-
-## Brand validation gate — before public naming and store assets
-
-Before a final product name, icon, public landing page, or app-store metadata is locked:
-
-- review docs/reference/BRAND.md
-- complete the naming checks required by D-021
-- validate that a new person understands the pre-checkout job
-- ensure the visual mark communicates remaining capacity without looking like generic fintech
-- keep CartRoom as working codename until this gate passes
-
-Marketing must not delay Phase 1–3 engineering work.
-
-## Design validation gate — before Phase 4
-
-**Status: complete — Phase 4 A0.**
-
-Selected direction:
-
-> **Calm Utility**
-
-Decision record:
-
-- docs/evidence/PHASE-4-DESIGN-VALIDATION.md
-
-The three directions defined in docs/DESIGN.md were compared against the same canonical fixture:
-
-- Calm utility
-- Premium spatial
-- Warm everyday
-
-Evaluate them using task questions rather than aesthetic preference:
-
-- Can a first-time viewer explain the app purpose in 3–5 seconds?
-- Can they identify remaining budget instantly?
-- Can they identify Add price instantly?
-- Can they use the primary action one-handed?
-- Does the progress visual clearly mean remaining capacity?
-
-Decision: use Calm Utility as the base direction. Do not merge all three styles by default.
-
-Key locks:
-
-- safe remaining is the hero when a safety buffer exists
-- nominal remaining is secondary
-- quiet linear capacity bar
-- Add price is the single primary action
-- light mode is first-class for bright-store use
-- subtle motion may survive only where it adds useful polish
-
-## Phase 4 — core Budget Cart UI
-
-Progress:
-
-- A0 Design validation — **complete**
-- A1 ShoppingAppController + React bridge — **complete via PR #15**
-- A2 App bootstrap / restore state — **complete via PR #17**
-- A3 Start Trip screen — **complete via PR #18**
-- A4 Remaining-first active screen — **complete via PR #19**
-- A5 Persistence-health UX — **complete via PR #20**
-- A6 Mobile/a11y/E2E hardening — **complete via PR #21**
-
-Sprint A stop/go status: **passed for the shopping product**.
-
-Validation evidence:
-
-- exact EUR 50 start and reload/restore
-- safety-buffer semantics
-- degraded-write and recovery paths
-- malformed and future-version storage preservation
-- 360×800 and 390×844 compact layouts
-- 200% text-size resilience
-- reduced-motion behavior
-- keyboard focus/activation
-- axe WCAG A/AA on start and active screens
-- Chromium, Firefox, and WebKit green
-- A6 caught and fixed a real 200% overflow defect and a WCAG contrast defect before merge
-
-Historical note: during the early migration, the new shopping shell stayed isolated until **Add price** and the core shopping path were functional. That compatibility shell has now been retired; the public root is the shopping product.
-
-**Next: Phase 5 / Sprint B — ultra-fast manual price entry.**
-
-Execution contract:
-
-- docs/archive/CORE-UI-EXECUTION-BRIEF.md — Sprint A
-
-Do not implement Phase 4 as one oversized PR. Follow the brief's application-controller → bootstrap → start-flow → remaining-first-screen → persistence-health → hardening sequence.
-
-Suggested PR:
-
-> feat: build remaining-first shopping experience
-
-### Scope
-
-- first-use budget setup
-- active trip
-- dominant remaining amount
-- cart total / budget
-- progress indicator
-- item list
-- Add price action
-
-### Acceptance criteria
-
-- active-trip behaviour matches docs/reference/FUNCTIONALITY.md
-- purpose is understandable in 3–5 seconds
-- no account/setup wall
-- mobile-first at compact viewport
-- the earlier experimental visual identity is simplified into task-focused product styling
-- remaining budget has strongest hierarchy
-
-## Phase 5 — ultra-fast manual price entry
-
-Progress:
-
-- B0 Price-entry interaction contract — **complete via PR #22**
-- B1 One-hand price-entry surface — **complete via PR #22**
-- B2 Live projected remaining — **complete via PR #23**
-- B3 Buffer / over-budget consequence states — **complete via PR #24**
-- B4 Quantity — **complete via PR #25**
-- B5 Commit / persist / return — **complete via PR #26**
-- B6 Correction minimum + quality gate — **automated/code gate implemented and green; QA v3 structurally captures input method, one-handed/bright-store/default-text context and secondary physical spot-checks with v2 evidence migration. Evidence integrity now rejects inconsistent/duplicate samples, supports versioned verifiable exports, and can recapture environment metadata through a fresh-session reset. Representative human timing and physical evidence itself remains unverified under explicit D-039 sequencing waiver.**
-
-B5 closes the projection-to-canonical loop: the application controller creates the confirmed manual CartItem from the validated `unitPriceMinor + quantity` intent, commits it through the domain reducer, attempts persistence immediately, and returns the UI to canonical summary state. A failed storage write keeps the committed item in memory and surfaces degraded persistence rather than rolling back valid shopping state.
-
-B4 keeps quantity ephemeral until commit while projecting the exact Phase 2 line total through `projectAddItem()`. The validated handoff carries both `unitPriceMinor` and `quantity`, so B5 commits the exact reviewed item intent without reconstructing quantity from UI state.
-
-B3 locks the threshold interaction before canonical commit wiring: reserve-only crossing stays frictionless, while nominal over-budget requires explicit `Add anyway`. The exact reviewed price intent is emitted only after confirmation. B5 remains responsible for proving that this intent becomes the identical canonical/persisted cart state.
-
-Execution contract:
-
-- docs/archive/CORE-UI-EXECUTION-BRIEF.md — Sprint B
-
-Do not begin Sprint B until the Sprint A stop/go gate passes.
-
-Suggested PR:
-
-> feat: add one-hand price entry and projected remaining
-
-### Scope
-
-- large price keypad
-- exact parsing
-- optional auto-cents mode
-- quantity
-- projected remaining before commit
-- add anyway / cancel when exceeding limit
-- automatic return to summary after commit
-
-### Acceptance criteria
-
-- manual entry works fully offline
-- common price-only item targets a median <=2.5 seconds in representative one-hand testing
-- approximately 3 seconds or less remains the minimum release-quality expectation
-- keypad does not remain dangerously active after commit
-- no item name/category required
-
-## Experimental scanner benchmark gate — after Phase 5
-
-This is a **measurement spike, not a production scanner phase**.
-
-Purpose:
-
-- compare the stable manual baseline against a minimal scan -> confirm path
-- measure whether camera capture reduces time or cognitive effort
-- identify large failure modes before the broader retention beta
-
-### Allowed scope
-
-- isolated experimental branch or clearly gated prototype
-- representative barcode and/or shelf-label capture path
-- timing instrumentation for the experiment
-- manual fallback
-- fixture-based recognition tests
-- no production navigation dependency
-
-### Required comparison
-
-Benchmark manual:
-
-> digits -> Add
-
-against experimental scanner:
-
-> open -> frame -> detect -> confirm
-
-Measure:
-
-- median seconds per item
-- P75/P90 latency
-- recognition failure rate
-- correction rate
-- fallback-to-manual rate
-- user preference after repeated use
-- fatigue after 10+ items
-
-### Decision
-
-If scanner is materially faster or lower-friction without reducing trust:
-
-- retain the evidence
-- allow Cohort C in the later real-store beta
-- keep production implementation scheduled for Phase 10/11
-
-If scanner is slower, fragile, or confusing:
-
-- simplify or defer
-- do not promote scanner in product positioning
-- do not let scanner work delay Phase 6–8
-
-### Hard constraints
-
-- no scanner candidate commits without confirmation
-- no camera/network requirement for the core flow
-- no scanner dependency in the initial critical bundle
-- no production scanner UI becomes required before the retention gate
-- Phase 10/11 remain the production implementation phases
-
-## Phase 6 — correction and confidence
-
-**Status: complete — delivered via PR #37.**
-
-Implementation evidence:
-
-- one-action Undo covers add, edit, and remove
-- item price and quantity can be corrected without restarting the trip
-- decrementing quantity 1 to zero is an explicit remove path with Undo
-- manual price correction explicitly refreshes source/confidence to manual + confirmed
-- quantity-only correction preserves existing price provenance/confidence
-- confidence and source remain independent dimensions in cart presentation
-- ordinary correction does not introduce a destructive confirmation modal
-- edit/remove mutations persist immediately and remain recoverable through one-level Undo
-- add/edit primary overlays use one discriminated UI state rather than independent booleans
-- edit cancel/save restores predictable keyboard focus
-- correction surface is covered by component, controller, E2E, axe, and cross-browser tests
-
-PR:
-
-> feat: add Phase 6 item correction and confidence UX
-
-### Scope
-
-- one-action undo
-- edit price
-- edit quantity
-- remove item
-- price source remains explicit (manual / price-memory / shelf-scan / encoded-barcode as implemented by phase)
-- price confidence remains explicit (confirmed / remembered / estimated)
-- source and confidence are never collapsed into one enum
-- estimated cart cues where appropriate
-
-### Acceptance criteria
-
-- add then undo restores exact previous total
-- uncertainty is visible but not noisy
-- ordinary correction requires no destructive modal flow
-
-## Phase 7 — trip completion and reconciliation
-
-**Status: complete — delivered via PR #38.**
-
-Implementation evidence:
-
-- explicit Finish Trip review keeps ordinary cart editing separate from completion
-- completed history is written before the active-trip key is cleared
-- failed history write leaves the active trip intact
-- successful history write plus failed active-key cleanup enters completed summary with explicit cleanup debt rather than reopening or losing the trip
-- startup reconciliation treats durable completed history as completion evidence and removes stale active copies without duplicating trip IDs
-- strict versioned `budget-cart:history` v1 persistence validates completed trips through domain reconstruction
-- malformed/future/conflicting history is preserved or quarantined rather than silently overwritten
-- actual checkout total is optional
-- checkout difference is derived in the domain, not canonical storage
-- lightweight shopping-focused history avoids general expense-dashboard scope
-- completion/history surfaces have component, storage, controller, E2E, axe, keyboard-focus, and Chromium/Firefox/WebKit coverage
-
-PR:
-
-> feat: add Phase 7 trip completion and reconciliation
-
-### Scope
-
-- finish trip
-- optional actual checkout total
-- estimated vs actual difference
-- lightweight trip history
-- no general expense-dashboard expansion
-
-### Acceptance criteria
-
-- user may finish without actual total
-- completed trip is recoverable from persistence
-- history remains shopping-task focused
-
-## Phase 8 — repeat-trip acceleration and price memory
-
-**Status: engineering complete for the current Phase 8 scope — repeat-trip foundation, Recent Items, local product identity, Price Memory, and a guarded privacy-safe retention-beta evidence harness are implemented; real-user validation remains pending.**
-
-Implemented first slice:
-
-- one-action Shop again from a healthy completed summary
-- one-action recent-budget shortcut on later idle launches
-- repeats budget + safety buffer only
-- creates a fresh trip id/start time with an empty cart
-- preserves completed history unchanged
-- derives the recent plan from validated completed history rather than a second settings copy
-- blocks repeat when completed-history durability is degraded or cleanup is unresolved
-- component, controller, domain, E2E, accessibility, and cross-browser coverage
-
-Implemented second slice:
-
-- Recent Items on the active-trip surface
-- label-derived local product identity for manual/offline use
-- independent versioned `budget-cart:price-memory` persistence
-- remembered price records with observation timestamp and provenance
-- visible freshness age
-- one-tap remembered-item reuse when within budget
-- two-step confirmation when remembered reuse would exceed nominal budget
-- explicit `Enter current price` override using the normal manual price flow
-- optional item naming that does not slow the baseline price-only path
-- memory creation only after durable trip completion
-- remembered cart items remain `source=price-memory` + `confidence=remembered`
-- advisory memory persistence failure remains isolated from active-cart durability
-- store-aware selector semantics for future known-store context
-
-Implemented product/UX hardening:
-
-- one-action **Shop again** from any healthy completed-history card, not only the latest summary/idle shortcut
-- inline completed-trip item details without introducing a new navigation layer
-- explicit delete-one-trip and clear-all-history controls with loss-safe persist-before-publish semantics
-- independent **Clear remembered prices** control so completed history and Price Memory are never conflated
-- destructive confirmation copy states exactly which local record is affected
-- keyboard focus restoration after cancelling destructive confirmations
-- active-trip secondary actions grouped beneath the single dominant **Add price** action
-- QA/retention instrumentation split out of the product shell so evidence state cannot become a second product-state owner
-- browser-level regression coverage for independent history/Price Memory clearing and confirmation accessibility
-
-Implemented validation preparation:
-
-- guarded `/beta/` shopping build for real-store retention testing
-- privacy-safe local event recorder for trip starts/finishes, 1/5/10-item milestones, manual-entry completion/abandonment, remembered-item reuse, and current-price override
-- session-relative trip ordinals that remain valid even when old shopping history already exists
-- local summary/export with no prices, budgets, item names, store history, or network telemetry
-- separate `budget-cart:qa:retention-v1` evidence record so validation data never becomes shopping business state
-- CI build gate and cross-browser E2E coverage for the beta recorder
-
-Still remaining in Phase 8 / retention gate:
-
-- optional user-facing store context only if validation shows it materially improves repeat shopping
-- 20–50 real-shopper beta
-- measured second-trip / third-trip behaviour
-- real-user evidence that the second/third trip is materially lighter
-
-Suggested PR:
-
-> feat: make repeated shopping materially faster
-
-### Why this moves before PWA/scanning
-
-The largest unresolved product risk is repeated-use friction, not installability or capture technology.
-
-The second and third trips should be materially easier than the first.
-
-### Scope
-
-- Shop again with previous budget
-- recent-budget shortcut on later launch
+This file describes **current validation gates and future sequencing**.
+
+It is not a chronological implementation diary. The detailed phase-by-phase plan through repeat-trip engineering is preserved in [archive/ROADMAP-THROUGH-PHASE-8.md](./archive/ROADMAP-THROUGH-PHASE-8.md).
+
+## Current status — 2026-09-22
+
+The core Shopping Budget Companion engineering path is implemented:
+
+- exact EUR money
+- ShoppingTrip / CartItem domain
+- local-first active-trip persistence and recovery
+- remaining-first mobile UI
+- fast manual price entry and projections
+- Undo, edit/remove and budget/buffer correction
+- loss-safe trip completion
+- optional checkout reconciliation
+- completed-trip history
+- Shop again
 - Recent Items
-- product identity abstraction sufficient for remembered items
-- remembered price records
-- observed date
-- optional store context
-- one/two-action remembered-item reuse
-- clear freshness labels
-- current-price override always available
+- Price Memory
+- local-data controls
+- privacy-safe timing QA and retention-beta evidence tooling
+- Chromium / Firefox / WebKit quality coverage
 
-### Acceptance criteria
+Two product-evidence gates remain open:
 
-- a returning user can restart the previous budget in one action
-- remembered price never appears as confirmed-current without explicit action
-- age is visible
-- store-specific suggestion works when store is known
-- recent familiar items can be reused in one/two actions
-- user can always enter current price instead
-- repeated-trip workflow is measurably lighter than first-trip setup
-- no account, network, or camera is required for this acceleration
+1. representative human one-hand/timing/bright-store validation
+2. real-shopper retention validation, including second- and third-trip behaviour
 
-## Retention validation gate — after Phase 8
+These gates are intentionally stronger than “CI is green”.
 
-**Engineering status: beta measurement harness implemented; human cohort evidence not yet collected.**
+## Current priority
 
-Guarded beta route:
+### 1. Close the human interaction evidence gate
 
-> `/shopping-budget-companion/beta/`
+Validate the manual price-entry path on representative physical devices.
 
-The beta build records only privacy-safe local event structure and requires manual export. It does not send telemetry and does not replace real observation/interviews.
+Evidence must cover the structured conditions defined in:
 
-Before adding PWA/scanner/OCR breadth, run a focused real-store beta.
+- [evidence/SPRINT-B-QUALITY-GATE.md](./evidence/SPRINT-B-QUALITY-GATE.md)
+- relevant decisions in [DECISIONS.md](./DECISIONS.md)
 
-Recommended cohort:
+Required conclusion:
 
-> **20–50 real shoppers**
+- either the manual path meets the release-quality interaction target
+- or the product is adjusted and re-tested
 
-Where practical, segment directionally:
+Automated browser timing cannot substitute for this gate.
 
-- Cohort A — manual-first
-- Cohort B — manual + Repeat Trip / Recent Items / Price Memory
-- Cohort C — manual + the experimental scanner path, only if the benchmark was positive
+### 2. Run the real-store retention beta
 
-This cohort size is directional, not statistically powered.
+Use the guarded beta evidence path defined in:
 
-Primary signal:
+- [evidence/RETENTION-BETA.md](./evidence/RETENTION-BETA.md)
+- [evidence/RETENTION-BETA-PLAYBOOK.md](./evidence/RETENTION-BETA-PLAYBOOK.md)
 
-> **Second-trip rate**
+Primary early signal:
 
-Provisional decision bands:
-
-- 45% or higher — exceptional early signal; validate third-trip behaviour
-- 35–45% — strong; preserve the core and proceed carefully
-- 25–35% — viable/promising; optimise recurring friction before broadening
-- 15–25% — problematic; freeze feature expansion
-- below 15% — revisit the core interaction/job before building production scanner/OCR
-
-Also measure:
-
-- median manual price-entry time
-- first / fifth / tenth item reached
-- trip completion
 - second-trip rate
-- third-trip rate
-- repeated-budget use
-- remembered-item use
-- scanner fallback rate for Cohort C
+
+Also inspect:
+
+- third-trip behaviour
 - manual-entry abandonment
-- trust/data-loss complaints
+- repeated-item reuse
+- current-price override behaviour
+- qualitative trust/friction feedback
 
-During this gate, do not add barcode, OCR, voice, cloud sync, family sharing, retailer integrations, or advanced analytics merely because they are available.
+Do not reinterpret a weak retention result as an automatic request for more features.
 
-Exceptions:
+## Work allowed while evidence is pending
 
-- blocker bug
-- data-integrity issue
-- accessibility failure
-- repeatedly observed missing capability preventing the core job
+The repository may continue to receive:
 
-Full retention contract:
+- correctness fixes
+- accessibility fixes
+- persistence/recovery hardening
+- test/CI reliability improvements
+- architecture simplification that preserves behaviour
+- documentation drift cleanup
+- evidence-tool integrity improvements
+- small UX fixes that do not invalidate the evidence protocol
+- dependency/security maintenance
 
-- docs/research/PRODUCT-SUCCESS-STRATEGY.md
-- docs/archive/CORE-UI-EXECUTION-BRIEF.md
-- docs/evidence/RETENTION-BETA-PLAYBOOK.md — facilitator workflow, export validation, cohort denominators, and anti-fabrication rules
+Avoid broad product expansion that makes the retention result harder to interpret.
 
-## Phase 9 — offline PWA
+## Gate before new breadth
 
-Suggested PR:
+Do not treat the next capability as approved merely because implementation capacity exists.
 
-> feat: ship installable offline shopping experience
+Before adding a new major user-facing capability, answer:
 
-### Scope
+1. What measured user problem does it solve?
+2. Does it reduce shopping friction or increase pre-checkout confidence?
+3. Can the manual/local-first fallback remain complete?
+4. Does it preserve exact-money and persistence invariants?
+5. Is the previous validation gate sufficiently resolved?
 
-- add vite-plugin-pwa + Workbox generateSW
-- web manifest
-- installability
-- application shell caching
-- offline startup
-- safe service-worker update strategy
+## Future sequence
 
-### Acceptance criteria
+### A. Installable offline PWA
 
-- previously loaded app opens without network
-- active shopping workflow works offline
-- service worker does not own canonical business data
-- external helpers can fail independently
+**Status: gated / not implemented.**
 
-## Phase 10 — barcode identification
+Goal:
 
-Suggested PR:
+- make the already local-first product reliably launchable offline after installation/caching
 
-> feat: add optional barcode product lookup
+Candidate implementation:
 
-### Scope
+- Vite PWA tooling / Workbox only if it remains the smallest reliable solution
+- application-shell asset caching
+- explicit offline-install/reload tests
 
-- scanner adapter boundary
-- native BarcodeDetector capability detection
-- lazy ZXing-C++ WASM BarcodeDetector-compatible fallback
-- self-host scanner WASM for offline use
-- capability detection/fallback
-- product identity lookup
-- connection to price memory
-- manual current-price fallback
+Must not:
 
-### Acceptance criteria
+- move canonical shopping state into the service worker
+- hide stale/degraded local data
+- introduce a backend requirement
 
-- scan reduces work for known products
-- barcode is never treated as price
-- failed/unsupported scanner leaves manual workflow intact
-- scanner bundle does not unnecessarily inflate initial critical path
+Acceptance:
 
-## Phase 11 — shelf-label price scan
+- installed shell launches offline
+- active trip/history remain correct
+- update/reload behaviour does not lose committed shopping state
+- browser tests cover supported offline critical paths
 
-Suggested PR:
+### B. Barcode identification
 
-> feat: add confirm-before-commit price tag scanning
+**Status: gated / not implemented.**
 
-### Scope
+Goal:
 
-- camera/OCR adapter
-- benchmark Tesseract.js Web Worker as first local provider candidate
-- do not lock provider unless real mobile fixtures meet usability/accuracy criteria
-- price candidate extraction
-- multiple-candidate state
-- confirmation preview
-- optional product text
+- reduce repeated product-identification friction when evidence shows the interaction actually saves work
 
-### Acceptance criteria
+Rules:
 
-- no scanner output changes cart before confirmation
-- ambiguous labels do not silently choose a price
-- useful fixtures cover split price, superscript cents, unit price, discounts
-- scanner failure is recoverable immediately with manual price entry
+- barcode identifies product, not authoritative current price
+- remembered price must retain freshness/store context
+- current-price confirmation remains explicit
+- manual entry remains available
+- provider/network failure cannot block the core trip
 
-## Phase 12 — advanced price mechanics
+Ship only if the end-to-end flow removes more interaction than it adds.
 
-Only after core usability is proven.
+### C. Shelf-label price capture
 
-Possible separate PRs:
+**Status: gated / not implemented.**
 
-- weighted goods
+Goal:
+
+- capture the value the user actually needs: current shelf price
+
+Rules:
+
+- OCR output is a candidate
+- ambiguous candidates require user choice
+- no detected value commits automatically
+- camera/OCR failure returns cleanly to manual entry
+
+Evaluate latency, accuracy, permission friction and correction cost on real devices.
+
+### D. Advanced price mechanics
+
+Only after evidence demonstrates recurring need.
+
+Examples may include:
+
 - discounts
-- optional tax mode
-- store-aware price history
-- deterministic safety-buffer suggestion
+- weighted goods
+- taxes/deposits where relevant
+- more explicit store context
+- confidence-aware buffer suggestions
 
-Each must have a demonstrated use case and explicit domain rules before implementation.
+Each mechanic must have an exact deterministic money contract before UI work.
 
-## Phase 13 — polish, launch evidence and recruiter-grade proof
+### E. Launch / recruiter-grade proof
 
-Before broad consumer acquisition, run docs/marketing/LAUNCH-CHECKLIST.md.
+Build the case study from verified evidence, not claims.
 
-Store work must follow docs/marketing/STORE-LISTING-SPEC.md.
+Target proof:
 
-Marketing order:
+- clear product problem and narrow scope
+- exact-money architecture
+- loss-safe local persistence
+- cross-browser/accessibility evidence
+- measured human interaction results
+- retention evidence
+- explicit decisions about features deliberately not built
 
-1. real-user beta
-2. polished landing/store assets
-3. organic short-form/build-in-public
-4. store-listing experiments once traffic exists
-5. meaningful paid acquisition only after retention evidence
+## Explicitly not planned by default
 
-Suggested PR group:
+Do not expand into:
 
-- performance budgets
-- deterministic product screenshots
-- measured interaction timings
-- README rewrite around product problem
-- architecture diagrams
-- real-world case-study fixture
-- accessibility hardening
-- mobile browser matrix refinement
-
-### Case-study target
-
-A clear scenario such as:
-
-> A shopper starts with EUR 50, uses a EUR 2 safety buffer, builds a 12–20 item cart, corrects one item, crosses the safe threshold, and finishes below the nominal limit with an estimate close to the real checkout value.
-
-Do not fabricate user-success statistics.
-
-## Feature priority table
-
-### P0 — core product
-
-- exact money
-- trip budget
-- remaining-first UI
-- safety buffer
-- fast manual price entry
-- quantity
-- add/edit/remove
-- undo
-- local persistence
-- visible persistence failure
-- checkout completion
-- mobile accessibility
-
-### P1 — reduce repeated friction
-
-First retention tier:
-
-- trip history
-- repeat previous budget / Shop again
-- Recent Items
-- price memory
-- optional store context
-
-After retention validation:
-
-- PWA/offline installation
-- barcode identification
-- price-tag scanning
-- weighted items
-- discount support
-- export/backup
-
-### P2 — only after evidence
-
-- voice price entry
-- receipt import
-- shared household cart
-- cross-device sync
-- deeper price analytics
-- retailer integrations
-
-## Explicitly not planned
-
-Unless docs/PRODUCT.md is intentionally changed with strong evidence:
-
-- bank synchronization
-- income/bill management
-- investment features
+- bank-linked personal finance
 - net-worth dashboards
+- investment/bill management
 - meal planning
 - nutrition tracking
-- recipe discovery
 - grocery delivery
 - coupon marketplace
-- loyalty platform
-- AI financial coaching
-- social feed
-- generic household OS
-- mandatory account
-- mandatory cloud backend
+- retailer loyalty platform
+- social features
+- AI financial advice
+- account/backend infrastructure without a validated requirement
+
+A new request in these areas needs a product decision, not opportunistic implementation.
 
 ## Technical-debt policy
 
-Do not postpone correctness debt in:
+Fix debt when it creates a real cost in correctness, reviewability, testing or change speed.
 
-- money arithmetic
-- persistence migrations
-- accessibility of the primary flow
-- scanner confirmation boundaries
+Priorities:
 
-Cosmetic refactoring can wait.
+1. correctness/data-loss risk
+2. duplicated sources of truth
+3. unclear ownership between layers
+4. files/modules with multiple unrelated reasons to change
+5. flaky/slow quality gates
+6. stale authoritative documentation
+7. cosmetic organization
+
+Do not create abstractions solely to reduce line count.
 
 ## AI-development policy
 
-Before implementing a roadmap item, an AI agent should read:
+AI-assisted changes should optimise for reasoning efficiency:
 
-1. AGENTS.md
-2. docs/PRODUCT.md
-3. relevant docs/reference/FUNCTIONALITY.md section
-4. relevant docs/reference/SCENARIOS.md entries
-5. relevant docs/specs/MVP-SPEC.md requirements
-6. relevant docs/specs/CONTRACTS.md interfaces
-7. relevant docs/specs/STATE-MACHINES.md transitions
-8. docs/specs/STORAGE-SCHEMA.md when persistence is touched
-9. docs/specs/MONEY-SPEC.md for any price/budget/quantity/checkout work
-10. docs/reference/TECH-STACK.md and docs/research/TECHNOLOGY-RESEARCH.md for dependency/framework/platform work
-11. docs/reference/BRAND.md for naming/copy/identity work
-12. docs/reference/MARKETING.md and relevant docs/marketing/* for acquisition/store/launch work
-13. relevant docs/reference/UX.md section
-14. docs/DESIGN.md for visual/user-facing work
-15. relevant docs/DOMAIN.md section
-16. docs/ARCHITECTURE.md
-17. docs/TESTING.md
-18. this roadmap item
+- load only task-relevant authoritative context
+- inspect current code/tests before trusting status prose
+- keep public contracts separate from implementation when that reduces context cost
+- update the smallest owning document
+- archive completed execution narration
+- avoid duplicating status across multiple docs
+- never claim human validation from automation
+- make refactors behaviour-preserving unless the task explicitly changes product behaviour
 
-The agent should implement only the current roadmap slice plus fixes required to keep main healthy.
+For multi-file changes, prefer one coherent architectural intent per PR.
 
-Do not opportunistically implement later phases because they seem easy.
+## Evidence-driven decision rule
+
+A feature is normally allowed into the core product only when it:
+
+- helps a shopper stay under the trip limit before checkout
+- reduces interaction cost or increases confidence
+- remains optional when possible
+- preserves manual/local-first fallback
+- does not weaken data integrity
+
+If it fails the first criterion, it normally does not belong in this product.
 
 ## When to revise this roadmap
 
-Revise when:
+Revise the current roadmap when:
 
-- real usability testing contradicts an assumption
-- competitor/review research exposes a materially better interaction
-- implementation uncovers a domain constraint
-- the product thesis changes intentionally
+- a validation gate produces new evidence
+- a major capability is approved or rejected
+- architecture constraints materially change
+- user research changes the core job
+- a future capability becomes current implementation
 
-Do not revise simply to accommodate an attractive technology.
-
-## Current next implementation step
-
-Phases 1, 2, and 3 are complete.
-
-Phase 4 / Sprint A is complete for the shopping product.
-
-Phase 5 / Sprint B has completed B0–B5 and the automated/code portion of B6; only the representative human B6 evidence gate remains.
-
-The B6 empirical validation remains a release-quality debt under D-039 rather than the active implementation blocker.
-
-Phase 6 correction/confidence is implemented via PR #37.
-
-Phase 7 trip completion/reconciliation is implemented via PR #38.
-
-The current implementation step is:
-
-> **Phase 8 retention validation — run the guarded real-store beta and collect evidence**
-
-The repeat-trip engineering slices are implemented. Do not start Phase 9 merely because the code is ready; the documented retention gate now requires human evidence.
-
-PR #28 implements the B6 code/automated portion:
-
-- one-action Undo after add
-- typo/correction minimum
-- full flagship exact-money E2E
-- price-entry and warning accessibility coverage
-- compact 360×800 / 390×844 keypad coverage
-- 200% text resilience for the price-entry flow
-- reduced-motion add/undo equivalence
-- keyboard/focus completion
-- Chromium / Firefox / WebKit
-- runtime no-network manual-core proof
-- Calm Utility reserve-boundary and light/dark design alignment
-
-The <=2.5 second KPI remains an empirical human interaction target. Automation must not be used as a substitute.
-
-Before the default/public shell makes speed/physical-usability claims, record the representative timing, one-hand reach, software-keyboard, typo/repeated-add, compact-device/equivalent, and bright-store checks defined in `docs/evidence/SPRINT-B-QUALITY-GATE.md`. The QA recorder must show the evidence as release-eligible; code/automation alone cannot satisfy this gate.
-
-D-039 explicitly waives this human gate only for **continued implementation sequencing**. It does not mark the gate passed and does not authorize claiming the <=2.5 second KPI.
-
-The Experimental Scanner Benchmark Gate is deferred while human timing evidence is unavailable, because an automated scanner-vs-manual comparison would not answer the intended human-friction question. Proceed with Phase 6 correction/confidence work. Production scanner sequencing remains governed by D-035 and D-037.
+When a section becomes historical execution detail, move it to `docs/archive/` rather than growing this file indefinitely.

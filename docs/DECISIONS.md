@@ -1609,3 +1609,46 @@ The previous recorder already separated QA state from product state, but it trus
 ### Revisit when
 
 The empirical protocol, timing schema, or cross-device evidence model changes materially.
+
+## D-048 — Separate application contracts and compress current AI context surfaces
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+Reduce reasoning cost without changing product behaviour by:
+
+- moving public ShoppingAppController state/result/port contracts into `src/application/shopping-app-contracts.ts`
+- keeping `shopping-app-controller.ts` focused on orchestration while re-exporting the existing public types for compatibility
+- converting application entry points from JSX to strict TSX
+- treating `AGENTS.md` as a concise context router rather than a duplicate product/architecture specification
+- keeping `ARCHITECTURE.md` focused on current boundaries and invariants
+- keeping `ROADMAP.md` focused on current evidence gates and future sequencing
+- archiving completed phase-by-phase roadmap narration instead of carrying it in the active context set
+
+### Rationale
+
+The repository had strong contracts but increasingly high context cost:
+
+- controller implementation and public type contracts occupied one large file
+- current architecture documentation still contained migration-era language after the legacy shell had been removed
+- the active roadmap mixed completed execution history with current priorities
+- AI instructions duplicated stable rules from several authoritative documents
+
+This made it easier for a contributor or AI agent to load stale or redundant context and harder to distinguish current behaviour from historical sequencing.
+
+### Consequence
+
+- application consumers have a dedicated contracts module
+- existing controller type imports remain compatible through re-exports
+- current documentation is shorter and more present-tense
+- historical execution detail remains available in `docs/archive/`
+- AI contributors are instructed to load task-specific authoritative context rather than the entire documentation tree
+- future refactors should be driven by cohesive responsibility boundaries, not line-count targets
+
+### Revisit when
+
+The controller requires another cohesive use-case extraction, documentation authority changes, or measured contributor/AI workflows show that a different context-routing model is more effective.
+

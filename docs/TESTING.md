@@ -204,7 +204,7 @@ For valid trip states:
 - add then undo restores the previous canonical total
 - serialise then restore preserves canonical state
 
-Use fast-check for property-style coverage of money and selector invariants once Phase 1 TypeScript work begins.
+Use fast-check for property-style coverage of money and selector invariants. The current suite already uses property-style checks for exact-money/domain behaviour where they add value.
 
 Randomised/property-style tests are more valuable here than many hand-picked examples alone because the domain exposes algebraic invariants.
 
@@ -227,7 +227,7 @@ Tests must prove:
 
 A useful portfolio proof point is a large deterministic cart with zero rounding drift.
 
-The parser test matrix in MONEY-SPEC.md is mandatory Phase 1 coverage, including valid, invalid, auto-cents, product-limit, and floating-point regression cases.
+The parser test matrix in MONEY-SPEC.md is mandatory regression coverage, including valid, invalid, auto-cents, product-limit, and floating-point regression cases.
 
 ## Critical E2E journey
 
@@ -574,9 +574,9 @@ Use obviously synthetic products and stores in automated tests.
 
 Avoid personal financial data and real user shopping history in fixtures.
 
-## Phase 1 money acceptance
+## Exact-money acceptance
 
-Before the exact-money foundation is considered complete:
+The exact-money foundation remains acceptable only while:
 
 - every MONEY-SPEC parser fixture passes
 - arithmetic/property invariants pass

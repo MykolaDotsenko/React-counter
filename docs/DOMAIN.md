@@ -4,7 +4,7 @@
 
 This document defines the target business rules for the shopping budget companion.
 
-The repository implements the shopping domain through Phase 8 engineering: exact EUR money, ShoppingTrip / CartItem rules, price source/confidence semantics, projections, active-trip commands, correction/Undo, completion/history/reconciliation, local product identity, and Price Memory. Scanner-backed sources remain later evidence-gated slices.
+The current shopping domain implements exact EUR money, ShoppingTrip / CartItem rules, price source/confidence semantics, projections, active-trip commands, correction/Undo, completion/history/reconciliation, local product identity, and Price Memory. Scanner-backed sources are not current production behaviour and remain roadmap-gated.
 
 ## Domain goals
 
