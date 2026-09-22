@@ -273,6 +273,48 @@
   flex: 0 0 auto;
 }
 
+.spotChecks {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+}
+
+.spotChecks legend {
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.spotChecks > p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.spotChecks label {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, 10rem);
+  gap: 10px;
+  align-items: center;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.spotChecks select {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+}
+
 .actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -300,7 +342,8 @@
 .actions button:focus-visible,
 .field input:focus-visible,
 .field textarea:focus-visible,
-.checklist input:focus-visible {
+.checklist input:focus-visible,
+.spotChecks select:focus-visible {
   outline: 3px solid #2563eb;
   outline-offset: 2px;
 }
@@ -313,5 +356,9 @@
 
   .panel {
     padding: 14px;
+  }
+
+  .spotChecks label {
+    grid-template-columns: 1fr;
   }
 }

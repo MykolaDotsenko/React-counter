@@ -1373,3 +1373,61 @@ Keeping evidence separate from shopping persistence also prevents validation inf
 
 A later validated product needs aggregate telemetry across a larger cohort and has an explicit privacy/consent design.
 
+## D-043 — Structured physical evidence is required for B6 release eligibility
+
+Date: 2026-09-22
+
+Status: accepted
+
+### Decision
+
+The B6 empirical timing gate must not infer physical test conditions from free-form notes.
+
+QA timing schema v3 requires explicit structured evidence for:
+
+- comparable input method
+- one-handed primary timing use
+- bright/store-like physical lighting
+- default system text size
+- primary device/browser
+- compact-phone/equivalent spot-check
+
+Dark appearance, 200%/large text, and reduced-motion physical checks are recorded independently as:
+
+- `not-run`
+- `pass`
+- `fail`
+
+A recorded secondary physical failure blocks release eligibility immediately.
+
+A `not-run` value remains visible and must never be interpreted as a physical pass.
+
+Valid v2 timing samples and device labels migrate to v3, but migration deliberately initializes the new physical-context fields as unverified.
+
+### Rationale
+
+The B6 KPI is a human physical-interaction gate.
+
+Timing samples alone cannot prove:
+
+- one-handed use
+- store-like lighting
+- default text conditions
+- consistent real input method
+
+Keeping these facts only in notes makes the release result too easy to overstate and too hard to audit.
+
+Preserving valid v2 timing evidence avoids throwing away legitimate measurements while refusing to fabricate evidence that v2 never recorded.
+
+### Consequence
+
+- B6 remains human-unverified until the v3 primary context is explicitly completed
+- the same input-method label must accompany comparable timing samples
+- a migrated v2 session cannot become release-eligible merely because its old checklist was complete
+- secondary physical checks are optional to run where unavailable, but any recorded failure is a release blocker
+- automation may verify the recorder and migration logic but still cannot prove the <=2.5 second human KPI
+
+### Revisit when
+
+The B6 physical-device protocol changes materially, or real testing shows that different structured context is needed to explain timing variance.
+

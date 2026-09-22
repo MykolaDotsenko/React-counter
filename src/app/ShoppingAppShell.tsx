@@ -58,7 +58,13 @@ import {
   updateQaChecklist,
   updateQaCompactDeviceLabel,
   updateQaDeviceLabel,
+  updateQaInputMethodLabel,
+  updateQaPhysicalContext,
+  updateQaSpotCheck,
   updateQaTimingNotes,
+  type QaPhysicalContext,
+  type QaSpotChecks,
+  type QaSpotCheckStatus,
   type QaTimingSession,
 } from "../qa/shopping-timing";
 import "./shopping-theme.css";
@@ -423,6 +429,27 @@ export function ShoppingAppShell({
         onCompactDeviceLabelChange={(value) => {
           updateQaSessionState((current) =>
             updateQaCompactDeviceLabel(current, value),
+          );
+        }}
+        onInputMethodLabelChange={(value) => {
+          updateQaSessionState((current) =>
+            updateQaInputMethodLabel(current, value),
+          );
+        }}
+        onPhysicalContextChange={(
+          key: keyof QaPhysicalContext,
+          value: boolean,
+        ) => {
+          updateQaSessionState((current) =>
+            updateQaPhysicalContext(current, key, value),
+          );
+        }}
+        onSpotCheckChange={(
+          key: keyof QaSpotChecks,
+          value: QaSpotCheckStatus,
+        ) => {
+          updateQaSessionState((current) =>
+            updateQaSpotCheck(current, key, value),
           );
         }}
         onNotesChange={(value) => {

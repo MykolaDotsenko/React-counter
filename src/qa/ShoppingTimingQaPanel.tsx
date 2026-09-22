@@ -5,6 +5,9 @@ import {
   summarizeQaEmpiricalGate,
   summarizeQaTimingSamples,
   type QaChecklistKey,
+  type QaPhysicalContext,
+  type QaSpotChecks,
+  type QaSpotCheckStatus,
   type QaTimingSession,
 } from "./shopping-timing";
 import styles from "./ShoppingTimingQaPanel.module.css";
@@ -17,9 +20,54 @@ export interface ShoppingTimingQaPanelProps {
   ) => void;
   readonly onDeviceLabelChange: (value: string) => void;
   readonly onCompactDeviceLabelChange: (value: string) => void;
+  readonly onInputMethodLabelChange: (value: string) => void;
+  readonly onPhysicalContextChange: (
+    key: keyof QaPhysicalContext,
+    value: boolean,
+  ) => void;
+  readonly onSpotCheckChange: (
+    key: keyof QaSpotChecks,
+    value: QaSpotCheckStatus,
+  ) => void;
   readonly onNotesChange: (value: string) => void;
   readonly onResetSamples: () => void;
 }
+
+const PHYSICAL_CONTEXT: readonly {
+  readonly key: keyof QaPhysicalContext;
+  readonly label: string;
+}[] = [
+  {
+    key: "oneHanded",
+    label: "Primary timing set was completed one-handed",
+  },
+  {
+    key: "brightStoreLikeLighting",
+    label: "Primary timing set was completed in bright/store-like lighting",
+  },
+  {
+    key: "defaultTextSize",
+    label: "Primary timing set used the default system text size",
+  },
+] as const;
+
+const SPOT_CHECKS: readonly {
+  readonly key: keyof QaSpotChecks;
+  readonly label: string;
+}[] = [
+  {
+    key: "darkAppearance",
+    label: "Dark appearance",
+  },
+  {
+    key: "largeText200",
+    label: "200% / large text",
+  },
+  {
+    key: "reducedMotion",
+    label: "Reduced motion",
+  },
+] as const;
 
 const CHECKLIST: readonly {
   readonly key: QaChecklistKey;
@@ -110,6 +158,9 @@ export function ShoppingTimingQaPanel({
   onChecklistChange,
   onDeviceLabelChange,
   onCompactDeviceLabelChange,
+  onInputMethodLabelChange,
+  onPhysicalContextChange,
+  onSpotCheckChange,
   onNotesChange,
   onResetSamples,
 }: ShoppingTimingQaPanelProps) {
@@ -152,33 +203,42 @@ export function ShoppingTimingQaPanel({
     Math.min(summary1250.count, QA_TARGET_SAMPLE_COUNT);
 
   const nextStep =
-    summary479.count < QA_TARGET_SAMPLE_COUNT
-      ? `Next: €4.79 sample ${summary479.count + 1}/${QA_TARGET_SAMPLE_COUNT}`
-      : summary1250.count < QA_TARGET_SAMPLE_COUNT
+    gate.secondarySpotCheckFailures > 0
+      ? "A secondary spot-check failed; resolve it before release."
+      : summary479.count < QA_TARGET_SAMPLE_COUNT
+        ? `Next: €4.79 sample ${summary479.count + 1}/${QA_TARGET_SAMPLE_COUNT}`
+        : summary1250.count < QA_TARGET_SAMPLE_COUNT
         ? `Next: €12.50 sample ${summary1250.count + 1}/${QA_TARGET_SAMPLE_COUNT}`
         : !gate.deviceLabelPresent
           ? "Add the primary device/browser label."
           : !gate.compactDeviceLabelPresent
             ? "Record the compact phone / equivalent spot-check label."
-            : !gate.phonePortraitViewport
-              ? "Run the timing set in a representative phone-like portrait viewport."
-              : !gate.lightAppearanceRecorded
-                ? "Switch to system light appearance and reopen the QA build."
-                : !gate.checklistComplete
-                  ? "Complete every empirical checklist item."
-                  : gate.status === "target-met"
-              ? "Empirical target met."
-              : gate.status === "release-floor"
-                ? "Release floor met; speed target still missed."
-                : gate.status === "fail"
-                  ? "Gate failed; redesign before production switch."
-                  : "Review evidence before release.";
+            : !gate.inputMethodPresent
+              ? "Record the input method used for the comparable timing samples."
+              : !gate.phonePortraitViewport
+                ? "Run the timing set in a representative phone-like portrait viewport."
+                : !gate.lightAppearanceRecorded
+                  ? "Switch to system light appearance and reopen the QA build."
+                  : !gate.physicalContextComplete
+                    ? "Confirm the one-handed, bright-store and default-text primary context."
+                    : !gate.checklistComplete
+                      ? "Complete every empirical checklist item."
+                      : gate.status === "target-met"
+                        ? "Empirical target met."
+                          : gate.status === "release-floor"
+                            ? "Release floor met; speed target still missed."
+                            : gate.status === "fail"
+                              ? "Gate failed; redesign before production switch."
+                              : "Review evidence before release.";
   const copyResults = async (): Promise<void> => {
     const report = {
       generatedAt: new Date().toISOString(),
       environment: session.environment,
       deviceLabel: session.deviceLabel,
       compactDeviceLabel: session.compactDeviceLabel,
+      inputMethodLabel: session.inputMethodLabel,
+      physicalContext: session.physicalContext,
+      spotChecks: session.spotChecks,
       notes: session.notes,
       checklist: session.checklist,
       gate,
@@ -253,8 +313,14 @@ export function ShoppingTimingQaPanel({
               Checklist {gate.checklistComplete ? "complete" : "incomplete"} ·
               Primary device {gate.deviceLabelPresent ? "set" : "missing"} ·
               Compact check {gate.compactDeviceLabelPresent ? "set" : "missing"} ·
+              Input method {gate.inputMethodPresent ? "set" : "missing"} ·
+              Physical context {gate.physicalContextComplete ? "complete" : "incomplete"} ·
               Phone portrait {gate.phonePortraitViewport ? "yes" : "no"} ·
-              Light appearance {gate.lightAppearanceRecorded ? "yes" : "no"}
+              Light appearance {gate.lightAppearanceRecorded ? "yes" : "no"} ·
+              Secondary checks {gate.secondarySpotChecksRecorded}/3
+              {gate.secondarySpotCheckFailures > 0
+                ? ` · ${gate.secondarySpotCheckFailures} failed`
+                : ""}
               {gate.ignoredSampleCount > 0
                 ? ` · ${gate.ignoredSampleCount} excluded sample(s)`
                 : ""}
@@ -287,6 +353,62 @@ export function ShoppingTimingQaPanel({
               }}
             />
           </label>
+
+          <label className={styles.field}>
+            <span>Comparable timing input method</span>
+            <input
+              value={session.inputMethodLabel}
+              placeholder="On-screen custom keypad · one thumb"
+              onChange={(event) => {
+                onInputMethodLabelChange(event.currentTarget.value);
+              }}
+            />
+          </label>
+
+          <fieldset className={styles.checklist}>
+            <legend>Primary physical context</legend>
+            {PHYSICAL_CONTEXT.map((item) => (
+              <label key={item.key}>
+                <input
+                  type="checkbox"
+                  checked={session.physicalContext[item.key]}
+                  onChange={(event) => {
+                    onPhysicalContextChange(
+                      item.key,
+                      event.currentTarget.checked,
+                    );
+                  }}
+                />
+                <span>{item.label}</span>
+              </label>
+            ))}
+          </fieldset>
+
+          <fieldset className={styles.spotChecks}>
+            <legend>Secondary physical spot-checks</legend>
+            <p>
+              These are recommended where available. A recorded failure blocks
+              release; not-run does not replace the automated checks.
+            </p>
+            {SPOT_CHECKS.map((item) => (
+              <label key={item.key}>
+                <span>{item.label}</span>
+                <select
+                  value={session.spotChecks[item.key]}
+                  onChange={(event) => {
+                    onSpotCheckChange(
+                      item.key,
+                      event.currentTarget.value as QaSpotCheckStatus,
+                    );
+                  }}
+                >
+                  <option value="not-run">Not run</option>
+                  <option value="pass">Pass</option>
+                  <option value="fail">Fail</option>
+                </select>
+              </label>
+            ))}
+          </fieldset>
 
           <dl className={styles.environment}>
             <div>

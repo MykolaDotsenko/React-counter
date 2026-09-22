@@ -24,8 +24,13 @@ The QA evidence recorder now treats empirical evidence as a strict contract rath
 - the timing viewport must be phone-like portrait width
 - the captured appearance must be light for the bright-store primary pass
 - both the primary timing device/browser and compact-phone/equivalent spot-check are named
+- the comparable timing input method is recorded explicitly
+- one-handed use, bright/store-like lighting, and default system text size are structured primary-context requirements
 - typo correction, five consecutive adds, consistent input method, and compact spot-check are structured checklist requirements
+- dark appearance, 200%/large text, and reduced-motion physical spot-checks are recorded independently when available
+- a recorded secondary spot-check failure blocks release eligibility; not-run remains visible and does not pretend that a physical check happened
 - samples outside the fixture remain visible as excluded evidence rather than silently contaminating the KPI
+- QA schema v3 preserves valid v2 samples/device labels through migration but intentionally requires the new physical-context evidence before release eligibility
 
 This document separates:
 
@@ -143,7 +148,8 @@ The QA build:
 
 - is not the public/default product
 - injects `noindex,nofollow,noarchive`
-- stores timing evidence only in tab-scoped `sessionStorage` under a versioned QA-only key
+- stores timing evidence only in tab-scoped `sessionStorage` under the versioned QA-only key `budget-cart:qa:timing-v3`
+- reads legacy `budget-cart:qa:timing-v2` evidence and migrates valid timing samples without granting the new v3 physical-context requirements automatically
 - never writes timing evidence into ShoppingTrip or production persistence DTOs
 - records a sample from intentional **Add price** activation until the canonical summary has rendered again
 - automatically calculates median, P75 and maximum for the two required ordinary price-only tasks using only the documented EUR 500 / zero-buffer measurement fixture
@@ -167,8 +173,11 @@ For the 20 ordinary speed samples:
 9. do not intentionally trigger nominal over-budget confirmation in the timing set
 10. complete one obvious typo-correction check and five consecutive ordinary adds
 11. record the compact-phone / equivalent spot-check label
-12. confirm all one-hand, bright-store, software-keyboard and input-method checklist items
-13. open the QA panel and record/copy the results
+12. record the exact input method used for comparable samples
+13. confirm the structured one-handed, bright/store-like, and default-text primary context
+14. confirm all one-hand, software-keyboard, correction, stability, and compact-device checklist items
+15. record dark appearance, 200%/large-text, and reduced-motion physical spot-checks where available
+16. open the QA panel and record/copy the results
 
 EUR 500 is a measurement fixture, not a product recommendation. It prevents threshold confirmation from contaminating the ordinary price-entry timing sample while preserving the real production interaction path.
 
@@ -241,6 +250,8 @@ Report:
 - slowest observed attempt
 - device/browser
 - input method used consistently across comparable samples
+- explicit comparable input-method label
+- explicit one-handed / bright-store-like / default-text primary context
 - primary timing device/browser label
 - compact-phone / equivalent spot-check label
 - phone-like portrait viewport and light appearance evidence
