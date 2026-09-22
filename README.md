@@ -29,7 +29,7 @@ This is deliberately narrower than a generic expense tracker:
 
 **set a spending limit → add prices quickly → always know what remains**
 
-The core flow is local-first and account-free. The product prioritizes exact money, durable state, one-hand interaction, reversible corrections, accessibility, and evidence-based feature expansion.
+The core flow is local-first and account-free. The product prioritizes exact money, durable state, one-hand interaction, reversible corrections, accessibility, **premium interaction quality**, and evidence-based feature expansion.
 
 Returning shoppers can reuse a previous spending plan, Recent Items, and local Price Memory while always retaining an explicit **Enter current price** path.
 
@@ -48,22 +48,24 @@ Returning shoppers can reuse a previous spending plan, Recent Items, and local P
 ## Architecture
 
 ```text
-React UI
+React feature UI
    ↓
-ShoppingAppController
+Application contracts + controller/use cases
    ↓
 Pure domain + selectors
    ↓
 Application ports
    ↓
-Browser infrastructure adapters
+Browser persistence adapters
+   ├── transactions / recovery
+   └── codec / runtime reconstruction
 ```
 
 | Layer | Owns |
 | --- | --- |
 | **Domain** | money, trip invariants, projections, selectors |
-| **Application** | lifecycle, commands, Undo, persistence ordering, recovery |
-| **Infrastructure** | storage schemas, localStorage adapters, runtime boundaries |
+| **Application** | public contracts, lifecycle, use cases, Undo, persistence ordering, recovery |
+| **Infrastructure** | storage transactions, codecs/schemas, localStorage adapters, runtime boundaries |
 | **UI** | rendering, drafts, focus, accessibility, interaction feedback |
 | **QA** | timing and retention evidence only |
 
@@ -217,8 +219,9 @@ This repository is a case study in:
 - testing risky journeys across browser engines
 - building accessibility into interaction contracts
 - using empirical gates to decide what **not** to build yet
+- balancing frictionless UX with premium, differentiated product execution
 
-The goal is not framework breadth. It is a small product that is technically disciplined, testable, and explicit about what has — and has not — been validated.
+The goal is not framework breadth. It is a focused product that is technically disciplined, fast in real use, premium without spectacle, and explicit about what has — and has not — been validated.
 
 ## License
 
