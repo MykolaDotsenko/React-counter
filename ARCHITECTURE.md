@@ -12,17 +12,16 @@ Current repository reality:
 - strict TypeScript 6 now covers the shopping money, domain, application, persistence, and shopping feature layers
 - exact EUR money and ShoppingTrip / CartItem domain are implemented
 - the plain-TypeScript ShoppingAppController + `useSyncExternalStore` bridge are implemented
-- versioned Zod-validated active-trip localStorage persistence is implemented
-- Calm Utility start, active-trip, persistence-health, recovery, manual price-entry, one-step Undo, and Phase 6 edit/remove correction flows are implemented in the guarded shell
+- versioned Zod-validated active-trip and completed-history localStorage persistence are implemented
+- loss-safe completion, startup stale-active reconciliation, optional checkout reconciliation, and lightweight history are implemented
+- Calm Utility start, active-trip, persistence-health, recovery, manual price-entry, one-step Undo, Phase 6 edit/remove correction, and atomic active-trip budget/buffer adjustment flows are implemented in the guarded shell
 - the legacy Pulse Counter UI, native typed View Transitions, and pointer-rendering adapter remain only on the default compatibility path
 - Vitest + React Testing Library + Playwright + axe remain the quality foundation
 
 Remaining target areas before the documented MVP is complete:
 
-- Phase 7 loss-safe trip completion, completed-trip history persistence, optional checkout reconciliation, and startup stale-active reconciliation
-- checkout reconciliation
-- repeat-trip/history/price-memory slices in their scheduled phases
-- vite-plugin-pwa + Workbox generateSW and offline installed-shell validation
+- Phase 8 repeat-trip acceleration and price-memory slices
+- Phase 9 vite-plugin-pwa + Workbox generateSW and offline installed-shell validation
 - optional scanning adapters only in their evidence-gated later phases
 - eventual retirement of the Pulse Counter compatibility shell after the guarded replacement passes its release gates
 
