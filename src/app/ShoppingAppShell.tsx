@@ -534,7 +534,8 @@ export function ShoppingAppShell({
             returnFocusToPriceTrigger(sourceMemoryId);
           }}
           onValidatedItem={(intent: ValidatedItemIntent) => {
-            const beforeCount = itemCount(state.activeTrip);
+            const beforeCount =
+              state.activeTrip === null ? 0 : itemCount(state.activeTrip);
             const tripOrdinal = activeTripOrdinal() ?? 1;
             const result = controller.addManualItem(intent);
 
