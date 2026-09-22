@@ -92,12 +92,26 @@ const isTripOrdinal = (value: unknown): value is number =>
   Number.isSafeInteger(value) &&
   value >= 1;
 
+const hasExactKeys = (
+  value: Record<string, unknown>,
+  keys: readonly string[],
+): boolean => {
+  const actual = Object.keys(value).sort();
+  const expected = [...keys].sort();
+
+  return (
+    actual.length === expected.length &&
+    actual.every((key, index) => key === expected[index])
+  );
+};
+
 const isEvent = (value: unknown): value is RetentionBetaEvent => {
   if (typeof value !== "object" || value === null) {
     return false;
   }
 
   const candidate = value as Partial<RetentionBetaEvent>;
+  const record = value as Record<string, unknown>;
 
   if (
     !isIsoTimestamp(candidate.at) ||
@@ -109,18 +123,21 @@ const isEvent = (value: unknown): value is RetentionBetaEvent => {
   switch (candidate.type) {
     case "trip_started":
       return (
-        candidate.source === "new" ||
-        candidate.source === "repeat" ||
-        candidate.source === "resume"
+        hasExactKeys(record, ["type", "at", "tripOrdinal", "source"]) &&
+        (candidate.source === "new" ||
+          candidate.source === "repeat" ||
+          candidate.source === "resume")
       );
     case "item_milestone":
       return (
-        candidate.itemCount === 1 ||
-        candidate.itemCount === 5 ||
-        candidate.itemCount === 10
+        hasExactKeys(record, ["type", "at", "tripOrdinal", "itemCount"]) &&
+        (candidate.itemCount === 1 ||
+          candidate.itemCount === 5 ||
+          candidate.itemCount === 10)
       );
     case "manual_entry_completed":
       return (
+        hasExactKeys(record, ["type", "at", "tripOrdinal", "durationMs"]) &&
         typeof candidate.durationMs === "number" &&
         Number.isFinite(candidate.durationMs) &&
         candidate.durationMs >= 0
@@ -130,7 +147,7 @@ const isEvent = (value: unknown): value is RetentionBetaEvent => {
     case "remembered_item_used":
     case "current_price_override_started":
     case "trip_finished":
-      return true;
+      return hasExactKeys(record, ["type", "at", "tripOrdinal"]);
     default:
       return false;
   }
@@ -142,8 +159,10 @@ const isSession = (value: unknown): value is RetentionBetaSession => {
   }
 
   const candidate = value as Partial<RetentionBetaSession>;
+  const record = value as Record<string, unknown>;
 
   return (
+    hasExactKeys(record, ["version", "variant", "createdAt", "events"]) &&
     candidate.version === 1 &&
     candidate.variant === "repeat-acceleration" &&
     isIsoTimestamp(candidate.createdAt) &&
