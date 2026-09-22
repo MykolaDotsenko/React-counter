@@ -18,7 +18,11 @@ const START = "2026-09-22T08:00:00.000Z";
 const LATER = "2026-09-22T08:05:00.000Z";
 
 const event = (
-  value: Omit<RetentionBetaEvent, "at"> & { readonly at?: string },
+  value: {
+    readonly type: RetentionBetaEvent["type"];
+    readonly at?: string;
+    readonly [key: string]: unknown;
+  },
 ): RetentionBetaEvent =>
   ({
     ...value,
