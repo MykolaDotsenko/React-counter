@@ -59,6 +59,19 @@ describe("guarded shopping build branding", () => {
     ).toThrow(/could not find expected title/i);
   });
 
+  it("keeps the public source shell on Pulse identity until the release switch", async () => {
+    const sourceIndex = await readFile(
+      new URL("../index.html", import.meta.url),
+      "utf8",
+    );
+
+    expect(sourceIndex).toContain(
+      "<title>Pulse Counter — Interaction Lab</title>",
+    );
+    expect(sourceIndex).toContain('href="/favicon.svg"');
+    expect(sourceIndex).not.toContain('href="./shopping-mark.svg"');
+  });
+
   it("keeps the provisional shopping mark aligned with the remaining-room identity", async () => {
     const mark = await readFile(
       new URL("../public/shopping-mark.svg", import.meta.url),
