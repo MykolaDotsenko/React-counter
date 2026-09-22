@@ -1,570 +1,312 @@
-# MVP Specification
+# Product Release Specification
+
+> File path retained as `MVP-SPEC.md` for stable links.
 
 ## Status
 
-Product specification. Shopping Budget Companion now implements the core MVP contract; later capabilities remain explicitly phase-gated.
+This is the executable contract for the current shopping-budget release.
 
-This is the executable product contract for the first shopping-budget release. It converts the higher-level product, UX, domain, scenario, and architecture documents into numbered requirements that can be implemented and verified.
+The original core MVP is implemented. Several post-core capabilities are also implemented and are explicitly listed below.
 
-## Scope
+Installable PWA, barcode and OCR are **PLANNED / GATED**, not current release requirements.
 
-The MVP proves one complete job:
+## Core job
 
-> A shopper sets a hard per-trip limit, adds prices while shopping, always knows what remains, corrects mistakes quickly, survives reload/offline use, and finishes the trip without needing an account or network.
+A shopper can:
 
-The MVP deliberately does not require barcode scanning, OCR, price memory, voice, cloud sync, or retailer integrations.
+> set a hard per-trip limit, add prices while shopping, always know what remains, correct mistakes quickly, survive reload, finish the trip, and do it without an account or mandatory network service.
 
-Those features may follow only after the core loop meets the acceptance criteria below.
+## Current release capabilities
 
-## Supported MVP capabilities
+### IMPLEMENTED core
 
-### Required
+- one active trip;
+- EUR;
+- exact integer-minor money;
+- budget;
+- optional safety buffer;
+- manual price entry;
+- quantity;
+- projected consequence before commit;
+- add/edit/remove;
+- one-step Undo;
+- reserve and nominal over-budget states;
+- active-trip persistence;
+- degraded persistence UX;
+- reload recovery;
+- finish trip;
+- optional actual checkout total;
+- completed-trip history;
+- keyboard/assistive-technology access.
 
-- start one active shopping trip
-- EUR as the only supported MVP currency
-- exact money arithmetic in integer cents
-- spending budget
-- optional safety buffer
-- manual price entry
-- quantity
-- projected remaining before commit
-- add item
-- edit price
-- edit quantity
-- remove item
-- one-step undo for the most recent cart mutation
-- safe-limit state
-- nominal over-budget preview
-- intentional over-budget state
-- local persistence
-- visible persistence-degraded state
-- reload recovery
-- finish trip
-- optional actual checkout total
-- lightweight completed-trip history
-- offline-capable installed/cached experience
-- keyboard and assistive-technology access to the complete core flow
+### IMPLEMENTED repeat-use extensions
 
-### Explicitly deferred
+- Shop again from completed history;
+- Recent Items;
+- local Price Memory;
+- local history deletion;
+- independent Price Memory deletion;
+- retention/timing evidence tooling that does not own shopping state.
 
-- barcode lookup
-- shelf-label OCR
-- price memory
-- store-aware suggestions
-- weighted-price calculator
-- discount engine
-- tax-exclusive pricing mode
-- voice input
-- receipt scan
-- reopening a completed trip back into an active trip
-- sharing/sync
-- backend/authentication
+### PLANNED / GATED
 
-A deferred feature may be prototyped independently, but it must not become a dependency of MVP acceptance.
+- installable offline PWA shell;
+- barcode identification;
+- shelf-label OCR;
+- weighted goods;
+- discount engine;
+- tax-exclusive pricing mode;
+- voice input;
+- receipt scan;
+- reopening completed trip into active state;
+- cloud sharing/sync;
+- backend/authentication.
 
 ## Functional requirements
 
 ### FR-001 — Start trip
 
-Given no active trip, the user can create one by supplying:
+Given no active trip, a valid positive EUR budget starts a trip.
 
-- budget
+Optional safety buffer must satisfy domain rules.
 
-Currency is fixed to EUR in MVP.
+### FR-002 — Remaining-first state
 
-Optional:
+The active screen exposes remaining safe spending as the primary metric.
 
-- safety buffer
+Supporting context may include nominal remaining, cart total and budget progress.
 
-Acceptance:
+### FR-003 — Manual price draft
 
-- no account required
-- no store required
-- no product metadata required
-- valid trip becomes the active trip
-- active trip is persisted immediately
-- UI opens the active-trip view directly
+The user can enter a price without supplying product metadata.
 
-### FR-002 — Budget validation
+Input behaviour follows `MONEY-SPEC.md`.
 
-Budget must:
+### FR-004 — Project before commit
 
-- be representable exactly in EUR cents
-- be greater than zero
-- not exceed EUR 999,999.99
-- remain within JavaScript safe-integer bounds after conversion to minor units
+A valid draft projects:
 
-Invalid input is rejected inline without discarding the user's draft.
+- line total;
+- cart total;
+- nominal remaining;
+- safe remaining;
+- reserve/over-budget consequence.
 
-### FR-003 — Safety buffer
+Projection does not mutate canonical trip state.
 
-Buffer:
+### FR-005 — Add item
 
-- defaults to zero
-- cannot be negative
-- cannot exceed nominal budget
-- can be changed during an active trip
+Commit creates one valid item and immediately updates the active trip.
 
-Derived:
+Persistence is attempted synchronously through the application boundary.
 
-- safeLimit = budget - buffer
-- safeRemaining = safeLimit - cartTotal
+### FR-006 — Quantity
 
-### FR-004 — Remaining-first active state
+Quantity is a positive bounded integer and line totals remain exact.
 
-The active-trip view always exposes:
+### FR-007 — Edit item
 
-- primary remaining value
-- cart total
-- nominal budget
-- safe-limit context when buffer is active
-- primary Add price action
+Active item price, quantity and optional label can be corrected.
 
-If buffer > 0, primary remaining value is safeRemaining.
+### FR-008 — Remove item
 
-### FR-005 — Manual price draft
+Active items can be removed.
 
-Opening Add price creates ephemeral input state.
+### FR-009 — Undo
 
-The price draft:
+The most recent supported active-trip cart mutation can be undone.
 
-- is not canonical trip state
-- is not persisted as a cart item before commit
-- preserves user input across inline validation errors
-- can be cleared or edited
-- can be cancelled without changing the trip
+Undo is not full event sourcing.
 
-### FR-006 — Exact price parsing
+### FR-010 — Budget / buffer adjustment
 
-Committed prices are converted to integer minor units without binary floating-point arithmetic.
+The active budget and safety buffer can be changed intentionally.
 
-The implementation must not use parseFloat + multiplication as the canonical conversion path.
+A change that creates overage remains valid.
 
-### FR-007 — Projected result
+### FR-011 — Reserve crossing
 
-While a valid price/quantity draft exists, the UI derives:
+If projected cart total crosses the safe limit but not nominal budget, the user sees an explicit reserve consequence before commit.
 
-- projected line total
-- projected cart total
-- projected safe remaining
-- projected nominal remaining
-- whether safe limit would be crossed
-- whether nominal budget would be crossed
+### FR-012 — Nominal over-budget
 
-Projection does not mutate canonical state.
+If projected cart total exceeds budget, the user sees explicit overage and can intentionally continue.
 
-### FR-008 — Add item
+### FR-013 — Persistence durability
 
-A valid item can be committed with:
+Committed active-trip mutations attempt local persistence promptly.
 
-- generated item id
-- unit price in minor units
-- quantity
-- optional label, trimmed to at most 120 Unicode code points
-- price provenance
-- created timestamp
+The UI must not silently represent failed persistence as durable success.
 
-After commit:
+### FR-014 — Reload recovery
 
-- canonical active trip changes exactly once
-- persistence is attempted immediately
-- UI returns to the active-trip summary
-- new totals derive from canonical items
-- latest mutation becomes undoable
+Valid saved active state restores after reload.
 
-### FR-009 — Quantity
+Malformed/unsupported data follows the recovery contract rather than being guessed into validity.
 
-For standard MVP cart items:
+### FR-015 — Finish trip
 
-- unit price must be greater than EUR 0
-- unit price must not exceed EUR 999,999.99
-- quantity is an integer from 1 through 999
-- default is 1
-- lineTotal = unitPriceMinor × quantity
-- arithmetic must remain within safe-integer bounds
+Finishing creates a completed trip.
 
-Reducing an existing item's quantity from 1 to 0 through the UI means remove, not a zero-quantity canonical item.
+History must become durable before active-trip cleanup.
 
-### FR-010 — Edit item
+Failed history persistence must not erase the active trip.
 
-For an active trip, the user can edit:
+### FR-016 — Completion cleanup failure
 
-- unit price
-- quantity
-- optional label
+If history is durable but active cleanup fails, completion remains durable and the app exposes cleanup-pending/degraded state.
 
-A valid edit:
+### FR-017 — Actual checkout total
 
-- changes the canonical item once
-- persists promptly
-- recalculates all derived values
-- becomes undoable
+A completed trip may store actual checkout total.
 
-### FR-011 — Remove item
+Derived difference does not rewrite item prices.
 
-Removing an item:
+### FR-018 — Completed history
 
-- removes it from canonical active-trip items
-- persists the new trip
-- makes the removal undoable
+History provides enough information to understand prior shopping trips without becoming a general expense dashboard.
 
-No confirmation dialog is required for ordinary single-item removal.
+### FR-019 — Shop again
 
-### FR-012 — Undo
+A valid completed trip can seed a **new empty active trip** with prior budget/buffer when persistence state is safe.
 
-MVP supports at least one-step undo for the latest cart mutation:
+This is not reopening historical state.
 
-- add
-- edit
-- remove
+### FR-020 — Price Memory learning
 
-Undo restores the previous canonical active-trip snapshot and persists the restored state.
+Eligible confirmed observations are learned only after completed history is durable.
 
-Undo history itself does not need to survive reload.
+### FR-021 — Price Memory reuse
 
-### FR-013 — Safe-limit crossing
+Remembered price remains explicitly remembered and does not become authoritative current price merely through reuse.
 
-If a pending item crosses safeLimit but not budget:
+### FR-022 — Local data controls
 
-- preview explains that the safety buffer will be used
-- user may still commit
-- committed trip enters a safe-limit-exceeded state derived from totals
+Completed history and Price Memory can be cleared independently according to their persistence contracts.
 
-This is not labelled as nominal over-budget.
+### FR-023 — No mandatory external service
 
-### FR-014 — Nominal over-budget preview
+Current release does not require:
 
-If a pending item would make cartTotal > budget:
+- barcode/OCR;
+- AI;
+- authentication;
+- bank API;
+- backend;
+- analytics service.
 
-- show projected overage before commit
-- require an explicit Add anyway action
-- Cancel leaves canonical state unchanged
+### FR-024 — Accessibility equivalence
 
-### FR-015 — Intentional over-budget
+The complete core workflow remains achievable through semantic controls and keyboard/assistive technologies.
 
-Over-budget is valid canonical state.
+### FR-025 — Local-first core
 
-The application:
+After the page is loaded, shopping state, manual entry, editing, completion and history do not require a remote business service.
 
-- shows exact overage
-- does not disable further edits/adds
-- does not use judgmental language
-- permits budget adjustment
+This does **not** claim installable/offline-shell PWA support.
 
-### FR-016 — Edit budget
+### FR-026 — Continue/reopen after finish
 
-The user may change active-trip budget.
+**PLANNED / GATED.**
 
-If new budget < cartTotal:
+Historical reopen requires an explicit loss-safe history ↔ active-state transaction and is not current behaviour.
 
-- change remains allowed
-- resulting over-budget state is shown
+### FR-027 — Future barcode
 
-Changing budget never mutates item prices.
+**PLANNED / GATED.**
 
-If the requested budget is below the current safety buffer, reject the budget change rather than silently changing the buffer. The buffer must be adjusted explicitly.
+Barcode may identify product context but cannot be treated as authoritative current shelf price by default.
 
-### FR-017 — Persistence durability
+### FR-028 — Future shelf OCR
 
-Every committed canonical mutation attempts synchronous/local persistence before the UI reports the mutation as durably saved.
+**PLANNED / GATED.**
 
-A successful write sets persistence health to healthy.
+OCR produces candidate price data requiring appropriate confirmation.
 
-### FR-018 — Persistence degradation
+## Canonical state requirements
 
-If canonical state is valid but storage write fails:
+Canonical active/completed trip data includes only inputs and lifecycle facts required to reconstruct the shopping state.
 
-- in-memory state remains usable
-- persistence health becomes degraded
-- UI warns the user
-- no false saved status is shown
-- later valid mutations may retry persistence
+Derived totals are never storage authority.
 
-### FR-019 — Reload recovery
-
-On startup:
-
-- valid active trip restores directly
-- derived values are recomputed
-- user does not have to confirm resume
-- no committed item is duplicated
-
-### FR-020 — Malformed storage
-
-Malformed/invalid active-trip storage:
-
-- must not crash startup
-- must not be partially guessed into valid money data
-- must not reinterpret historical non-shopping state as shopping state
-- must expose a safe recovery path
-
-### FR-021 — Finish trip
-
-The user can finish an active trip.
-
-Completion:
-
-- produces completed status/timestamp
-- persists completed trip to history before active state is cleared
-- avoids data loss if history persistence fails
-
-### FR-022 — Actual checkout total
-
-For a completed trip, user may optionally add actual checkout total.
-
-Derived:
-
-difference = actualCheckoutTotal - estimatedCartTotal
-
-This does not retroactively alter cart item prices.
-
-### FR-023 — Continue/reopen after accidental finish — deferred
-
-The current guarded MVP does not claim reversible completion.
-
-Reopening a completed snapshot touches both active-trip and history persistence and therefore requires an explicit two-record rollback/reconciliation contract before it can ship. Until that contract exists, the completed summary may return the user to the idle/start state and history, but it must not offer a misleading Continue shopping action.
-
-Historical reopen remains deferred until a dedicated domain rule and failure-safe persistence transaction are implemented.
-
-### FR-024 — History
-
-MVP history shows completed trips with enough data to understand:
-
-- completion date
-- budget
-- estimated cart total
-- optional actual total
-- remaining/overage
-- item count
-
-It is not a general expense dashboard.
-
-### FR-025 — Offline core
-
-After the application shell has been cached/installed appropriately, these operations remain available offline:
-
-- restore active trip
-- start trip
-- add/edit/remove
-- quantity
-- undo
-- budget/buffer changes
-- finish trip
-- local history
-
-### FR-026 — No mandatory external service
-
-No MVP requirement depends on:
-
-- barcode service
-- OCR
-- AI
-- authentication
-- bank API
-- backend
-- analytics service
-
-### FR-027 — Accessibility equivalence
-
-The complete MVP core flow must be achievable without:
-
-- camera
-- colour perception
-- animation
-- sound
-- haptics
-- swipe gestures
-- network
-- precise pointer input
-
-### FR-028 — Locale-aware EUR display/input boundary
-
-The MVP supports EUR only.
-
-The UI:
-
-- accepts the explicitly defined EUR input grammar from docs/specs/MONEY-SPEC.md
-- formats EUR according to an explicit locale
-- may accept both comma and period as unambiguous decimal separators
-- never sends locale-formatted strings into canonical domain arithmetic
-
-The money domain receives validated integer cents.
-
-Unsupported currencies are rejected rather than accepted through a generic currency string.
-
-## MVP state requirements
-
-At application level, the system must distinguish:
-
-- booting
-- no-active-trip
-- active-trip
-- completed-summary
-- recovery-required
-
-Separately track:
-
-- persistence health
-- ephemeral UI state
-- optional capability availability
-
-Do not encode modal/sheet state into the canonical ShoppingTrip.
-
-## MVP data requirements
-
-Canonical active trip contains:
-
-- id
-- schema-compatible currency
-- budgetMinor
-- safetyBufferMinor
-- items[]
-- status
-- startedAt
-- optional completedAt
-- optional actualCheckoutMinor
-
-Each item contains:
-
-- id
-- unitPriceMinor
-- quantity
-- optional label
-- price source
-- price confidence
-- createdAt
-- updatedAt
-
-Blank/whitespace-only labels normalize to absent. `itemCount` means the sum of standard-item quantities, while cart-line count remains `items.length` when needed.
-
-Derived totals are never authoritative persisted fields.
+Detailed rules: `DOMAIN.md`.
 
 ## Money contract
 
-All MVP money behaviour is governed by:
+All canonical financial values use integer EUR minor units.
 
-- docs/specs/MONEY-SPEC.md
+Detailed parser/arithmetic contract: `specs/MONEY-SPEC.md`.
 
-Key requirements:
+## Price trust contract
 
-- EUR only
-- integer cents
-- no parseFloat-based canonical conversion
-- no silent rounding of extra decimal digits
-- explicit product maximum
-- exact arithmetic tests
-- locale formatting outside the domain
+Source and confidence remain separate dimensions.
 
-## Price provenance model
-
-Price provenance is intentionally split into two dimensions.
-
-### Source
-
-Where did the numeric value come from?
-
-MVP:
-
-- manual
-
-Future:
-
-- price-memory
-- shelf-scan
-- encoded-barcode
-- retailer-feed
-
-### Confidence
-
-What does the product claim about this value?
-
-MVP:
-
-- confirmed
-- estimated
-
-Future:
-
-- remembered
-
-This separation prevents contradictory states such as a shelf-scanned value losing its scanner provenance after user confirmation.
-
-Example future item:
-
-- source = shelf-scan
-- confidence = confirmed
+A value can be remembered/scanned in origin while independently carrying a confidence/currentness state.
 
 ## Non-functional requirements
 
 ### NFR-001 — Correctness
 
-No user-visible money calculation may depend on floating-point decimal arithmetic.
+No canonical binary floating-point money arithmetic.
 
 ### NFR-002 — Responsiveness
 
-Pure local operations must feel immediate and must not wait on animation/network.
+Core local interactions feel immediate.
 
 ### NFR-003 — Reliability
 
-A successfully persisted mutation must restore identically after reload.
+A failed optional subsystem cannot silently corrupt core trip state.
 
 ### NFR-004 — Progressive enhancement
 
-Optional browser capabilities may improve the experience but cannot own core correctness.
+Optional capture/visual capabilities never become required for manual core completion.
 
 ### NFR-005 — Accessibility
 
-Meet the detailed contract in docs/quality/ACCESSIBILITY.md.
+Keyboard, focus, semantics, large text and reduced-motion requirements are release quality.
 
 ### NFR-006 — Mobile-first
 
-The primary flow must work at compact phone widths and one-handed reach assumptions.
+The primary flow is usable one-handed on compact phone widths.
 
 ### NFR-007 — Bundle discipline
 
-Deferred scanner/OCR dependencies should not enter the initial critical bundle before those features ship.
+Gated future scanner/PWA dependencies must not penalise the current critical path before they ship.
 
 ### NFR-008 — Privacy
 
-Core shopping data remains local by default.
+Core shopping state is local. Evidence tooling stays content-minimized and separate.
 
-## MVP acceptance journey
+### NFR-009 — Premium quality
 
-A release candidate must demonstrate this exact scenario:
+The product must feel intentional, polished and distinctive without adding recurring friction or reducing accessibility.
 
-1. open with clean storage
-2. start EUR 50 trip
-3. set EUR 2 safety buffer
-4. add EUR 3.79
-5. add EUR 12.50
-6. add EUR 1.29 × 3
-7. verify exact cart total and safe remaining
-8. enter a typo and correct before commit
-9. add an item, then edit its price
-10. remove an item and Undo
-11. preview an item that crosses safe limit
-12. commit it
-13. preview an item that crosses EUR 50 nominal budget
-14. cancel it
-15. reload
-16. verify canonical state restored exactly
-17. simulate persistence write failure
-18. verify degraded warning while in-memory arithmetic remains usable
-19. recover persistence
-20. finish trip
-21. enter actual checkout total
-22. verify difference
-23. reopen app
-24. verify completed trip exists in history
+## Acceptance journey
 
-## Acceptance scoring
+A representative release journey:
 
-Architecture/spec readiness before coding: **96/100**
+1. open with clean storage;
+2. start a EUR trip with budget/buffer;
+3. add exact prices;
+4. observe remaining/reserve consequence;
+5. edit/remove/Undo;
+6. reload and restore;
+7. finish trip;
+8. optionally enter actual checkout total;
+9. return to history;
+10. start another trip;
+11. reuse or override a remembered value where available.
 
-Remaining gaps before 100:
+The journey must remain clear, fast, durable and accessible.
 
-- final completed-trip immediate-reopen semantics
-- exact PWA update strategy
-- implementation evidence for the money parser and persistence transaction
+## Acceptance rule
 
-These gaps are intentionally explicit rather than hidden in implementation.
+Current release behaviour is accepted only when:
+
+- applicable domain/spec tests pass;
+- persistence/recovery semantics pass;
+- component/browser journeys pass;
+- accessibility checks pass;
+- code/docs agree on implementation status;
+- no gated capability is presented as shipped;
+- premium polish does not compromise speed or clarity.

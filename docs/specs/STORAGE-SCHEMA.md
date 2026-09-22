@@ -2,545 +2,278 @@
 
 ## Status
 
-The active-trip v1 portion of this localStorage schema is implemented in Phase 3.
+**IMPLEMENTED** localStorage contracts:
 
-Implemented now:
+- active trip;
+- completed history;
+- Price Memory;
+- versioned envelopes;
+- strict runtime validation;
+- domain reconstruction;
+- malformed/future-version handling;
+- historical non-shopping key retirement;
+- loss-safe completion and startup reconciliation.
 
-- `budget-cart:active-trip`
-- common v1 envelope for active-trip snapshots
-- strict Zod DTO validation
-- domain reconstruction
-- malformed/future-version recovery outcomes
-- safe historical non-shopping key retirement after successful shopping bootstrap
-
-Implemented beyond the original Phase 3 baseline:
-
-- completed-trip history
-- loss-safe completion transaction/reconciliation
-- independent Phase 8 price-memory record
-
-Still target-only in this document:
-
-- settings
-- optional meta record
-
-This document continues to define those later persistence slices before they are implemented.
+Settings/meta records are not current product state and are not defined here until a real requirement exists.
 
 ## Goals
 
-- versioned and inspectable
-- no derived financial totals as authority
-- safe migration
-- deterministic validation
-- loss-avoiding completion flow
-- no reinterpretation of historical non-shopping data
-- room for future price memory without polluting MVP records
+- versioned and inspectable;
+- canonical inputs only;
+- deterministic validation;
+- safe migration;
+- loss-avoiding completion;
+- no reinterpretation of historical non-shopping data;
+- independent advisory Price Memory.
 
-## Namespace
+## Keys
 
-Recommended keys:
-
-~~~text
+```text
 budget-cart:active-trip
 budget-cart:history
-budget-cart:settings
-budget-cart:meta
-~~~
-
-Implemented Phase 8:
-
-~~~text
 budget-cart:price-memory
-~~~
+```
 
-Do not reuse:
-
-~~~text
-historical versioned counter key
-counter
-~~~
+Historical counter keys must never be interpreted as shopping money.
 
 ## Common envelope
 
-Every stored logical record uses an envelope.
+Logical records use a versioned envelope:
 
-~~~ts
+```ts
 interface StorageEnvelope<T> {
   schemaVersion: number
   savedAt: string
   data: T
 }
-~~~
+```
 
 Rules:
 
-- schemaVersion is integer >= 1
-- savedAt is diagnostic metadata only
-- domain validation applies to data
-- derived totals are recalculated after load
+- schemaVersion is integer >= 1;
+- savedAt is diagnostic metadata;
+- runtime schema validation happens before domain reconstruction;
+- domain validation still applies after DTO validation;
+- derived totals are never storage authority.
 
-## Active-trip schema v1
+## Active-trip v1
 
 Key:
 
-~~~text
+```text
 budget-cart:active-trip
-~~~
+```
 
 Stored only when an active trip exists.
 
-~~~json
-{
-  "schemaVersion": 1,
-  "savedAt": "2026-09-21T12:00:00.000Z",
-  "data": {
-    "id": "trip-uuid",
-    "status": "active",
-    "currency": "EUR",
-    "budgetMinor": 5000,
-    "safetyBufferMinor": 200,
-    "startedAt": "2026-09-21T11:30:00.000Z",
-    "items": [
-      {
-        "id": "item-uuid",
-        "unitPriceMinor": 379,
-        "quantity": 1,
-        "priceSource": {
-          "kind": "manual"
-        },
-        "priceConfidence": {
-          "kind": "confirmed",
-          "confirmedAt": "2026-09-21T11:35:00.000Z"
-        },
-        "createdAt": "2026-09-21T11:35:00.000Z",
-        "updatedAt": "2026-09-21T11:35:00.000Z"
-      }
-    ]
-  }
-}
-~~~
+Canonical content includes:
 
-Must not contain:
+- trip id/status/currency;
+- budget and safety buffer;
+- startedAt;
+- item ids/prices/quantities;
+- optional labels;
+- price source/confidence;
+- item timestamps;
+- supported identity/store context where schema permits it.
 
-- cartTotal
-- remaining
-- safeRemaining
-- overBudget
-- progress
+Must not contain derived authority such as:
 
-## History schema v1
+- cartTotal;
+- remaining;
+- safeRemaining;
+- progress;
+- overBudget.
+
+## History v1
 
 Key:
 
-~~~text
+```text
 budget-cart:history
-~~~
+```
 
-Use one snapshot list for MVP.
+Stores completed-trip snapshots in a versioned envelope.
 
-~~~json
-{
-  "schemaVersion": 1,
-  "savedAt": "2026-09-21T12:30:00.000Z",
-  "data": {
-    "trips": [
-      {
-        "id": "trip-uuid",
-        "status": "completed",
-        "currency": "EUR",
-        "budgetMinor": 5000,
-        "safetyBufferMinor": 200,
-        "startedAt": "2026-09-21T11:30:00.000Z",
-        "completedAt": "2026-09-21T12:20:00.000Z",
-        "actualCheckoutMinor": 4672,
-        "items": []
-      }
-    ]
-  }
-}
-~~~
+Each completed entry preserves canonical trip/item data plus:
 
-History may retain full item lists.
+- completedAt;
+- optional actualCheckoutMinor.
 
-Do not optimise into summary-only records until there is evidence storage size matters.
+Requirements:
 
-## Price-memory schema v1
+- trip ids are unique;
+- conflicting duplicate ids degrade rather than silently replace;
+- invalid entries do not become domain objects;
+- completion append is idempotent for an identical trip.
+
+## Price Memory v1
 
 Key:
 
-~~~text
+```text
 budget-cart:price-memory
-~~~
+```
 
-Price Memory is a separate advisory snapshot:
+Independent from active/history persistence.
 
-~~~json
-{
-  "schemaVersion": 1,
-  "savedAt": "2026-09-22T08:00:00.000Z",
-  "data": {
-    "records": [
-      {
-        "id": "memory:label%3Amilk%201l:*",
-        "productId": "label:milk 1l",
-        "label": "Milk 1L",
-        "currency": "EUR",
-        "unitPriceMinor": 139,
-        "observedAt": "2026-09-20T08:00:00.000Z",
-        "source": {
-          "kind": "manual"
-        }
-      }
-    ]
-  }
-}
-~~~
+Records contain only fields required by the Price Memory domain contract, such as:
 
-Rules:
+- memory id;
+- normalized identity/label context;
+- remembered minor-unit value;
+- provenance/currentness metadata;
+- observation timestamps;
+- optional store context supported by the schema.
 
-- one deterministic memory id represents one product/store context
-- product identity is validated independently from display label
-- `observedAt` is authoritative freshness context; storage `savedAt` is not
-- malformed individual records are quarantined while valid records remain readable
-- unsupported future versions are preserved and never overwritten
-- duplicate deterministic ids are treated as integrity conflicts
-- write failure is advisory and must not affect active-trip persistence health
-- only safe transient write failure may be retried without first replacing unknown/corrupt raw data
+Price Memory is advisory.
 
-## Settings schema v1
-
-Key:
-
-~~~text
-budget-cart:settings
-~~~
-
-~~~json
-{
-  "schemaVersion": 1,
-  "savedAt": "2026-09-21T12:30:00.000Z",
-  "data": {
-    "preferredCurrency": "EUR",
-    "defaultSafetyBufferMinor": 0,
-    "autoCents": false,
-    "appearance": "system",
-    "haptics": true
-  }
-}
-~~~
-
-Rules:
-
-- settings cannot be required to decode historical trip money
-- unsupported preference values fall back safely
-- core trip restore must not fail because settings are malformed
-
-## Meta schema v1
-
-Key:
-
-~~~text
-budget-cart:meta
-~~~
-
-Optional but useful for migrations.
-
-~~~json
-{
-  "schemaVersion": 1,
-  "savedAt": "2026-09-21T12:30:00.000Z",
-  "data": {
-    "productStorageGeneration": 1,
-    "legacyPulseKeysRetired": true
-  }
-}
-~~~
-
-Do not use meta as a second source of truth for trip data.
+A Price Memory write failure must not invalidate completed-trip durability.
 
 ## Validation order
 
-For each record:
+For persisted input:
 
-1. storage getItem
-2. if null, return empty/default state
-3. JSON.parse
-4. validate envelope object
-5. validate schemaVersion
-6. reject unsupported future version
-7. run schema-level validation
-8. run domain-level validation
-9. convert validated numbers/strings into branded runtime types
-10. derive totals fresh
+1. read raw string;
+2. parse JSON;
+3. validate envelope header/version;
+4. validate DTO schema;
+5. reconstruct through domain validators/constructors;
+6. reject or recover on invariant failure.
 
-Never brand first and validate later.
+Never cast untrusted JSON directly into branded domain types.
 
-## Active-trip validation
+## Unsupported future versions
 
-Required:
+If an older build sees a newer unsupported schema:
 
-- id non-empty
-- status === active
-- supported currency
-- budgetMinor safe integer > 0 and <= 99_999_999
-- buffer safe integer >= 0 and <= budget
-- startedAt valid timestamp
-- items is array
+- do not guess compatibility;
+- do not overwrite the raw value;
+- surface degraded/recovery semantics according to the persistence contract.
 
-Each item:
+## Malformed data
 
-- unique id
-- unitPriceMinor safe integer > 0 and <= 99_999_999
-- quantity safe integer from 1 through 999
-- valid priceSource
-- valid priceConfidence
-- valid createdAt/updatedAt
+Malformed/invalid raw active-trip data must not be silently replaced during bootstrap.
 
-Reject the entire active snapshot if required financial invariants are broken.
-
-Do not partially remove “bad” items and continue without explicit recovery design.
-
-## History validation
-
-A malformed individual history entry should not automatically destroy all valid history.
-
-Recommended recovery:
-
-- validate each completed trip
-- quarantine invalid entries in-memory for possible export/debug
-- load valid entries
-- surface non-blocking history-recovery warning if user-facing recovery is implemented
-
-Active-trip reliability takes priority over perfect history recovery.
-
-## Completion transaction
-
-localStorage has no multi-key transaction.
-
-Preferred sequence:
-
-1. compute CompletedTrip in memory
-2. load/validate history
-3. append completed trip by unique trip id
-4. write history envelope
-5. only after history write success, remove active-trip key
-6. update in-memory lifecycle to completed-summary
-
-If step 4 fails:
-
-- leave active key unchanged
-- keep UI in active state
-- persistence = degraded
-
-If step 5 fails:
-
-- history already contains completed trip
-- active key still exists
-- mark persistence degraded
-- startup reconciliation must detect duplicate trip id
-
-## Duplicate completion reconciliation
-
-Deterministic rule proposal:
-
-If the same trip id appears:
-
-- once as active storage
-- once as completed history
-
-and completed history has completedAt:
-
-Treat the completed history record as completion evidence.
-
-Recovery flow:
-
-1. do not append a second history copy
-2. attempt to clear stale active key
-3. if clear succeeds → normal completed/no-active state
-4. if clear fails → preserve warning/degraded status
-5. never convert completed record back to active automatically
-
-This handles interruption after history write but before active clear.
-
-Immediate Continue shopping is a separate explicit operation and must not rely on startup guessing.
-
-## Idempotent history append
-
-History save helper must not append duplicate trip ids.
-
-Conceptually:
-
-~~~ts
-function upsertCompletedTrip(
-  history: CompletedTrip[],
-  trip: CompletedTrip,
-): CompletedTrip[]
-~~~
-
-For normal completion, same id should replace an identical/interrupted record rather than duplicate it.
-
-Unexpected conflicting completed records with same id should be treated as data-integrity error, not merged silently.
-
-## Undo persistence
-
-Undo metadata is not stored.
-
-The result of an undo command is canonical and must be persisted like any other active-trip mutation.
-
-After reload:
-
-- restored cart reflects the undo result
-- Undo button may be unavailable
-
-## Historical non-shopping storage policy
-
-Keys:
-
-~~~text
-historical versioned counter key
-counter
-~~~
-
-Rules:
-
-- never parse count into budget
-- never create a cart item from count
-- first shopping-version startup may mark legacy keys as retired
-- removal should happen only after new schema startup succeeds safely
-- tests cover both keys
-
-Conservative option:
-
-Leave legacy keys untouched for one release and simply ignore them.
-
-This is safer than destructive cleanup during the same migration that introduces new shopping state.
-
-## Schema migration contract
-
-Each version needs:
-
-~~~ts
-interface Migration<From, To> {
-  from: number
-  to: number
-  migrate(data: From): Result<To, MigrationError>
-}
-~~~
-
-Rules:
-
-- migrate one version at a time
-- no skipped implicit migrations
-- migration never reads React state
-- migration never contacts network
-- migration is deterministic
-- migrated result passes current domain validation before save
-
-## Future version handling
-
-If schemaVersion > CURRENT_SCHEMA_VERSION:
-
-- do not overwrite
-- do not clear
-- return unsupported-version error
-- show recovery/update guidance where appropriate
-
-This protects against an older cached PWA build.
+History may preserve valid entries while reporting invalid-entry degradation only where the contract explicitly allows that partial result.
 
 ## Write semantics
 
-Use complete envelope replacement.
+### Active trip
 
-For MVP:
+Committed mutations attempt immediate snapshot persistence.
 
-~~~ts
-localStorage.setItem(key, JSON.stringify(envelope))
-~~~
+A failed write produces degraded health while keeping the in-memory result explicit.
 
-A successful return means the browser accepted the write.
+### Completion
 
-Do not expose “saved” UI if setItem threw.
+Order is mandatory:
 
-## Parse/serialisation constraints
+1. restore/validate history;
+2. append completed trip safely;
+3. write durable history;
+4. only then clear active trip.
 
-- JSON only
-- no Date objects in storage
-- timestamps are ISO strings
-- no bigint unless storage design is revised
-- no Map/Set
-- no functions
-- no derived selector cache
+If history write fails:
 
-## Size strategy
+- active trip remains;
+- completion is not represented as safely finished.
 
-MVP expected size is small.
+If history succeeds but active clear fails:
 
-Do not prematurely:
+- completion is durable;
+- cleanup pending/degraded is exposed;
+- startup reconciliation handles stale active copy.
 
-- compress
-- shard every trip into separate keys
-- move to IndexedDB
-- introduce database libraries
+### Completed update
 
-Revisit when actual measured history/price-memory volume justifies it.
+Checkout reconciliation updates the matching completed trip.
+
+Missing/conflicting history entry degrades rather than inventing a new relationship.
+
+## Startup reconciliation
+
+If active trip id already exists identically as a durable completed history entry:
+
+- treat history as completion authority;
+- attempt to clear stale active snapshot;
+- never duplicate the completed trip;
+- expose cleanup failure if clear fails.
+
+## Historical non-shopping keys
+
+Historical counter data:
+
+- is never interpreted as money;
+- is retired only after shopping bootstrap is safe enough to do so;
+- removal failure becomes explicit degradation where applicable.
+
+## Migration discipline
+
+A real schema version change requires in one coherent change:
+
+- schema/type update;
+- migration/compatibility logic;
+- reconstruction rules;
+- tests for old/current/future versions;
+- documentation update.
+
+Do not bump versions for code-only refactors.
 
 ## Data deletion
 
-### Delete one completed trip
+History deletion and Price Memory deletion are independent user actions.
 
-- remove by trip id
-- save full updated history snapshot
-- report persistence failure if write fails
+Deletion must not silently affect the other subsystem.
 
-### Clear history
+Active-trip deletion/reset behaviour must remain explicit and safe.
 
-- requires explicit destructive confirmation in UI
-- active trip remains untouched
+## Privacy
 
-### Reset app data
+Shopping state remains local in the current product.
 
-If introduced later, exact scope must be stated:
+Storage schemas must not grow analytics/evidence fields.
 
-- active trip?
-- history?
-- settings?
-- price memory?
+QA/retention evidence uses separate keys/contracts.
 
-No ambiguous “Reset” button.
+## Multiple tabs
 
-## Storage schema test fixtures
+No silent merge of concurrent financial edits.
 
-Required fixture classes:
+If cross-tab editing becomes a real feature, define conflict semantics before adding synchronization.
 
-- fresh/no data
-- valid active v1
-- valid history v1
-- malformed JSON
-- missing data field
-- unsupported future version
-- invalid budget
-- budget above product maximum
-- buffer > budget
-- zero item price
-- item price above product maximum
-- zero quantity
-- quantity above 999
-- duplicate item ids
-- malformed price provenance
-- historical non-shopping state only
-- active + same completed id duplicate
-- write failure
+## Storage quota
 
-## Schema readiness score
+Current records are small enough for localStorage.
 
-**Active-trip v1 implementation: 100/100 against the Phase 3 scope.**
+IndexedDB requires a demonstrated size/query/concurrency need, not architectural preference.
 
-Full persistence design remains **98/100** because later history/completion concerns still need implementation evidence.
+## Required tests
 
-Remaining later-phase decisions:
+Cover:
 
-- whether meta key is worth keeping in MVP
-- exact history quarantine UX for partially invalid old history
-- duplicate active/history reconciliation when completion persistence ships
+- fresh start;
+- valid restore;
+- reload after mutation;
+- malformed JSON;
+- invalid DTO/business value;
+- unsupported future version;
+- storage unavailable;
+- read/write/remove failure;
+- history conflicts;
+- idempotent completion;
+- history-write failure;
+- active-clear failure after durable completion;
+- startup reconciliation;
+- legacy retirement;
+- Price Memory independence.
 
-The supported MVP currency is already locked to EUR.
+## Review checklist
+
+- Is only canonical state persisted?
+- Can an old build overwrite a future schema?
+- Can completion lose the trip?
+- Can invalid JSON become branded domain data?
+- Is convenience state isolated from core durability?
+- Are migration and tests included with a schema change?
+- Did a speculative settings/meta record get added without a product need?

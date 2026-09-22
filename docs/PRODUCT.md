@@ -2,405 +2,271 @@
 
 ## Status
 
-This document defines the target product direction for the repository.
+**IMPLEMENTED product direction.**
 
-The current implementation is a focused, mobile-first Shopping Budget Companion. Code, README copy, and architecture must distinguish implemented behavior from future or evidence-gated capabilities.
+This document owns the current product job, principles, competitive strategy and decision criteria. Implementation status of individual capabilities is listed only where it materially affects product scope.
 
 ## Product thesis
 
-Help a shopper stay under a hard spending limit while they can still change what is in the cart.
+Help a shopper stay under a hard spending limit **before checkout**, while the cart can still change.
 
 Primary promise:
 
 > Set your limit. Add prices. Always know what is left.
 
-The product should answer one question better and faster than general budgeting or grocery applications:
+The product should answer one question faster and more confidently than general budgeting or grocery apps:
 
 > How much can I still safely spend right now?
 
-## Problem
-
-A shopper may enter a store with a strict limit such as EUR 50, but the physical cart does not show a running total. Mental arithmetic becomes unreliable as the number of items grows, and discovering an overrun at checkout is late: the user is already at the register and may need to remove items under social and time pressure.
-
-This is especially relevant for:
-
-- shoppers on a fixed or constrained income
-- students
-- cash-envelope users
-- gift-card users
-- households making large grocery trips
-- anyone intentionally setting a hard per-trip cap
-
-Competitive review research confirms that users value knowing the total before checkout and use shopping calculators specifically to avoid overspending. The opportunity is not to prove that the problem exists; it is to remove more friction than existing tools.
-
 ## Job to be done
 
-When I shop with a fixed spending limit, help me see what I can still afford as I add items, so I can adjust the cart before checkout instead of being surprised at the register.
+When I shop with a fixed spending limit, help me see what I can still afford as I add items, so I can adjust the cart before checkout instead of discovering a problem at the register.
 
-## User outcome
+## Successful user outcome
 
-A successful shopping trip means the user:
+A shopper can:
 
-1. sets a limit in seconds
-2. adds prices with very little interaction
-3. always sees the remaining safe amount without navigating
-4. can correct mistakes immediately
-5. does not lose the active trip if the page reloads
-6. reaches checkout already knowing approximately what the cart will cost
-7. can optionally compare the estimate with the actual checkout total
+1. start a trip in seconds;
+2. add prices with minimal interaction;
+3. see remaining safe spending without navigation;
+4. correct mistakes immediately;
+5. survive reload without losing committed state;
+6. finish with a credible cart estimate;
+7. optionally reconcile against the actual checkout total;
+8. return for another trip with less repeated work.
 
-## North-star product metric
+## Product quality bar
+
+The product must be both:
+
+- **exceptionally convenient in a real store**;
+- **premium, polished and distinctive enough to feel meaningfully better than a generic calculator**.
+
+Neither goal may be used to excuse harm to the other.
+
+Premium quality comes from precision, hierarchy, feedback, typography, spacing, motion restraint, state design and consistency — not decorative complexity.
+
+## North-star signals
 
 ### In-product decision metric
 
-Remaining safe spending amount.
+**Remaining safe spending.**
 
-The interface may show cart total and budget progress, but the primary metric is what the user can still do, not what they have already done.
+Cart total and progress are supporting information. The primary active-trip metric is what the shopper can still do.
 
 ### Product-validation metric
 
-The primary retention signal is:
+**Second-trip rate**, with third-trip behaviour as an important confidence check.
 
-> **Second-trip rate**
-
-The product is not validated merely because a first trip works. It becomes meaningfully stronger when a shopper voluntarily returns and uses it on another real shopping trip.
-
-Initial decision thresholds and the full retention strategy are defined in:
-
-- docs/research/PRODUCT-SUCCESS-STRATEGY.md
+Real retention evidence outranks feature enthusiasm.
 
 ## Product principles
 
 ### 1. Remaining beats spent
 
-The primary screen answers “what is left?” before “what has been spent?”
+The active experience answers “what can I still add?” first.
 
 ### 2. Speed beats feature count
 
-Frequent actions must be possible in seconds. A feature that makes the common path slower must justify itself with material user value.
+Frequent interactions must take seconds. A feature that slows the common path must earn that cost with clear user value.
 
 ### 3. Price first
 
-A product name, category, photo, barcode, store, or note is optional unless required by the user’s chosen workflow.
+A price is enough to add an item. Name, category, barcode, store, photo and notes remain optional unless the chosen workflow needs them.
 
-The minimum useful input for an item is its price.
+### 4. Manual entry always works
 
-### 4. Manual entry must always work
-
-Manual price entry is the baseline interaction and must remain available offline.
-
-Scanning is an accelerator, never a dependency.
+Manual price entry is the universal baseline and fallback.
 
 ### 5. No surprise automation
 
-Remembered, scanned, and estimated prices must be clearly distinguished from prices confirmed during the current trip.
-
-The product must never present a stale remembered price as a current store price.
+Remembered, scanned, estimated or externally sourced values are candidates/context until the user confirms the current price where required.
 
 ### 6. Local-first core
 
-A shopper must be able to start and complete the core workflow without an account, bank connection, or network connection.
+The core shopping job does not require an account, bank connection, backend or analytics platform.
 
-### 7. No shame
+### 7. Correction is cheap
 
-Going over a limit is information, not failure.
-
-Use neutral language such as “EUR 3.41 over your limit,” never moralising language such as “You overspent again.”
+Undo/edit/remove must be easy because distracted input is expected.
 
 ### 8. Complexity must earn its tap
 
-Every feature must either reduce entry friction, improve confidence before checkout, prevent data loss, or make a repeated shopping task materially faster.
+A capability belongs only if it reduces friction, improves confidence, prevents data loss, improves repeat use, or materially strengthens the premium experience without slowing the core job.
 
-Otherwise it does not belong in the core product.
+### 9. Repeated use gets easier
 
-### 9. Repeated use must get easier
-
-The second and third shopping trips should require materially less effort than the first.
-
-Prioritise:
-
-- repeat previous budget
-- Shop again
-- Recent Items
-- remembered prices with freshness
-- one/two-action reuse
-
-before adding scanner/OCR breadth.
+Shop again, Recent Items and Price Memory exist to reduce recurring work.
 
 ### 10. Evidence beats feature race
 
-After the core manual and repeat-trip flows are implemented, real-store retention evidence takes priority over adding more capabilities.
+Weak retention is not an automatic request for OCR, barcode, voice, cloud sync or more screens.
 
-A low second-trip rate is a core product signal, not a request for more features.
+### 11. Premium without friction
 
-## Core experience
+Among equally correct and usable solutions, prefer the one with better hierarchy, feedback, polish, consistency and distinctiveness.
 
-### Start
+Never trade obviousness or speed for visual spectacle.
 
-The first useful question is:
+## Current product capabilities
 
-> How much can you spend today?
+**IMPLEMENTED**
 
-Provide optional quick values plus custom entry.
+- start one EUR shopping trip;
+- optional safety buffer;
+- remaining-first active state;
+- exact manual price entry;
+- quantity and projected consequences;
+- over-budget preview/intentional overage;
+- edit/remove/Undo;
+- active-trip persistence and recovery;
+- finish trip and completed history;
+- optional actual checkout reconciliation;
+- Shop again;
+- Recent Items;
+- local Price Memory;
+- independent local-data controls.
 
-Do not require an account, tutorial carousel, profile, category setup, or store selection.
+**PLANNED / GATED**
 
-### Shop
-
-The active-trip screen always exposes:
-
-1. remaining amount
-2. cart total relative to the limit
-3. clear progress
-4. one primary add action
-5. recent items and undo
-
-### Add
-
-Default flow:
-
-1. tap Add price
-2. enter the price using a large one-hand keypad
-3. preview the remaining amount before committing
-4. add
-
-An optional auto-cents mode may allow 379 to resolve to EUR 3.79 when configured for a two-decimal currency.
-
-### Correct
-
-Editing, removing, and undoing must be immediate. A shopper changing their mind is normal behaviour, not an exceptional workflow.
-
-### Checkout
-
-The user may finish the trip with only the estimated total.
-
-Optional reconciliation records estimated total, actual checkout total, and difference. This exists to improve confidence and future safety-buffer suggestions, not to become a full expense tracker.
+- installable offline PWA shell;
+- production barcode identification;
+- production shelf-label OCR;
+- advanced price mechanics only after evidence.
 
 ## Safety buffer
 
-The user may reserve part of the nominal budget.
+The optional buffer protects uncertainty inside the nominal budget.
 
-Example:
+```text
+safe limit = budget - safety buffer
+safe remaining = safe limit - cart total
+```
 
-- available money: EUR 50
-- safety buffer: EUR 2
-- safe spending limit: EUR 48
+The UI must distinguish normal, reserve-using and nominal over-budget states without shame.
 
-This protects against approximate weighted goods, bottle deposits, missed items, stale remembered prices, and small calculation differences.
+## Price trust
 
-## Price confidence
+Price provenance and confidence are separate concepts.
 
-Every price has an explicit origin:
+Examples:
 
-- confirmed — entered or confirmed during the current trip
-- remembered — reused from a previous trip
-- scanned — detected from a shelf label and awaiting or receiving confirmation
-- estimated — intentionally approximate
+- manual + confirmed;
+- price-memory + remembered;
+- shelf-scan + candidate;
+- external identity + no authoritative current price.
 
-The UI must make uncertainty visible without making the interface noisy.
-
-## Input strategy
-
-### P0 — manual price entry
-
-Always available, offline, deterministic, and fast.
-
-### P1 — repeat-trip acceleration and price memory
-
-Repeat-trip acceleration is a retention feature, not merely a convenience.
-
-Prioritise:
-
-- repeat previous budget
-- Shop again
-- Recent Items
-- remembered prices
-
-Remembered values include freshness context such as “Last paid EUR 1.39 at Prisma, 8 days ago.”
-
-This work should land before barcode/OCR because it reduces repeated friction without camera permissions, network dependency, recognition latency, or product-database coverage.
-
-### P1 — barcode identification
-
-A barcode primarily identifies a product; it does not normally contain an authoritative current shelf price.
-
-Useful flow:
-
-1. scan barcode
-2. identify product if possible
-3. show remembered store-specific price if available
-4. require confirmation or current-price entry
-5. remember the confirmed relationship for the future
-
-A barcode scan that still forces unnecessary metadata entry has failed its purpose.
-
-### P1/P2 — shelf-label scanning
-
-Camera-assisted price-tag reading can be more valuable to the core job than barcode scanning because the user primarily needs the current price.
-
-Detected values must always be previewed before commit.
-
-### P2 — voice
-
-Voice may reduce one-hand typing, but it is optional and never required for the core workflow.
-
-## What we deliberately are not building
-
-This product is not:
-
-- a general personal-finance application
-- a bank-linked expense tracker
-- a net-worth dashboard
-- an investment tool
-- a bill manager
-- a meal planner
-- a nutrition tracker
-- a grocery delivery service
-- a coupon marketplace
-- a retailer loyalty platform
-- an AI financial adviser
-- a household operating system
-- a social network
-
-These boundaries protect the central value proposition.
+The product must never imply more certainty than it has.
 
 ## Competitive strategy
 
-We will not attempt to beat mature competitors by accumulating more features.
+Do not compete by accumulating grocery features.
 
-We compete on:
+Compete on:
 
-1. interaction speed
-2. remaining-first information hierarchy
-3. reliability
-4. honest price confidence
-5. local-first privacy
-6. zero-friction first use
-7. a calm, non-judgmental product personality
+1. extremely fast price entry;
+2. remaining-first decision support;
+3. loss-resistant local persistence;
+4. easy correction;
+5. honest uncertainty;
+6. repeat-trip acceleration;
+7. zero-friction first use;
+8. privacy-friendly local operation;
+9. premium visual/interaction quality;
+10. a focused, calm, memorable product identity.
 
-## Competitive lessons already validated
+A competitor having a feature is not enough reason to copy it.
 
-Research reviewed Total Plus, GroceryBudget, CartBudget, Cart AI, Shopping Calculator, and Cart Tracker.
+## What we deliberately are not building
 
-Repeated positive signals:
+By default, this is not:
 
-- live totals are genuinely useful
-- budget progress helps users change decisions before checkout
-- quantity, discounts, taxes, reusable items, and price memory can remove real friction
-- offline operation is valuable in stores
-- no-account entry reduces barriers
+- a bank-linked finance app;
+- a net-worth or bill dashboard;
+- a meal planner;
+- a nutrition tracker;
+- a grocery delivery app;
+- a coupon marketplace;
+- a loyalty platform;
+- an AI financial adviser;
+- a household operating system;
+- a social network.
 
-Repeated negative signals:
+Expansion beyond the pre-checkout budget-control job requires a new product decision.
 
-- typing every field becomes tedious
-- keeping a keypad active can cause accidental input
-- scanners disappoint when scanning does not remove manual work
-- aggressive paywalls before first value destroy trust
-- data-loss or reappearing-item bugs are unacceptable
-- feature growth can turn a simple utility into a cluttered grocery suite
+## Tone
 
-## Tone and personality
+Calm, helpful, precise, optimistic and non-judgmental.
 
-The product should feel calm, helpful, optimistic, lightly witty, and never judgmental.
-
-Humour belongs in low-stakes moments, not errors involving money or data integrity.
-
-Appropriate:
-
-> EUR 2.20 left. We have entered the snack-decision zone.
-
-Appropriate after a precise finish:
-
-> That was close. Nicely done.
-
-Not appropriate:
-
-> You overspent again.
+Humour may appear in low-stakes moments, never in money/data-integrity failures.
 
 ## Business value
 
-The product creates value by helping users avoid checkout surprises, stressful item removal at the register, repeated mental arithmetic, and accidental breaches of a hard spending cap.
+The product helps avoid:
 
-The portfolio version should remain fully useful without monetisation.
+- checkout surprises;
+- stressful item removal at the register;
+- repeated mental arithmetic;
+- accidental breaches of a hard spending cap.
 
-If commercialised later, monetisation must not block the core budgeting workflow. Potential paid extensions must have real marginal cost or advanced value, such as cross-device household sync, large-scale OCR processing, advanced long-term price analytics, or retailer integrations.
+The core workflow should remain useful without monetisation.
+
+Any future monetisation must preserve first value and core trust.
 
 ## Success criteria
 
-A first-time user can:
+Internal targets until validated:
 
-- understand the purpose from the first screen
-- start a trip in under 10 seconds
-- add a manual price in roughly 3 seconds
-- see remaining budget with zero navigation
-- undo the last addition in one action
-- reload and resume without losing committed data
-- complete the core workflow without an account or internet connection
+- purpose understood from the first screen;
+- new trip starts in under ~10 seconds;
+- common manual price-only flow targets median <=2.5 seconds in representative one-hand testing, with ~3 seconds or less as a practical release expectation;
+- remaining amount requires zero navigation;
+- correction is one or very few actions;
+- committed state survives reload;
+- core workflow needs no account.
 
-These are internal targets until measured.
-
-### Repeated-use success
-
-After repeat-trip acceleration is implemented, validate the product with real shopping trips.
-
-The highest-value early signal is second-trip rate.
-
-Provisional interpretation:
-
-- >=45% — exceptional early signal; validate third-trip behaviour
-- 35–45% — strong
-- 25–35% — viable/promising; optimise recurring friction
-- 15–25% — problematic; freeze non-critical feature expansion
-- <15% — revisit the core interaction/job before expanding production features
-
-These thresholds are decision heuristics, not established benchmarks. Real cohort evidence overrides them.
-
-Healthy third-trip behaviour is required before treating early retention as strongly validated.
-
-The common manual price-only flow should target a median of <=2.5 seconds in representative one-hand testing, with approximately 3 seconds or less as a minimum release-quality expectation.
-
-See docs/research/PRODUCT-SUCCESS-STRATEGY.md for the full model.
+Retention interpretation remains a heuristic, not an external benchmark. See `research/PRODUCT-SUCCESS-STRATEGY.md`.
 
 ## Product risks
 
 ### Input fatigue
 
-If adding prices feels like bookkeeping, retention will collapse.
-
-Mitigation: price-first flow, auto-cents, price memory, optional scanning, one-hand design.
+Mitigation: price-first entry, auto-cents, repeat-trip acceleration, Price Memory and only evidence-backed capture accelerators.
 
 ### Scanner theatre
 
-A scanner that looks impressive but saves no work harms trust.
-
-Mitigation: measure scanner usefulness by interaction reduction, not technical novelty.
+Mitigation: judge capture by end-to-end interaction reduction, not technical novelty.
 
 ### Scope drift
 
-Grocery apps naturally expand into recipes, lists, household planning, coupons, and finance.
-
-Mitigation: every proposed feature must map to the core job.
+Mitigation: map every feature to the core job and competitive strategy.
 
 ### False precision
 
-Remembered or estimated prices can differ from checkout reality.
-
-Mitigation: price confidence, safety buffer, optional reconciliation.
+Mitigation: explicit provenance/confidence, optional buffer and checkout reconciliation.
 
 ### Data loss
 
-An active trip is small data with high immediate importance.
+Mitigation: persist committed mutations and surface degraded durability.
 
-Mitigation: persist every committed mutation and surface persistence failure.
+### Generic utility feel
+
+Mitigation: preserve premium hierarchy, typography, feedback, state design and coherent identity while keeping the workflow obvious.
 
 ## Decision rule for future features
 
-Before accepting a feature, answer:
+Before accepting a meaningful product capability, answer:
 
-1. Does it help the shopper stay under the trip limit before checkout?
-2. Does it reduce interaction cost or increase confidence?
-3. Can it remain optional for users who want the simplest workflow?
-4. Does it preserve offline/manual fallback?
-5. Does it avoid turning the product into a general finance or grocery platform?
+1. Does it materially help the shopper stay under the trip limit before checkout?
+2. Does it reduce friction, increase confidence or improve repeat use?
+3. Does it strengthen premium quality or meaningful differentiation?
+4. Can it remain optional where the simplest workflow should stay simple?
+5. Does it preserve manual/local-first fallback and accessibility?
+6. Does it preserve exact-money and durability invariants?
+7. Does it avoid expanding into a different product category?
 
-If the answer is no to the first question, the feature normally does not belong here.
+If the first answer is no, the feature normally does not belong.
+
+If a feature looks premium but adds recurring friction, reject or redesign it.
+
+If a change is frictionless but makes the product generic, improve its presentation/interaction quality without compromising speed.

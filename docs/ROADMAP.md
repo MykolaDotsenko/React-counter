@@ -95,10 +95,11 @@ Do not treat the next capability as approved merely because implementation capac
 Before adding a new major user-facing capability, answer:
 
 1. What measured user problem does it solve?
-2. Does it reduce shopping friction or increase pre-checkout confidence?
-3. Can the manual/local-first fallback remain complete?
-4. Does it preserve exact-money and persistence invariants?
-5. Is the previous validation gate sufficiently resolved?
+2. Does it reduce shopping friction, increase confidence or improve repeat use?
+3. Does it strengthen premium quality or meaningful competitive differentiation?
+4. Can the manual/local-first fallback remain complete?
+5. Does it preserve exact-money, persistence and accessibility invariants?
+6. Is the previous validation gate sufficiently resolved?
 
 ## Future sequence
 
@@ -246,10 +247,11 @@ For multi-file changes, prefer one coherent architectural intent per PR.
 A feature is normally allowed into the core product only when it:
 
 - helps a shopper stay under the trip limit before checkout
-- reduces interaction cost or increases confidence
+- reduces interaction cost, increases confidence or improves repeat use
+- strengthens premium quality or meaningful differentiation without adding recurring friction
 - remains optional when possible
 - preserves manual/local-first fallback
-- does not weaken data integrity
+- does not weaken data integrity or accessibility
 
 If it fails the first criterion, it normally does not belong in this product.
 

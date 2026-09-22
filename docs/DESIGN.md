@@ -1,139 +1,82 @@
-# Design System and Product Storytelling
+# Design
 
 ## Status
 
-This document defines the target visual design system for the shopping budget companion.
+**IMPLEMENTED production design contract.**
 
-Phase 4 A0 design validation is complete. **Calm Utility** is the selected production direction for the core shopping UI.
+The selected direction is **Calm Utility**: premium, precise and distinctive without adding interaction cost.
 
-Decision evidence:
+Historical prototype comparison and research rationale live in [reference/DESIGN-RATIONALE.md](./reference/DESIGN-RATIONALE.md).
 
-- docs/evidence/PHASE-4-DESIGN-VALIDATION.md
-
-The public/default build now ships the Calm Utility Shopping Budget Companion. The automated/code portion of Phase 5 through B6 is implemented, while representative human timing/one-hand/bright-store evidence remains explicitly unverified.
-
-This document complements:
-
-- PRODUCT.md — product purpose and scope
-- docs/reference/UX.md — detailed interaction behaviour
-- DOMAIN.md — business rules
-- ARCHITECTURE.md — implementation boundaries
-- docs/quality/ACCESSIBILITY.md — accessibility contract
-
-When visual preference conflicts with clarity, trust, accessibility, or task speed, those requirements win.
+Accessibility requirements are refined in [quality/ACCESSIBILITY.md](./quality/ACCESSIBILITY.md).
 
 ## Design objective
 
-The interface should communicate its purpose before the user reads an explanation.
+A shopper should understand, at a glance:
 
-A shopper opening an active trip should immediately understand:
+1. how much is safely left;
+2. whether the budget is comfortable, using reserve, or exceeded;
+3. how to add another price.
 
-1. how much money is still safely available
-2. how much of the budget is already in the cart
-3. how to add another price
-
-The desired emotional impression is:
+Desired emotional impression:
 
 > calm control, not financial anxiety
 
-The desired product impression is:
+Desired product impression:
 
-> a small tool that has been designed unusually well for one job
+> a small, unusually well-designed tool for one job
 
-## Design thesis
+## Premium definition
 
-The visual concept is **remaining room**.
+Premium means:
 
-The product is not visually about:
+- obvious hierarchy;
+- excellent spacing;
+- stable numeric typography;
+- confident but restrained surfaces;
+- polished empty/error/success states;
+- fast, purposeful feedback;
+- consistent motion;
+- coherent light/dark behaviour;
+- subtle identity;
+- no visual ambiguity.
 
-- accounting
-- charts
-- banking
-- spreadsheets
-- grocery catalogues
-- AI
-- futuristic spectacle
+Premium does **not** mean:
 
-It is about the amount of room still available inside a constraint.
+- extra steps;
+- hidden controls;
+- decorative dashboards;
+- glass-on-glass stacks;
+- excessive gradients;
+- slow hero animations;
+- novelty gestures;
+- “AI” styling without AI value.
 
-That concept should appear consistently through:
-
-- the dominant remaining amount
-- the budget-progress visual
-- spacing and composition
-- subtle depletion/remaining-capacity motion
-- concise language
-
-The interface should feel more like a precise instrument than a finance dashboard.
-
-## Evidence behind the direction
-
-The design direction incorporates current platform and usability guidance.
-
-### Apple Human Interface Guidelines
-
-Relevant principles:
-
-- focus on primary tasks and limit onscreen controls
-- place frequently used controls in comfortable middle/bottom reach on iPhone
-- use strong visual hierarchy
-- use progressive disclosure for secondary details
-- reserve prominent button styling for one or two primary actions
-- use brand colour judiciously rather than colouring every control
-- support both light and dark appearance
-- use purposeful, brief motion rather than animation for its own sake
-- use plain, action-oriented language
-
-### Android / Material accessibility guidance
-
-Interactive controls should provide at least a 48dp target for reliable touch interaction.
-
-### Nielsen Norman Group
-
-Relevant principles:
-
-- progressive disclosure reduces complexity
-- recognition is preferable to recall
-- visible system status matters
-- user control and easy recovery matter
-- minimalist design should remove irrelevant information
-- mobile forms should minimise physical and cognitive effort
-
-### Baymard Institute
-
-Mobile form research repeatedly shows that:
-
-- touch typing is slow and error-prone
-- the on-screen keyboard consumes substantial viewport space
-- redundant fields materially hurt usability
-- correct mobile keyboard/input behaviour matters
-- users need important totals and context visible during transactional flows
-
-These sources support a design that is simpler and more contextual than a conventional grocery app.
+If visual sophistication makes the core action slower or less obvious, it is not premium.
 
 ## Design personality
 
 The product should feel:
 
-- modern
-- calm
-- precise
-- warm
-- trustworthy
-- lightly playful
-- premium without looking expensive or exclusive
+- modern;
+- calm;
+- precise;
+- warm;
+- trustworthy;
+- lightly playful;
+- premium without looking exclusive.
 
 It should not feel:
 
-- corporate
-- childish
-- gamified
-- alarmist
-- crypto/fintech
-- cyberpunk
-- neon-heavy
-- overloaded
-- aggressively “AI”
+- corporate;
+- childish;
+- gamified;
+- alarmist;
+- crypto/fintech;
+- cyberpunk;
+- neon-heavy;
+- overloaded;
+- aggressively “AI”.
 
 Working phrase:
 
@@ -141,741 +84,214 @@ Working phrase:
 
 ## Visual hierarchy
 
-The active-trip screen has one dominant object.
-
-When no safety buffer is active:
-
-> **EUR 18.58 left**
-
-When a safety buffer is active, the hero represents safe remaining:
-
-> **EUR 16.58 safe to spend**
-
-for the canonical EUR 50 / EUR 31.42 cart / EUR 2 reserve fixture.
-
-Nominal remaining stays secondary when a reserve exists.
-
-If the safe limit has already been crossed but the nominal budget has not, do not present a negative amount as “safe to spend.” Keep the hero at **EUR 0.00 safe to spend** and use secondary copy to state that the safety buffer has been reached plus the exact nominal amount still remaining. Only a true nominal-budget overage changes the hero into an exact over-limit amount.
-
-Everything else supports the safe shopping decision.
-
-Hierarchy:
-
-### 1. Hero — remaining amount
-
-Largest type on the screen.
-
-The amount is the visual anchor.
-
-The label should clarify meaning:
-
-- Left
-- Safe to spend
-- Remaining
-
-Choose one final wording during usability testing and use it consistently.
-
-### 2. Budget context
-
-Directly under or integrated with the hero:
-
-> EUR 31.42 of EUR 50.00
-
-This is smaller but always available.
-
-### 3. Capacity visual
-
-A simple budget indicator reinforces the relationship between:
-
-- cart total
-- safe limit
-- nominal limit
-
-It must be understandable without relying on colour.
-
-### 4. Primary action
-
-One visually dominant action:
-
-> Add price
-
-Active-trip utilities such as **Adjust budget** and **Finish trip** must remain visibly secondary. When both are present, group them compactly beneath the Add action rather than giving either another full-width primary-looking row.
-
-### 5. Cart details
-
-Recent items and corrections belong below the primary decision information.
-
-### 6. Secondary tools
-
-History, scanner options, settings, store, discounts, and advanced details are progressively disclosed.
-
-## First screen: no explanation required
-
-### New trip
-
-The start screen should read approximately:
-
-> How much can you spend today?
-
-Then show a small set of quick values plus custom entry.
-
-The visual story is:
-
-> choose a limit → start shopping
-
-Do not begin with:
-
-- logo animation
-- marketing carousel
-- long value proposition
-- account creation
-- feature tour
-
 ### Active trip
 
-Recommended conceptual structure:
+Order of importance:
 
-~~~text
-┌─────────────────────────────┐
-│ Shopping               •••  │
-│                             │
-│          €18.58             │
-│            LEFT             │
-│                             │
-│      €31.42 of €50.00       │
-│      ━━━━━━━━━━━──────       │
-│      Safe buffer €2         │
-│                             │
-│      [  + Add price  ]      │
-│                             │
-│ Recent                      │
-│ €8.90                   ×1  │
-│ €4.79                   ×1  │
-│ €2.45                   ×2  │
-└─────────────────────────────┘
-~~~
+1. remaining / over-budget amount;
+2. budget context;
+3. capacity/status cue;
+4. Add price;
+5. cart details;
+6. secondary tools.
 
-This is a hierarchy model, not a pixel-perfect specification.
+The remaining amount is the visual anchor.
 
-The first screen must not require scrolling to reach the primary Add action on common phone sizes.
+Cart total supports the decision but must not compete with remaining safe spending.
 
-## The budget visual
+### Start state
 
-The visualisation should communicate remaining capacity, not create another dashboard metric.
+The first screen should make the job and first action obvious without onboarding.
 
-Preferred order for prototyping:
+Avoid marketing copy inside the core task.
 
-### Option A — quiet linear capacity bar
+### Completed state
 
-**Selected for Phase 4 production direction.**
+Show:
 
-Advantages:
+- final estimated total;
+- optional actual checkout comparison;
+- remaining/overage;
+- clear Done / Shop again / History actions.
 
-- instantly familiar
-- visually compact
-- works well with large text
-- easy to make accessible
-- does not compete with hero amount
+Do not turn completion into a gamified spending celebration.
 
-### Option B — partial radial ring around the hero
+## Remaining-capacity visual
 
-**Rejected as the default Phase 4 production visual.** It remains a historical/prototype reference only.
+Use a quiet capacity/status cue that reinforces remaining room.
 
-Advantages:
+Requirements:
 
-- stronger visual identity
-- naturally reuses some proven interaction patterns
-- communicates finite capacity
+- readable in bright store conditions;
+- understandable without colour alone;
+- visually secondary to the numeric remaining amount;
+- able to represent normal, reserve and over-budget states;
+- stable at large text sizes.
 
-Risks:
+Do not add charts that create another metric to interpret.
 
-- can become decorative
-- can resemble fitness/gamification products
-- can reduce number legibility
-- can be harder at large text sizes
+## Colour
 
-Decision result:
+Use colour by role:
 
-The Phase 4 design validation selected the quiet linear capacity bar because it has lower comprehension, large-text, bright-store, and accessibility risk.
+- background/surface;
+- primary text;
+- secondary text;
+- restrained accent;
+- semantic reserve/over-budget status;
+- focus/interaction states.
 
-Do not add decorative radial progress unless it communicates shopping state better than the current linear capacity model.
+Rules:
 
-See docs/evidence/PHASE-4-DESIGN-VALIDATION.md.
-
-## Brand expression
-
-Branding must be felt through the whole experience rather than repeated as a logo.
-
-Brand expression comes from:
-
-- typography
-- spacing
-- motion
-- primary accent
-- shape language
-- microcopy
-- the remaining-room visual metaphor
-
-Avoid:
-
-- persistent logo in the header
-- branded splash screens
-- decorative brand panels
-- excessive accent-colour surfaces
-
-The shopping information is the hero, not the brand mark.
-
-## Colour strategy
-
-### Principle
-
-Use colour as punctuation, not wallpaper.
-
-The product should use a largely neutral surface system with one recognisable brand accent and a small number of semantic colours.
-
-Do not assign final hex/OKLCH values before testing prototypes in:
-
-- bright store lighting
-- dark mode
-- increased contrast
-- common forms of colour-vision deficiency
-
-### Roles
-
-Define tokens by role rather than hue name:
-
-- surface-primary
-- surface-secondary
-- surface-elevated
-- text-primary
-- text-secondary
-- border-subtle
-- accent-primary
-- status-comfortable
-- status-attention
-- status-over
-- focus-ring
-
-The same role can have different light/dark values.
-
-### Accent
-
-The brand accent should appear primarily on:
-
-- Add price
-- selected controls
-- key progress/capacity detail
-- focus/highlight moments
-
-Do not make every button, icon, heading, and border the brand colour.
-
-### Semantic status
-
-Colour must never be the sole status signal.
-
-Comfortable / near limit / over limit should also differ through:
-
-- text
-- icon or marker
-- copy
-- position/shape where useful
-
-Avoid making normal spending states emotionally alarming.
-
-An over-budget condition should be clear without creating a “danger dashboard.”
-
-## Light and dark appearance
-
-Support the system appearance by default.
-
-Do not make the product dark-only; bright-store use makes first-class light mode a product requirement.
-
-### Light mode
-
-Should feel:
-
-- clean
-- calm
-- legible under bright supermarket lighting
-- slightly warm rather than sterile
-
-### Dark mode
-
-Should feel:
-
-- deep rather than pure black
-- high contrast
-- restrained in glow/saturation
-- visually consistent with light mode
-
-Dark mode is not a separate brand.
-
-### System preference
-
-Respect system appearance.
-
-Avoid requiring the user to configure a separate app theme just to obtain a normal light/dark experience.
+- accent is not applied to every control;
+- semantic meaning is never colour-only;
+- normal spending states should not feel alarming;
+- dark mode should be genuinely designed, not mechanically inverted;
+- light mode must remain strong in bright environments.
 
 ## Surface and depth
 
-Use depth sparingly.
+Prefer simple surfaces and limited elevation.
 
-Preferred hierarchy:
+Use depth only when it clarifies hierarchy, such as:
 
-1. page background
-2. primary content plane
-3. contextual sheet/dialog
-4. temporary feedback
+- modal/sheet separation;
+- primary card separation where needed;
+- focused transient layers.
 
-Avoid stacking many glass cards inside other glass cards.
+Decorative glass/spectral effects are allowed only when they improve hierarchy without reducing text contrast or performance.
 
-Decorative glass/spectral effects may appear only when they improve hierarchy; they must not become the dominant visual language.
+## Shape and spacing
 
-Blur is decorative enhancement, never the only thing separating content layers.
+Use consistent radius and spacing families.
 
-## Shape language
+Frequent controls must remain comfortably tappable.
 
-Use a restrained rounded system.
+Mobile page padding should preserve usable width while giving the hero visual breathing room.
 
-Suggested starting points:
-
-- large content panels: 20–28px radius
-- primary button: capsule or generously rounded rectangle
-- item rows: 14–20px radius where surfaced
-- small chips: capsule
-
-Do not give every element a different radius.
-
-Shape consistency is more important than novelty.
-
-## Spacing system
-
-Use a consistent spacing scale.
-
-Recommended base:
-
-~~~text
-4
-8
-12
-16
-20
-24
-32
-40
-48
-64
-~~~
-
-Primary mobile page side padding should generally live around 16–24px depending on viewport.
-
-Use generous spacing around the hero number.
-
-The hero needs visual silence around it so the remaining amount is recognised instantly.
+Whitespace around the remaining amount is intentional: it improves instant recognition.
 
 ## Typography
 
-Typography carries most of the hierarchy.
+Money is the most important typographic system.
 
-### Typeface strategy
+Requirements:
 
-Prefer a highly legible system or modern variable sans-serif.
+- tabular numerals where available;
+- stable layout as values change;
+- responsive size rather than screenshot-specific fixed values;
+- strong contrast;
+- no decorative typeface for critical financial values;
+- hierarchy survives 200% text / large text.
 
-If a custom brand font is eventually introduced:
+## Primary action
 
-- use it only where it materially strengthens identity
-- keep body/control text extremely legible
-- verify large-text behaviour
-- avoid thin weights
-
-Do not use multiple decorative typefaces.
-
-### Numeric typography
-
-Money values should use tabular numerals where available to prevent horizontal jitter as totals change.
-
-The hero amount should use:
-
-- strong weight
-- compact line-height
-- generous optical spacing
-- enough size to dominate without forcing awkward wrapping
-
-### Hierarchy
-
-Conceptual scale:
-
-- hero money: fluid approximately 48–72px on phones
-- screen title: approximately 20–24px
-- primary control: approximately 16–18px semibold
-- body: approximately 16–17px
-- metadata: approximately 13–15px, never dependent on ultra-light weight
-
-Exact values should use responsive clamp rules and accessibility testing rather than fixed screenshots.
-
-### Labels
-
-Do not rely on placeholder text as labels.
-
-Keep context visible while entering prices.
-
-## Primary button
-
-There should normally be one visually dominant button in the active-shopping view:
+There should normally be one visually dominant action in the active shopping view:
 
 > Add price
 
-Design:
+Secondary actions must remain discoverable but should not compete with it.
 
-- large touch area
-- clear filled shape
-- text + optional familiar plus symbol
-- visible pressed state
-- bottom-reachable
-- inset from device edges/safe areas
+## Price entry
 
-Do not make:
+Design goals:
 
-- Scan
-- Voice
-- Barcode
-- History
+- fast one-hand entry;
+- current budget context remains understandable;
+- exact projected consequence appears before commit;
+- quantity is available without overwhelming the default flow;
+- optional label remains optional;
+- over-budget confirmation is explicit;
+- keypad/mode behaviour is predictable;
+- after commit, the user returns cleanly to the trip.
 
-equally prominent.
+Do not require name/category/store before a simple price add.
 
-They are alternative or secondary paths.
+## Cart items
 
-## Bottom sheet strategy
+Each item should support quick recognition and correction.
 
-Use a bottom sheet for contextual, temporary actions that benefit from thumb reach.
+Show only information useful to the shopping decision.
 
-Good candidates:
+Unknown/unnamed items are valid; the UI must not imply they are incomplete.
 
-- add method
-- manual price keypad
-- item edit
-- discount
-- secondary scan actions
+Remembered/estimated/scanned values must remain distinguishable where trust depends on provenance.
 
-Do not put permanently necessary information in a bottom sheet.
+## Correction
 
-The remaining amount must remain visible in the main interface.
+Edit/remove/Undo should feel immediate and safe.
 
-Where practical, keep some budget context visible above or within the add sheet so the user does not lose orientation.
+A correction flow should preserve orientation and restore focus to a sensible trigger.
 
-## Price-entry design
+Do not hide destructive correction behind gesture-only interactions.
 
-The keypad is a core product surface and deserves custom attention.
+## Near-limit and over-budget states
 
-### Layout goals
+Near-limit:
 
-- large numeric display
-- currency always visible
-- minimum 48px targets; prefer larger for numeric keys
-- generous spacing
-- clear backspace
-- one dominant Add action
-- projected remaining directly above the commit action
+- increase clarity, not anxiety;
+- preserve Add price;
+- show remaining/reserve status explicitly.
 
-Example:
+Over-budget:
 
-~~~text
-       €4.79
-
-After adding
-€13.79 left
-
-┌─────┬─────┬─────┐
-│  1  │  2  │  3  │
-├─────┼─────┼─────┤
-│  4  │  5  │  6  │
-├─────┼─────┼─────┤
-│  7  │  8  │  9  │
-├─────┼─────┼─────┤
-│  .  │  0  │  ⌫  │
-└─────┴─────┴─────┘
-
-[ Add €4.79 ]
-~~~
-
-### Context preservation
-
-The user should not need to remember:
-
-- current budget
-- remaining before entry
-- expected result
-
-Show the projected result during entry.
-
-### Error prevention
-
-Invalid or impossible input should be prevented or explained inline.
-
-Do not wait for a modal error after pressing Add if the problem is already known.
-
-## Cart item design
-
-Rows should be scannable in under a second.
-
-Primary row information:
-
-- optional name
-- line total
-- quantity if more than one
-
-Secondary:
-
-- unit price
-- remembered/scanned/estimated status
-- store/freshness when relevant
-
-Avoid exposing internal metadata by default.
-
-### Unknown-name item
-
-A nameless item is valid.
-
-Example:
-
-> €4.79
-
-The product must never visually imply that unnamed means incomplete.
-
-## Empty-state design
-
-The empty state still displays the full budget context.
-
-Example:
-
-> €50.00 left  
-> Nothing in the cart yet.
-
-Primary action:
-
-> Add first price
-
-Do not replace the core screen with an illustration-only empty state.
-
-## Near-limit design
-
-The interface should become more informative, not more dramatic.
-
-Example:
-
-> €3.20 left
-
-Secondary message:
-
-> Close to your safe limit.
-
-Avoid:
-
-- shaking UI
-- flashing
-- red full-screen backgrounds
-- repeated warnings
-
-Attention should scale with consequence.
-
-## Over-budget design
-
-Factual information first:
-
-> €2.14 over your limit
-
-Then actions:
-
-- Review cart
-- Adjust limit
-
-If a pending item causes the overage, preview that before commit.
-
-Do not use shame or celebratory gamification.
+- valid state, not error;
+- show overage amount clearly;
+- allow correction;
+- avoid shame language.
 
 ## Success and delight
 
-Delight should reward precision and clarity, not spending.
+Delight should reward clarity and precision, not spending.
 
-Good moment:
+Appropriate:
 
-> Perfect landing. €0.00 left.
-
-Good motion:
-
-- brief number transition
-- subtle capacity-settle animation
-- small haptic where platform allows
+- subtle confirmation;
+- brief number transition;
+- polished empty/completion state;
+- restrained tactile/visual feedback.
 
 Avoid:
 
-- confetti after every purchase
-- trophies
-- streaks
-- points
-- “spending achievements”
+- confetti for spending;
+- streaks;
+- achievements;
+- celebratory overspending cues.
 
-This is a utility, not a game.
+## Motion
 
-## Motion system
+Motion is progressive enhancement.
 
-Motion should answer one of three questions:
+Rules:
 
-1. What changed?
-2. Where did it go?
-3. Did my action work?
+- financial mutations happen before decorative animation;
+- common actions stay fast;
+- no important information exists only in motion;
+- reduced motion preserves all meaning and controls;
+- transitions should help orientation, not demonstrate animation skill.
 
-If motion answers none of those, remove it.
+## Navigation and disclosure
 
-### Frequent actions
+Do not manufacture navigation complexity for sophistication.
 
-Use minimal duration and amplitude.
+Secondary tools belong behind progressive disclosure when they are not part of the immediate aisle decision.
 
-Adding a price is frequent; the animation should not demand attention every time.
-
-### Major state changes
-
-More expressive motion is acceptable for:
-
-- starting a trip
-- finishing a trip
-- opening a contextual sheet
-- switching between active and history state
-
-### Reduced motion
-
-Replace spatial movement with:
-
-- opacity
-- instantaneous state
-- subtle emphasis
-
-No critical meaning may depend on motion.
-
-## Interaction feedback
-
-Every tap should have a visible state.
-
-For custom buttons:
-
-- pressed state
-- focus state
-- disabled state where truly necessary
-- loading only for genuinely asynchronous actions
-
-Core local actions should not display spinners.
-
-Optional haptics can support:
-
-- successful price add
-- warning threshold
-- scanner detection
-
-Haptics must never be the only feedback.
-
-## Iconography
-
-Use familiar symbols.
-
-Examples:
-
-- plus — add
-- barcode — barcode
-- camera — price tag scan
-- microphone — voice
-- trash/delete — remove
-- ellipsis — secondary menu
-
-Use text labels when an icon alone could be ambiguous.
-
-Avoid custom abstract icons for basic actions.
-
-## Navigation
-
-MVP should not need a persistent bottom tab bar.
-
-The primary flow is one task.
-
-Recommended model:
-
-- active trip as home when one exists
-- start trip when none exists
-- history/settings through secondary navigation
-- scanning as an add method, not a top-level destination
-
-Do not manufacture navigation complexity for visual sophistication.
-
-## Progressive disclosure
-
-Primary screen:
-
-- remaining
-- total / budget
-- progress
-- Add price
-- recent cart
-
-Secondary layer:
-
-- edit item
-- quantity
-- discount
-- scan options
-- store
-
-Tertiary settings only where necessary:
-
-- tax mode
-- auto-cents
-- appearance/accessibility preferences
-- export
-
-Avoid more than two practical disclosure levels inside an active task.
-
-## Information density
-
-The product should feel spacious without wasting mobile space.
-
-Rule:
-
-> Large space around important information; compact space around related operational data.
-
-Hero section can breathe.
-
-Cart rows should be efficient.
-
-Do not give every piece of metadata a separate card.
+The core active trip should remain one-screen understandable.
 
 ## Content design
 
-Use sentence case.
+Use plain action-oriented language.
 
-Prefer verb-first controls:
+Prefer:
 
-- Add price
-- Finish trip
-- Edit item
-- Use €1.39
-- Enter current price
+- “Add price”
+- “€12.40 safe to spend”
+- “Uses €1.20 of your safety buffer”
+- “€2.10 over your limit”
 
-Prefer plain language over clever labels.
+Avoid branded terms for ordinary actions.
 
-Humour belongs in secondary copy only.
-
-Never make the user decode a branded term for a normal action.
-
-## Internationalisation
-
-The visual system must support:
-
-- longer translated labels
-- decimal separators
-- currency symbol placement
-- right-to-left layout
-- different minor-unit rules
-- larger text
-
-Do not hard-code layouts around the short string “€18.58 LEFT”.
+Tone remains calm and non-judgmental.
 
 ## Responsive strategy
 
@@ -883,231 +299,103 @@ Do not hard-code layouts around the short string “€18.58 LEFT”.
 
 Primary target.
 
-Single-column.
+Optimise for:
 
-Bottom-reachable primary action.
+- 320–430px widths;
+- thumb reach;
+- software keyboard;
+- large text;
+- bright store conditions.
 
-### Tablet / desktop
+### Larger screens
 
-Do not simply stretch the phone card to full width.
+Preserve hierarchy and compactness.
 
-Use a constrained content width.
+Do not stretch the utility into a dashboard simply because more space exists.
 
-Potential layout:
+## Accessibility
 
-- budget/hero + controls in primary column
-- cart details/history context in secondary area
+Release requirements include:
 
-Maintain the same information hierarchy.
+- semantic controls;
+- keyboard operation;
+- visible focus;
+- useful focus restoration;
+- accessible names;
+- no colour-only meaning;
+- reduced motion;
+- forced-colour resilience;
+- large-text/200% support;
+- reliable touch targets.
 
-## App icon direction
-
-Do not use:
-
-- a generic shopping cart with a euro symbol
-- a calculator icon
-- a bank card
-- an AI sparkle
-
-Preferred concept:
-
-> a container with visible remaining space
-
-Possible forms:
-
-- open rounded shape with a remaining segment
-- abstract basket/container cut by a capacity line
-- simple letterform built around negative space
-
-The icon should remain recognisable at small size and work without text.
-
-Final branding/name should be validated separately before icon lock.
-
-## Screenshot / portfolio direction
-
-The portfolio hero screenshot should communicate the product in one frame.
-
-Best candidate state:
-
-- EUR 50 budget
-- around EUR 31–37 cart total
-- clear EUR remaining hero
-- 3–5 recent items
-- visible Add price action
-- enough progress to show the capacity concept
-- no modal or scanner open
-
-A recruiter should understand the application without reading the README first.
-
-Secondary screenshot:
-
-- price-entry sheet showing projected remaining
-
-Avoid screenshots that primarily showcase decorative effects.
-
-## Prototype variants evaluated
-
-Phase 4 A0 evaluated three intentionally different directions using the same canonical fixture. The selected direction is documented in docs/evidence/PHASE-4-DESIGN-VALIDATION.md:
-
-### A. Calm utility
-
-- neutral surfaces
-- restrained accent
-- linear capacity bar
-- minimal depth
-
-Purpose: strongest clarity baseline.
-
-### B. Premium spatial
-
-- subtle depth/glass
-- partial radial capacity visual
-- slightly more expressive transitions
-
-Purpose: preserve only interaction details that still improve the shopping task.
-
-### C. Warm everyday
-
-- softer surfaces
-- warmer neutral palette
-- friendly shape language
-- subtle illustration/empty-state personality
-
-Purpose: test whether finance-like precision can feel more human.
-
-Do not mix all three into one compromise before testing.
-
-## Usability test questions for visual prototypes
-
-Do not ask:
-
-> Do you like this design?
-
-Ask:
-
-1. What is this app for?
-2. How much money can you still spend?
-3. What would you press to add a €3.79 item?
-4. Is the cart currently close to the limit?
-5. Which information feels most important?
-6. Which control, if any, is confusing?
-7. What do you think the progress visual means?
-8. Would you be comfortable using this with one hand in a store?
-
-Measure correctness and speed before aesthetic preference.
-
-## Design acceptance criteria
-
-A production design should pass all of these:
-
-### Comprehension
-
-A first-time viewer can identify the app's purpose within 3–5 seconds.
-
-### Hierarchy
-
-Remaining budget is the strongest visual signal.
-
-### Action
-
-Add price is the obvious primary action.
-
-### Ergonomics
-
-Frequent touch controls meet the product's 48px target standard and are thumb-reachable.
-
-### Simplicity
-
-No mandatory metadata appears in the basic add flow.
-
-### Trust
-
-Remembered/scanned/estimated values are visually distinct from confirmed prices.
-
-### Adaptability
-
-Works in light, dark, increased contrast, reduced motion, and 200% text zoom.
-
-### Performance
-
-Core state changes feel immediate and do not wait on network/scanner services.
-
-### Brand restraint
-
-The interface has identity without branding overpowering the shopping information.
+Accessibility is part of premium quality.
 
 ## Design anti-patterns
 
 Do not ship:
 
-- neon cyberpunk finance styling
-- glass-on-glass card stacks
-- excessive gradients behind important text
-- more than one or two primary-looking actions
-- hidden remaining amount while shopping
-- a permanent scanner-first camera UI
-- tiny icon actions
-- decorative charts
-- gamified spending streaks
-- red/green-only status
-- forced dark mode
-- mandatory onboarding
-- full-screen brand splash
-- constant orbital animation
-- low-contrast secondary text
-- placeholder-only form labels
-- interaction that depends on swipe with no alternative
-- AI sparkle iconography without actual AI value
+- hidden remaining amount;
+- scanner-first camera as the default UI;
+- tiny icon-only frequent actions;
+- multiple competing primary buttons;
+- forced dark mode;
+- mandatory onboarding;
+- full-screen brand splash before first value;
+- decorative finance charts;
+- low-contrast secondary text;
+- placeholder-only labels;
+- swipe-only essential actions;
+- AI sparkle iconography without AI value.
 
-## Design review checklist
+## Design acceptance
 
-For each visual implementation PR:
+A user-facing change is acceptable when:
 
-1. Is the product purpose obvious without explanation?
-2. Is remaining budget still the strongest visual element?
-3. Is Add price still the strongest action?
-4. Did we add visual complexity without user value?
-5. Can the screen be used one-handed?
-6. Are secondary features progressively disclosed?
-7. Does light mode work as well as dark mode?
-8. Does the accent remain restrained?
+### Comprehension
+The purpose and current remaining state are obvious.
+
+### Action
+The next likely action is visually clear.
+
+### Ergonomics
+The common flow remains one-hand friendly and fast.
+
+### Trust
+Money, provenance and durability states are honest.
+
+### Premium quality
+Spacing, typography, feedback, transitions and states feel intentional and coherent.
+
+### Differentiation
+The experience feels more considered than a generic calculator without adding task friction.
+
+### Accessibility
+The same job remains achievable with keyboard/assistive technology, large text and reduced motion.
+
+## Review checklist
+
+For a visual PR:
+
+1. Is remaining still the strongest signal?
+2. Is Add price still the strongest action?
+3. Did we reduce or add recurring friction?
+4. Does the result feel more polished without becoming busier?
+5. Is the premium value visible in hierarchy, feedback or consistency rather than decoration?
+6. Does the change strengthen a reason to prefer this product?
+7. Can it be used one-handed?
+8. Is uncertainty visible without noise?
 9. Are money values stable and easy to scan?
-10. Is uncertainty visible without creating noise?
-11. Is motion purposeful and brief?
-12. Does the design survive large text and reduced motion?
-13. Are buttons recognisable and at least 48px in frequent-use contexts?
-14. Does the design look like a focused shopping utility rather than a fintech dashboard?
-15. Would a portfolio screenshot explain the product in one frame?
-
-## Research references
-
-Research reviewed for this design contract:
-
-- Apple HIG — Design principles: https://developer.apple.com/design/human-interface-guidelines/design-principles
-- Apple HIG — Designing for iOS: https://developer.apple.com/design/human-interface-guidelines/designing-for-ios
-- Apple HIG — Layout: https://developer.apple.com/design/human-interface-guidelines/layout
-- Apple HIG — Buttons: https://developer.apple.com/design/human-interface-guidelines/buttons
-- Apple HIG — Typography: https://developer.apple.com/design/human-interface-guidelines/typography
-- Apple HIG — Branding: https://developer.apple.com/design/human-interface-guidelines/branding
-- Apple HIG — Color: https://developer.apple.com/design/human-interface-guidelines/color
-- Apple HIG — Dark Mode: https://developer.apple.com/design/human-interface-guidelines/dark-mode
-- Apple HIG — Motion: https://developer.apple.com/design/human-interface-guidelines/motion
-- Apple HIG — Writing: https://developer.apple.com/design/human-interface-guidelines/writing
-- Android Developers — Accessibility API defaults and 48dp touch targets: https://developer.android.com/develop/ui/compose/accessibility/api-defaults
-- W3C — WCAG 2.2 target-size minimum: https://www.w3.org/TR/WCAG22/
-- Nielsen Norman Group — Progressive Disclosure: https://www.nngroup.com/articles/progressive-disclosure/
-- Nielsen Norman Group — 10 Usability Heuristics: https://www.nngroup.com/articles/ten-usability-heuristics/
-- Nielsen Norman Group — Reducing cognitive load in forms: https://www.nngroup.com/articles/4-principles-reduce-cognitive-load/
-- Nielsen Norman Group — Bottom Sheets: https://www.nngroup.com/articles/bottom-sheet/
-- Baymard Institute — Mobile checkout and form usability: https://baymard.com/research-articles/mobile-ecommerce-checkout-forms
-- Baymard Institute — Mobile ecommerce usability: https://baymard.com/research/mcommerce-usability
+10. Does light mode work in bright conditions?
+11. Does dark mode remain intentional?
+12. Does reduced motion preserve meaning?
+13. Does large text remain usable?
+14. Are frequent controls comfortably tappable?
+15. Did we add visual complexity without product value?
 
 ## Maintenance rule
 
-If usability testing disproves a visual assumption, change this document.
+If usability evidence disproves a design assumption, change the contract.
 
-Do not preserve a design choice because it is impressive, already implemented, or visually fashionable.
+Do not preserve a design choice because it is fashionable, impressive or already implemented.
 
-The product goal is not to look modern in a screenshot.
-
-The goal is to feel obvious, calm, fast, and trustworthy every time someone uses it in a real store.
+The goal is to feel obvious, fast, trustworthy, polished and distinctive in a real store.

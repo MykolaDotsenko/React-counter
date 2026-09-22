@@ -14,6 +14,29 @@ Each decision captures:
 
 Date format: YYYY-MM-DD.
 
+## Decision index
+
+Use this index to retrieve only relevant ADRs. Older decisions explain historical choices; current implementation status still comes from code/tests and current authoritative contracts.
+
+### Product / scope / competition
+D-001, D-002, D-003, D-014, D-015, D-016, D-020, D-022, D-023, D-035, D-036, D-038
+
+### Money / domain / trust
+D-004, D-005, D-010, D-011, D-017, D-018, D-019, D-041
+
+### Persistence / data integrity
+D-007, D-008, D-009, D-012, D-027, D-034, D-040, D-042, D-045
+
+### UI / architecture / technology
+D-006, D-013, D-024, D-025, D-026, D-029, D-030, D-046, D-048, D-049
+
+### Future capture / PWA
+D-028, D-031, D-032, D-033, D-037
+
+### Evidence / validation / brand
+D-021, D-039, D-043, D-044, D-047
+
+
 ## D-001 — Pivot from generic counter to shopping budget companion
 
 Date: 2026-09-21
