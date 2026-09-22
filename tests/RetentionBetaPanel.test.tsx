@@ -45,6 +45,35 @@ describe("RetentionBetaPanel", () => {
     ).not.toBeNull();
   });
 
+  it("prevents resetting evidence while a trip is active", async () => {
+    const user = userEvent.setup();
+    const onReset = vi.fn();
+
+    render(
+      <RetentionBetaPanel
+        session={createRetentionBetaSession(
+          "2026-09-22T08:00:00.000Z",
+        )}
+        onReset={onReset}
+        resetDisabled
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Beta evidence" }),
+    );
+
+    const reset = screen.getByRole("button", {
+      name: "Reset evidence",
+    }) as HTMLButtonElement;
+
+    expect(reset.disabled).toBe(true);
+    expect(
+      screen.getByText(/Finish or leave the active trip before resetting evidence/i),
+    ).not.toBeNull();
+    expect(onReset).not.toHaveBeenCalled();
+  });
+
   it("requires a second reset action before clearing evidence", async () => {
     const user = userEvent.setup();
     const onReset = vi.fn();
