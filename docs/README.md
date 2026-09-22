@@ -160,6 +160,14 @@ When behaviour changes:
 5. move useful rationale out of current contracts;
 6. delete duplicated status narration.
 
+Documentation structure is enforced by:
+
+```bash
+npm run docs:check
+```
+
+The validator checks required contract paths, retired legacy paths, docs-root classification, and relative Markdown links. It runs inside `npm run check`.
+
 Current docs use only:
 
 - **IMPLEMENTED**
