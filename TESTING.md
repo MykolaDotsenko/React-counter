@@ -306,6 +306,24 @@ Estimated status survives:
 - persistence round trip
 - cart summary derivation
 
+## Retention beta evidence tests
+
+The guarded retention beta must prove:
+
+- evidence stays local unless the user explicitly copies it
+- the schema contains no prices, budgets, item names, product/store identity, or checkout values
+- trip ordinals are relative to the beta evidence session, not pre-existing shopping history
+- starting the recorder mid-trip does not fabricate a `trip_started` event
+- item milestones are deduplicated per trip
+- manual entry completion and abandonment are distinguishable
+- remembered-price reuse and current-price override are distinguishable
+- malformed beta evidence falls back safely without affecting shopping state
+- the event log is bounded
+- the beta panel cannot block the primary mobile Add price control
+- the beta build is noindex and independently build-gated in CI
+
+The beta recorder is QA/validation infrastructure. Failure to save beta evidence must never affect active-trip persistence or money correctness.
+
 ## Technology-specific test policy
 
 ### Application controller
