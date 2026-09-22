@@ -176,7 +176,7 @@ export function ShoppingTimingQaPanel({
   const summary1250 = gate.eur1250;
 
   useEffect(() => {
-    document.title = "Budget Cart — Empirical Timing QA";
+    document.title = "Shopping Budget Companion — Empirical Timing QA";
 
     const robots =
       document.querySelector<HTMLMetaElement>('meta[name="robots"]') ??
@@ -194,7 +194,7 @@ export function ShoppingTimingQaPanel({
 
     if (description !== null) {
       description.content =
-        "Internal Budget Cart empirical timing and one-hand usability QA.";
+        "Internal Shopping Budget Companion empirical timing and one-hand usability QA.";
     }
   }, []);
 
