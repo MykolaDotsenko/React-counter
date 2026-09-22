@@ -388,6 +388,7 @@ export function ShoppingAppShell({
       {betaSession === null ? null : (
         <RetentionBetaPanel
           session={betaSession}
+          resetDisabled={state.activeTrip !== null}
           onReset={() => {
             const next = createRetentionBetaSession(
               new Date().toISOString(),
