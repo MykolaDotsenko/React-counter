@@ -88,6 +88,26 @@ export function RecentItemsSection({
   const [errorMessage, setErrorMessage] = useState("");
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
 
+  const restoreRememberedTrigger = (memoryId: string): void => {
+    queueMicrotask(() => {
+      const buttons = document.querySelectorAll<HTMLButtonElement>(
+        "[data-use-remembered-memory-id]",
+      );
+
+      for (const button of buttons) {
+        if (button.dataset.useRememberedMemoryId === memoryId) {
+          button.focus();
+          break;
+        }
+      }
+    });
+  };
+
+  const cancelPending = (memoryId: string): void => {
+    setPendingId(null);
+    restoreRememberedTrigger(memoryId);
+  };
+
   useEffect(() => {
     if (pendingId !== null) {
       confirmationCancelRef.current?.focus();
@@ -156,7 +176,7 @@ export function RecentItemsSection({
                   onKeyDown={(event) => {
                     if (event.key === "Escape") {
                       event.preventDefault();
-                      setPendingId(null);
+                      cancelPending(record.id);
                     }
                   }}
                 >
@@ -176,7 +196,7 @@ export function RecentItemsSection({
                       type="button"
                       className={styles.secondaryButton}
                       onClick={() => {
-                        setPendingId(null);
+                        cancelPending(record.id);
                       }}
                     >
                       Cancel
@@ -196,6 +216,7 @@ export function RecentItemsSection({
                         }
 
                         setPendingId(null);
+                        restoreRememberedTrigger(record.id);
                       }}
                     >
                       Add anyway
@@ -207,6 +228,7 @@ export function RecentItemsSection({
                   <button
                     type="button"
                     className={styles.rememberedButton}
+                    data-use-remembered-memory-id={record.id}
                     onClick={() => {
                       setErrorMessage("");
 
