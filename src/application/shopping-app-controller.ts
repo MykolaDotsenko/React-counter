@@ -1,5 +1,15 @@
 import type { MinorUnits } from "../domain/money";
 import {
+  mergePriceMemories,
+  priceMemoryRecordsFromCompletedTrip,
+  type PriceMemoryId,
+  type PriceMemoryRecord,
+} from "../domain/price-memory";
+import {
+  EMPTY_PRICE_MEMORY_PERSISTENCE_PORT,
+  type PriceMemoryPersistencePort,
+} from "./price-memory-port";
+import {
   createActiveTrip,
   createCartItem,
   reduceTrip,
@@ -118,6 +128,8 @@ export interface ShoppingAppState {
   readonly completedTrips: readonly CompletedTrip[];
   readonly completionCleanupPending: boolean;
   readonly persistence: PersistenceHealth;
+  readonly priceMemories: readonly PriceMemoryRecord[];
+  readonly priceMemoryPersistence: PersistenceHealth;
   readonly undo: UndoState | null;
   readonly recovery: RecoveryState | null;
 }
@@ -130,6 +142,12 @@ export interface StartTripInput {
 export interface AddManualItemInput {
   readonly unitPriceMinor: MinorUnits;
   readonly quantity: number;
+  readonly label?: string;
+}
+
+export interface AddRememberedItemInput {
+  readonly memoryId: PriceMemoryId;
+  readonly quantity?: number;
 }
 
 export interface UpdateSpendingPlanInput {
@@ -141,6 +159,7 @@ export interface UpdateManualItemInput {
   readonly itemId: ItemId;
   readonly unitPriceMinor: MinorUnits;
   readonly quantity: number;
+  readonly label?: string | null;
 }
 
 type ActiveTripCommand = Exclude<
@@ -160,7 +179,8 @@ export type ApplicationError =
         | "completed-summary-open"
         | "completion-not-saved"
         | "completed-trip-not-found"
-        | "repeat-source-unavailable";
+        | "repeat-source-unavailable"
+        | "price-memory-not-found";
     }
   | DomainError;
 
@@ -186,6 +206,9 @@ export interface ShoppingAppController {
   readonly startTrip: (input: StartTripInput) => AppCommandResult;
   readonly startTripFromCompleted: (tripId: TripId) => AppCommandResult;
   readonly addManualItem: (input: AddManualItemInput) => AppCommandResult;
+  readonly addRememberedItem: (
+    input: AddRememberedItemInput,
+  ) => AppCommandResult;
   readonly updateSpendingPlan: (
     input: UpdateSpendingPlanInput,
   ) => AppCommandResult;
@@ -207,9 +230,11 @@ export interface ShoppingAppControllerDependencies {
   readonly persistence: ShoppingPersistencePort;
   readonly clock: Clock;
   readonly ids: IdGenerator;
+  readonly priceMemoryPersistence?: PriceMemoryPersistencePort;
 }
 
 const EMPTY_COMPLETED_TRIPS = Object.freeze([]) as readonly CompletedTrip[];
+const EMPTY_PRICE_MEMORIES = Object.freeze([]) as readonly PriceMemoryRecord[];
 
 const HEALTHY_PERSISTENCE = Object.freeze({
   status: "healthy",
@@ -233,6 +258,8 @@ const initialState = (): ShoppingAppState =>
     completedTrips: EMPTY_COMPLETED_TRIPS,
     completionCleanupPending: false,
     persistence: HEALTHY_PERSISTENCE,
+    priceMemories: EMPTY_PRICE_MEMORIES,
+    priceMemoryPersistence: HEALTHY_PERSISTENCE,
     undo: null,
     recovery: null,
   });
@@ -297,6 +324,7 @@ export const createShoppingAppController = ({
   persistence,
   clock,
   ids,
+  priceMemoryPersistence = EMPTY_PRICE_MEMORY_PERSISTENCE_PORT,
 }: ShoppingAppControllerDependencies): ShoppingAppController => {
   let state = initialState();
   const listeners = new Set<() => void>();
@@ -330,6 +358,15 @@ export const createShoppingAppController = ({
     }
 
     const result = persistence.bootstrap();
+    const memoryResult = priceMemoryPersistence.bootstrap();
+    const bootstrapIssueTime =
+      !result.ok || !memoryResult.ok ? clock.now() : null;
+    const memoryHealth = memoryResult.ok
+      ? HEALTHY_PERSISTENCE
+      : degradedPersistence(
+          memoryResult.issue,
+          bootstrapIssueTime ?? clock.now(),
+        );
 
     if (result.ok) {
       return publish({
@@ -339,12 +376,14 @@ export const createShoppingAppController = ({
         completedTrips: result.completedTrips,
         completionCleanupPending: result.completionCleanupPending,
         persistence: HEALTHY_PERSISTENCE,
+        priceMemories: memoryResult.records,
+        priceMemoryPersistence: memoryHealth,
         undo: null,
         recovery: null,
       });
     }
 
-    const since = clock.now();
+    const since = bootstrapIssueTime ?? clock.now();
     const persistenceHealth = degradedPersistence(result.issue, since);
 
     if (result.recoveryRequired) {
@@ -355,6 +394,8 @@ export const createShoppingAppController = ({
         completedTrips: result.completedTrips,
         completionCleanupPending: result.completionCleanupPending,
         persistence: persistenceHealth,
+        priceMemories: memoryResult.records,
+        priceMemoryPersistence: memoryHealth,
         undo: null,
         recovery: recoveryState(
           result.issue,
@@ -370,6 +411,8 @@ export const createShoppingAppController = ({
       completedTrips: result.completedTrips,
       completionCleanupPending: result.completionCleanupPending,
       persistence: persistenceHealth,
+      priceMemories: memoryResult.records,
+      priceMemoryPersistence: memoryHealth,
       undo: null,
       recovery: null,
     });
@@ -402,6 +445,8 @@ export const createShoppingAppController = ({
       persistence: saveResult.ok
         ? HEALTHY_PERSISTENCE
         : degradedPersistence(saveResult.issue, now),
+      priceMemories: state.priceMemories,
+      priceMemoryPersistence: state.priceMemoryPersistence,
       undo: null,
       recovery: null,
     });
@@ -493,10 +538,67 @@ export const createShoppingAppController = ({
       id: ids.itemId(),
       unitPriceMinor: input.unitPriceMinor,
       quantity: input.quantity,
+      ...(input.label === undefined ? {} : { label: input.label }),
       priceSource: { kind: "manual" },
       priceConfidence: {
         kind: "confirmed",
         confirmedAt: now,
+      },
+      createdAt: now,
+    });
+
+    if (!itemResult.ok) {
+      return failure(state, itemResult.error);
+    }
+
+    return dispatch({
+      type: "add-item",
+      item: itemResult.value,
+    });
+  };
+
+  const addRememberedItem = (
+    input: AddRememberedItemInput,
+  ): AppCommandResult => {
+    if (state.lifecycle === "booting") {
+      return failure(state, applicationError("not-ready"));
+    }
+
+    if (state.lifecycle === "recovery") {
+      return failure(state, applicationError("recovery-required"));
+    }
+
+    if (state.activeTrip === null) {
+      return failure(state, applicationError("no-active-trip"));
+    }
+
+    const memory = state.priceMemories.find(
+      (candidate) => candidate.id === input.memoryId,
+    );
+
+    if (memory === undefined) {
+      return failure(
+        state,
+        applicationError("price-memory-not-found"),
+      );
+    }
+
+    const now = clock.now();
+    const itemResult = createCartItem({
+      id: ids.itemId(),
+      unitPriceMinor: memory.unitPriceMinor,
+      quantity: input.quantity ?? 1,
+      label: memory.label,
+      priceSource: {
+        kind: "price-memory",
+        memoryId: memory.id,
+      },
+      priceConfidence: {
+        kind: "remembered",
+        observedAt: memory.observedAt,
+        ...(memory.storeId === undefined
+          ? {}
+          : { storeId: memory.storeId }),
       },
       createdAt: now,
     });
@@ -556,6 +658,7 @@ export const createShoppingAppController = ({
       patch: {
         unitPriceMinor: input.unitPriceMinor,
         quantity: input.quantity,
+        ...(input.label === undefined ? {} : { label: input.label }),
         ...(priceChanged
           ? {
               priceSource: { kind: "manual" as const },
@@ -666,7 +769,7 @@ export const createShoppingAppController = ({
       state.completedTrips,
       completedTrip,
     );
-    const nextState = publish({
+    let nextState = publish({
       lifecycle: "completed-summary",
       activeTrip: null,
       completedSummary: completedTrip,
@@ -678,9 +781,44 @@ export const createShoppingAppController = ({
             persistenceResult.issue,
             completedAt,
           ),
+      priceMemories: state.priceMemories,
+      priceMemoryPersistence: state.priceMemoryPersistence,
       undo: null,
       recovery: null,
     });
+
+    const observedMemories =
+      priceMemoryRecordsFromCompletedTrip(completedTrip);
+    const mergedMemories = mergePriceMemories(
+      nextState.priceMemories,
+      observedMemories,
+    );
+
+    if (mergedMemories !== nextState.priceMemories) {
+      if (nextState.priceMemoryPersistence.status === "healthy") {
+        const memorySavedAt = clock.now();
+        const memorySave = priceMemoryPersistence.save(
+          mergedMemories,
+          memorySavedAt,
+        );
+
+        nextState = publish({
+          ...nextState,
+          priceMemories: mergedMemories,
+          priceMemoryPersistence: memorySave.ok
+            ? HEALTHY_PERSISTENCE
+            : degradedPersistence(
+                memorySave.issue,
+                memorySavedAt,
+              ),
+        });
+      } else {
+        nextState = publish({
+          ...nextState,
+          priceMemories: mergedMemories,
+        });
+      }
+    }
 
     return success(nextState, true, "persisted");
   };
@@ -986,6 +1124,7 @@ export const createShoppingAppController = ({
     startTrip,
     startTripFromCompleted,
     addManualItem,
+    addRememberedItem,
     updateSpendingPlan,
     updateManualItem,
     removeItem,
