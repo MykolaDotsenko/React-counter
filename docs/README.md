@@ -18,6 +18,52 @@ Rationale/history:
 
 If code and an authoritative contract disagree, reconcile the drift in the same change.
 
+## Information architecture
+
+Each location has one purpose:
+
+| Location | Put here | Do not put here |
+| --- | --- | --- |
+| `docs/*.md` | small set of current cross-cutting authoritative contracts | research snapshots, completed plans, provider notes |
+| `docs/specs/` | executable behavioural/data interaction specifications | copied TypeScript interfaces, product strategy |
+| `docs/architecture/` | specialized engineering contracts that refine ARCHITECTURE | generic tech research |
+| `docs/quality/` | cross-cutting release-quality contracts | feature roadmap ideas |
+| `docs/decisions/` | accepted ADR rationale grouped by topic | current implementation-status checklists |
+| `docs/reference/` | useful heuristics, ownership maps and non-authoritative guidance | rules that redefine current behaviour |
+| `docs/evidence/` | protocols/results that support validation claims | product requirements |
+| `docs/research/` | dated/external evidence and hypotheses | shipped capability claims |
+| `docs/marketing/` | launch/store operational material | core product contracts |
+| `docs/archive/` | completed/historical execution material | anything an implementation agent should follow today |
+
+### New-document rule
+
+Prefer editing an existing owner over creating a new file.
+
+Create a new document only when:
+
+1. no current document clearly owns the concern;
+2. the content has a distinct lifecycle or audience;
+3. putting it in the existing owner would materially increase context cost;
+4. its authority level and directory are unambiguous.
+
+Do **not** create a second product, architecture, UX, functionality, testing or roadmap contract under a different name.
+
+### Navigation invariant
+
+A normal engineering task should usually need:
+
+```text
+AGENTS.md
+  → docs/README.md
+  → one primary owning contract
+  → at most one or two detailed specs/references
+  → affected code/tests
+```
+
+Use ADR/research/evidence only when the task requires rationale, external evidence or validation status.
+
+Avoid dense cross-link meshes. `docs/README.md` is the hub; domain-specific documents may link to the exact refinement they depend on.
+
 ## Authoritative documents
 
 | Document | Owns |
