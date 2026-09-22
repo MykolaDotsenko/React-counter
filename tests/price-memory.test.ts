@@ -5,13 +5,17 @@ import {
   createPriceMemoryRecord,
   priceMemoryAgeDays,
   priceMemoryIdFor,
+  priceMemoryRecordsFromCompletedTrip,
   productIdFromLabel,
   recentPriceMemories,
   upsertPriceMemory,
   type PriceMemoryRecord,
 } from "../src/domain/price-memory";
 import {
+  createActiveTrip,
+  createCartItem,
   isoTimestamp,
+  reduceTrip,
   storeId,
   type IsoTimestamp,
   type StoreId,
@@ -221,6 +225,97 @@ describe("price memory domain", () => {
     expect(recentPriceMemories([old, latest, bread], { limit: 2 })).toEqual([
       latest,
       bread,
+    ]);
+  });
+
+  it("derives memories only from named confirmed observations in a completed trip", () => {
+    const base = unwrap(
+      createActiveTrip({
+        id: "memory-completed-trip",
+        budgetMinor: money(5_000),
+        startedAt: "2026-09-20T07:00:00.000Z",
+      }),
+    );
+    const confirmedMilk = unwrap(
+      createCartItem({
+        id: "confirmed-milk",
+        unitPriceMinor: money(139),
+        quantity: 1,
+        label: "Milk 1L",
+        priceSource: { kind: "manual" },
+        priceConfidence: {
+          kind: "confirmed",
+          confirmedAt: time("2026-09-20T08:00:00.000Z"),
+        },
+        createdAt: "2026-09-20T08:00:00.000Z",
+      }),
+    );
+    const rememberedBread = unwrap(
+      createCartItem({
+        id: "remembered-bread",
+        unitPriceMinor: money(249),
+        quantity: 1,
+        label: "Bread",
+        priceSource: {
+          kind: "price-memory",
+          memoryId: "memory-bread",
+        },
+        priceConfidence: {
+          kind: "remembered",
+          observedAt: time("2026-09-18T08:00:00.000Z"),
+        },
+        createdAt: "2026-09-20T08:05:00.000Z",
+      }),
+    );
+    const unnamed = unwrap(
+      createCartItem({
+        id: "unnamed",
+        unitPriceMinor: money(315),
+        quantity: 1,
+        priceSource: { kind: "manual" },
+        priceConfidence: {
+          kind: "confirmed",
+          confirmedAt: time("2026-09-20T08:10:00.000Z"),
+        },
+        createdAt: "2026-09-20T08:10:00.000Z",
+      }),
+    );
+
+    let active = base;
+
+    for (const item of [confirmedMilk, rememberedBread, unnamed]) {
+      const next = unwrap(
+        reduceTrip(active, {
+          type: "add-item",
+          item,
+        }),
+      );
+
+      if (next.status !== "active") {
+        throw new Error("Expected active trip");
+      }
+
+      active = next;
+    }
+
+    const completed = unwrap(
+      reduceTrip(active, {
+        type: "complete-trip",
+        completedAt: time("2026-09-20T09:00:00.000Z"),
+      }),
+    );
+
+    if (completed.status !== "completed") {
+      throw new Error("Expected completed trip");
+    }
+
+    expect(priceMemoryRecordsFromCompletedTrip(completed)).toEqual([
+      expect.objectContaining({
+        label: "Milk 1L",
+        unitPriceMinor: 139,
+        observedAt: "2026-09-20T08:00:00.000Z",
+        source: { kind: "manual" },
+      }),
     ]);
   });
 
