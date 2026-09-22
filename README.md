@@ -189,7 +189,7 @@ npm run preview
 
 ## Documentation
 
-The authoritative entry point is [docs/README.md](./docs/README.md).
+For AI-assisted or contributor work, start with [AGENTS.md](./AGENTS.md), then use [docs/README.md](./docs/README.md) as the authoritative documentation router.
 
 Key current contracts:
 
