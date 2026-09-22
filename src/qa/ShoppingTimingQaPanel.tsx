@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   QA_TARGET_SAMPLE_COUNT,
+  buildQaTimingExport,
   summarizeQaEmpiricalGate,
   summarizeQaTimingSamples,
   type QaChecklistKey,
@@ -31,6 +32,7 @@ export interface ShoppingTimingQaPanelProps {
   ) => void;
   readonly onNotesChange: (value: string) => void;
   readonly onResetSamples: () => void;
+  readonly onResetSession: () => void;
 }
 
 const PHYSICAL_CONTEXT: readonly {
@@ -163,10 +165,12 @@ export function ShoppingTimingQaPanel({
   onSpotCheckChange,
   onNotesChange,
   onResetSamples,
+  onResetSession,
 }: ShoppingTimingQaPanelProps) {
   const [open, setOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
+  const [sessionResetArmed, setSessionResetArmed] = useState(false);
 
   const gate = useMemo(
     () => summarizeQaEmpiricalGate(session),
@@ -220,7 +224,7 @@ export function ShoppingTimingQaPanel({
               : !gate.phonePortraitViewport
                 ? "Run the timing set in a representative phone-like portrait viewport."
                 : !gate.lightAppearanceRecorded
-                  ? "Switch to system light appearance and reopen the QA build."
+                  ? "Switch to system light appearance, then start a fresh QA session."
                   : !gate.physicalContextComplete
                     ? "Confirm the one-handed, bright-store and default-text primary context."
                     : !gate.checklistComplete
@@ -230,30 +234,21 @@ export function ShoppingTimingQaPanel({
                           : gate.status === "release-floor"
                             ? "Release floor met; speed target still missed."
                             : gate.status === "fail"
-                              ? "Gate failed; redesign before production switch."
+                              ? "Gate failed; redesign before marking B6 passed or expanding input breadth."
                               : "Review evidence before release.";
   const copyResults = async (): Promise<void> => {
-    const report = {
-      generatedAt: new Date().toISOString(),
-      environment: session.environment,
-      deviceLabel: session.deviceLabel,
-      compactDeviceLabel: session.compactDeviceLabel,
-      inputMethodLabel: session.inputMethodLabel,
-      physicalContext: session.physicalContext,
-      spotChecks: session.spotChecks,
-      notes: session.notes,
-      checklist: session.checklist,
-      gate,
-      summaries: {
-        eur479: summary479,
-        eur1250: summary1250,
-      },
-      samples: session.samples,
-    };
+    let report;
+
+    try {
+      report = buildQaTimingExport(session, new Date().toISOString());
+    } catch {
+      setCopyStatus("Evidence is invalid and cannot be exported");
+      return;
+    }
 
     try {
       await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
-      setCopyStatus("Copied");
+      setCopyStatus("Copied verifiable JSON");
     } catch {
       setCopyStatus("Copy failed — use browser devtools/session storage");
     }
@@ -488,6 +483,29 @@ export function ShoppingTimingQaPanel({
               }}
             >
               {resetArmed ? "Confirm reset" : "Reset timing samples"}
+            </button>
+            <button
+              type="button"
+              data-danger={sessionResetArmed}
+              onClick={() => {
+                if (sessionResetArmed) {
+                  onResetSession();
+                  setSessionResetArmed(false);
+                  setResetArmed(false);
+                  setCopyStatus("Fresh QA session started");
+                  return;
+                }
+
+                setSessionResetArmed(true);
+                setResetArmed(false);
+                setCopyStatus(
+                  "Press Confirm fresh session to delete all QA evidence and recapture environment",
+                );
+              }}
+            >
+              {sessionResetArmed
+                ? "Confirm fresh session"
+                : "Start fresh QA session"}
             </button>
           </div>
 
