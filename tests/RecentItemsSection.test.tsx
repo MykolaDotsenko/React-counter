@@ -124,9 +124,12 @@ describe("RecentItemsSection", () => {
       />,
     );
 
-    await user.click(
-      screen.getByRole("button", { name: "Enter current price" }),
-    );
+    const currentPrice = screen.getByRole("button", {
+      name: "Enter current price",
+    });
+    expect(currentPrice.dataset.currentPriceMemoryId).toBe(record.id);
+
+    await user.click(currentPrice);
 
     expect(onEnterCurrentPrice).toHaveBeenCalledWith(record);
   });
@@ -166,6 +169,38 @@ describe("RecentItemsSection", () => {
 
     expect(onUseRemembered).toHaveBeenCalledTimes(1);
     expect(onUseRemembered).toHaveBeenCalledWith(record);
+  });
+
+  it("focuses the safe cancel action and lets Escape close remembered over-budget confirmation", async () => {
+    const user = userEvent.setup();
+    const record = memory({ price: 600 });
+    const onUseRemembered = vi.fn(() => true);
+
+    render(
+      <RecentItemsSection
+        trip={createTrip(500)}
+        records={[record]}
+        now={time(NOW)}
+        onUseRemembered={onUseRemembered}
+        onEnterCurrentPrice={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Use remembered price" }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Cancel" }),
+    ).toBeFocused();
+
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.queryByLabelText("Confirm remembered price for Milk 1L"),
+    ).toBeNull();
+    expect(onUseRemembered).not.toHaveBeenCalled();
   });
 
   it("keeps advisory persistence failure separate and explicit", () => {
