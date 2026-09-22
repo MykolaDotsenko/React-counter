@@ -141,6 +141,7 @@ export function ShoppingAppShell({
   const qaStartedAtRef = useRef<number | null>(null);
   const qaPendingSampleRef = useRef<PendingQaSample | null>(null);
   const betaManualStartedAtRef = useRef<number | null>(null);
+  const betaRestoreRecordedRef = useRef(false);
   const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
   const [lastAddedMessage, setLastAddedMessage] = useState("");
   const recentCompletedTrip = mostRecentCompletedTrip(
@@ -312,6 +313,30 @@ export function ShoppingAppShell({
       }
     }
   };
+
+  useEffect(() => {
+    if (
+      !betaEvidenceEnabled ||
+      betaRestoreRecordedRef.current ||
+      betaSession === null ||
+      state.activeTrip === null
+    ) {
+      return;
+    }
+
+    const tripOrdinal = currentRetentionTripOrdinal(betaSession);
+
+    if (tripOrdinal === null) {
+      return;
+    }
+
+    betaRestoreRecordedRef.current = true;
+    recordBetaEvent({
+      type: "trip_restored",
+      at: new Date().toISOString(),
+      tripOrdinal,
+    });
+  }, [betaSession, state.activeTrip]);
 
   useEffect(() => {
     if (
