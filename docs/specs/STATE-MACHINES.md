@@ -318,10 +318,12 @@ Startup sequence:
 
 Reconciliation rule for duplicate id:
 
-- if active record exists and same id is in completed history due an interrupted completion transaction, preserve both raw records until deterministic rule resolves them
-- do not silently delete either based only on timestamp guesswork
+- if a valid active record exists and the same trip id already exists in valid completed history, completed history is treated as durable completion evidence
+- startup attempts to clear the stale active record; if cleanup fails, the completed trip remains available and the application exposes degraded persistence with cleanup pending
+- duplicate/conflicting history ids are rejected as a history conflict instead of being guessed into one record
+- malformed or unsupported history is preserved rather than used as evidence to delete active data
 
-A specific deterministic reconciliation algorithm must be defined before completion transaction ships.
+This deterministic reconciliation is implemented in the storage bootstrap path and covered by Phase 7 tests.
 
 ## 12. Forbidden states
 
@@ -343,7 +345,6 @@ Implementation should make these impossible or immediately reject them:
 
 Remaining uncertainty:
 
-- exact safe rollback/reconciliation for Continue shopping after completion
-- exact duplicate active/history recovery algorithm after partial completion transaction
+- exact safe rollback/reconciliation for a future Continue shopping action after completion
 
-Those should be solved before implementing trip completion persistence.
+The duplicate active/history recovery rule is implemented. A Continue shopping action remains intentionally deferred until its two-record rollback/reconciliation semantics are specified and tested; the UI must not imply that completed trips are reversible today.
