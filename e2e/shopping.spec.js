@@ -898,7 +898,7 @@ test("learns named completed items, reuses remembered prices, and keeps current-
   ).toBeVisible();
 
   const currentPriceTrigger = page.getByRole("button", {
-    name: "Enter current price",
+    name: "Enter current price for Milk 1L",
   });
   await currentPriceTrigger.click();
 
@@ -915,9 +915,14 @@ test("learns named completed items, reuses remembered prices, and keeps current-
   await expect(
     page.getByText("€1.49 of €50.00", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("Milk 1L", { exact: true })).toBeVisible();
+  const cartRegion = page.getByRole("region", {
+    name: "What you have added",
+  });
   await expect(
-    page.getByText("Remembered · Price memory", { exact: true }),
+    cartRegion.getByText("Milk 1L", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    cartRegion.getByText("Remembered · Price memory", { exact: true }),
   ).toHaveCount(0);
 
   await page.getByRole("button", { name: "Finish trip" }).click();
