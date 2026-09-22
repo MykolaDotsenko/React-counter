@@ -76,7 +76,7 @@ describe("BudgetSettingsSurface", () => {
       />,
     );
 
-    const budget = screen.getByLabelText("Budget");
+    const budget = screen.getByLabelText(/^Budget/);
     const buffer = screen.getByLabelText(/Safety buffer/);
 
     expect((budget as HTMLInputElement).value).toBe("50.00");
@@ -116,7 +116,7 @@ describe("BudgetSettingsSurface", () => {
       />,
     );
 
-    const budget = screen.getByLabelText("Budget");
+    const budget = screen.getByLabelText(/^Budget/);
     const buffer = screen.getByLabelText(/Safety buffer/);
 
     await user.clear(budget);
@@ -148,7 +148,7 @@ describe("BudgetSettingsSurface", () => {
       />,
     );
 
-    const budget = screen.getByLabelText("Budget");
+    const budget = screen.getByLabelText(/^Budget/);
     const buffer = screen.getByLabelText(/Safety buffer/);
 
     await user.clear(budget);
