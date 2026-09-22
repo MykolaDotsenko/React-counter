@@ -1,6 +1,5 @@
 import {
   Component,
-  type ErrorInfo,
   type ReactNode,
 } from "react";
 
@@ -28,9 +27,6 @@ export class AppErrorBoundary extends Component<
     };
   }
 
-  public componentDidCatch(_error: unknown, _info: ErrorInfo): void {
-    // Intentionally local-only: the production app has no remote telemetry.
-  }
 
   public render(): ReactNode {
     if (!this.state.failed) {
