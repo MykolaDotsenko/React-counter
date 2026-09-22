@@ -164,6 +164,51 @@ describe("price memory domain", () => {
     expect(upsertPriceMemory(updated, latest)).toBe(updated);
   });
 
+  it("never lets an older duplicate observation overwrite a newer memory", () => {
+    const newer = memory({
+      label: "Milk",
+      price: 149,
+      observedAt: "2026-09-21T10:00:00.000Z",
+    });
+    const older = memory({
+      label: "Milk",
+      price: 139,
+      observedAt: "2026-09-21T09:00:00.000Z",
+    });
+
+    const kept = upsertPriceMemory([newer], older);
+
+    expect(kept).toEqual([newer]);
+    expect(kept).not.toContain(older);
+  });
+
+  it("keeps the newest same-product observation regardless of incoming order", () => {
+    const older = memory({
+      label: "Milk",
+      price: 139,
+      observedAt: "2026-09-21T09:00:00.000Z",
+    });
+    const newer = memory({
+      label: "Milk",
+      price: 149,
+      observedAt: "2026-09-21T10:00:00.000Z",
+    });
+
+    expect(
+      upsertPriceMemory(
+        upsertPriceMemory([], newer),
+        older,
+      ),
+    ).toEqual([newer]);
+
+    expect(
+      upsertPriceMemory(
+        upsertPriceMemory([], older),
+        newer,
+      ),
+    ).toEqual([newer]);
+  });
+
   it("prefers exact-store memory, then store-neutral memory, and hides another-store-only prices", () => {
     const prisma = store("store-prisma");
     const kCity = store("store-k-city");
