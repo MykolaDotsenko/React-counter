@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   QA_FIXTURE_BUDGET_MINOR,
@@ -73,6 +73,10 @@ const sample = (
 });
 
 describe("shopping timing QA model", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
   it("keeps timing evidence separate from product state", () => {
     const session = createQaTimingSession(environment);
     const next = appendQaTimingSample(
