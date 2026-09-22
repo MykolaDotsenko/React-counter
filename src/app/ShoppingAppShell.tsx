@@ -383,7 +383,9 @@ export function ShoppingAppShell({
       <>
         <PriceEntrySurface
           trip={state.activeTrip}
-          initialLabel={overlay.initialLabel}
+          {...(overlay.initialLabel === undefined
+            ? {}
+            : { initialLabel: overlay.initialLabel })}
           locale="en-FI"
           onCancel={() => {
             qaStartedAtRef.current = null;
