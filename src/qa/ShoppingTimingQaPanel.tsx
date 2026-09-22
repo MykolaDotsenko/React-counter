@@ -188,13 +188,15 @@ export function ShoppingTimingQaPanel({
       document.head.append(robots);
     }
 
-    const description = document.querySelector<HTMLMetaElement>(
-      'meta[name="description"]',
-    );
+    const description =
+      document.querySelector<HTMLMetaElement>('meta[name="description"]') ??
+      document.createElement("meta");
+    description.name = "description";
+    description.content =
+      "Internal Shopping Budget Companion empirical timing and one-hand usability QA.";
 
-    if (description !== null) {
-      description.content =
-        "Internal Shopping Budget Companion empirical timing and one-hand usability QA.";
+    if (!description.isConnected) {
+      document.head.append(description);
     }
   }, []);
 
