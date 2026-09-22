@@ -18,6 +18,7 @@ import {
   lineTotal,
   nominalOverage,
   projectAddItem,
+  projectSpendingPlan,
   reduceTrip,
   remaining,
   safeLimit,
@@ -697,6 +698,60 @@ describe("trip reducer", () => {
       reduceTrip(lowerBudget, {
         type: "set-budget",
         budgetMinor: money(100),
+      }),
+      "invalid-buffer",
+    );
+  });
+
+  it("projects a proposed spending plan without mutating canonical trip state", () => {
+    let trip = createTrip(5_000, 200);
+    trip = addItem(
+      trip,
+      createItem({ id: "plan-preview-item", price: 4_500 }),
+    );
+
+    const projection = unwrap(
+      projectSpendingPlan(
+        trip,
+        money(4_000),
+        money(500),
+      ),
+    );
+
+    expect(projection).toEqual({
+      cartTotalMinor: 4_500,
+      remainingMinor: -500,
+      safeRemainingMinor: -1_000,
+      crossesSafeLimit: true,
+      crossesNominalBudget: true,
+    });
+    expect(trip.budgetMinor).toBe(5_000);
+    expect(trip.safetyBufferMinor).toBe(200);
+  });
+
+  it("updates budget and safety buffer atomically against the final pair", () => {
+    const trip = createTrip(5_000, 4_000);
+
+    const updated = expectActive(
+      unwrap(
+        reduceTrip(trip, {
+          type: "set-spending-plan",
+          budgetMinor: money(3_000),
+          safetyBufferMinor: money(1_000),
+        }),
+      ),
+    );
+
+    expect(updated).toMatchObject({
+      budgetMinor: 3_000,
+      safetyBufferMinor: 1_000,
+    });
+
+    expectDomainError(
+      reduceTrip(trip, {
+        type: "set-spending-plan",
+        budgetMinor: money(3_000),
+        safetyBufferMinor: money(3_001),
       }),
       "invalid-buffer",
     );

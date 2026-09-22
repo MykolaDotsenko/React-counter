@@ -12,6 +12,10 @@ import {
   type ItemId,
 } from "../domain/shopping-trip";
 import { ActiveTripScreen } from "../features/shopping/ActiveTripScreen";
+import {
+  BudgetSettingsSurface,
+  type SpendingPlanIntent,
+} from "../features/shopping/BudgetSettingsSurface";
 import { CompletedSummaryScreen } from "../features/shopping/CompletedSummaryScreen";
 import { FinishTripSurface } from "../features/shopping/FinishTripSurface";
 import { HistoryScreen } from "../features/shopping/HistoryScreen";
@@ -52,6 +56,7 @@ const qaTimingEnabled =
 type OverlayState =
   | { readonly kind: "none" }
   | { readonly kind: "add-price" }
+  | { readonly kind: "budget-settings" }
   | { readonly kind: "edit-item"; readonly itemId: ItemId }
   | { readonly kind: "finish-trip" }
   | { readonly kind: "history" };
@@ -107,6 +112,7 @@ export function ShoppingAppShell({
   const state = useShoppingAppState(controller);
   const addPriceButtonRef = useRef<HTMLButtonElement>(null);
   const finishTripButtonRef = useRef<HTMLButtonElement>(null);
+  const adjustBudgetButtonRef = useRef<HTMLButtonElement>(null);
   const qaStartedAtRef = useRef<number | null>(null);
   const qaPendingSampleRef = useRef<PendingQaSample | null>(null);
   const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
@@ -135,6 +141,12 @@ export function ShoppingAppShell({
   const returnFocusToFinishTrip = (): void => {
     queueMicrotask(() => {
       finishTripButtonRef.current?.focus();
+    });
+  };
+
+  const returnFocusToAdjustBudget = (): void => {
+    queueMicrotask(() => {
+      adjustBudgetButtonRef.current?.focus();
     });
   };
 
@@ -378,6 +390,45 @@ export function ShoppingAppShell({
   }
 
   if (
+    overlay.kind === "budget-settings" &&
+    state.activeTrip !== null
+  ) {
+    return (
+      <>
+        <BudgetSettingsSurface
+          trip={state.activeTrip}
+          locale="en-FI"
+          onCancel={() => {
+            setOverlay({ kind: "none" });
+            returnFocusToAdjustBudget();
+          }}
+          onSave={(intent: SpendingPlanIntent) => {
+            const result = controller.updateSpendingPlan(intent);
+
+            if (!result.ok || result.state.activeTrip === null) {
+              return false;
+            }
+
+            if (result.changed) {
+              setLastAddedMessage(
+                `Budget updated. ${remainingFeedback(
+                  result.state.activeTrip,
+                  "en-FI",
+                )}`,
+              );
+            }
+
+            setOverlay({ kind: "none" });
+            returnFocusToAdjustBudget();
+            return true;
+          }}
+        />
+        {qaPanel}
+      </>
+    );
+  }
+
+  if (
     overlay.kind === "finish-trip" &&
     state.activeTrip !== null
   ) {
@@ -506,6 +557,7 @@ export function ShoppingAppShell({
         controller={controller}
         addPriceButtonRef={addPriceButtonRef}
         finishTripButtonRef={finishTripButtonRef}
+        adjustBudgetButtonRef={adjustBudgetButtonRef}
         feedbackMessage={lastAddedMessage}
         onUndo={() => {
           const result = controller.undo();
@@ -533,6 +585,12 @@ export function ShoppingAppShell({
           }
 
           setOverlay({ kind: "add-price" });
+        }}
+        onAdjustBudget={() => {
+          qaStartedAtRef.current = null;
+          qaPendingSampleRef.current = null;
+          setLastAddedMessage("");
+          setOverlay({ kind: "budget-settings" });
         }}
         onFinishTrip={() => {
           qaStartedAtRef.current = null;

@@ -127,6 +127,14 @@ export interface AddItemProjectionDraft {
   readonly label?: string | null;
 }
 
+export interface SpendingPlanProjection {
+  readonly cartTotalMinor: SignedMinorUnits;
+  readonly remainingMinor: SignedMinorUnits;
+  readonly safeRemainingMinor: SignedMinorUnits;
+  readonly crossesSafeLimit: boolean;
+  readonly crossesNominalBudget: boolean;
+}
+
 export interface TripProjection {
   readonly lineTotalMinor: SignedMinorUnits;
   readonly cartTotalMinor: SignedMinorUnits;
@@ -154,6 +162,11 @@ export type TripCommand =
       readonly now: IsoTimestamp;
     }
   | { readonly type: "remove-item"; readonly itemId: ItemId }
+  | {
+      readonly type: "set-spending-plan";
+      readonly budgetMinor: MinorUnits;
+      readonly safetyBufferMinor: MinorUnits;
+    }
   | { readonly type: "set-budget"; readonly budgetMinor: MinorUnits }
   | {
       readonly type: "set-buffer";
@@ -684,6 +697,68 @@ const validateDraft = (
   });
 };
 
+export const projectSpendingPlan = (
+  trip: ActiveTrip,
+  budgetMinor: MinorUnits,
+  safetyBufferMinor: MinorUnits,
+): Result<SpendingPlanProjection, DomainError> => {
+  const budgetResult = validateBudget(budgetMinor);
+
+  if (!budgetResult.ok) {
+    return budgetResult;
+  }
+
+  const bufferResult = validateBuffer(
+    safetyBufferMinor,
+    budgetResult.value,
+  );
+
+  if (!bufferResult.ok) {
+    return bufferResult;
+  }
+
+  const totalResult = cartTotalResult(trip.items);
+
+  if (!totalResult.ok) {
+    return totalResult;
+  }
+
+  const remainingResult = subtractMoney(
+    budgetResult.value,
+    totalResult.value,
+  );
+
+  if (!remainingResult.ok) {
+    return domainError("unsafe-integer");
+  }
+
+  const safeLimitResult = subtractMoney(
+    budgetResult.value,
+    bufferResult.value,
+  );
+
+  if (!safeLimitResult.ok) {
+    return domainError("unsafe-integer");
+  }
+
+  const safeRemainingResult = subtractMoney(
+    safeLimitResult.value,
+    totalResult.value,
+  );
+
+  if (!safeRemainingResult.ok) {
+    return domainError("unsafe-integer");
+  }
+
+  return ok({
+    cartTotalMinor: totalResult.value,
+    remainingMinor: remainingResult.value,
+    safeRemainingMinor: safeRemainingResult.value,
+    crossesSafeLimit: totalResult.value > safeLimitResult.value,
+    crossesNominalBudget: totalResult.value > budgetResult.value,
+  });
+};
+
 export const projectAddItem = (
   trip: ActiveTrip,
   draft: AddItemProjectionDraft,
@@ -911,6 +986,42 @@ export const reduceTrip = (
           (item) => item.id !== command.itemId,
         ),
       );
+    }
+
+    case "set-spending-plan": {
+      const activeResult = activeTripOnly(trip);
+
+      if (!activeResult.ok) {
+        return activeResult;
+      }
+
+      const budgetResult = validateBudget(command.budgetMinor);
+
+      if (!budgetResult.ok) {
+        return budgetResult;
+      }
+
+      const bufferResult = validateBuffer(
+        command.safetyBufferMinor,
+        budgetResult.value,
+      );
+
+      if (!bufferResult.ok) {
+        return bufferResult;
+      }
+
+      if (
+        budgetResult.value === activeResult.value.budgetMinor &&
+        bufferResult.value === activeResult.value.safetyBufferMinor
+      ) {
+        return ok(activeResult.value);
+      }
+
+      return ok({
+        ...activeResult.value,
+        budgetMinor: budgetResult.value,
+        safetyBufferMinor: bufferResult.value,
+      });
     }
 
     case "set-budget": {

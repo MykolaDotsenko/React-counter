@@ -7,6 +7,7 @@ import {
   cartTotal,
   checkoutDifference,
   itemCount,
+  remaining,
   type CompletedTrip,
 } from "../../domain/shopping-trip";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
@@ -50,6 +51,21 @@ const differenceLabel = (
   return difference > 0
     ? `${formatAbsoluteEur(difference, locale)} more at checkout`
     : `${formatAbsoluteEur(difference, locale)} less at checkout`;
+};
+
+const budgetOutcomeLabel = (
+  trip: CompletedTrip,
+  locale: string,
+): string => {
+  const amount = remaining(trip);
+
+  if (amount === 0) {
+    return "On budget";
+  }
+
+  return amount > 0
+    ? `${formatAbsoluteEur(amount, locale)} under budget`
+    : `${formatAbsoluteEur(amount, locale)} over budget`;
 };
 
 const completedLabel = (
@@ -145,6 +161,10 @@ export function HistoryScreen({
                           ? "Not added"
                           : formatEur(trip.actualCheckoutMinor, locale)}
                       </dd>
+                    </div>
+                    <div>
+                      <dt>Budget outcome</dt>
+                      <dd>{budgetOutcomeLabel(trip, locale)}</dd>
                     </div>
                   </dl>
 

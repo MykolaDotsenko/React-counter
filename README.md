@@ -59,6 +59,8 @@ Manual price entry remains the baseline.
 | Reserve / over-budget states | ✅ implemented |
 | Canonical add + persistence | ✅ implemented |
 | One-step Undo | ✅ implemented |
+| Edit/remove correction flow | ✅ implemented |
+| Atomic budget + safety-buffer adjustment | ✅ implemented |
 | Persistence-health UX | ✅ implemented |
 | Recovery from malformed/future saved state | ✅ implemented |
 | Reload / restore active trip | ✅ implemented |
@@ -70,8 +72,9 @@ Manual price entry remains the baseline.
 | Runtime core with network offline | ✅ automated |
 | Real-device one-hand timing | ⏳ pending |
 | Public shopping-shell switch | ⛔ blocked until empirical gate passes |
-| Full edit/remove flow | later roadmap phase |
-| Completion/history/reconciliation | later roadmap phase |
+| Completion/history/reconciliation | ✅ implemented |
+| Lightweight budget-outcome history | ✅ implemented |
+| Repeat-trip / price-memory acceleration | next roadmap phase |
 | PWA cold offline launch | later roadmap phase |
 | Barcode / OCR scanning | evidence-gated later work |
 
@@ -129,6 +132,8 @@ The projection comes from domain logic before commit.
 
 ### Safety buffer
 
+Budget and safety buffer can be adjusted during an active trip without mutating cart prices or quantities.
+
 Example:
 
 ~~~text
@@ -141,16 +146,21 @@ Crossing only the safety buffer is informational and does **not** introduce a se
 
 Crossing the nominal budget requires explicit **Add anyway / Cancel** confirmation.
 
-### Correction
+### Correction and active-trip adjustment
 
-Current Sprint B correction support:
+Implemented correction support includes:
 
 - Backspace
 - Clear
 - Cancel
-- one-action Undo after add
+- one-action Undo after add/edit/remove
+- edit price and quantity
+- remove item
+- adjust budget and safety buffer as one atomic canonical mutation
 
-Undo restores the exact previous canonical trip snapshot and immediately attempts persistence.
+Budget adjustment deliberately preserves cart items. Lowering the budget below the current cart total is allowed and immediately produces the explicit over-budget state required by the product contract.
+
+Undo restores the exact previous canonical cart snapshot and immediately attempts persistence. Budget/buffer adjustment is intentionally not added to the one-step cart Undo slot.
 
 ---
 

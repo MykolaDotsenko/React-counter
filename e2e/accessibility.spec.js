@@ -53,6 +53,35 @@ test("has no detectable WCAG A/AA violations on the price-entry surface", async 
   expect(results.violations).toEqual([]);
 });
 
+test("has no detectable WCAG A/AA violations on budget adjustment and restores focus", async ({
+  page,
+  browserName,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+
+  const adjustBudget = page.getByRole("button", { name: "Adjust budget" });
+  await adjustBudget.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(
+    page.getByRole("heading", { name: "Adjust budget" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Budget" }),
+  ).toBeFocused();
+
+  if (browserName === "chromium") {
+    const results = await scan(page);
+    expect(results.violations).toEqual([]);
+  }
+
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: "Adjust budget" }),
+  ).toBeFocused();
+});
+
 test("has no detectable WCAG A/AA violations on the item-correction surface", async ({
   page,
   browserName,

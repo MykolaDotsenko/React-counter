@@ -327,13 +327,18 @@ Do not hide browser accessibility affordances for the sake of a “native-lookin
 
 Keep axe checks in Chromium and expand tags/tooling as dependencies support newer WCAG criteria.
 
-Automated checks should cover representative states:
+Automated checks cover representative states and primary correction surfaces:
 
-- empty active trip
-- populated trip
-- near-limit state
-- warning/dialog state
+- start and active-trip screens
+- manual price entry
+- item correction
+- active-trip budget adjustment
+- nominal over-budget review
+- finish-trip confirmation
 - completed summary
+- trip history
+
+Near-limit semantics are additionally asserted through active-trip and price-projection tests.
 
 ## Manual checks
 

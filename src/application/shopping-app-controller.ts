@@ -131,6 +131,11 @@ export interface AddManualItemInput {
   readonly quantity: number;
 }
 
+export interface UpdateSpendingPlanInput {
+  readonly budgetMinor: MinorUnits;
+  readonly safetyBufferMinor: MinorUnits;
+}
+
 export interface UpdateManualItemInput {
   readonly itemId: ItemId;
   readonly unitPriceMinor: MinorUnits;
@@ -177,6 +182,9 @@ export interface ShoppingAppController {
   readonly bootstrap: () => ShoppingAppState;
   readonly startTrip: (input: StartTripInput) => AppCommandResult;
   readonly addManualItem: (input: AddManualItemInput) => AppCommandResult;
+  readonly updateSpendingPlan: (
+    input: UpdateSpendingPlanInput,
+  ) => AppCommandResult;
   readonly updateManualItem: (
     input: UpdateManualItemInput,
   ) => AppCommandResult;
@@ -453,6 +461,15 @@ export const createShoppingAppController = ({
     });
   };
 
+  const updateSpendingPlan = (
+    input: UpdateSpendingPlanInput,
+  ): AppCommandResult =>
+    dispatch({
+      type: "set-spending-plan",
+      budgetMinor: input.budgetMinor,
+      safetyBufferMinor: input.safetyBufferMinor,
+    });
+
   const updateManualItem = (
     input: UpdateManualItemInput,
   ): AppCommandResult => {
@@ -529,6 +546,7 @@ export const createShoppingAppController = ({
           previousTrip,
           description: "remove",
         });
+      case "set-spending-plan":
       case "set-budget":
       case "set-buffer":
         return null;
@@ -917,6 +935,7 @@ export const createShoppingAppController = ({
     bootstrap,
     startTrip,
     addManualItem,
+    updateSpendingPlan,
     updateManualItem,
     removeItem,
     undo,

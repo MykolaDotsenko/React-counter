@@ -648,6 +648,56 @@ describe("PriceEntrySurface", () => {
     });
   });
 
+  it("does not auto-open the software keyboard on coarse-pointer devices", async () => {
+    const user = userEvent.setup();
+    const originalMatchMedia = window.matchMedia;
+
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      writable: true,
+      value: vi.fn((query: string) => ({
+        matches: query === "(pointer: coarse)",
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    try {
+      render(
+        <PriceEntrySurface
+          trip={createTrip()}
+          locale="en-IE"
+          onCancel={vi.fn()}
+          onValidatedItem={vi.fn()}
+        />,
+      );
+
+      const price = screen.getByLabelText("Price") as HTMLInputElement;
+      const title = screen.getByRole("heading", {
+        name: "What does this item cost?",
+      });
+
+      expect(document.activeElement).toBe(title);
+      expect(document.activeElement).not.toBe(price);
+
+      await user.click(screen.getByRole("button", { name: "Digit 4" }));
+
+      expect(price.value).toBe("4");
+      expect(document.activeElement).not.toBe(price);
+    } finally {
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
   it("supports Escape as a predictable cancel path", async () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();

@@ -272,6 +272,28 @@ describe("ActiveTripScreen", () => {
     expect(screen.getByText("4 items")).not.toBeNull();
   });
 
+  it("keeps budget adjustment secondary to Add price and emits an explicit intent", async () => {
+    const user = userEvent.setup();
+    const onAdjustBudget = vi.fn();
+
+    render(
+      <ActiveTripScreen
+        controller={createController(createTrip())}
+        onAddPrice={vi.fn()}
+        onAdjustBudget={onAdjustBudget}
+        locale="en-IE"
+      />,
+    );
+
+    const addPrice = screen.getByRole("button", { name: "Add price" });
+    const adjustBudget = screen.getByRole("button", { name: "Adjust budget" });
+
+    expect(addPrice.className).not.toBe(adjustBudget.className);
+
+    await user.click(adjustBudget);
+    expect(onAdjustBudget).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps Finish trip secondary to Add price and emits an explicit finish intent", async () => {
     const user = userEvent.setup();
     const onAddPrice = vi.fn();
@@ -318,7 +340,7 @@ describe("ActiveTripScreen", () => {
       />,
     );
 
-    expect(screen.getByText("Confirmed · Manual")).not.toBeNull();
+    expect(screen.queryByText("Confirmed · Manual")).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
     expect(onEditItem).toHaveBeenCalledWith(item);

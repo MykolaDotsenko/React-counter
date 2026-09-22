@@ -71,6 +71,11 @@ const errorMessage = (reason: PriceEntryInvalidReason): string => {
   }
 };
 
+const prefersCustomKeypad = (): boolean =>
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(pointer: coarse)").matches;
+
 const KEYPAD_ROWS: readonly (readonly string[])[] = [
   ["1", "2", "3"],
   ["4", "5", "6"],
@@ -147,6 +152,7 @@ export function PriceEntrySurface({
   const statusId = useId();
   const projectionId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
   const [submitted, setSubmitted] = useState(false);
@@ -157,6 +163,31 @@ export function PriceEntrySurface({
     initialPriceEntryDraft,
   );
   const [quantity, setQuantity] = useState(defaultQuantity);
+
+  useEffect(() => {
+    if (prefersCustomKeypad()) {
+      titleRef.current?.focus();
+      return;
+    }
+
+    inputRef.current?.focus();
+  }, []);
+
+  const focusInputUnlessCoarse = (): void => {
+    if (!prefersCustomKeypad()) {
+      inputRef.current?.focus();
+    }
+  };
+
+  const restoreEntryFocus = (): void => {
+    queueMicrotask(() => {
+      if (prefersCustomKeypad()) {
+        titleRef.current?.focus();
+      } else {
+        inputRef.current?.focus();
+      }
+    });
+  };
 
   const state = useMemo(
     () => classifyPriceEntryDraft(draft),
@@ -246,9 +277,7 @@ export function PriceEntrySurface({
 
   const cancelOverBudgetConfirmation = (): void => {
     setOverBudgetConfirmation(null);
-    queueMicrotask(() => {
-      inputRef.current?.focus();
-    });
+    restoreEntryFocus();
   };
 
   const confirmOverBudget = (): void => {
@@ -261,7 +290,7 @@ export function PriceEntrySurface({
 
   const updateMode = (mode: MoneyDraftMode): void => {
     setDraft((current) => setPriceEntryMode(current, mode));
-    inputRef.current?.focus();
+    focusInputUnlessCoarse();
   };
 
   const pressKey = (key: string): void => {
@@ -277,7 +306,7 @@ export function PriceEntrySurface({
       return appendPriceDigit(current, key);
     });
 
-    inputRef.current?.focus();
+    focusInputUnlessCoarse();
   };
 
   const invalidCopy =
@@ -294,7 +323,13 @@ export function PriceEntrySurface({
         <header className={styles.header}>
           <div>
             <p className={styles.eyebrow}>Add price</p>
-            <h1 id="price-entry-title">What does this item cost?</h1>
+            <h1
+              ref={titleRef}
+              id="price-entry-title"
+              tabIndex={-1}
+            >
+              What does this item cost?
+            </h1>
           </div>
           <button
             type="button"
@@ -357,7 +392,6 @@ export function PriceEntrySurface({
                   ? "decimal"
                   : "numeric"
               }
-              autoFocus
               readOnly={activeConfirmation !== null}
               autoComplete="off"
               autoCorrect="off"
@@ -540,7 +574,7 @@ export function PriceEntrySurface({
               disabled={draft.raw === ""}
               onClick={() => {
                 setDraft((current) => clearPriceEntry(current));
-                inputRef.current?.focus();
+                focusInputUnlessCoarse();
               }}
             >
               Clear
