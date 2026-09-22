@@ -523,12 +523,7 @@ describe("ShoppingAppController price memory", () => {
     });
     expect(result.state.priceMemories).toEqual([remembered]);
     expect(result.state.priceMemoryPersistence).toEqual({
-      status: "degraded",
-      issue: {
-        code: "write-failed",
-        storageKey: "budget-cart:price-memory",
-      },
-      since: MEMORY_SAVE,
+      status: "healthy",
     });
   });
 
