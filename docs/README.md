@@ -96,9 +96,11 @@ Cross-cutting durable decisions:
 
 | Task | Read |
 | --- | --- |
+| release behaviour / acceptance | PRODUCT → RELEASE-SPEC → affected domain/design/test contract |
 | money/parser | PRODUCT → DOMAIN → MONEY-SPEC → affected tests |
 | trip command/selector | PRODUCT → DOMAIN → STATE-MACHINES where relevant → tests |
 | controller/lifecycle | ARCHITECTURE → STATE-MACHINES → controller tests |
+| architecture refactor / file ownership | ARCHITECTURE → CODE-OWNERSHIP → affected tests |
 | persistence/recovery | ARCHITECTURE → DATA-PERSISTENCE → STORAGE-SCHEMA → tests |
 | UI/interaction | PRODUCT → DESIGN → ACCESSIBILITY → component/E2E tests |
 | tests/CI | TESTING → workflow/config |
