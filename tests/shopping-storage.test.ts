@@ -35,7 +35,7 @@ import {
   encodeHistorySnapshot,
   restoreActiveTrip,
   restoreHistory,
-  retireLegacyPulseKeys,
+  retireHistoricalNonShoppingKeys,
   updateCompletedTripPersistence,
   writeActiveTrip,
   type StorageLike,
@@ -1195,7 +1195,7 @@ describe("historical non-shopping storage retirement", () => {
       },
     );
 
-    expect(retireLegacyPulseKeys(storage)).toEqual({
+    expect(retireHistoricalNonShoppingKeys(storage)).toEqual({
       health: "degraded",
       retired: false,
       issue: {
