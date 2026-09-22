@@ -100,7 +100,7 @@ test("has no detectable WCAG A/AA violations on Recent Items and restores curren
   }
 
   const currentPrice = page.getByRole("button", {
-    name: "Enter current price",
+    name: "Enter current price for Milk 1L",
   });
   await currentPrice.focus();
   await page.keyboard.press("Enter");
