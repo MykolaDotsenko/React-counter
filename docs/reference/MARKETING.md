@@ -16,7 +16,7 @@ It complements:
 - BRAND.md — positioning, voice, identity
 - PRODUCT.md — core product promise
 - DESIGN.md — visual presentation
-- docs/marketing/RESEARCH.md — evidence base
+- docs/research/MARKETING-RESEARCH.md — evidence base
 
 ## Marketing objective
 
