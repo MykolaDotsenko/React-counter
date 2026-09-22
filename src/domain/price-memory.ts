@@ -234,6 +234,9 @@ export const createPriceMemoryRecord = (
   });
 };
 
+const observedAtMs = (record: PriceMemoryRecord): number =>
+  Date.parse(record.observedAt);
+
 const sameMemoryRecord = (
   left: PriceMemoryRecord,
   right: PriceMemoryRecord,
@@ -259,7 +262,15 @@ export const upsertPriceMemory = (
 
   const current = records[index];
 
-  if (current !== undefined && sameMemoryRecord(current, record)) {
+  if (current === undefined) {
+    return records;
+  }
+
+  if (sameMemoryRecord(current, record)) {
+    return records;
+  }
+
+  if (observedAtMs(record) <= observedAtMs(current)) {
     return records;
   }
 
@@ -344,9 +355,6 @@ export const priceMemoryRecordsFromCompletedTrip = (
 
   return Object.freeze(records);
 };
-
-const observedAtMs = (record: PriceMemoryRecord): number =>
-  Date.parse(record.observedAt);
 
 const storeRank = (
   record: PriceMemoryRecord,
