@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 const ACTIVE_TRIP_KEY = "budget-cart:active-trip";
 const HISTORY_KEY = "budget-cart:history";
 const PRICE_MEMORY_KEY = "budget-cart:price-memory";
+const RETENTION_BETA_KEY = "budget-cart:qa:retention-v1";
 
 const startQuickBudget = async (page, label = "€50") => {
   await page.getByRole("button", { name: label, exact: true }).click();
@@ -942,6 +943,118 @@ test("learns named completed items, reuses remembered prices, and keeps current-
   });
   expect(updatedMemory.data.records[0].observedAt).not.toBe(
     learnedMemory.data.records[0].observedAt,
+  );
+});
+
+test("records privacy-safe retention evidence across a repeated trip", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("1.39");
+  await page.getByText("Name for next time", { exact: false }).click();
+  await page.getByRole("textbox", { name: "Item name" }).fill("Milk 1L");
+  await page.getByRole("button", { name: "Add · €1.39" }).click();
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Shop again" }).click();
+
+  await page
+    .getByRole("button", { name: "Use remembered price for Milk 1L" })
+    .click();
+
+  const evidence = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+
+    if (raw === null) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    const forbiddenKeys = new Set([
+      "budgetMinor",
+      "safetyBufferMinor",
+      "unitPriceMinor",
+      "lineTotalMinor",
+      "label",
+      "productId",
+      "memoryId",
+      "storeId",
+      "actualCheckoutMinor",
+    ]);
+    const foundForbidden = [];
+
+    const visit = (value) => {
+      if (Array.isArray(value)) {
+        value.forEach(visit);
+        return;
+      }
+
+      if (value === null || typeof value !== "object") {
+        return;
+      }
+
+      for (const [entryKey, entryValue] of Object.entries(value)) {
+        if (forbiddenKeys.has(entryKey)) {
+          foundForbidden.push(entryKey);
+        }
+        visit(entryValue);
+      }
+    };
+
+    visit(parsed);
+
+    return {
+      parsed,
+      foundForbidden,
+    };
+  }, RETENTION_BETA_KEY);
+
+  expect(evidence).not.toBeNull();
+  expect(evidence.foundForbidden).toEqual([]);
+  expect(evidence.parsed).toMatchObject({
+    version: 1,
+    variant: "repeat-acceleration",
+  });
+
+  expect(evidence.parsed.events).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "new",
+      }),
+      expect.objectContaining({
+        type: "manual_entry_completed",
+        tripOrdinal: 1,
+      }),
+      expect.objectContaining({
+        type: "item_milestone",
+        tripOrdinal: 1,
+        itemCount: 1,
+      }),
+      expect.objectContaining({
+        type: "trip_finished",
+        tripOrdinal: 1,
+      }),
+      expect.objectContaining({
+        type: "trip_started",
+        tripOrdinal: 2,
+        source: "repeat",
+      }),
+      expect.objectContaining({
+        type: "remembered_item_used",
+        tripOrdinal: 2,
+      }),
+      expect.objectContaining({
+        type: "item_milestone",
+        tripOrdinal: 2,
+        itemCount: 1,
+      }),
+    ]),
   );
 });
 
