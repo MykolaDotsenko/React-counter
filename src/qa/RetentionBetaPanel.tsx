@@ -42,13 +42,15 @@ export function RetentionBetaPanel({
       document.head.append(robots);
     }
 
-    const description = document.querySelector<HTMLMetaElement>(
-      'meta[name="description"]',
-    );
+    const description =
+      document.querySelector<HTMLMetaElement>('meta[name="description"]') ??
+      document.createElement("meta");
+    description.name = "description";
+    description.content =
+      "Internal Shopping Budget Companion real-store retention beta with privacy-safe local evidence.";
 
-    if (description !== null) {
-      description.content =
-        "Internal Shopping Budget Companion real-store retention beta with privacy-safe local evidence.";
+    if (!description.isConnected) {
+      document.head.append(description);
     }
   }, []);
 
