@@ -521,7 +521,7 @@ When new evidence changes a product decision:
 
 1. add/update the evidence here
 2. label evidence strength
-3. update PRODUCT.md / UX.md / DOMAIN.md only if the product contract truly changes
+3. update the owning authoritative contract (typically PRODUCT.md, DESIGN.md or DOMAIN.md) only if the product contract truly changes
 4. record meaningful architecture decisions separately
 
 Do not let competitor releases silently reshape the product.
