@@ -214,6 +214,28 @@ export function useShoppingTimingEvidence(
       onResetSamples={() => {
         updateSession(resetQaTimingSamples);
       }}
+      onResetSession={() => {
+        startedAtRef.current = null;
+        pendingSampleRef.current = null;
+
+        setSession((current) => {
+          if (current === null) {
+            return null;
+          }
+
+          const next = createQaTimingSession(
+            captureQaTimingEnvironment(),
+          );
+
+          try {
+            persistQaTimingSession(sessionStorage, next);
+          } catch {
+            // A fresh QA session must not affect shopping product behavior.
+          }
+
+          return next;
+        });
+      }}
     />
   );
 
