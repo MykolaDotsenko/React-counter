@@ -167,7 +167,7 @@ Do not preserve the radial counter merely for continuity.
 ### Strengths
 
 - strongest visual identity
-- highest continuity with current Pulse work
+- highest continuity with earlier interaction work
 - potentially excellent portfolio screenshot
 - radial depletion can communicate finite capacity
 
@@ -245,7 +245,7 @@ Weights are chosen for in-store utility, not aesthetic preference.
 | Bright-store/light-mode resilience | 8 |
 | Trust / precision | 5 |
 | Visual differentiation | 4 |
-| Pulse/recruiter continuity | 3 |
+| Prior-work/recruiter continuity | 3 |
 
 ## Heuristic prototype scores
 
@@ -262,7 +262,7 @@ These are design-review scores, not user-study results.
 | Bright-store resilience | 99 | 89 | 98 |
 | Trust / precision | 100 | 94 | 97 |
 | Differentiation | 89 | 99 | 93 |
-| Pulse/recruiter continuity | 82 | 100 | 78 |
+| Prior-work/recruiter continuity | 82 | 100 | 78 |
 
 Weighted decision result:
 
