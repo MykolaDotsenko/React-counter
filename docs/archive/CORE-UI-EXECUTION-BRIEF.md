@@ -19,7 +19,7 @@ This brief operationalizes:
 - ARCHITECTURE.md
 - TECH-STACK.md
 - TESTING.md
-- docs/PRODUCT-SUCCESS-STRATEGY.md
+- docs/research/PRODUCT-SUCCESS-STRATEGY.md
 - ROADMAP.md
 
 It does not replace those contracts.
@@ -138,7 +138,7 @@ Selected:
 
 Decision record:
 
-- docs/design/PHASE-4-DESIGN-VALIDATION.md
+- docs/evidence/PHASE-4-DESIGN-VALIDATION.md
 
 Priority: **100/100**
 
@@ -706,7 +706,7 @@ Status: **automated/code gate implemented via PR #28; representative human timin
 
 Evidence protocol:
 
-- docs/SPRINT-B-QUALITY-GATE.md
+- docs/evidence/SPRINT-B-QUALITY-GATE.md
 
 Priority: **99/100**
 
