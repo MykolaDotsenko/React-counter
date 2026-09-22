@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const ACTIVE_TRIP_KEY = "budget-cart:active-trip";
 const HISTORY_KEY = "budget-cart:history";
+const PRICE_MEMORY_KEY = "budget-cart:price-memory";
 
 const startQuickBudget = async (page, label = "€50") => {
   await page.getByRole("button", { name: label, exact: true }).click();
@@ -816,6 +817,127 @@ test("repeats the last spending plan immediately and after a later reload", asyn
     safetyBufferMinor: 200,
     items: [],
   });
+});
+
+test("learns named completed items, reuses remembered prices, and keeps current-price override explicit", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("1.39");
+  await page.getByText("Name for next time", { exact: false }).click();
+  await page.getByRole("textbox", { name: "Item name" }).fill("Milk 1L");
+  await page.getByRole("button", { name: "Add · €1.39" }).click();
+
+  await expect(
+    page.getByText("€1.39 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Milk 1L", { exact: true })).toBeVisible();
+
+  const memoryBeforeCompletion = await page.evaluate(
+    (key) => localStorage.getItem(key),
+    PRICE_MEMORY_KEY,
+  );
+  expect(memoryBeforeCompletion).toBeNull();
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+
+  const learnedMemory = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    PRICE_MEMORY_KEY,
+  );
+
+  expect(learnedMemory).toMatchObject({
+    schemaVersion: 1,
+    data: {
+      records: [
+        {
+          label: "Milk 1L",
+          productId: "label:milk 1l",
+          currency: "EUR",
+          unitPriceMinor: 139,
+          source: { kind: "manual" },
+        },
+      ],
+    },
+  });
+
+  await page.getByRole("button", { name: "Shop again" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Recent Items" }),
+  ).toBeVisible();
+  await expect(page.getByText("Milk 1L", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Remembered · Seen/)).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Use remembered price" })
+    .click();
+
+  await expect(
+    page.getByText("€1.39 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Remembered · Price memory", { exact: true }),
+  ).toBeVisible();
+
+  const memoryAfterReuse = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    PRICE_MEMORY_KEY,
+  );
+  expect(memoryAfterReuse.data.records[0].observedAt).toBe(
+    learnedMemory.data.records[0].observedAt,
+  );
+
+  await page.getByRole("button", { name: "Remove" }).click();
+  await expect(
+    page.getByText("€0.00 of €50.00", { exact: true }),
+  ).toBeVisible();
+
+  const currentPriceTrigger = page.getByRole("button", {
+    name: "Enter current price",
+  });
+  await currentPriceTrigger.click();
+
+  await expect(
+    page.getByText("Current price for", { exact: false }),
+  ).toContainText("Milk 1L");
+
+  const priceInput = page.getByRole("textbox", { name: "Price" });
+  await expect(priceInput).toHaveValue("");
+
+  await priceInput.fill("1.49");
+  await page.getByRole("button", { name: "Add · €1.49" }).click();
+
+  await expect(
+    page.getByText("€1.49 of €50.00", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Milk 1L", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Remembered · Price memory", { exact: true }),
+  ).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+
+  const updatedMemory = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    PRICE_MEMORY_KEY,
+  );
+
+  expect(updatedMemory.data.records).toHaveLength(1);
+  expect(updatedMemory.data.records[0]).toMatchObject({
+    label: "Milk 1L",
+    productId: "label:milk 1l",
+    unitPriceMinor: 149,
+    source: { kind: "manual" },
+  });
+  expect(updatedMemory.data.records[0].observedAt).not.toBe(
+    learnedMemory.data.records[0].observedAt,
+  );
 });
 
 test("never clears the active trip when completed-history persistence fails", async ({
