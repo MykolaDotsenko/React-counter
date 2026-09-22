@@ -17,7 +17,7 @@ The current repository already has Vitest, React Testing Library, Playwright, ax
 
 ## Scenario-driven quality gates
 
-SCENARIOS.md is the authoritative scenario matrix.
+`docs/reference/SCENARIOS.md` is the supporting scenario matrix; current release authority comes from the applicable product/spec/testing contracts.
 
 Before a release or significant feature merge:
 
@@ -231,7 +231,7 @@ The parser test matrix in MONEY-SPEC.md is mandatory Phase 1 coverage, including
 
 ## Critical E2E journey
 
-This journey operationalises the highest-priority scenarios from SCENARIOS.md.
+This journey operationalises the highest-priority scenarios from `docs/reference/SCENARIOS.md`.
 
 The minimum flagship browser scenario:
 
@@ -624,5 +624,5 @@ Before a significant release:
 - reduced-motion flow works
 - no known silent data-loss path
 - docs match shipped behaviour
-- SCENARIOS.md Tier 0 coverage reviewed
+- `docs/reference/SCENARIOS.md` Tier 0 coverage reviewed
 - README does not advertise target-only features as completed
