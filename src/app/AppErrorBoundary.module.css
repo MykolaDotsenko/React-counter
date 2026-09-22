@@ -1,0 +1,54 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--shopping-page, #f5f3ee);
+  color: var(--shopping-text, #202520);
+}
+
+.card {
+  width: min(100%, 480px);
+  padding: 28px;
+  border: 1px solid var(--shopping-border, #d9d5cc);
+  border-radius: 24px;
+  background: var(--shopping-panel, #fffdf9);
+  box-shadow: 0 18px 60px rgb(32 37 32 / 0.1);
+}
+
+.card h1 {
+  margin: 8px 0 12px;
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  line-height: 1.1;
+}
+
+.card p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.eyebrow {
+  color: var(--shopping-muted-strong, #626a62);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reload {
+  min-height: 48px;
+  margin-top: 22px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--shopping-accent, #315f4f);
+  color: var(--shopping-accent-contrast, #fff);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reload:focus-visible {
+  outline: 3px solid var(--shopping-focus, #245fca);
+  outline-offset: 3px;
+}
