@@ -79,6 +79,7 @@ const createController = (trips: readonly CompletedTrip[]) => {
       save: () => ({ ok: true }),
       complete: () => ({ ok: true }),
       saveCompleted: () => ({ ok: true }),
+      replaceCompletedHistory: () => ({ ok: true }),
       clearCompletedActive: () => ({ ok: true }),
     },
     clock,
@@ -107,8 +108,6 @@ describe("HistoryScreen", () => {
     render(
       <HistoryScreen
         controller={controller}
-        persistenceHealth={{ status: "healthy" }}
-        trips={trips}
         onBack={vi.fn()}
         locale="en-IE"
       />,
@@ -128,6 +127,40 @@ describe("HistoryScreen", () => {
     expect(trips[1]).toBe(newer);
   });
 
+  it("requires explicit confirmation before deleting a trip", async () => {
+    const user = userEvent.setup();
+    const older = completedTrip("older", FIRST_COMPLETE, 2_500);
+    const newer = completedTrip("newer", SECOND_COMPLETE, 5_000);
+    const controller = createController([older, newer]);
+
+    render(
+      <HistoryScreen
+        controller={controller}
+        onBack={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    const deleteButtons = screen.getAllByRole("button", {
+      name: "Delete trip",
+    });
+    expect(deleteButtons).toHaveLength(2);
+
+    await user.click(deleteButtons[1]!);
+    expect(
+      screen.getByText("Remembered item prices are stored separately."),
+    ).not.toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: "Delete trip" }),
+    );
+
+    expect(controller.getSnapshot().completedTrips).toEqual([newer]);
+    expect(
+      screen.getByText("Trip deleted from this device."),
+    ).not.toBeNull();
+  });
+
   it("provides a single explicit Back action", async () => {
     const user = userEvent.setup();
     const trips = [
@@ -139,8 +172,6 @@ describe("HistoryScreen", () => {
     render(
       <HistoryScreen
         controller={controller}
-        persistenceHealth={{ status: "healthy" }}
-        trips={trips}
         onBack={onBack}
         locale="en-IE"
       />,
