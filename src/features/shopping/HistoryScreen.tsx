@@ -7,6 +7,7 @@ import {
   cartTotal,
   checkoutDifference,
   itemCount,
+  lineTotal,
   remaining,
   type CompletedTrip,
 } from "../../domain/shopping-trip";
@@ -16,6 +17,7 @@ import styles from "./HistoryScreen.module.css";
 export interface HistoryScreenProps {
   readonly controller: ShoppingAppController;
   readonly onBack: () => void;
+  readonly onTripStarted?: () => void;
   readonly locale?: string;
 }
 
@@ -91,6 +93,7 @@ const completedLabel = (
 export function HistoryScreen({
   controller,
   onBack,
+  onTripStarted,
   locale = "en-FI",
 }: HistoryScreenProps) {
   const state = useShoppingAppState(controller);
@@ -141,6 +144,20 @@ export function HistoryScreen({
     if (previous.kind === "delete-trip") {
       restoreDeleteTripFocus(previous.tripId);
     }
+  };
+
+  const startSimilarTrip = (trip: CompletedTrip): void => {
+    resetMessages();
+    const result = controller.startTripFromCompleted(trip.id);
+
+    if (!result.ok) {
+      setErrorMessage(
+        "A new trip could not be started from this budget. Check local saving and try again.",
+      );
+      return;
+    }
+
+    onTripStarted?.();
   };
 
   const deleteTrip = (tripId: string): void => {
@@ -285,6 +302,41 @@ export function HistoryScreen({
                     </p>
                   )}
 
+                  {trip.items.length > 0 ? (
+                    <details className={styles.tripDetails}>
+                      <summary>
+                        View items · {trip.items.length}
+                      </summary>
+                      <ul>
+                        {trip.items.map((item, index) => (
+                          <li key={item.id}>
+                            <span>
+                              {item.label ?? `Item ${index + 1}`}
+                              {item.quantity > 1
+                                ? ` · ${formatEur(item.unitPriceMinor, locale)} × ${item.quantity}`
+                                : ""}
+                            </span>
+                            <strong>
+                              {formatEur(lineTotal(item), locale)}
+                            </strong>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : null}
+
+                  <div className={styles.tripActions}>
+                    <button
+                      type="button"
+                      className={styles.repeatTripButton}
+                      disabled={!canChangeHistory}
+                      onClick={() => {
+                        startSimilarTrip(trip);
+                      }}
+                    >
+                      Shop again
+                    </button>
+
                   {isDeleting ? (
                     <section
                       className={styles.confirmation}
@@ -340,6 +392,7 @@ export function HistoryScreen({
                       Delete trip
                     </button>
                   )}
+                  </div>
                 </li>
               );
             })}
