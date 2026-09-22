@@ -37,6 +37,7 @@ describe("ShoppingTimingQaPanel", () => {
         onSpotCheckChange={onSpotCheckChange}
         onNotesChange={vi.fn()}
         onResetSamples={vi.fn()}
+        onResetSession={vi.fn()}
       />,
     );
 
@@ -113,6 +114,7 @@ describe("ShoppingTimingQaPanel", () => {
         onSpotCheckChange={vi.fn()}
         onNotesChange={vi.fn()}
         onResetSamples={vi.fn()}
+        onResetSession={vi.fn()}
       />,
     );
 
@@ -149,4 +151,41 @@ describe("ShoppingTimingQaPanel", () => {
       ).value,
     ).toBe("fail");
   });
+  it("requires confirmation before starting a fresh QA session", async () => {
+    const user = userEvent.setup();
+    const onResetSession = vi.fn();
+
+    render(
+      <ShoppingTimingQaPanel
+        session={createQaTimingSession(environment)}
+        onChecklistChange={vi.fn()}
+        onDeviceLabelChange={vi.fn()}
+        onCompactDeviceLabelChange={vi.fn()}
+        onInputMethodLabelChange={vi.fn()}
+        onPhysicalContextChange={vi.fn()}
+        onSpotCheckChange={vi.fn()}
+        onNotesChange={vi.fn()}
+        onResetSamples={vi.fn()}
+        onResetSession={onResetSession}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "QA 0/20" }));
+    await user.click(
+      screen.getByRole("button", { name: "Start fresh QA session" }),
+    );
+
+    expect(onResetSession).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Confirm fresh session" }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Confirm fresh session" }),
+    );
+
+    expect(onResetSession).toHaveBeenCalledTimes(1);
+  });
+
+
 });
