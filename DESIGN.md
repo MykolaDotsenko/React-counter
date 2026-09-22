@@ -10,7 +10,7 @@ Decision evidence:
 
 - docs/design/PHASE-4-DESIGN-VALIDATION.md
 
-The default/public build still ships the Pulse Counter interface while the replacement shopping shell remains guarded behind `VITE_SHOPPING_SHELL=1`. Phase 4 and the automated/code portion of Phase 5 through B6 implement the selected Calm Utility direction in that guarded shell, including one-step Undo, exact reserve/over-limit states, mobile/a11y hardening, and the empirical timing harness. The shopping design must not be presented as the public/default product until the representative human B6 timing/one-hand/bright-store gate passes and the production-shell switch is intentionally made.
+The public/default build now ships the Calm Utility Shopping Budget Companion. The automated/code portion of Phase 5 through B6 is implemented, while representative human timing/one-hand/bright-store evidence remains explicitly unverified.
 
 This document complements:
 
@@ -284,7 +284,7 @@ Advantages:
 Advantages:
 
 - stronger visual identity
-- naturally reuses some Pulse Counter DNA
+- naturally reuses some proven interaction patterns
 - communicates finite capacity
 
 Risks:
@@ -298,7 +298,7 @@ Decision result:
 
 The Phase 4 design validation selected the quiet linear capacity bar because it has lower comprehension, large-text, bright-store, and accessibility risk.
 
-Do not keep the radial ring merely because the old counter already contains one.
+Do not add decorative radial progress unless it communicates shopping state better than the current linear capacity model.
 
 See docs/design/PHASE-4-DESIGN-VALIDATION.md.
 
@@ -388,7 +388,7 @@ An over-budget condition should be clear without creating a “danger dashboard.
 
 Support the system appearance by default.
 
-Do not make the product dark-only simply to preserve Pulse Counter aesthetics.
+Do not make the product dark-only; bright-store use makes first-class light mode a product requirement.
 
 ### Light mode
 
@@ -429,7 +429,7 @@ Preferred hierarchy:
 
 Avoid stacking many glass cards inside other glass cards.
 
-The current Pulse Counter glass/spectral treatment can survive as a subtle material detail, but not as the dominant visual language.
+Decorative glass/spectral effects may appear only when they improve hierarchy; they must not become the dominant visual language.
 
 Blur is decorative enhancement, never the only thing separating content layers.
 
@@ -964,7 +964,7 @@ Purpose: strongest clarity baseline.
 - partial radial capacity visual
 - slightly more expressive transitions
 
-Purpose: preserve selected Pulse Counter visual DNA.
+Purpose: preserve only interaction details that still improve the shopping task.
 
 ### C. Warm everyday
 
