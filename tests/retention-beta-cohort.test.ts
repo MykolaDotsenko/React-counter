@@ -133,15 +133,24 @@ describe("retention beta cohort analysis", () => {
     ).toBe(1);
   });
 
-  it("does not count orphan finish evidence as a completed started trip", () => {
+  it("keeps interaction evidence from a partial session without inflating retention or completion", () => {
     const partial = session([
+      at("manual_entry_completed", 1, "2026-09-01T08:30:00.000Z", {
+        durationMs: 2_400,
+      }),
+      at("manual_entry_abandoned", 1, "2026-09-01T08:31:00.000Z"),
       at("trip_finished", 1, "2026-09-01T09:00:00.000Z"),
     ]);
 
     const summary = summarizeRetentionBetaCohort([partial]);
 
+    expect(summary.activatedParticipants).toBe(0);
     expect(summary.totalTripsStarted).toBe(0);
     expect(summary.totalTripsFinished).toBe(0);
     expect(summary.tripCompletionRate).toBeNull();
+    expect(summary.manualEntriesCompleted).toBe(1);
+    expect(summary.manualEntriesAbandoned).toBe(1);
+    expect(summary.manualEntryAbandonmentRate).toBe(0.5);
+    expect(summary.medianManualEntryMs).toBe(2_400);
   });
 });
