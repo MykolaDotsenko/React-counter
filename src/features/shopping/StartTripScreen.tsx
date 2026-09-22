@@ -117,6 +117,7 @@ type BufferResult = ParsedBuffer | InvalidBuffer;
 
 export interface StartTripScreenProps {
   readonly controller: ShoppingAppController;
+  readonly onTripStarted?: (source: "new" | "repeat") => void;
   readonly completedTripCount?: number;
   readonly recentTrip?: CompletedTrip | null;
   readonly persistenceHealth?: PersistenceHealth;
@@ -126,6 +127,7 @@ export interface StartTripScreenProps {
 
 export function StartTripScreen({
   controller,
+  onTripStarted,
   completedTripCount = 0,
   recentTrip = null,
   persistenceHealth,
@@ -198,7 +200,10 @@ export function StartTripScreen({
 
     if (!result.ok) {
       setErrorMessage(applicationErrorMessage(result));
+      return;
     }
+
+    onTripStarted?.("new");
   };
 
   const submitCustom = (): void => {
@@ -227,7 +232,10 @@ export function StartTripScreen({
 
     if (!result.ok) {
       setErrorMessage(applicationErrorMessage(result));
+      return;
     }
+
+    onTripStarted?.("repeat");
   };
 
   return (

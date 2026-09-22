@@ -588,10 +588,21 @@ Implemented second slice:
 - advisory memory persistence failure remains isolated from active-cart durability
 - store-aware selector semantics for future known-store context
 
-Still remaining in Phase 8:
+Implemented validation preparation:
 
-- optional user-facing store context if validation shows it materially improves repeat shopping
-- real-user measurement proving the second/third trip is materially lighter
+- guarded `/beta/` shopping build for real-store retention testing
+- privacy-safe local event recorder for trip starts/finishes, 1/5/10-item milestones, manual-entry completion/abandonment, remembered-item reuse, and current-price override
+- session-relative trip ordinals that remain valid even when old shopping history already exists
+- local summary/export with no prices, budgets, item names, store history, or network telemetry
+- separate `budget-cart:qa:retention-v1` evidence record so validation data never becomes shopping business state
+- CI build gate and cross-browser E2E coverage for the beta recorder
+
+Still remaining in Phase 8 / retention gate:
+
+- optional user-facing store context only if validation shows it materially improves repeat shopping
+- 20–50 real-shopper beta
+- measured second-trip / third-trip behaviour
+- real-user evidence that the second/third trip is materially lighter
 
 Suggested PR:
 
@@ -628,6 +639,14 @@ The second and third trips should be materially easier than the first.
 - no account, network, or camera is required for this acceleration
 
 ## Retention validation gate — after Phase 8
+
+**Engineering status: beta measurement harness implemented; human cohort evidence not yet collected.**
+
+Guarded beta route:
+
+> `/shopping-budget-companion/beta/`
+
+The beta build records only privacy-safe local event structure and requires manual export. It does not send telemetry and does not replace real observation/interviews.
 
 Before adding PWA/scanner/OCR breadth, run a focused real-store beta.
 
@@ -926,9 +945,11 @@ Phase 6 correction/confidence is implemented via PR #37.
 
 Phase 7 trip completion/reconciliation is implemented via PR #38.
 
-The next implementation step is:
+The current implementation step is:
 
-> **Phase 8 — repeat-trip acceleration and price memory**
+> **Phase 8 retention validation — run the guarded real-store beta and collect evidence**
+
+The repeat-trip engineering slices are implemented. Do not start Phase 9 merely because the code is ready; the documented retention gate now requires human evidence.
 
 PR #28 implements the B6 code/automated portion:
 

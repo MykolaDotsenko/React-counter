@@ -1,4 +1,4 @@
-name: Publish Pulse Counter and guarded QA
+name: Publish Pulse Counter and guarded builds
 
 on:
   push:
@@ -52,6 +52,14 @@ jobs:
           npm run build -- --base=/shopping-budget-companion/qa/ --outDir=dist-qa
           npm run qa:prepare-index
 
+      - name: Build guarded retention beta
+        env:
+          VITE_SHOPPING_SHELL: "1"
+          VITE_SHOPPING_BETA_EVIDENCE: "1"
+        run: |
+          npm run build -- --base=/shopping-budget-companion/beta/ --outDir=dist-beta
+          npm run beta:prepare-index
+
       - name: Stage static site
         run: |
           rm -rf /tmp/shopping-budget-companion-pages
@@ -59,6 +67,8 @@ jobs:
           cp -R dist/. /tmp/shopping-budget-companion-pages/
           mkdir -p /tmp/shopping-budget-companion-pages/qa
           cp -R dist-qa/. /tmp/shopping-budget-companion-pages/qa/
+          mkdir -p /tmp/shopping-budget-companion-pages/beta
+          cp -R dist-beta/. /tmp/shopping-budget-companion-pages/beta/
           touch /tmp/shopping-budget-companion-pages/.nojekyll
 
       - name: Publish gh-pages branch
@@ -69,5 +79,5 @@ jobs:
           git rm -rf . || true
           cp -R /tmp/shopping-budget-companion-pages/. .
           git add -A
-          git commit -m "deploy: Pulse Counter + guarded QA ${GITHUB_SHA}"
+          git commit -m "deploy: Pulse Counter + guarded QA/beta ${GITHUB_SHA}"
           git push --force origin gh-pages

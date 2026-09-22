@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "typecheck": "tsc --noEmit",
-    "qa:prepare-index": "node scripts/prepare-qa-index.mjs"
+    "qa:prepare-index": "node scripts/prepare-qa-index.mjs",
+    "beta:prepare-index": "node scripts/prepare-beta-index.mjs"
   },
   "dependencies": {
     "react": "19.3.0",

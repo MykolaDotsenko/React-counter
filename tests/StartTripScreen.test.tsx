@@ -201,6 +201,38 @@ describe("StartTripScreen", () => {
     });
   });
 
+  it("reports successful new and repeated trip starts without exposing budget values", async () => {
+    const user = userEvent.setup();
+    const recentTrip = createCompletedTrip();
+    const controller = createController([recentTrip]);
+    const onTripStarted = vi.fn();
+
+    const { rerender } = render(
+      <StartTripScreen
+        controller={controller}
+        recentTrip={recentTrip}
+        completedTripCount={1}
+        onTripStarted={onTripStarted}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Shop again/i }));
+    expect(onTripStarted).toHaveBeenCalledWith("repeat");
+
+    const freshController = createController();
+    onTripStarted.mockClear();
+
+    rerender(
+      <StartTripScreen
+        controller={freshController}
+        onTripStarted={onTripStarted}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "€50" }));
+    expect(onTripStarted).toHaveBeenCalledWith("new");
+  });
+
   it("applies an optional safety buffer to a quick budget", async () => {
     const user = userEvent.setup();
     const controller = createController();

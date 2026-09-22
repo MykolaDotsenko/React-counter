@@ -14,7 +14,19 @@ https://mykoladotsenko.github.io/shopping-budget-companion/
 
 This remains the default GitHub Pages experience until the shopping replacement passes its empirical release gate.
 
-### Guarded shopping QA
+### Guarded retention beta
+
+A separate internal beta build is published at:
+
+> `https://mykoladotsenko.github.io/shopping-budget-companion/beta/`
+
+It runs the guarded shopping product with a local privacy-safe retention evidence recorder.
+
+It records behavioural structure only—trip starts/finishes, item-count milestones, manual-entry duration/abandonment, remembered-item reuse, and current-price override. It does **not** record prices, budgets, item names, stores, checkout totals, or transmit analytics.
+
+This route exists to support the documented 20–50 real-shopper retention gate. It does not mean that retention has been validated.
+
+## Guarded shopping QA
 
 https://mykoladotsenko.github.io/shopping-budget-companion/qa/
 

@@ -8,6 +8,7 @@ import type {
   PriceMemoryRecord,
 } from "../domain/price-memory";
 import {
+  itemCount,
   lineTotal,
   mostRecentCompletedTrip,
   remaining,
@@ -34,7 +35,19 @@ import {
 } from "../features/shopping/PriceEntrySurface";
 import { RecoveryScreen } from "../features/shopping/RecoveryScreen";
 import { StartTripScreen } from "../features/shopping/StartTripScreen";
+import { RetentionBetaPanel } from "../qa/RetentionBetaPanel";
 import { ShoppingTimingQaPanel } from "../qa/ShoppingTimingQaPanel";
+import {
+  appendRetentionBetaEvent,
+  createRetentionBetaSession,
+  currentRetentionTripOrdinal,
+  loadRetentionBetaSession,
+  nextRetentionTripOrdinal,
+  persistRetentionBetaSession,
+  type RetentionBetaEvent,
+  type RetentionBetaSession,
+  type RetentionBetaTripSource,
+} from "../qa/retention-beta";
 import {
   appendQaTimingSample,
   captureQaTimingEnvironment,
@@ -57,6 +70,9 @@ export interface ShoppingAppShellProps {
 
 const qaTimingEnabled =
   import.meta.env.VITE_SHOPPING_QA_TIMING === "1";
+
+const betaEvidenceEnabled =
+  import.meta.env.VITE_SHOPPING_BETA_EVIDENCE === "1";
 
 type OverlayState =
   | { readonly kind: "none" }
@@ -124,6 +140,7 @@ export function ShoppingAppShell({
   const adjustBudgetButtonRef = useRef<HTMLButtonElement>(null);
   const qaStartedAtRef = useRef<number | null>(null);
   const qaPendingSampleRef = useRef<PendingQaSample | null>(null);
+  const betaManualStartedAtRef = useRef<number | null>(null);
   const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
   const [lastAddedMessage, setLastAddedMessage] = useState("");
   const recentCompletedTrip = mostRecentCompletedTrip(
@@ -142,6 +159,20 @@ export function ShoppingAppShell({
       return createQaTimingSession(environment);
     }
   });
+  const [betaSession, setBetaSession] =
+    useState<RetentionBetaSession | null>(() => {
+      if (!betaEvidenceEnabled) {
+        return null;
+      }
+
+      const now = new Date().toISOString();
+
+      try {
+        return loadRetentionBetaSession(localStorage, now);
+      } catch {
+        return createRetentionBetaSession(now);
+      }
+    });
 
   const returnFocusToAddPrice = (): void => {
     queueMicrotask(() => {
@@ -206,6 +237,82 @@ export function ShoppingAppShell({
     });
   };
 
+  const updateBetaSessionState = (
+    updater: (current: RetentionBetaSession) => RetentionBetaSession,
+  ): void => {
+    setBetaSession((current) => {
+      if (current === null) {
+        return null;
+      }
+
+      const next = updater(current);
+
+      try {
+        persistRetentionBetaSession(localStorage, next);
+      } catch {
+        // Beta evidence must never change shopping product behaviour.
+      }
+
+      return next;
+    });
+  };
+
+  const recordBetaEvent = (event: RetentionBetaEvent): void => {
+    if (!betaEvidenceEnabled) {
+      return;
+    }
+
+    updateBetaSessionState((current) =>
+      appendRetentionBetaEvent(current, event),
+    );
+  };
+
+  const activeTripOrdinal = (): number | null => {
+    if (betaSession === null) {
+      return null;
+    }
+
+    return currentRetentionTripOrdinal(betaSession);
+  };
+
+  const recordTripStarted = (
+    source: RetentionBetaTripSource,
+  ): void => {
+    if (betaSession === null) {
+      return;
+    }
+
+    const snapshot = controller.getSnapshot();
+
+    if (snapshot.activeTrip === null) {
+      return;
+    }
+
+    recordBetaEvent({
+      type: "trip_started",
+      at: new Date().toISOString(),
+      tripOrdinal: nextRetentionTripOrdinal(betaSession),
+      source,
+    });
+  };
+
+  const recordCrossedItemMilestones = (
+    beforeCount: number,
+    afterCount: number,
+    tripOrdinal: number,
+  ): void => {
+    for (const milestone of [1, 5, 10] as const) {
+      if (beforeCount < milestone && afterCount >= milestone) {
+        recordBetaEvent({
+          type: "item_milestone",
+          at: new Date().toISOString(),
+          tripOrdinal,
+          itemCount: milestone,
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     if (
       !qaTimingEnabled ||
@@ -248,9 +355,10 @@ export function ShoppingAppShell({
     });
   }, [overlay.kind]);
 
-  const qaPanel =
-    qaSession === null ? null : (
-      <ShoppingTimingQaPanel
+  const qaPanel = (
+    <>
+      {qaSession === null ? null : (
+        <ShoppingTimingQaPanel
         session={qaSession}
         onChecklistChange={(key, value) => {
           updateQaSessionState((current) =>
@@ -276,7 +384,26 @@ export function ShoppingAppShell({
           updateQaSessionState(resetQaTimingSamples);
         }}
       />
-    );
+      )}
+      {betaSession === null ? null : (
+        <RetentionBetaPanel
+          session={betaSession}
+          onReset={() => {
+            const next = createRetentionBetaSession(
+              new Date().toISOString(),
+            );
+            setBetaSession(next);
+
+            try {
+              persistRetentionBetaSession(localStorage, next);
+            } catch {
+              // Reset remains effective in memory when storage is unavailable.
+            }
+          }}
+        />
+      )}
+    </>
+  );
 
   if (state.lifecycle === "booting") {
     return (
@@ -320,6 +447,7 @@ export function ShoppingAppShell({
       <>
         <StartTripScreen
           controller={controller}
+          onTripStarted={recordTripStarted}
           completedTripCount={state.completedTrips.length}
           recentTrip={recentCompletedTrip}
           persistenceHealth={state.persistence}
@@ -363,6 +491,7 @@ export function ShoppingAppShell({
               setOverlay({ kind: "none" });
             }}
             onShopAgain={() => {
+              recordTripStarted("repeat");
               setOverlay({ kind: "none" });
               setLastAddedMessage(
                 "New trip started with your previous budget.",
@@ -390,11 +519,24 @@ export function ShoppingAppShell({
           onCancel={() => {
             qaStartedAtRef.current = null;
             qaPendingSampleRef.current = null;
+
+            if (betaManualStartedAtRef.current !== null) {
+              recordBetaEvent({
+                type: "manual_entry_abandoned",
+                at: new Date().toISOString(),
+                tripOrdinal: activeTripOrdinal() ?? 1,
+              });
+              betaManualStartedAtRef.current = null;
+            }
+
             const sourceMemoryId = overlay.sourceMemoryId;
             setOverlay({ kind: "none" });
             returnFocusToPriceTrigger(sourceMemoryId);
           }}
           onValidatedItem={(intent: ValidatedItemIntent) => {
+            const beforeCount =
+              state.activeTrip === null ? 0 : itemCount(state.activeTrip);
+            const tripOrdinal = activeTripOrdinal() ?? 1;
             const result = controller.addManualItem(intent);
 
             if (
@@ -413,6 +555,23 @@ export function ShoppingAppShell({
 
             setLastAddedMessage(
               addedFeedback(result.state.activeTrip, addedItem, "en-FI"),
+            );
+
+            if (betaManualStartedAtRef.current !== null) {
+              recordBetaEvent({
+                type: "manual_entry_completed",
+                at: new Date().toISOString(),
+                tripOrdinal,
+                durationMs:
+                  performance.now() - betaManualStartedAtRef.current,
+              });
+              betaManualStartedAtRef.current = null;
+            }
+
+            recordCrossedItemMilestones(
+              beforeCount,
+              itemCount(result.state.activeTrip),
+              tripOrdinal,
             );
 
             if (qaTimingEnabled && qaStartedAtRef.current !== null) {
@@ -490,12 +649,18 @@ export function ShoppingAppShell({
             returnFocusToFinishTrip();
           }}
           onConfirm={() => {
+            const tripOrdinal = activeTripOrdinal() ?? 1;
             const result = controller.completeTrip();
 
             if (!result.ok) {
               return false;
             }
 
+            recordBetaEvent({
+              type: "trip_finished",
+              at: new Date().toISOString(),
+              tripOrdinal,
+            });
             setOverlay({ kind: "none" });
             return true;
           }}
@@ -635,6 +800,10 @@ export function ShoppingAppShell({
             qaPendingSampleRef.current = null;
           }
 
+          if (betaEvidenceEnabled) {
+            betaManualStartedAtRef.current = performance.now();
+          }
+
           setOverlay({ kind: "add-price" });
         }}
         onAdjustBudget={() => {
@@ -658,8 +827,12 @@ export function ShoppingAppShell({
         onUseRemembered={(record: PriceMemoryRecord) => {
           qaStartedAtRef.current = null;
           qaPendingSampleRef.current = null;
+          betaManualStartedAtRef.current = null;
           setLastAddedMessage("");
 
+          const beforeCount =
+            state.activeTrip === null ? 0 : itemCount(state.activeTrip);
+          const tripOrdinal = activeTripOrdinal() ?? 1;
           const result = controller.addRememberedItem({
             memoryId: record.id,
           });
@@ -678,12 +851,32 @@ export function ShoppingAppShell({
               "en-FI",
             )}`,
           );
+          recordBetaEvent({
+            type: "remembered_item_used",
+            at: new Date().toISOString(),
+            tripOrdinal,
+          });
+          recordCrossedItemMilestones(
+            beforeCount,
+            itemCount(result.state.activeTrip),
+            tripOrdinal,
+          );
           return true;
         }}
         onEnterCurrentPrice={(record: PriceMemoryRecord) => {
           qaStartedAtRef.current = null;
           qaPendingSampleRef.current = null;
           setLastAddedMessage("");
+          recordBetaEvent({
+            type: "current_price_override_started",
+            at: new Date().toISOString(),
+            tripOrdinal: activeTripOrdinal() ?? 1,
+          });
+
+          if (betaEvidenceEnabled) {
+            betaManualStartedAtRef.current = performance.now();
+          }
+
           setOverlay({
             kind: "add-price",
             initialLabel: record.label,

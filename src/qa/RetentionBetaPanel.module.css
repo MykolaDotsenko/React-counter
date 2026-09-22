@@ -1,0 +1,156 @@
+.root {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 80;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  color: #202521;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+.toggle {
+  min-height: 44px;
+  border: 1px solid #c7ccc6;
+  border-radius: 999px;
+  padding: 0 14px;
+  background: #fffdf9;
+  color: #202521;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgb(31 35 32 / 0.14);
+  cursor: pointer;
+}
+
+.panel {
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(680px, calc(100dvh - 76px));
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #c7ccc6;
+  border-radius: 18px;
+  background: #fffdf9;
+  box-shadow: 0 18px 48px rgb(31 35 32 / 0.18);
+}
+
+.panel header p,
+.panel header h2,
+.privacy,
+.note,
+.status {
+  margin: 0;
+}
+
+.panel header p {
+  color: #376653;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.panel header h2 {
+  margin-top: 2px;
+  font-size: 1.08rem;
+}
+
+.privacy,
+.note,
+.status {
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.privacy {
+  color: #4d554f;
+}
+
+.note {
+  color: #5d655f;
+}
+
+.metrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.metrics div {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #dde1dc;
+  border-radius: 12px;
+  background: #f5f3ee;
+}
+
+.metrics dt {
+  color: #626963;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.metrics dd {
+  margin: 2px 0 0;
+  font-size: 0.86rem;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+}
+
+.actions button {
+  min-height: 44px;
+  border: 1px solid #c7ccc6;
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: #f5f3ee;
+  color: #202521;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.actions .reset {
+  background: transparent;
+}
+
+.toggle:focus-visible,
+.actions button:focus-visible {
+  outline: 3px solid #376653;
+  outline-offset: 3px;
+}
+
+.status {
+  color: #376653;
+  font-weight: 750;
+}
+
+@media (max-width: 380px) {
+  .panel {
+    padding: 12px;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (forced-colors: active) {
+  .toggle,
+  .panel,
+  .metrics div,
+  .actions button {
+    border: 1px solid ButtonText;
+  }
+}
