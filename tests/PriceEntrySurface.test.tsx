@@ -571,13 +571,18 @@ describe("PriceEntrySurface", () => {
       />,
     );
 
-    expect(
-      screen.queryByRole("textbox", { name: "Item name" }),
-    ).toBeNull();
-
-    await user.click(
-      screen.getByText("Name for next time", { exact: false }),
+    const namingSummary = screen.getByText(
+      "Name for next time",
+      { exact: false },
     );
+    const namingDetails = namingSummary.closest("details");
+
+    expect(namingDetails).not.toBeNull();
+    expect((namingDetails as HTMLDetailsElement).open).toBe(false);
+
+    await user.click(namingSummary);
+
+    expect((namingDetails as HTMLDetailsElement).open).toBe(true);
 
     const name = screen.getByRole("textbox", { name: "Item name" });
     await user.type(name, "Milk 1L");
