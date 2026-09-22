@@ -117,6 +117,22 @@ export function RetentionBetaPanel({
               <dd>{summary.repeatTripStarts}</dd>
             </div>
             <div>
+              <dt>Restores</dt>
+              <dd>{summary.tripRestores}</dd>
+            </div>
+            <div>
+              <dt>2nd trip ≤7d</dt>
+              <dd>{summary.secondTripWithin7Days ? "Yes" : "Not yet"}</dd>
+            </div>
+            <div>
+              <dt>2nd trip ≤14d</dt>
+              <dd>{summary.secondTripWithin14Days ? "Yes" : "Not yet"}</dd>
+            </div>
+            <div>
+              <dt>2nd trip ≤30d</dt>
+              <dd>{summary.secondTripWithin30Days ? "Yes" : "Not yet"}</dd>
+            </div>
+            <div>
               <dt>Reached 10 items</dt>
               <dd>{summary.tenthItemTrips} trips</dd>
             </div>
