@@ -203,6 +203,39 @@ describe("RecentItemsSection", () => {
     expect(onUseRemembered).not.toHaveBeenCalled();
   });
 
+  it("restores focus to the remembered trigger after Escape from over-budget confirmation", async () => {
+    const user = userEvent.setup();
+    const record = memory({ price: 600 });
+
+    render(
+      <RecentItemsSection
+        trip={createTrip(500)}
+        records={[record]}
+        now={time(NOW)}
+        onUseRemembered={vi.fn()}
+        onEnterCurrentPrice={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    const trigger = screen.getByRole("button", {
+      name: "Use remembered price",
+    });
+    await user.click(trigger);
+
+    const cancel = screen.getByRole("button", { name: "Cancel" });
+    expect(document.activeElement).toBe(cancel);
+
+    await user.keyboard("{Escape}");
+
+    const restored = screen.getByRole("button", {
+      name: "Use remembered price",
+    });
+
+    await Promise.resolve();
+    expect(document.activeElement).toBe(restored);
+  });
+
   it("keeps advisory persistence failure separate and explicit", () => {
     render(
       <RecentItemsSection
