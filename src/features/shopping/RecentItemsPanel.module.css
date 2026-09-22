@@ -111,7 +111,7 @@
 .currentButton,
 .cancelButton,
 .addAnywayButton {
-  min-height: 44px;
+  min-height: 48px;
   border-radius: 12px;
   padding: 0 12px;
   font: inherit;
