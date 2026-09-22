@@ -43,7 +43,7 @@ Specialized contracts:
 
 Cross-cutting durable decisions:
 
-- [DECISIONS.md](./DECISIONS.md)
+- [DECISIONS.md](./DECISIONS.md) — short ADR index; open only the relevant category file
 
 ## Read by task
 
