@@ -6,7 +6,9 @@ import {
   appendRetentionBetaEvent,
   buildRetentionBetaExport,
   createRetentionBetaSession,
+  currentRetentionTripOrdinal,
   loadRetentionBetaSession,
+  nextRetentionTripOrdinal,
   persistRetentionBetaSession,
   summarizeRetentionBeta,
   type RetentionBetaEvent,
@@ -99,6 +101,36 @@ describe("retention beta evidence", () => {
     }
 
     expect(session.events).toHaveLength(RETENTION_BETA_EVENT_LIMIT);
+  });
+
+  it("keeps trip ordinals relative to the beta session rather than shopping history", () => {
+    let session = createRetentionBetaSession(START);
+
+    expect(nextRetentionTripOrdinal(session)).toBe(1);
+    expect(currentRetentionTripOrdinal(session)).toBeNull();
+
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "new",
+      }),
+    );
+
+    expect(currentRetentionTripOrdinal(session)).toBe(1);
+    expect(nextRetentionTripOrdinal(session)).toBe(2);
+
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_finished",
+        tripOrdinal: 1,
+      }),
+    );
+
+    expect(currentRetentionTripOrdinal(session)).toBeNull();
+    expect(nextRetentionTripOrdinal(session)).toBe(2);
   });
 
   it("summarizes repeat retention and manual-entry friction without money", () => {
