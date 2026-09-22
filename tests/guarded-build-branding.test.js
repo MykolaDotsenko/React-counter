@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -61,7 +62,7 @@ describe("guarded shopping build branding", () => {
 
   it("keeps the public source shell on Pulse identity until the release switch", async () => {
     const sourceIndex = await readFile(
-      new URL("../index.html", import.meta.url),
+      resolve(process.cwd(), "index.html"),
       "utf8",
     );
 
@@ -74,7 +75,7 @@ describe("guarded shopping build branding", () => {
 
   it("keeps the provisional shopping mark aligned with the remaining-room identity", async () => {
     const mark = await readFile(
-      new URL("../public/shopping-mark.svg", import.meta.url),
+      resolve(process.cwd(), "public/shopping-mark.svg"),
       "utf8",
     );
 
