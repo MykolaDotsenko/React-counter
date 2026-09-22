@@ -55,8 +55,9 @@ describe("RecentItemsPanel", () => {
   });
 
   it("shows remembered price age and keeps current-price override explicit", async () => {
-    vi.useRealTimers();
-    const user = userEvent.setup();
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
     const milk = memory("Milk 1L", 139);
     const onUse = vi.fn(() => true);
     const onCurrent = vi.fn();
@@ -86,8 +87,9 @@ describe("RecentItemsPanel", () => {
   });
 
   it("reuses a remembered price in one action when it stays within budget", async () => {
-    vi.useRealTimers();
-    const user = userEvent.setup();
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
     const milk = memory("Milk 1L", 139);
     const onUse = vi.fn(() => true);
 
@@ -111,8 +113,9 @@ describe("RecentItemsPanel", () => {
   });
 
   it("requires explicit confirmation when a remembered price would exceed the nominal budget", async () => {
-    vi.useRealTimers();
-    const user = userEvent.setup();
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
     const milk = memory("Milk 1L", 139);
     const onUse = vi.fn(() => true);
 
