@@ -16,7 +16,7 @@ Current repository reality:
 - loss-safe completion, startup stale-active reconciliation, optional checkout reconciliation, and lightweight history are implemented
 - Calm Utility start, active-trip, persistence-health, recovery, manual price-entry, one-step Undo, Phase 6 edit/remove correction, atomic active-trip budget/buffer adjustment, and Phase 8 repeat-budget flows are implemented in the guarded shell
 - the first Phase 8 slice derives the repeat candidate from validated completed history; it does not introduce a duplicate recent-budget/settings persistence record
-- legacy counter UI/rendering code has been retired; only shopping product code remains
+- legacy prototype UI/rendering code has been retired; only shopping product code remains
 - Vitest + React Testing Library + Playwright + axe remain the quality foundation
 
 Remaining target areas before the documented MVP is complete:
