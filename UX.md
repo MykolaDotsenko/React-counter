@@ -4,7 +4,7 @@
 
 This document defines the target user experience for the shopping budget companion.
 
-The current Pulse Counter interface is the interaction and visual foundation, not the final product UI. Preserve the strongest parts of its tactile feedback, accessibility work, motion discipline, and responsive craft while replacing counter-centric information with a real shopping workflow.
+The current interface is a task-focused shopping product. Preserve tactile feedback, accessibility, motion discipline, and responsive craft only where they improve the shopping workflow.
 
 ## UX north star
 
@@ -436,7 +436,7 @@ Respect reduced motion.
 
 ## Visual direction
 
-Preserve the strongest Pulse Counter qualities:
+Preserve the strongest interaction qualities:
 
 - tactile depth
 - polished typography
