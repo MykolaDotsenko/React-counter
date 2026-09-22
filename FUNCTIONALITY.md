@@ -2,9 +2,9 @@
 
 ## Status
 
-This document defines the target functional behaviour of the shopping budget companion.
+This document defines the functional behaviour of the shopping budget companion.
 
-The current shipped application is still Pulse Counter. Nothing in this file should be represented as implemented until the corresponding code lands.
+The public/default build is still Pulse Counter until the guarded replacement passes its empirical release gate. In the guarded shopping shell, the core flow through Phase 7 is implemented: start/restore, exact manual entry, edit/remove/Undo, active-trip budget and safety-buffer adjustment, loss-safe completion, optional checkout reconciliation, and lightweight history. Later sections such as price memory, installed PWA support, and scanning remain target behaviour until their roadmap phases land.
 
 This document answers:
 
