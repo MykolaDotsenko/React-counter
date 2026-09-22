@@ -154,6 +154,11 @@ export type TripCommand =
       readonly now: IsoTimestamp;
     }
   | { readonly type: "remove-item"; readonly itemId: ItemId }
+  | {
+      readonly type: "set-spending-plan";
+      readonly budgetMinor: MinorUnits;
+      readonly safetyBufferMinor: MinorUnits;
+    }
   | { readonly type: "set-budget"; readonly budgetMinor: MinorUnits }
   | {
       readonly type: "set-buffer";
@@ -911,6 +916,42 @@ export const reduceTrip = (
           (item) => item.id !== command.itemId,
         ),
       );
+    }
+
+    case "set-spending-plan": {
+      const activeResult = activeTripOnly(trip);
+
+      if (!activeResult.ok) {
+        return activeResult;
+      }
+
+      const budgetResult = validateBudget(command.budgetMinor);
+
+      if (!budgetResult.ok) {
+        return budgetResult;
+      }
+
+      const bufferResult = validateBuffer(
+        command.safetyBufferMinor,
+        budgetResult.value,
+      );
+
+      if (!bufferResult.ok) {
+        return bufferResult;
+      }
+
+      if (
+        budgetResult.value === activeResult.value.budgetMinor &&
+        bufferResult.value === activeResult.value.safetyBufferMinor
+      ) {
+        return ok(activeResult.value);
+      }
+
+      return ok({
+        ...activeResult.value,
+        budgetMinor: budgetResult.value,
+        safetyBufferMinor: bufferResult.value,
+      });
     }
 
     case "set-budget": {
