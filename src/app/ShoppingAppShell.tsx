@@ -201,6 +201,7 @@ export function ShoppingAppShell({
           controller={controller}
           onTripStarted={evidence.recordTripStarted}
           completedTripCount={state.completedTrips.length}
+          rememberedPriceCount={state.priceMemories.length}
           recentTrip={recentCompletedTrip}
           persistenceHealth={state.persistence}
           onOpenHistory={() => {
