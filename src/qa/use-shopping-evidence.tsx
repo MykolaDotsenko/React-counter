@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { ShoppingAppController } from "../application/shopping-app-controller";
+import type { MinorUnits } from "../domain/money";
 import {
   itemCount,
   lineTotal,
   type ActiveTrip,
   type CartItem,
 } from "../domain/shopping-trip";
-import type { ValidatedItemIntent } from "../features/shopping/PriceEntrySurface";
 import { RetentionBetaPanel } from "./RetentionBetaPanel";
 import { ShoppingTimingQaPanel } from "./ShoppingTimingQaPanel";
 import {
@@ -47,6 +47,11 @@ const qaTimingEnabled =
 const betaEvidenceEnabled =
   import.meta.env.VITE_SHOPPING_BETA_EVIDENCE === "1";
 
+interface ManualEntryEvidence {
+  readonly unitPriceMinor: MinorUnits;
+  readonly quantity: number;
+}
+
 interface PendingQaSample {
   readonly unitPriceMinor: number;
   readonly quantity: number;
@@ -69,7 +74,7 @@ export interface ShoppingEvidence {
   readonly startCurrentPriceOverride: () => void;
   readonly abandonManualEntry: () => void;
   readonly commitManualEntry: (
-    intent: ValidatedItemIntent,
+    intent: ManualEntryEvidence,
     trip: ActiveTrip,
     addedItem: CartItem,
     beforeCount: number,
@@ -266,7 +271,7 @@ export function useShoppingEvidence({
   };
 
   const commitManualEntry = (
-    intent: ValidatedItemIntent,
+    intent: ManualEntryEvidence,
     trip: ActiveTrip,
     addedItem: CartItem,
     beforeCount: number,
