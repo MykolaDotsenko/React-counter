@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { ShoppingAppController } from "../application/shopping-app-controller";
+import type { MinorUnits } from "../domain/money";
 import type {
   ActiveTrip,
   CartItem,
@@ -8,7 +9,7 @@ import type {
 import type { RetentionBetaTripSource } from "./retention-beta";
 
 export interface ManualEntryEvidence {
-  readonly unitPriceMinor: number;
+  readonly unitPriceMinor: MinorUnits;
   readonly quantity: number;
 }
 
