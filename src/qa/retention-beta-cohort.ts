@@ -134,12 +134,12 @@ export const summarizeRetentionBetaCohort = (
     ),
   );
   const manualEntriesCompleted = manualDurations.length;
-  const manualEntriesAbandoned = activated.reduce(
+  const manualEntriesAbandoned = summaries.reduce(
     (sum, summary) => sum + summary.manualEntriesAbandoned,
     0,
   );
 
-  const rememberedItemUses = activated.reduce(
+  const rememberedItemUses = summaries.reduce(
     (sum, summary) => sum + summary.rememberedItemUses,
     0,
   );
@@ -201,7 +201,7 @@ export const summarizeRetentionBetaCohort = (
       rememberedItemParticipants,
       activatedParticipants,
     ),
-    currentPriceOverrides: activated.reduce(
+    currentPriceOverrides: summaries.reduce(
       (sum, summary) => sum + summary.currentPriceOverrides,
       0,
     ),
