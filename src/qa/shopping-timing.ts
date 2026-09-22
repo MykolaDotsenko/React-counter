@@ -1,4 +1,6 @@
-export const QA_TIMING_STORAGE_KEY = "budget-cart:qa:timing-v2";
+export const QA_TIMING_STORAGE_KEY = "budget-cart:qa:timing-v3";
+export const LEGACY_QA_TIMING_STORAGE_KEY =
+  "budget-cart:qa:timing-v2";
 
 export const QA_TARGET_PRICE_479 = 479;
 export const QA_TARGET_PRICE_1250 = 1_250;
@@ -61,11 +63,28 @@ export interface QaTimingChecklist {
   readonly compactSpotCheckRecorded: boolean;
 }
 
+export interface QaPhysicalContext {
+  readonly oneHanded: boolean;
+  readonly brightStoreLikeLighting: boolean;
+  readonly defaultTextSize: boolean;
+}
+
+export type QaSpotCheckStatus = "not-run" | "pass" | "fail";
+
+export interface QaSpotChecks {
+  readonly darkAppearance: QaSpotCheckStatus;
+  readonly largeText200: QaSpotCheckStatus;
+  readonly reducedMotion: QaSpotCheckStatus;
+}
+
 export interface QaTimingSession {
-  readonly version: 2;
+  readonly version: 3;
   readonly environment: QaTimingEnvironment;
   readonly deviceLabel: string;
   readonly compactDeviceLabel: string;
+  readonly inputMethodLabel: string;
+  readonly physicalContext: QaPhysicalContext;
+  readonly spotChecks: QaSpotChecks;
   readonly notes: string;
   readonly checklist: QaTimingChecklist;
   readonly samples: readonly QaTimingSample[];
@@ -85,8 +104,12 @@ export interface QaEmpiricalGateSummary {
   readonly checklistComplete: boolean;
   readonly deviceLabelPresent: boolean;
   readonly compactDeviceLabelPresent: boolean;
+  readonly inputMethodPresent: boolean;
+  readonly physicalContextComplete: boolean;
   readonly lightAppearanceRecorded: boolean;
   readonly phonePortraitViewport: boolean;
+  readonly secondarySpotChecksRecorded: number;
+  readonly secondarySpotCheckFailures: number;
   readonly ignoredSampleCount: number;
   readonly status: "pending" | "target-met" | "release-floor" | "fail";
   readonly releaseEligible: boolean;
@@ -109,6 +132,18 @@ const emptyChecklist = (): QaTimingChecklist => ({
   compactSpotCheckRecorded: false,
 });
 
+const emptyPhysicalContext = (): QaPhysicalContext => ({
+  oneHanded: false,
+  brightStoreLikeLighting: false,
+  defaultTextSize: false,
+});
+
+const emptySpotChecks = (): QaSpotChecks => ({
+  darkAppearance: "not-run",
+  largeText200: "not-run",
+  reducedMotion: "not-run",
+});
+
 export const captureQaTimingEnvironment = (): QaTimingEnvironment => ({
   userAgent: navigator.userAgent,
   viewportWidth: window.innerWidth,
@@ -125,10 +160,13 @@ export const captureQaTimingEnvironment = (): QaTimingEnvironment => ({
 export const createQaTimingSession = (
   environment: QaTimingEnvironment,
 ): QaTimingSession => ({
-  version: 2,
+  version: 3,
   environment,
   deviceLabel: "",
   compactDeviceLabel: "",
+  inputMethodLabel: "",
+  physicalContext: emptyPhysicalContext(),
+  spotChecks: emptySpotChecks(),
   notes: "",
   checklist: emptyChecklist(),
   samples: [],
@@ -214,12 +252,59 @@ const isQaTimingSample = (value: unknown): value is QaTimingSample => {
   );
 };
 
-const isQaTimingSession = (value: unknown): value is QaTimingSession => {
+const isQaPhysicalContext = (
+  value: unknown,
+): value is QaPhysicalContext => {
   if (typeof value !== "object" || value === null) {
     return false;
   }
 
-  const candidate = value as Partial<QaTimingSession>;
+  const candidate = value as Partial<QaPhysicalContext>;
+
+  return (
+    typeof candidate.oneHanded === "boolean" &&
+    typeof candidate.brightStoreLikeLighting === "boolean" &&
+    typeof candidate.defaultTextSize === "boolean"
+  );
+};
+
+const isSpotCheckStatus = (
+  value: unknown,
+): value is QaSpotCheckStatus =>
+  value === "not-run" || value === "pass" || value === "fail";
+
+const isQaSpotChecks = (value: unknown): value is QaSpotChecks => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<QaSpotChecks>;
+
+  return (
+    isSpotCheckStatus(candidate.darkAppearance) &&
+    isSpotCheckStatus(candidate.largeText200) &&
+    isSpotCheckStatus(candidate.reducedMotion)
+  );
+};
+
+interface QaTimingSessionV2 {
+  readonly version: 2;
+  readonly environment: QaTimingEnvironment;
+  readonly deviceLabel: string;
+  readonly compactDeviceLabel: string;
+  readonly notes: string;
+  readonly checklist: QaTimingChecklist;
+  readonly samples: readonly QaTimingSample[];
+}
+
+const isQaTimingSessionV2 = (
+  value: unknown,
+): value is QaTimingSessionV2 => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<QaTimingSessionV2>;
 
   return (
     candidate.version === 2 &&
@@ -233,11 +318,50 @@ const isQaTimingSession = (value: unknown): value is QaTimingSession => {
   );
 };
 
+const migrateQaTimingSessionV2 = (
+  session: QaTimingSessionV2,
+): QaTimingSession => ({
+  version: 3,
+  environment: session.environment,
+  deviceLabel: session.deviceLabel,
+  compactDeviceLabel: session.compactDeviceLabel,
+  inputMethodLabel: "",
+  physicalContext: emptyPhysicalContext(),
+  spotChecks: emptySpotChecks(),
+  notes: session.notes,
+  checklist: session.checklist,
+  samples: session.samples,
+});
+
+const isQaTimingSession = (value: unknown): value is QaTimingSession => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<QaTimingSession>;
+
+  return (
+    candidate.version === 3 &&
+    isQaTimingEnvironment(candidate.environment) &&
+    typeof candidate.deviceLabel === "string" &&
+    typeof candidate.compactDeviceLabel === "string" &&
+    typeof candidate.inputMethodLabel === "string" &&
+    isQaPhysicalContext(candidate.physicalContext) &&
+    isQaSpotChecks(candidate.spotChecks) &&
+    typeof candidate.notes === "string" &&
+    isQaTimingChecklist(candidate.checklist) &&
+    Array.isArray(candidate.samples) &&
+    candidate.samples.every(isQaTimingSample)
+  );
+};
+
 export const loadQaTimingSession = (
   storage: Storage,
   environment: QaTimingEnvironment,
 ): QaTimingSession => {
-  const raw = storage.getItem(QA_TIMING_STORAGE_KEY);
+  const raw =
+    storage.getItem(QA_TIMING_STORAGE_KEY) ??
+    storage.getItem(LEGACY_QA_TIMING_STORAGE_KEY);
 
   if (raw === null) {
     return createQaTimingSession(environment);
@@ -245,8 +369,13 @@ export const loadQaTimingSession = (
 
   try {
     const parsed: unknown = JSON.parse(raw);
-    return isQaTimingSession(parsed)
-      ? parsed
+
+    if (isQaTimingSession(parsed)) {
+      return parsed;
+    }
+
+    return isQaTimingSessionV2(parsed)
+      ? migrateQaTimingSessionV2(parsed)
       : createQaTimingSession(environment);
   } catch {
     return createQaTimingSession(environment);
@@ -302,6 +431,38 @@ export const updateQaCompactDeviceLabel = (
 ): QaTimingSession => ({
   ...session,
   compactDeviceLabel,
+});
+
+export const updateQaInputMethodLabel = (
+  session: QaTimingSession,
+  inputMethodLabel: string,
+): QaTimingSession => ({
+  ...session,
+  inputMethodLabel,
+});
+
+export const updateQaPhysicalContext = (
+  session: QaTimingSession,
+  key: keyof QaPhysicalContext,
+  value: boolean,
+): QaTimingSession => ({
+  ...session,
+  physicalContext: {
+    ...session.physicalContext,
+    [key]: value,
+  },
+});
+
+export const updateQaSpotCheck = (
+  session: QaTimingSession,
+  key: keyof QaSpotChecks,
+  value: QaSpotCheckStatus,
+): QaTimingSession => ({
+  ...session,
+  spotChecks: {
+    ...session.spotChecks,
+    [key]: value,
+  },
 });
 
 export const resetQaTimingSamples = (
@@ -424,6 +585,18 @@ export const summarizeQaEmpiricalGate = (
   const deviceLabelPresent = session.deviceLabel.trim().length > 0;
   const compactDeviceLabelPresent =
     session.compactDeviceLabel.trim().length > 0;
+  const inputMethodPresent = session.inputMethodLabel.trim().length > 0;
+  const physicalContextComplete =
+    session.physicalContext.oneHanded &&
+    session.physicalContext.brightStoreLikeLighting &&
+    session.physicalContext.defaultTextSize;
+  const spotCheckValues = Object.values(session.spotChecks);
+  const secondarySpotChecksRecorded = spotCheckValues.filter(
+    (value) => value !== "not-run",
+  ).length;
+  const secondarySpotCheckFailures = spotCheckValues.filter(
+    (value) => value === "fail",
+  ).length;
   const lightAppearanceRecorded = session.environment.colorScheme === "light";
   const phonePortraitViewport = isPhonePortraitEnvironment(
     session.environment,
@@ -437,13 +610,19 @@ export const summarizeQaEmpiricalGate = (
     checklistComplete &&
     deviceLabelPresent &&
     compactDeviceLabelPresent &&
+    inputMethodPresent &&
+    physicalContextComplete &&
     lightAppearanceRecorded &&
     phonePortraitViewport;
 
   let status: QaEmpiricalGateSummary["status"] = "pending";
 
   if (evidenceComplete) {
-    if (eur479.status === "fail" || eur1250.status === "fail") {
+    if (
+      eur479.status === "fail" ||
+      eur1250.status === "fail" ||
+      secondarySpotCheckFailures > 0
+    ) {
       status = "fail";
     } else if (
       eur479.status === "release-floor" ||
@@ -464,8 +643,12 @@ export const summarizeQaEmpiricalGate = (
     checklistComplete,
     deviceLabelPresent,
     compactDeviceLabelPresent,
+    inputMethodPresent,
+    physicalContextComplete,
     lightAppearanceRecorded,
     phonePortraitViewport,
+    secondarySpotChecksRecorded,
+    secondarySpotCheckFailures,
     ignoredSampleCount,
     status,
     releaseEligible:
