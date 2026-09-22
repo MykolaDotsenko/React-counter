@@ -228,8 +228,19 @@ const isQaTimingEnvironment = (
   }
 
   const candidate = value as Partial<QaTimingEnvironment>;
+  const record = value as Record<string, unknown>;
 
   return (
+    hasExactKeys(record, [
+      "userAgent",
+      "viewportWidth",
+      "viewportHeight",
+      "screenWidth",
+      "screenHeight",
+      "devicePixelRatio",
+      "colorScheme",
+      "reducedMotion",
+    ]) &&
     typeof candidate.userAgent === "string" &&
     isFiniteNumber(candidate.viewportWidth) &&
     isFiniteNumber(candidate.viewportHeight) &&
@@ -250,8 +261,25 @@ const isQaTimingChecklist = (
   }
 
   const candidate = value as Partial<QaTimingChecklist>;
+  const record = value as Record<string, unknown>;
 
   return (
+    hasExactKeys(record, [
+      "addPriceReachable",
+      "numericKeysReachable",
+      "cancelReachable",
+      "projectionReadable",
+      "reserveWithoutColour",
+      "addPlacementStable",
+      "keypadCloses",
+      "brightSummaryReadable",
+      "softwareKeyboardClear",
+      "repeatedAddNoScroll",
+      "typoCorrectionWorks",
+      "fiveConsecutiveAddsSmooth",
+      "consistentInputMethod",
+      "compactSpotCheckRecorded",
+    ]) &&
     typeof candidate.addPriceReachable === "boolean" &&
     typeof candidate.numericKeysReachable === "boolean" &&
     typeof candidate.cancelReachable === "boolean" &&
@@ -275,8 +303,19 @@ const isQaTimingSample = (value: unknown): value is QaTimingSample => {
   }
 
   const candidate = value as Partial<QaTimingSample>;
+  const record = value as Record<string, unknown>;
 
   if (
+    !hasExactKeys(record, [
+      "id",
+      "durationMs",
+      "unitPriceMinor",
+      "quantity",
+      "lineTotalMinor",
+      "budgetMinor",
+      "safetyBufferMinor",
+      "completedAt",
+    ]) ||
     typeof candidate.id !== "string" ||
     candidate.id.trim().length === 0 ||
     !isFiniteNumber(candidate.durationMs) ||
@@ -318,8 +357,14 @@ const isQaPhysicalContext = (
   }
 
   const candidate = value as Partial<QaPhysicalContext>;
+  const record = value as Record<string, unknown>;
 
   return (
+    hasExactKeys(record, [
+      "oneHanded",
+      "brightStoreLikeLighting",
+      "defaultTextSize",
+    ]) &&
     typeof candidate.oneHanded === "boolean" &&
     typeof candidate.brightStoreLikeLighting === "boolean" &&
     typeof candidate.defaultTextSize === "boolean"
@@ -337,8 +382,14 @@ const isQaSpotChecks = (value: unknown): value is QaSpotChecks => {
   }
 
   const candidate = value as Partial<QaSpotChecks>;
+  const record = value as Record<string, unknown>;
 
   return (
+    hasExactKeys(record, [
+      "darkAppearance",
+      "largeText200",
+      "reducedMotion",
+    ]) &&
     isSpotCheckStatus(candidate.darkAppearance) &&
     isSpotCheckStatus(candidate.largeText200) &&
     isSpotCheckStatus(candidate.reducedMotion)
@@ -363,8 +414,18 @@ const isQaTimingSessionV2 = (
   }
 
   const candidate = value as Partial<QaTimingSessionV2>;
+  const record = value as Record<string, unknown>;
 
   return (
+    hasExactKeys(record, [
+      "version",
+      "environment",
+      "deviceLabel",
+      "compactDeviceLabel",
+      "notes",
+      "checklist",
+      "samples",
+    ]) &&
     candidate.version === 2 &&
     isQaTimingEnvironment(candidate.environment) &&
     typeof candidate.deviceLabel === "string" &&
@@ -398,8 +459,21 @@ const isQaTimingSession = (value: unknown): value is QaTimingSession => {
   }
 
   const candidate = value as Partial<QaTimingSession>;
+  const record = value as Record<string, unknown>;
 
   return (
+    hasExactKeys(record, [
+      "version",
+      "environment",
+      "deviceLabel",
+      "compactDeviceLabel",
+      "inputMethodLabel",
+      "physicalContext",
+      "spotChecks",
+      "notes",
+      "checklist",
+      "samples",
+    ]) &&
     candidate.version === 3 &&
     isQaTimingEnvironment(candidate.environment) &&
     typeof candidate.deviceLabel === "string" &&
@@ -447,6 +521,12 @@ export const persistQaTimingSession = (
   session: QaTimingSession,
 ): void => {
   storage.setItem(QA_TIMING_STORAGE_KEY, JSON.stringify(session));
+
+  try {
+    storage.removeItem(LEGACY_QA_TIMING_STORAGE_KEY);
+  } catch {
+    // Legacy cleanup must not invalidate a successfully persisted v3 session.
+  }
 };
 
 export const appendQaTimingSample = (
@@ -748,6 +828,94 @@ const isQaTimingExportPrivacy = (
   );
 };
 
+const sameQaTimingSummary = (
+  value: unknown,
+  expected: QaTimingSummary,
+): boolean => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  return (
+    hasExactKeys(record, [
+      "count",
+      "medianMs",
+      "p75Ms",
+      "maxMs",
+      "status",
+    ]) &&
+    Object.is(record.count, expected.count) &&
+    Object.is(record.medianMs, expected.medianMs) &&
+    Object.is(record.p75Ms, expected.p75Ms) &&
+    Object.is(record.maxMs, expected.maxMs) &&
+    Object.is(record.status, expected.status)
+  );
+};
+
+const sameQaEmpiricalGate = (
+  value: unknown,
+  expected: QaEmpiricalGateSummary,
+): boolean => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  return (
+    hasExactKeys(record, [
+      "eur479",
+      "eur1250",
+      "checklistComplete",
+      "deviceLabelPresent",
+      "compactDeviceLabelPresent",
+      "inputMethodPresent",
+      "physicalContextComplete",
+      "lightAppearanceRecorded",
+      "phonePortraitViewport",
+      "secondarySpotChecksRecorded",
+      "secondarySpotCheckFailures",
+      "ignoredSampleCount",
+      "status",
+      "b6Eligible",
+    ]) &&
+    sameQaTimingSummary(record.eur479, expected.eur479) &&
+    sameQaTimingSummary(record.eur1250, expected.eur1250) &&
+    Object.is(record.checklistComplete, expected.checklistComplete) &&
+    Object.is(record.deviceLabelPresent, expected.deviceLabelPresent) &&
+    Object.is(
+      record.compactDeviceLabelPresent,
+      expected.compactDeviceLabelPresent,
+    ) &&
+    Object.is(record.inputMethodPresent, expected.inputMethodPresent) &&
+    Object.is(
+      record.physicalContextComplete,
+      expected.physicalContextComplete,
+    ) &&
+    Object.is(
+      record.lightAppearanceRecorded,
+      expected.lightAppearanceRecorded,
+    ) &&
+    Object.is(
+      record.phonePortraitViewport,
+      expected.phonePortraitViewport,
+    ) &&
+    Object.is(
+      record.secondarySpotChecksRecorded,
+      expected.secondarySpotChecksRecorded,
+    ) &&
+    Object.is(
+      record.secondarySpotCheckFailures,
+      expected.secondarySpotCheckFailures,
+    ) &&
+    Object.is(record.ignoredSampleCount, expected.ignoredSampleCount) &&
+    Object.is(record.status, expected.status) &&
+    Object.is(record.b6Eligible, expected.b6Eligible)
+  );
+};
+
 export const buildQaTimingExport = (
   session: QaTimingSession,
   generatedAt: string,
@@ -804,7 +972,7 @@ export const parseQaTimingExport = (
 
   const gate = summarizeQaEmpiricalGate(record.session);
 
-  if (JSON.stringify(record.gate) !== JSON.stringify(gate)) {
+  if (!sameQaEmpiricalGate(record.gate, gate)) {
     return null;
   }
 
