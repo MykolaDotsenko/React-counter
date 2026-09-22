@@ -383,7 +383,7 @@ Item details should expand inline rather than opening a new navigation layer whe
 
 Local-data controls must distinguish completed-trip history from Price Memory. Clearing one must never visually imply that the other was deleted. Rare destructive actions use explicit inline confirmation with factual consequence copy.
 
-Reachability is part of this contract: if trip history becomes empty while remembered prices remain, the start screen keeps a quiet **Manage remembered prices** entry point. A destructive action must not strand another local-data record behind a navigation condition that no longer exists.
+Reachability is part of this contract: if trip history becomes empty while remembered prices remain, the start screen keeps a quiet **Manage remembered prices** entry point. If Price Memory is degraded with no valid records, that entry point becomes **Repair remembered prices** instead of disappearing. A destructive action or recovery state must not strand local data behind a navigation condition that no longer exists.
 
 Avoid monthly cash-flow dashboards, category-budget systems, income tracking, net worth, financial scoring, or a persistent history tab.
 
