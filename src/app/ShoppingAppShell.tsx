@@ -141,6 +141,8 @@ export function ShoppingAppShell({
   const qaStartedAtRef = useRef<number | null>(null);
   const qaPendingSampleRef = useRef<PendingQaSample | null>(null);
   const betaManualStartedAtRef = useRef<number | null>(null);
+  const betaRestoreRecordedRef = useRef(false);
+  const betaInitialActiveTripRef = useRef(state.activeTrip !== null);
   const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
   const [lastAddedMessage, setLastAddedMessage] = useState("");
   const recentCompletedTrip = mostRecentCompletedTrip(
@@ -315,6 +317,54 @@ export function ShoppingAppShell({
 
   useEffect(() => {
     if (
+      !betaEvidenceEnabled ||
+      betaRestoreRecordedRef.current ||
+      !betaInitialActiveTripRef.current ||
+      state.activeTrip === null
+    ) {
+      return;
+    }
+
+    betaRestoreRecordedRef.current = true;
+
+    setBetaSession((current) => {
+      if (current === null) {
+        return null;
+      }
+
+      const observedOrdinal = currentRetentionTripOrdinal(current);
+      const tripOrdinal =
+        observedOrdinal ?? nextRetentionTripOrdinal(current);
+      const at = new Date().toISOString();
+      let next = current;
+
+      if (observedOrdinal === null) {
+        next = appendRetentionBetaEvent(next, {
+          type: "trip_started",
+          at,
+          tripOrdinal,
+          source: "resume",
+        });
+      }
+
+      next = appendRetentionBetaEvent(next, {
+        type: "trip_restored",
+        at,
+        tripOrdinal,
+      });
+
+      try {
+        persistRetentionBetaSession(localStorage, next);
+      } catch {
+        // Restore evidence must never change shopping product behaviour.
+      }
+
+      return next;
+    });
+  }, [state.activeTrip]);
+
+  useEffect(() => {
+    if (
       !qaTimingEnabled ||
       overlay.kind === "add-price" ||
       qaPendingSampleRef.current === null ||
@@ -385,7 +435,9 @@ export function ShoppingAppShell({
         }}
       />
       )}
-      {betaSession === null ? null : (
+      {betaSession === null ||
+      state.activeTrip !== null ||
+      overlay.kind !== "none" ? null : (
         <RetentionBetaPanel
           session={betaSession}
           onReset={() => {

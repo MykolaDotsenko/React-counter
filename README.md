@@ -26,6 +26,8 @@ It records behavioural structure only—trip starts/finishes, item-count milesto
 
 This route exists to support the documented 20–50 real-shopper retention gate. It does not mean that retention has been validated.
 
+See [docs/RETENTION-BETA.md](./docs/RETENTION-BETA.md) for the evidence schema, privacy boundary, reset/export rules, and study protocol.
+
 ## Guarded shopping QA
 
 https://mykoladotsenko.github.io/shopping-budget-companion/qa/
@@ -92,7 +94,9 @@ Manual price entry remains the baseline.
 | Freshness + current-price override | ✅ implemented |
 | Store-aware matching foundation | ✅ implemented |
 | User-facing store context | optional Phase 8 follow-up |
-| PWA cold offline launch | later roadmap phase |
+| Guarded privacy-safe retention beta | ✅ implemented |
+| Real-user retention validation | ⏳ pending |
+| PWA cold offline launch | blocked until retention gate |
 | Barcode / OCR scanning | evidence-gated later work |
 
 See [ROADMAP.md](./ROADMAP.md) for the authoritative sequence.

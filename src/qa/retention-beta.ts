@@ -3,7 +3,7 @@ export const RETENTION_BETA_STORAGE_KEY =
 
 export const RETENTION_BETA_EVENT_LIMIT = 5_000;
 
-export type RetentionBetaTripSource = "new" | "repeat";
+export type RetentionBetaTripSource = "new" | "repeat" | "resume";
 
 export type RetentionBetaEvent =
   | {
@@ -17,6 +17,11 @@ export type RetentionBetaEvent =
       readonly at: string;
       readonly tripOrdinal: number;
       readonly itemCount: 1 | 5 | 10;
+    }
+  | {
+      readonly type: "trip_restored";
+      readonly at: string;
+      readonly tripOrdinal: number;
     }
   | {
       readonly type: "manual_entry_completed";
@@ -57,7 +62,12 @@ export interface RetentionBetaSummary {
   readonly tripsFinished: number;
   readonly secondTripStarted: boolean;
   readonly thirdTripStarted: boolean;
+  readonly secondTripWithin7Days: boolean;
+  readonly secondTripWithin14Days: boolean;
+  readonly secondTripWithin30Days: boolean;
+  readonly daysToSecondTrip: number | null;
   readonly repeatTripStarts: number;
+  readonly tripRestores: number;
   readonly firstItemTrips: number;
   readonly fifthItemTrips: number;
   readonly tenthItemTrips: number;
@@ -82,12 +92,26 @@ const isTripOrdinal = (value: unknown): value is number =>
   Number.isSafeInteger(value) &&
   value >= 1;
 
+const hasExactKeys = (
+  value: Record<string, unknown>,
+  keys: readonly string[],
+): boolean => {
+  const actual = Object.keys(value).sort();
+  const expected = [...keys].sort();
+
+  return (
+    actual.length === expected.length &&
+    actual.every((key, index) => key === expected[index])
+  );
+};
+
 const isEvent = (value: unknown): value is RetentionBetaEvent => {
   if (typeof value !== "object" || value === null) {
     return false;
   }
 
   const candidate = value as Partial<RetentionBetaEvent>;
+  const record = value as Record<string, unknown>;
 
   if (
     !isIsoTimestamp(candidate.at) ||
@@ -98,24 +122,32 @@ const isEvent = (value: unknown): value is RetentionBetaEvent => {
 
   switch (candidate.type) {
     case "trip_started":
-      return candidate.source === "new" || candidate.source === "repeat";
+      return (
+        hasExactKeys(record, ["type", "at", "tripOrdinal", "source"]) &&
+        (candidate.source === "new" ||
+          candidate.source === "repeat" ||
+          candidate.source === "resume")
+      );
     case "item_milestone":
       return (
-        candidate.itemCount === 1 ||
-        candidate.itemCount === 5 ||
-        candidate.itemCount === 10
+        hasExactKeys(record, ["type", "at", "tripOrdinal", "itemCount"]) &&
+        (candidate.itemCount === 1 ||
+          candidate.itemCount === 5 ||
+          candidate.itemCount === 10)
       );
     case "manual_entry_completed":
       return (
+        hasExactKeys(record, ["type", "at", "tripOrdinal", "durationMs"]) &&
         typeof candidate.durationMs === "number" &&
         Number.isFinite(candidate.durationMs) &&
         candidate.durationMs >= 0
       );
+    case "trip_restored":
     case "manual_entry_abandoned":
     case "remembered_item_used":
     case "current_price_override_started":
     case "trip_finished":
-      return true;
+      return hasExactKeys(record, ["type", "at", "tripOrdinal"]);
     default:
       return false;
   }
@@ -127,8 +159,10 @@ const isSession = (value: unknown): value is RetentionBetaSession => {
   }
 
   const candidate = value as Partial<RetentionBetaSession>;
+  const record = value as Record<string, unknown>;
 
   return (
+    hasExactKeys(record, ["version", "variant", "createdAt", "events"]) &&
     candidate.version === 1 &&
     candidate.variant === "repeat-acceleration" &&
     isIsoTimestamp(candidate.createdAt) &&
@@ -298,6 +332,16 @@ export const summarizeRetentionBeta = (
   const manualDurations = session.events.flatMap((event) =>
     event.type === "manual_entry_completed" ? [event.durationMs] : [],
   );
+  const firstTripStart = started.find((event) => event.tripOrdinal === 1);
+  const secondTripStart = started.find((event) => event.tripOrdinal === 2);
+  const daysToSecondTrip =
+    firstTripStart === undefined || secondTripStart === undefined
+      ? null
+      : Math.max(
+          0,
+          (Date.parse(secondTripStart.at) - Date.parse(firstTripStart.at)) /
+            86_400_000,
+        );
 
   return {
     tripsStarted: uniqueTripCount(
@@ -310,8 +354,18 @@ export const summarizeRetentionBeta = (
     ),
     secondTripStarted: started.some((event) => event.tripOrdinal >= 2),
     thirdTripStarted: started.some((event) => event.tripOrdinal >= 3),
+    secondTripWithin7Days:
+      daysToSecondTrip !== null && daysToSecondTrip <= 7,
+    secondTripWithin14Days:
+      daysToSecondTrip !== null && daysToSecondTrip <= 14,
+    secondTripWithin30Days:
+      daysToSecondTrip !== null && daysToSecondTrip <= 30,
+    daysToSecondTrip,
     repeatTripStarts: started.filter((event) => event.source === "repeat")
       .length,
+    tripRestores: session.events.filter(
+      (event) => event.type === "trip_restored",
+    ).length,
     firstItemTrips: uniqueTripCount(
       session.events,
       (event) =>

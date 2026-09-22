@@ -38,6 +38,23 @@ test("has no detectable WCAG A/AA violations with the recent-budget shortcut", a
   expect(results.violations).toEqual([]);
 });
 
+test("has no detectable WCAG A/AA violations in the expanded retention beta panel", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "axe scan runs once in Chromium");
+
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Beta evidence" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Local beta evidence" }),
+  ).toBeVisible();
+
+  const results = await scan(page);
+  expect(results.violations).toEqual([]);
+});
+
 test("has no detectable WCAG A/AA violations on the active-trip screen", async ({
   page,
   browserName,
