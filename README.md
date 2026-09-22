@@ -34,6 +34,8 @@ https://mykoladotsenko.github.io/shopping-budget-companion/qa/
 
 The QA route is a separate internal build used for real-device timing and usability validation. It is statically marked noindex/nofollow/noarchive and does not change the public Pulse Counter bundle.
 
+Its v3 evidence contract records the primary/compact device labels, the comparable input method, explicit one-handed + bright-store-like + default-text context, the required usability checklist, and optional dark/large-text/reduced-motion physical spot-check results. Valid v2 timing samples migrate forward without being mistaken for the new physical evidence.
+
 ---
 
 ## What this repository demonstrates
