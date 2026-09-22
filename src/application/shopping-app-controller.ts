@@ -795,7 +795,11 @@ export const createShoppingAppController = ({
     );
 
     if (mergedMemories !== nextState.priceMemories) {
-      if (nextState.priceMemoryPersistence.status === "healthy") {
+      const canAttemptMemoryWrite =
+        nextState.priceMemoryPersistence.status === "healthy" ||
+        nextState.priceMemoryPersistence.issue.code === "write-failed";
+
+      if (canAttemptMemoryWrite) {
         const memorySavedAt = clock.now();
         const memorySave = priceMemoryPersistence.save(
           mergedMemories,
