@@ -56,6 +56,7 @@ Those features may follow only after the core loop meets the acceptance criteria
 - tax-exclusive pricing mode
 - voice input
 - receipt scan
+- reopening a completed trip back into an active trip
 - sharing/sync
 - backend/authentication
 
@@ -317,11 +318,13 @@ difference = actualCheckoutTotal - estimatedCartTotal
 
 This does not retroactively alter cart item prices.
 
-### FR-023 — Continue/reopen immediately after accidental finish
+### FR-023 — Continue/reopen after accidental finish — deferred
 
-The completed summary offers a clear recovery action.
+The current guarded MVP does not claim reversible completion.
 
-Exact historical-reopen behaviour beyond the immediate completion context remains deferred until a dedicated domain rule is implemented.
+Reopening a completed snapshot touches both active-trip and history persistence and therefore requires an explicit two-record rollback/reconciliation contract before it can ship. Until that contract exists, the completed summary may return the user to the idle/start state and history, but it must not offer a misleading Continue shopping action.
+
+Historical reopen remains deferred until a dedicated domain rule and failure-safe persistence transaction are implemented.
 
 ### FR-024 — History
 
