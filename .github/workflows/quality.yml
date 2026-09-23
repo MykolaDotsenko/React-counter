@@ -78,6 +78,31 @@ jobs:
           include-hidden-files: true
           retention-days: 3
 
+  artifact-integrity:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Download release artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: pages-site
+          path: /tmp/pages-site
+
+      - name: Verify release artifact contents
+        run: |
+          test -f /tmp/pages-site/index.html
+          test -f /tmp/pages-site/.nojekyll
+          test ! -e /tmp/pages-site/node_modules
+          test ! -e /tmp/pages-site/package.json
+          test ! -e /tmp/pages-site/package-lock.json
+          test ! -e /tmp/pages-site/src
+          test ! -e /tmp/pages-site/tests
+          test ! -e /tmp/pages-site/dist
+          test ! -e /tmp/pages-site/dist-qa
+          test ! -e /tmp/pages-site/dist-beta
+
   browser:
     needs: quality
     runs-on: ubuntu-latest
@@ -176,7 +201,7 @@ jobs:
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [browser, beta-browser]
+    needs: [artifact-integrity, browser, beta-browser]
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
