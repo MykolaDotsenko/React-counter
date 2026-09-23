@@ -1198,7 +1198,7 @@ export const parseQaTimingExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "shopping-timing-evidence",
     generatedAt: record.generatedAt,
     privacy: Object.freeze({
