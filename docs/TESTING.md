@@ -21,7 +21,8 @@ In order:
 7. repeat-trip / Price Memory semantics;
 8. evidence integrity;
 9. cross-browser reliability;
-10. performance/premium interaction quality.
+10. installable/offline-shell reliability;
+11. performance/premium interaction quality.
 
 ## Definition of done
 
@@ -142,7 +143,22 @@ At minimum cover:
 7. history;
 8. repeat trip / remembered value where applicable;
 9. degraded/recovery cases covered by browser harness;
-10. accessibility scans/critical keyboard paths.
+10. accessibility scans/critical keyboard paths;
+11. install manifest/service worker and offline active-trip/history recovery.
+
+## PWA / offline shell
+
+Automation must prove:
+
+- the public release artifact contains a valid install manifest, install icons and generated service worker;
+- guarded QA/beta builds do not create competing service workers;
+- after one successful online install/cache pass, the shell opens while the browser context is offline;
+- an active trip restores offline with exact canonical values;
+- completion/history persistence continues offline;
+- history restores after a subsequent offline reload;
+- Cache Storage/service-worker behaviour never becomes shopping-state authority.
+
+Service-worker updates must remain prompt-based. Automated or runtime update logic must never force an active shopping trip to reload.
 
 ## Exact-money contract
 

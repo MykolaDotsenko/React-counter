@@ -102,21 +102,20 @@ No remote analytics SDK is required for current evidence work.
 
 Retention/timing evidence remains local/content-minimized under the current contract.
 
-## Future PWA
+## PWA / offline shell
 
-**PLANNED / GATED.**
+**IMPLEMENTED.**
 
-When approved, select the smallest reliable Vite-compatible service-worker/PWA solution.
+The current release uses:
 
-Requirements:
+- `vite-plugin-pwa` 1.3.x;
+- Workbox `generateSW`;
+- application-shell precaching;
+- prompt-based updates;
+- GitHub Pages-aware base/scope;
+- no canonical business state in Cache Storage/service worker.
 
-- app-shell caching only;
-- correct GitHub Pages scope/base;
-- no canonical business state in Cache Storage/service worker;
-- safe update/reload behaviour.
-
-Do not add PWA tooling before the roadmap gate.
-
+The generated service worker is disabled for guarded `/qa/` and `/beta/` builds so those evidence surfaces cannot create competing registrations. Update UI is lifecycle-aware and only becomes actionable when the shopping application is idle.
 ## Future barcode
 
 **PLANNED / GATED.**
@@ -172,7 +171,6 @@ Current architecture intentionally does not require:
 - backend/auth;
 - remote analytics SDK;
 - scanner/OCR SDK;
-- PWA/service-worker tooling.
 
 These are not banned forever; they are simply unjustified today.
 

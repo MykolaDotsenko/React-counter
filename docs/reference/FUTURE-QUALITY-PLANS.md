@@ -6,17 +6,6 @@
 
 These test plans apply only after the corresponding capability is approved and implemented. They are intentionally outside current `TESTING.md` so AI contributors do not mistake future technology for current product scope.
 
-## Installable PWA
-
-When PWA work is approved, test:
-
-- production base/scope under GitHub Pages;
-- first successful online load caches required shell resources;
-- subsequent offline launch opens the product;
-- active trip/history remain correct;
-- service-worker update does not discard committed state;
-- Cache Storage never becomes business-state authority.
-
 ## Barcode identification
 
 When barcode work is approved:
@@ -76,18 +65,6 @@ If sync/auth/backend ever becomes approved:
 ## Future capability accessibility
 
 These requirements become current only when the corresponding capability ships.
-
-### Installable PWA
-
-Verify installed mode preserves:
-
-- system text scaling;
-- safe-area layout;
-- keyboard/focus behaviour;
-- screen-reader semantics;
-- update/reload flows without trapping or losing the user.
-
-Do not hide browser/platform accessibility affordances merely to imitate a native shell.
 
 ### Barcode / camera
 
