@@ -18,7 +18,10 @@ Use it when you need to locate code/contract ownership quickly.
 | controller helpers | `src/application/shopping-app-support.ts` |
 | Price Memory port | `src/application/price-memory-port.ts` |
 | exact money | `src/domain/money.ts` + `MONEY-SPEC.md` |
-| trip commands/selectors | `src/domain/shopping-trip.ts` + `STATE-MACHINES.md` |
+| trip public API | `src/domain/shopping-trip.ts` façade |
+| trip model/validation | `src/domain/shopping-trip-model.ts` |
+| trip selectors/projections | `src/domain/shopping-trip-selectors.ts` |
+| trip commands/reducer | `src/domain/shopping-trip-reducer.ts` + `STATE-MACHINES.md` |
 | Price Memory domain | `src/domain/price-memory.ts` |
 | storage transactions | `src/infrastructure/storage/shopping-storage.ts` |
 | storage codec/reconstruction | `src/infrastructure/storage/shopping-storage-codec.ts` |

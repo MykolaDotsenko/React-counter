@@ -9,9 +9,28 @@ const typescriptRecommended = tseslint.configs.recommended.map((config) => ({
   files: ["**/*.{ts,tsx}"],
 }));
 
+const restrictedLayerImports = (patterns) => [
+  "error",
+  {
+    patterns: patterns.map((group) => ({
+      group,
+      message: "Import crosses an architectural layer boundary.",
+    })),
+  },
+];
+
 export default [
   {
-    ignores: ["dist", "coverage", "playwright-report", "test-results"],
+    ignores: [
+      "dist",
+      "dist-qa",
+      "dist-beta",
+      "site",
+      "coverage",
+      "playwright-report",
+      "test-results",
+      ".playwright-site-root",
+    ],
   },
   {
     ...js.configs.recommended,
@@ -38,6 +57,52 @@ export default [
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+    },
+  },
+  {
+    files: ["src/domain/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedLayerImports([
+        ["../application/**", "../../application/**"],
+        ["../infrastructure/**", "../../infrastructure/**"],
+        ["../features/**", "../../features/**"],
+        ["../app/**", "../../app/**"],
+        ["../qa/**", "../../qa/**"],
+        ["react", "react-dom", "react-dom/**"],
+      ]),
+    },
+  },
+  {
+    files: ["src/application/**/*.{ts,tsx}"],
+    ignores: ["src/application/react/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedLayerImports([
+        ["../infrastructure/**", "../../infrastructure/**"],
+        ["../features/**", "../../features/**"],
+        ["../app/**", "../../app/**"],
+        ["../qa/**", "../../qa/**"],
+        ["react", "react-dom", "react-dom/**"],
+      ]),
+    },
+  },
+  {
+    files: ["src/features/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedLayerImports([
+        ["../../infrastructure/**", "../infrastructure/**"],
+        ["../../app/**", "../app/**"],
+        ["../../qa/**", "../qa/**"],
+      ]),
+    },
+  },
+  {
+    files: ["src/infrastructure/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedLayerImports([
+        ["../../features/**", "../features/**"],
+        ["../../app/**", "../app/**"],
+        ["../../qa/**", "../qa/**"],
+      ]),
     },
   },
   {

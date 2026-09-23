@@ -21,6 +21,11 @@
     "checkJs": false,
     "skipLibCheck": true,
     "noEmit": true,
+    "paths": {
+      "#shopping-evidence": [
+        "./src/qa/use-shopping-evidence.tsx"
+      ]
+    },
     "types": [
       "vitest/globals"
     ]

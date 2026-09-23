@@ -15,16 +15,16 @@ concurrency:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version-file: .node-version
           cache: npm
 
       - name: Install dependencies
@@ -33,8 +33,14 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Lint, unit/component tests and build
+      - name: Run static, unit and component quality gates
         run: npm run check
+
+      - name: Build public release artifact
+        run: |
+          rm -rf dist dist-qa dist-beta site
+          npm run build -- --base=/shopping-budget-companion/
+          npm run build:check
 
       - name: Build guarded shopping timing QA
         env:
@@ -50,6 +56,53 @@ jobs:
           npm run build -- --base=/shopping-budget-companion/beta/ --outDir=dist-beta
           npm run beta:prepare-index
 
+      - name: Stage immutable site artifact
+        run: |
+          mkdir -p site/qa site/beta
+          cp -R dist/. site/
+          cp -R dist-qa/. site/qa/
+          cp -R dist-beta/. site/beta/
+          touch site/.nojekyll
+          test ! -e site/node_modules
+          test ! -e site/package.json
+          test ! -e site/package-lock.json
+          test ! -e site/src
+          test ! -e site/tests
+
+      - name: Upload tested site artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pages-site
+          path: site
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+
+  artifact-integrity:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Download release artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: pages-site
+          path: /tmp/pages-site
+
+      - name: Verify release artifact contents
+        run: |
+          test -f /tmp/pages-site/index.html
+          test -f /tmp/pages-site/.nojekyll
+          test ! -e /tmp/pages-site/node_modules
+          test ! -e /tmp/pages-site/package.json
+          test ! -e /tmp/pages-site/package-lock.json
+          test ! -e /tmp/pages-site/src
+          test ! -e /tmp/pages-site/tests
+          test ! -e /tmp/pages-site/dist
+          test ! -e /tmp/pages-site/dist-qa
+          test ! -e /tmp/pages-site/dist-beta
+
   browser:
     needs: quality
     runs-on: ubuntu-latest
@@ -61,19 +114,131 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 24
+          node-version-file: .node-version
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Download exact release artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: pages-site
+          path: .playwright-site-root/shopping-budget-companion
+
+      - name: Expose production index at test origin
+        run: cp .playwright-site-root/shopping-budget-companion/index.html .playwright-site-root/index.html
+
       - name: Install browser
         run: npx playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Run browser and accessibility tests
-        run: npm run test:e2e -- --project=${{ matrix.browser }}
+      - name: Run production browser and accessibility tests
+        env:
+          PLAYWRIGHT_STAGED_SITE: "1"
+        run: npm run test:e2e -- --project=${{ matrix.browser }} --grep-invert @beta
+
+      - name: Upload browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-${{ matrix.browser }}-${{ github.run_attempt }}
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+  beta-browser:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download exact release artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: pages-site
+          path: .playwright-site-root/shopping-budget-companion
+
+      - name: Expose beta index at test origin
+        run: cp .playwright-site-root/shopping-budget-companion/beta/index.html .playwright-site-root/index.html
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run guarded beta evidence browser tests
+        env:
+          PLAYWRIGHT_STAGED_SITE: "1"
+        run: npm run test:e2e -- --project=chromium --grep @beta
+
+      - name: Upload beta browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-beta-${{ github.run_attempt }}
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [artifact-integrity, browser, beta-browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    concurrency:
+      group: gh-pages-publish
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout deployment repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Download exact tested site artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: pages-site
+          path: /tmp/pages-site
+
+      - name: Verify deploy artifact cleanliness
+        run: |
+          test -f /tmp/pages-site/index.html
+          test -f /tmp/pages-site/.nojekyll
+          test ! -e /tmp/pages-site/node_modules
+          test ! -e /tmp/pages-site/package.json
+          test ! -e /tmp/pages-site/src
+          test ! -e /tmp/pages-site/tests
+
+      - name: Publish exact tested artifact to gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --orphan gh-pages-publish
+          git rm -rf . || true
+          git clean -fdx
+          cp -R /tmp/pages-site/. .
+          git add -A
+          git commit -m "deploy: tested shopping app ${GITHUB_SHA}"
+          git push --force origin HEAD:gh-pages

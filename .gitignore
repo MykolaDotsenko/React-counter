@@ -7,9 +7,22 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependencies and build output
+node_modules/
+dist/
+dist-ssr/
+dist-qa/
+dist-beta/
+site/
+coverage/
+playwright-report/
+test-results/
+.playwright-site-root/
+
+# Local environment
+.env
+.env.*
+!.env.example
 *.local
 
 # Editor directories and files

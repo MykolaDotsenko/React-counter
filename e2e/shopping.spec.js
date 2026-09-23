@@ -1048,7 +1048,7 @@ test("learns named completed items, reuses remembered prices, and keeps current-
   );
 });
 
-test("records privacy-safe retention evidence across a repeated trip", async ({
+test("@beta records privacy-safe retention evidence across a repeated trip", async ({
   page,
 }) => {
   await page.goto("/");
@@ -1160,7 +1160,7 @@ test("records privacy-safe retention evidence across a repeated trip", async ({
   );
 });
 
-test("records an active-trip restore without placing beta UI over the trip", async ({
+test("@beta records an active-trip restore without placing beta UI over the trip", async ({
   page,
 }) => {
   await page.goto("/");

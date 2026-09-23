@@ -7,11 +7,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:check": "node scripts/validate-build.mjs",
     "preview": "vite preview",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "npm run docs:check && npm run lint && npm run typecheck && npm test && npm run build",
+    "check": "npm run docs:check && npm run lint && npm run typecheck && npm test && npm run build && npm run build:check",
     "typecheck": "tsc --noEmit",
     "qa:prepare-index": "node scripts/prepare-qa-index.mjs",
     "beta:prepare-index": "node scripts/prepare-beta-index.mjs",
@@ -44,11 +45,12 @@
     "vitest": "5.0.1"
   },
   "engines": {
-    "node": ">=24"
+    "node": "24.x"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/MykolaDotsenko/shopping-budget-companion.git"
   },
-  "homepage": "https://mykoladotsenko.github.io/shopping-budget-companion/"
+  "homepage": "https://mykoladotsenko.github.io/shopping-budget-companion/",
+  "packageManager": "npm@11.19.0"
 }

@@ -29,7 +29,7 @@ import {
 } from "../features/shopping/PriceEntrySurface";
 import { RecoveryScreen } from "../features/shopping/RecoveryScreen";
 import { StartTripScreen } from "../features/shopping/StartTripScreen";
-import { useShoppingEvidence } from "../qa/use-shopping-evidence";
+import { useShoppingEvidence } from "#shopping-evidence";
 import { addedFeedback, remainingFeedback } from "../features/shopping/shopping-feedback";
 import { useShoppingShellFocus } from "./use-shopping-shell-focus";
 import "./shopping-theme.css";

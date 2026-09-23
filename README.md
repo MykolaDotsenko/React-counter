@@ -93,7 +93,7 @@ npm run test:e2e
 
 `npm run check` validates documentation structure/links, then runs lint, strict TypeScript, unit/component tests, and a production build.
 
-CI additionally validates:
+CI additionally validates the exact release artifact before it can be deployed:
 
 - Chromium, Firefox, and WebKit
 - browser-level accessibility
@@ -105,7 +105,11 @@ CI additionally validates:
 - reload/restore and storage failure recovery
 - exact-money flagship journeys
 - independent history / Price Memory deletion semantics
+- public-bundle isolation from guarded QA/beta tooling
 - QA and retention-beta builds
+- exact production artifact in Chromium, Firefox, and WebKit
+- guarded beta evidence scenarios separately
+- deploy only after all browser gates pass
 
 ---
 
@@ -139,7 +143,7 @@ CI additionally validates:
 
 PWA, barcode, and OCR breadth remain evidence-gated.
 
-Internal evidence builds:
+Public guarded evidence builds (validation surfaces, not private/security boundaries):
 
 - **Timing QA:** https://mykoladotsenko.github.io/shopping-budget-companion/qa/
 - **Retention beta:** https://mykoladotsenko.github.io/shopping-budget-companion/beta/
@@ -189,7 +193,7 @@ npm run preview
 
 ## Documentation
 
-For AI-assisted or contributor work, start with [AGENTS.md](./AGENTS.md), then use [docs/README.md](./docs/README.md) as the authoritative documentation router.
+For AI-assisted work, start with [AGENTS.md](./AGENTS.md). Human contributors should also read [CONTRIBUTING.md](./CONTRIBUTING.md); security reporting is defined in [SECURITY.md](./SECURITY.md). Then use [docs/README.md](./docs/README.md) as the authoritative documentation router.
 
 Key current contracts:
 
