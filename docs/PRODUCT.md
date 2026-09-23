@@ -125,11 +125,10 @@ Never trade obviousness or speed for visual spectacle.
 - Shop again;
 - Recent Items;
 - local Price Memory;
-- independent local-data controls.
+- independent local-data controls;
+- installable offline PWA shell with user-controlled updates.
 
 **PLANNED / GATED**
-
-- installable offline PWA shell;
 - production barcode identification;
 - production shelf-label OCR;
 - advanced price mechanics only after evidence.
