@@ -9,6 +9,8 @@ import {
   type QaPhysicalContext,
   type QaSpotChecks,
   type QaSpotCheckStatus,
+  type QaTimingExclusion,
+  type QaTimingSample,
   type QaTimingSession,
 } from "./shopping-timing";
 import styles from "./ShoppingTimingQaPanel.module.css";
@@ -31,6 +33,11 @@ export interface ShoppingTimingQaPanelProps {
     value: QaSpotCheckStatus,
   ) => void;
   readonly onNotesChange: (value: string) => void;
+  readonly onDocumentInterruption: (
+    sampleId: string,
+    reason: string,
+  ) => void;
+  readonly onRestoreSample: (sampleId: string) => void;
   readonly onResetSamples: () => void;
   readonly onResetSession: () => void;
 }
@@ -164,6 +171,8 @@ export function ShoppingTimingQaPanel({
   onPhysicalContextChange,
   onSpotCheckChange,
   onNotesChange,
+  onDocumentInterruption,
+  onRestoreSample,
   onResetSamples,
   onResetSession,
 }: ShoppingTimingQaPanelProps) {
@@ -171,6 +180,9 @@ export function ShoppingTimingQaPanel({
   const [copyStatus, setCopyStatus] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
   const [sessionResetArmed, setSessionResetArmed] = useState(false);
+  const [interruptionReasons, setInterruptionReasons] = useState<
+    Record<string, string>
+  >({});
 
   const gate = useMemo(
     () => summarizeQaEmpiricalGate(session),
@@ -320,8 +332,11 @@ export function ShoppingTimingQaPanel({
               {gate.secondarySpotCheckFailures > 0
                 ? ` · ${gate.secondarySpotCheckFailures} failed`
                 : ""}
-              {gate.ignoredSampleCount > 0
-                ? ` · ${gate.ignoredSampleCount} excluded sample(s)`
+              {gate.documentedInterruptionCount > 0
+                ? ` · ${gate.documentedInterruptionCount} documented interruption(s)`
+                : ""}
+              {gate.nonFixtureSampleCount > 0
+                ? ` · ${gate.nonFixtureSampleCount} non-fixture sample(s)`
                 : ""}
             </small>
           </section>
@@ -454,8 +469,68 @@ export function ShoppingTimingQaPanel({
             ))}
           </fieldset>
 
+          <details className={styles.sampleAudit}>
+            <summary>
+              Timing sample audit · {session.samples.length} recorded
+            </summary>
+            <p className={styles.auditGuidance}>
+              Keep slow attempts, corrections and app friction in the KPI.
+              Exclude a sample only when an unrelated external interruption
+              clearly invalidated the timing, and record why. The sample stays
+              in the exported evidence.
+            </p>
+            {session.samples.length === 0 ? (
+              <p className={styles.auditEmpty}>No timing samples yet.</p>
+            ) : (
+              <ol className={styles.sampleList}>
+                {[...session.samples].reverse().map((sample) => {
+                  const exclusion = session.exclusions.find(
+                    (candidate) => candidate.sampleId === sample.id,
+                  );
+                  const draftReason =
+                    interruptionReasons[sample.id] ?? "";
+
+                  return (
+                    <TimingSampleAuditRow
+                      key={sample.id}
+                      sample={sample}
+                      exclusion={exclusion}
+                      draftReason={draftReason}
+                      onDraftReasonChange={(value) => {
+                        setInterruptionReasons((current) => ({
+                          ...current,
+                          [sample.id]: value,
+                        }));
+                      }}
+                      onExclude={() => {
+                        const normalizedReason = draftReason.trim();
+
+                        if (normalizedReason.length === 0) {
+                          return;
+                        }
+
+                        onDocumentInterruption(
+                          sample.id,
+                          normalizedReason,
+                        );
+                        setInterruptionReasons((current) => {
+                          const next = { ...current };
+                          delete next[sample.id];
+                          return next;
+                        });
+                      }}
+                      onRestore={() => {
+                        onRestoreSample(sample.id);
+                      }}
+                    />
+                  );
+                })}
+              </ol>
+            )}
+          </details>
+
           <label className={styles.field}>
-            <span>Notes / interruptions / typo test</span>
+            <span>Notes / typo test / observations</span>
             <textarea
               rows={4}
               value={session.notes}
@@ -559,5 +634,76 @@ function TimingCard({ label, summary }: TimingCardProps) {
       </dl>
       <p>{statusLabel(summary.status)}</p>
     </section>
+  );
+}
+
+
+interface TimingSampleAuditRowProps {
+  readonly sample: QaTimingSample;
+  readonly exclusion: QaTimingExclusion | undefined;
+  readonly draftReason: string;
+  readonly onDraftReasonChange: (value: string) => void;
+  readonly onExclude: () => void;
+  readonly onRestore: () => void;
+}
+
+function TimingSampleAuditRow({
+  sample,
+  exclusion,
+  draftReason,
+  onDraftReasonChange,
+  onExclude,
+  onRestore,
+}: TimingSampleAuditRowProps) {
+  const price = `€${(sample.lineTotalMinor / 100).toFixed(2)}`;
+  const completedAt = new Date(sample.completedAt).toLocaleTimeString(
+    "en-FI",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    },
+  );
+
+  return (
+    <li className={styles.sampleRow}>
+      <div className={styles.sampleMeta}>
+        <strong>{price}</strong>
+        <span>{seconds(sample.durationMs)}</span>
+        <time dateTime={sample.completedAt}>{completedAt}</time>
+      </div>
+      {exclusion === undefined ? (
+        <div className={styles.sampleExclusionEditor}>
+          <label>
+            <span>External interruption reason for {price}</span>
+            <input
+              value={draftReason}
+              maxLength={240}
+              placeholder="e.g. another person interrupted the timing run"
+              onChange={(event) => {
+                onDraftReasonChange(event.currentTarget.value);
+              }}
+            />
+          </label>
+          <button
+            type="button"
+            disabled={draftReason.trim().length === 0}
+            onClick={onExclude}
+          >
+            Exclude interruption
+          </button>
+        </div>
+      ) : (
+        <div className={styles.sampleExcluded}>
+          <p>
+            <strong>Excluded external interruption:</strong>{" "}
+            {exclusion.reason}
+          </p>
+          <button type="button" onClick={onRestore}>
+            Restore to KPI
+          </button>
+        </div>
+      )}
+    </li>
   );
 }
