@@ -51,5 +51,6 @@
     "type": "git",
     "url": "https://github.com/MykolaDotsenko/shopping-budget-companion.git"
   },
-  "homepage": "https://mykoladotsenko.github.io/shopping-budget-companion/"
+  "homepage": "https://mykoladotsenko.github.io/shopping-budget-companion/",
+  "packageManager": "npm@11.19.0"
 }
