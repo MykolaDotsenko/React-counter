@@ -94,6 +94,14 @@ jobs:
         run: |
           test -f /tmp/pages-site/index.html
           test -f /tmp/pages-site/.nojekyll
+          test -f /tmp/pages-site/manifest.webmanifest
+          test -f /tmp/pages-site/sw.js
+          test -f /tmp/pages-site/pwa-icon-192.png
+          test -f /tmp/pages-site/pwa-icon-512.png
+          test ! -e /tmp/pages-site/qa/manifest.webmanifest
+          test ! -e /tmp/pages-site/qa/sw.js
+          test ! -e /tmp/pages-site/beta/manifest.webmanifest
+          test ! -e /tmp/pages-site/beta/sw.js
           test ! -e /tmp/pages-site/node_modules
           test ! -e /tmp/pages-site/package.json
           test ! -e /tmp/pages-site/package-lock.json
@@ -226,6 +234,8 @@ jobs:
         run: |
           test -f /tmp/pages-site/index.html
           test -f /tmp/pages-site/.nojekyll
+          test -f /tmp/pages-site/manifest.webmanifest
+          test -f /tmp/pages-site/sw.js
           test ! -e /tmp/pages-site/node_modules
           test ! -e /tmp/pages-site/package.json
           test ! -e /tmp/pages-site/src
