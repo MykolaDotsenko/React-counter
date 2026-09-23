@@ -6,14 +6,17 @@ import {
   QA_TARGET_PRICE_1250,
   QA_TARGET_PRICE_479,
   LEGACY_QA_TIMING_STORAGE_KEY,
+  PREVIOUS_QA_TIMING_STORAGE_KEY,
   QA_TIMING_STORAGE_KEY,
   appendQaTimingSample,
   buildQaTimingExport,
   createQaTimingSession,
+  documentQaTimingInterruption,
   loadQaTimingSession,
   parseQaTimingExport,
   qaChecklistComplete,
   resetQaTimingSamples,
+  restoreQaTimingSample,
   summarizeQaEmpiricalGate,
   summarizeQaTimingSamples,
   updateQaChecklist,
@@ -146,7 +149,7 @@ describe("shopping timing QA model", () => {
     );
 
     expect(exported).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       kind: "shopping-timing-evidence",
       privacy: {
         networkTransmission: false,
@@ -304,7 +307,7 @@ describe("shopping timing QA model", () => {
 
     const restored = loadQaTimingSession(sessionStorage, environment);
 
-    expect(restored.version).toBe(3);
+    expect(restored.version).toBe(4);
     expect(restored.deviceLabel).toBe("Pixel 8 · Chrome");
     expect(restored.compactDeviceLabel).toBe("iPhone SE · Safari");
     expect(restored.notes).toBe("Existing human evidence");
@@ -642,4 +645,154 @@ describe("shopping timing QA model", () => {
     expect(reset.samples).toHaveLength(0);
     expect(qaChecklistComplete(reset.checklist)).toBe(true);
   });
+
+  it("migrates valid v3 evidence into v4 without inventing exclusions", () => {
+    const v3 = {
+      version: 3,
+      environment,
+      deviceLabel: "Pixel 8 · Chrome",
+      compactDeviceLabel: "Compact phone · Chrome",
+      inputMethodLabel: "Custom keypad · one thumb",
+      physicalContext: {
+        oneHanded: true,
+        brightStoreLikeLighting: true,
+        defaultTextSize: true,
+      },
+      spotChecks: {
+        darkAppearance: "not-run",
+        largeText200: "not-run",
+        reducedMotion: "not-run",
+      },
+      notes: "",
+      checklist: createQaTimingSession(environment).checklist,
+      samples: [sample("v3-sample", QA_TARGET_PRICE_479, 2_100)],
+    };
+
+    sessionStorage.setItem(
+      PREVIOUS_QA_TIMING_STORAGE_KEY,
+      JSON.stringify(v3),
+    );
+
+    const restored = loadQaTimingSession(sessionStorage, environment);
+
+    expect(restored.version).toBe(4);
+    expect(restored.samples).toHaveLength(1);
+    expect(restored.exclusions).toEqual([]);
+    expect(restored.inputMethodLabel).toBe(
+      "Custom keypad · one thumb",
+    );
+  });
+
+  it("documents external interruptions without deleting captured timing samples", () => {
+    let session = createQaTimingSession(environment);
+
+    for (let index = 0; index < 10; index += 1) {
+      session = appendQaTimingSample(
+        session,
+        sample(`base-${index}`, QA_TARGET_PRICE_479, 2_100 + index),
+      );
+    }
+
+    session = appendQaTimingSample(
+      session,
+      sample("interrupted", QA_TARGET_PRICE_479, 9_500),
+    );
+
+    expect(
+      summarizeQaTimingSamples(
+        session.samples,
+        QA_TARGET_PRICE_479,
+        session.exclusions,
+      ).count,
+    ).toBe(11);
+
+    session = documentQaTimingInterruption(
+      session,
+      "interrupted",
+      "Another person interrupted the timed attempt",
+    );
+
+    expect(
+      summarizeQaTimingSamples(
+        session.samples,
+        QA_TARGET_PRICE_479,
+        session.exclusions,
+      ).count,
+    ).toBe(10);
+    expect(session.samples).toHaveLength(11);
+    expect(session.exclusions).toEqual([
+      {
+        sampleId: "interrupted",
+        reason: "Another person interrupted the timed attempt",
+      },
+    ]);
+
+    const gate = summarizeQaEmpiricalGate(session);
+    expect(gate.documentedInterruptionCount).toBe(1);
+    expect(gate.ignoredSampleCount).toBe(1);
+
+    const exported = buildQaTimingExport(
+      session,
+      "2026-09-23T20:00:00.000Z",
+    );
+    expect(parseQaTimingExport(exported)).not.toBeNull();
+    expect(exported.session.samples).toHaveLength(11);
+
+    session = restoreQaTimingSample(session, "interrupted");
+    expect(session.exclusions).toEqual([]);
+  });
+
+  it("rejects undocumented, oversized, or unknown timing exclusions", () => {
+    const session = appendQaTimingSample(
+      createQaTimingSession(environment),
+      sample("known", QA_TARGET_PRICE_479, 2_100),
+    );
+
+    expect(() =>
+      documentQaTimingInterruption(session, "known", "   "),
+    ).toThrow("1-240 characters");
+
+    expect(() =>
+      documentQaTimingInterruption(session, "known", "x".repeat(241)),
+    ).toThrow("1-240 characters");
+
+    expect(() =>
+      documentQaTimingInterruption(
+        session,
+        "missing",
+        "External interruption",
+      ),
+    ).toThrow("unknown QA timing sample");
+  });
+
+  it("rejects exported exclusions that reference unknown samples", () => {
+    const session = documentQaTimingInterruption(
+      appendQaTimingSample(
+        createQaTimingSession(environment),
+        sample("known", QA_TARGET_PRICE_479, 2_100),
+      ),
+      "known",
+      "External interruption",
+    );
+    const exported = buildQaTimingExport(
+      session,
+      "2026-09-23T20:00:00.000Z",
+    );
+
+    const tampered = {
+      ...exported,
+      session: {
+        ...exported.session,
+        exclusions: [
+          {
+            sampleId: "missing",
+            reason: "External interruption",
+          },
+        ],
+      },
+    };
+
+    expect(parseQaTimingExport(tampered)).toBeNull();
+  });
+
 });
