@@ -270,7 +270,9 @@ Tests must prove:
 - entry completion/abandonment remain distinguishable;
 - remembered reuse/current-price override remain distinguishable;
 - recorder/storage failure cannot alter shopping behaviour;
-- beta UI cannot block the primary flow.
+- beta UI cannot block the primary flow;
+- timing exclusions remain auditable: an excluded sample stays in evidence, references a real sample ID, requires a bounded non-empty reason, and is omitted from timing KPIs only as a documented external interruption;
+- malformed/unknown exclusion references and tampered derived gate summaries are rejected.
 
 Real-store retention evidence remains a human/product-validation gate.
 
