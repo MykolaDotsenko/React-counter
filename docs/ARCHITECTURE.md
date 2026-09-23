@@ -4,7 +4,7 @@
 
 This document describes the **current** architecture of the public Shopping Budget Companion.
 
-The repository no longer contains an alternate prototype product shell. The public root, timing QA route and retention-beta route all compose the same shopping product; QA/beta flags add evidence tooling only.
+The repository no longer contains an alternate prototype product shell. The public root, timing QA route and retention-beta route all compose the same shopping product. The public build resolves the evidence boundary to a NoOp adapter; guarded QA/beta builds resolve the same boundary to evidence tooling at build time.
 
 Human timing and retention gates remain unverified. PWA, barcode and OCR capabilities are future/gated work, not current architecture.
 
@@ -112,7 +112,7 @@ Keep environment-specific construction here instead of scattering singleton crea
 
 ### QA
 
-`src/qa/` records validation evidence only.
+`src/qa/` records validation evidence only. Production code depends on the `#shopping-evidence` adapter contract, which resolves to a NoOp implementation in the public build and to the guarded evidence implementation only when a QA/beta build flag is enabled.
 
 QA data:
 
@@ -174,7 +174,13 @@ Never use `parseFloat` + multiplication as a financial authority.
 
 ## ShoppingTrip domain
 
-`shopping-trip.ts` owns:
+`shopping-trip.ts` is the stable public façade for the trip domain. Internal ownership is split by reason to change:
+
+- `shopping-trip-model.ts` — canonical types, constructors and validation;
+- `shopping-trip-selectors.ts` — derived totals and projections;
+- `shopping-trip-reducer.ts` — state-changing trip commands.
+
+Together they own:
 
 - trip/item validation
 - lifecycle-safe commands
