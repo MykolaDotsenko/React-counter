@@ -479,9 +479,8 @@ const isQaTimingSessionV3 = (
       "notes",
       "checklist",
       "samples",
-      "exclusions",
     ]) &&
-    candidate.version === 4 &&
+    candidate.version === 3 &&
     isQaTimingEnvironment(candidate.environment) &&
     typeof candidate.deviceLabel === "string" &&
     typeof candidate.compactDeviceLabel === "string" &&
@@ -492,14 +491,7 @@ const isQaTimingSessionV3 = (
     isQaTimingChecklist(candidate.checklist) &&
     Array.isArray(candidate.samples) &&
     candidate.samples.every(isQaTimingSample) &&
-    hasUniqueSampleIds(candidate.samples) &&
-    Array.isArray(candidate.exclusions) &&
-    candidate.exclusions.every(isQaTimingExclusion) &&
-    hasUniqueExclusionSampleIds(candidate.exclusions) &&
-    exclusionsReferenceKnownSamples(
-      candidate.exclusions,
-      candidate.samples,
-    )
+    hasUniqueSampleIds(candidate.samples)
   );
 };
 
@@ -597,8 +589,9 @@ const isQaTimingSession = (value: unknown): value is QaTimingSession => {
       "notes",
       "checklist",
       "samples",
+      "exclusions",
     ]) &&
-    candidate.version === 3 &&
+    candidate.version === 4 &&
     isQaTimingEnvironment(candidate.environment) &&
     typeof candidate.deviceLabel === "string" &&
     typeof candidate.compactDeviceLabel === "string" &&
@@ -609,7 +602,14 @@ const isQaTimingSession = (value: unknown): value is QaTimingSession => {
     isQaTimingChecklist(candidate.checklist) &&
     Array.isArray(candidate.samples) &&
     candidate.samples.every(isQaTimingSample) &&
-    hasUniqueSampleIds(candidate.samples)
+    hasUniqueSampleIds(candidate.samples) &&
+    Array.isArray(candidate.exclusions) &&
+    candidate.exclusions.every(isQaTimingExclusion) &&
+    hasUniqueExclusionSampleIds(candidate.exclusions) &&
+    exclusionsReferenceKnownSamples(
+      candidate.exclusions,
+      candidate.samples,
+    )
   );
 };
 
