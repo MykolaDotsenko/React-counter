@@ -48,7 +48,7 @@ npm run test:e2e
 
 `npm run check` covers lint, typecheck, unit/component tests and production build.
 
-CI also builds guarded QA/beta variants when relevant.
+CI builds one immutable site artifact containing the public app plus guarded QA/beta variants. Production browser tests run against the exact public build artifact; beta-specific browser tests run separately against the guarded beta artifact. Deployment may promote the artifact only after all browser gates succeed.
 
 ## Test layers
 
@@ -265,6 +265,8 @@ Protect:
 - fast initial product load;
 - immediate local add/edit/undo response;
 - stable bundle trend;
+- no QA/beta evidence markers in the public JavaScript bundle;
+- public JS/CSS remain within the enforced bundle budgets;
 - optional future capability isolation.
 
 Do not accept a premium visual effect that materially slows the core aisle interaction.
