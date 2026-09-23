@@ -58,7 +58,7 @@ test("exposes an installable shell and precaches the application entry", async (
     for (const cacheName of cacheNames) {
       const cache = await caches.open(cacheName);
 
-      if ((await cache.match(indexUrl)) !== undefined) {
+      if ((await cache.match(indexUrl, { ignoreSearch: true })) !== undefined) {
         cachedIndex = true;
         break;
       }
