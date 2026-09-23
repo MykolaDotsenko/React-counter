@@ -10,10 +10,12 @@ import { ShoppingTimingQaPanel } from "./ShoppingTimingQaPanel";
 import {
   appendQaTimingSample,
   captureQaTimingEnvironment,
+  documentQaTimingInterruption,
   createQaTimingSession,
   loadQaTimingSession,
   persistQaTimingSession,
   resetQaTimingSamples,
+  restoreQaTimingSample,
   updateQaChecklist,
   updateQaCompactDeviceLabel,
   updateQaDeviceLabel,
@@ -216,6 +218,16 @@ export function useShoppingTimingEvidence(
       onNotesChange={(value) => {
         updateSession((current) =>
           updateQaTimingNotes(current, value),
+        );
+      }}
+      onDocumentInterruption={(sampleId, reason) => {
+        updateSession((current) =>
+          documentQaTimingInterruption(current, sampleId, reason),
+        );
+      }}
+      onRestoreSample={(sampleId) => {
+        updateSession((current) =>
+          restoreQaTimingSample(current, sampleId),
         );
       }}
       onResetSamples={() => {

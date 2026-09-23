@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ShoppingTimingQaPanel } from "../src/qa/ShoppingTimingQaPanel";
 import {
+  appendQaTimingSample,
   createQaTimingSession,
   type QaTimingEnvironment,
 } from "../src/qa/shopping-timing";
@@ -36,6 +37,8 @@ describe("ShoppingTimingQaPanel", () => {
         onPhysicalContextChange={onPhysicalContextChange}
         onSpotCheckChange={onSpotCheckChange}
         onNotesChange={vi.fn()}
+        onDocumentInterruption={vi.fn()}
+        onRestoreSample={vi.fn()}
         onResetSamples={vi.fn()}
         onResetSession={vi.fn()}
       />,
@@ -113,6 +116,8 @@ describe("ShoppingTimingQaPanel", () => {
         onPhysicalContextChange={vi.fn()}
         onSpotCheckChange={vi.fn()}
         onNotesChange={vi.fn()}
+        onDocumentInterruption={vi.fn()}
+        onRestoreSample={vi.fn()}
         onResetSamples={vi.fn()}
         onResetSession={vi.fn()}
       />,
@@ -165,6 +170,8 @@ describe("ShoppingTimingQaPanel", () => {
         onPhysicalContextChange={vi.fn()}
         onSpotCheckChange={vi.fn()}
         onNotesChange={vi.fn()}
+        onDocumentInterruption={vi.fn()}
+        onRestoreSample={vi.fn()}
         onResetSamples={vi.fn()}
         onResetSession={onResetSession}
       />,
@@ -187,5 +194,66 @@ describe("ShoppingTimingQaPanel", () => {
     expect(onResetSession).toHaveBeenCalledTimes(1);
   });
 
+
+
+  it("requires a reason before a sample can be excluded as an external interruption", async () => {
+    const user = userEvent.setup();
+    const onDocumentInterruption = vi.fn();
+    const session = appendQaTimingSample(
+      createQaTimingSession(environment),
+      {
+        id: "sample-1",
+        durationMs: 2_450,
+        unitPriceMinor: 479,
+        quantity: 1,
+        lineTotalMinor: 479,
+        budgetMinor: 50_000,
+        safetyBufferMinor: 0,
+        completedAt: "2026-09-23T20:00:00.000Z",
+      },
+    );
+
+    render(
+      <ShoppingTimingQaPanel
+        session={session}
+        onChecklistChange={vi.fn()}
+        onDeviceLabelChange={vi.fn()}
+        onCompactDeviceLabelChange={vi.fn()}
+        onInputMethodLabelChange={vi.fn()}
+        onPhysicalContextChange={vi.fn()}
+        onSpotCheckChange={vi.fn()}
+        onNotesChange={vi.fn()}
+        onDocumentInterruption={onDocumentInterruption}
+        onRestoreSample={vi.fn()}
+        onResetSamples={vi.fn()}
+        onResetSession={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "QA 1/20" }));
+    await user.click(
+      screen.getByText("Timing sample audit · 1 recorded"),
+    );
+
+    const exclude = screen.getByRole("button", {
+      name: "Exclude interruption",
+    });
+    expect((exclude as HTMLButtonElement).disabled).toBe(true);
+
+    await user.type(
+      screen.getByRole("textbox", {
+        name: "External interruption reason for €4.79",
+      }),
+      "Someone interrupted the timed attempt",
+    );
+
+    expect((exclude as HTMLButtonElement).disabled).toBe(false);
+    await user.click(exclude);
+
+    expect(onDocumentInterruption).toHaveBeenCalledWith(
+      "sample-1",
+      "Someone interrupted the timed attempt",
+    );
+  });
 
 });
