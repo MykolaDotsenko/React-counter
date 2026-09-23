@@ -206,7 +206,7 @@ npm run check
 npm run test:e2e
 ```
 
-`npm run check` covers documentation validation, lint, strict TypeScript, unit/component tests and production build.
+`npm run check` covers documentation validation, architecture-aware lint, strict TypeScript, unit/component tests, production build and public-bundle validation. CI then tests the exact staged production artifact across Chromium, Firefox and WebKit before deployment.
 
 Add regression coverage when changing:
 
