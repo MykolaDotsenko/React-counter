@@ -238,7 +238,7 @@ describe("ShoppingTimingQaPanel", () => {
     const exclude = screen.getByRole("button", {
       name: "Exclude interruption",
     });
-    expect(exclude).toBeDisabled();
+    expect((exclude as HTMLButtonElement).disabled).toBe(true);
 
     await user.type(
       screen.getByRole("textbox", {
@@ -247,7 +247,7 @@ describe("ShoppingTimingQaPanel", () => {
       "Someone interrupted the timed attempt",
     );
 
-    expect(exclude).toBeEnabled();
+    expect((exclude as HTMLButtonElement).disabled).toBe(false);
     await user.click(exclude);
 
     expect(onDocumentInterruption).toHaveBeenCalledWith(
