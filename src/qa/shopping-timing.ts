@@ -1,4 +1,6 @@
-export const QA_TIMING_STORAGE_KEY = "budget-cart:qa:timing-v3";
+export const QA_TIMING_STORAGE_KEY = "budget-cart:qa:timing-v4";
+export const PREVIOUS_QA_TIMING_STORAGE_KEY =
+  "budget-cart:qa:timing-v3";
 export const LEGACY_QA_TIMING_STORAGE_KEY =
   "budget-cart:qa:timing-v2";
 
@@ -46,6 +48,11 @@ export interface QaTimingSample {
   readonly completedAt: string;
 }
 
+export interface QaTimingExclusion {
+  readonly sampleId: string;
+  readonly reason: string;
+}
+
 export interface QaTimingChecklist {
   readonly addPriceReachable: boolean;
   readonly numericKeysReachable: boolean;
@@ -78,7 +85,7 @@ export interface QaSpotChecks {
 }
 
 export interface QaTimingSession {
-  readonly version: 3;
+  readonly version: 4;
   readonly environment: QaTimingEnvironment;
   readonly deviceLabel: string;
   readonly compactDeviceLabel: string;
@@ -88,6 +95,7 @@ export interface QaTimingSession {
   readonly notes: string;
   readonly checklist: QaTimingChecklist;
   readonly samples: readonly QaTimingSample[];
+  readonly exclusions: readonly QaTimingExclusion[];
 }
 
 export interface QaTimingSummary {
@@ -110,13 +118,15 @@ export interface QaEmpiricalGateSummary {
   readonly phonePortraitViewport: boolean;
   readonly secondarySpotChecksRecorded: number;
   readonly secondarySpotCheckFailures: number;
+  readonly documentedInterruptionCount: number;
+  readonly nonFixtureSampleCount: number;
   readonly ignoredSampleCount: number;
   readonly status: "pending" | "target-met" | "release-floor" | "fail";
   readonly b6Eligible: boolean;
 }
 
 export interface QaTimingExport {
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
   readonly kind: "shopping-timing-evidence";
   readonly generatedAt: string;
   readonly privacy: {
@@ -174,7 +184,7 @@ export const captureQaTimingEnvironment = (): QaTimingEnvironment => ({
 export const createQaTimingSession = (
   environment: QaTimingEnvironment,
 ): QaTimingSession => ({
-  version: 3,
+  version: 4,
   environment,
   deviceLabel: "",
   compactDeviceLabel: "",
@@ -184,6 +194,7 @@ export const createQaTimingSession = (
   notes: "",
   checklist: emptyChecklist(),
   samples: [],
+  exclusions: [],
 });
 
 const isFiniteNumber = (value: unknown): value is number =>
@@ -219,6 +230,43 @@ const hasUniqueSampleIds = (
   samples: readonly QaTimingSample[],
 ): boolean =>
   new Set(samples.map((sample) => sample.id)).size === samples.length;
+
+const hasUniqueExclusionSampleIds = (
+  exclusions: readonly QaTimingExclusion[],
+): boolean =>
+  new Set(exclusions.map((exclusion) => exclusion.sampleId)).size ===
+  exclusions.length;
+
+const isQaTimingExclusion = (
+  value: unknown,
+): value is QaTimingExclusion => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<QaTimingExclusion>;
+  const record = value as Record<string, unknown>;
+
+  return (
+    hasExactKeys(record, ["sampleId", "reason"]) &&
+    typeof candidate.sampleId === "string" &&
+    candidate.sampleId.trim().length > 0 &&
+    typeof candidate.reason === "string" &&
+    candidate.reason.trim().length > 0 &&
+    candidate.reason.trim().length <= 240
+  );
+};
+
+const exclusionsReferenceKnownSamples = (
+  exclusions: readonly QaTimingExclusion[],
+  samples: readonly QaTimingSample[],
+): boolean => {
+  const sampleIds = new Set(samples.map((sample) => sample.id));
+
+  return exclusions.every((exclusion) =>
+    sampleIds.has(exclusion.sampleId),
+  );
+};
 
 const isQaTimingEnvironment = (
   value: unknown,
@@ -396,6 +444,65 @@ const isQaSpotChecks = (value: unknown): value is QaSpotChecks => {
   );
 };
 
+interface QaTimingSessionV3 {
+  readonly version: 3;
+  readonly environment: QaTimingEnvironment;
+  readonly deviceLabel: string;
+  readonly compactDeviceLabel: string;
+  readonly inputMethodLabel: string;
+  readonly physicalContext: QaPhysicalContext;
+  readonly spotChecks: QaSpotChecks;
+  readonly notes: string;
+  readonly checklist: QaTimingChecklist;
+  readonly samples: readonly QaTimingSample[];
+}
+
+const isQaTimingSessionV3 = (
+  value: unknown,
+): value is QaTimingSessionV3 => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<QaTimingSessionV3>;
+  const record = value as Record<string, unknown>;
+
+  return (
+    hasExactKeys(record, [
+      "version",
+      "environment",
+      "deviceLabel",
+      "compactDeviceLabel",
+      "inputMethodLabel",
+      "physicalContext",
+      "spotChecks",
+      "notes",
+      "checklist",
+      "samples",
+      "exclusions",
+    ]) &&
+    candidate.version === 4 &&
+    isQaTimingEnvironment(candidate.environment) &&
+    typeof candidate.deviceLabel === "string" &&
+    typeof candidate.compactDeviceLabel === "string" &&
+    typeof candidate.inputMethodLabel === "string" &&
+    isQaPhysicalContext(candidate.physicalContext) &&
+    isQaSpotChecks(candidate.spotChecks) &&
+    typeof candidate.notes === "string" &&
+    isQaTimingChecklist(candidate.checklist) &&
+    Array.isArray(candidate.samples) &&
+    candidate.samples.every(isQaTimingSample) &&
+    hasUniqueSampleIds(candidate.samples) &&
+    Array.isArray(candidate.exclusions) &&
+    candidate.exclusions.every(isQaTimingExclusion) &&
+    hasUniqueExclusionSampleIds(candidate.exclusions) &&
+    exclusionsReferenceKnownSamples(
+      candidate.exclusions,
+      candidate.samples,
+    )
+  );
+};
+
 interface QaTimingSessionV2 {
   readonly version: 2;
   readonly environment: QaTimingEnvironment;
@@ -438,10 +545,26 @@ const isQaTimingSessionV2 = (
   );
 };
 
+const migrateQaTimingSessionV3 = (
+  session: QaTimingSessionV3,
+): QaTimingSession => ({
+  version: 4,
+  environment: session.environment,
+  deviceLabel: session.deviceLabel,
+  compactDeviceLabel: session.compactDeviceLabel,
+  inputMethodLabel: session.inputMethodLabel,
+  physicalContext: session.physicalContext,
+  spotChecks: session.spotChecks,
+  notes: session.notes,
+  checklist: session.checklist,
+  samples: session.samples,
+  exclusions: [],
+});
+
 const migrateQaTimingSessionV2 = (
   session: QaTimingSessionV2,
 ): QaTimingSession => ({
-  version: 3,
+  version: 4,
   environment: session.environment,
   deviceLabel: session.deviceLabel,
   compactDeviceLabel: session.compactDeviceLabel,
@@ -451,6 +574,7 @@ const migrateQaTimingSessionV2 = (
   notes: session.notes,
   checklist: session.checklist,
   samples: session.samples,
+  exclusions: [],
 });
 
 const isQaTimingSession = (value: unknown): value is QaTimingSession => {
@@ -493,27 +617,37 @@ export const loadQaTimingSession = (
   storage: Storage,
   environment: QaTimingEnvironment,
 ): QaTimingSession => {
-  const raw =
-    storage.getItem(QA_TIMING_STORAGE_KEY) ??
-    storage.getItem(LEGACY_QA_TIMING_STORAGE_KEY);
+  const storedCandidates = [
+    storage.getItem(QA_TIMING_STORAGE_KEY),
+    storage.getItem(PREVIOUS_QA_TIMING_STORAGE_KEY),
+    storage.getItem(LEGACY_QA_TIMING_STORAGE_KEY),
+  ];
 
-  if (raw === null) {
-    return createQaTimingSession(environment);
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(raw);
-
-    if (isQaTimingSession(parsed)) {
-      return parsed;
+  for (const raw of storedCandidates) {
+    if (raw === null) {
+      continue;
     }
 
-    return isQaTimingSessionV2(parsed)
-      ? migrateQaTimingSessionV2(parsed)
-      : createQaTimingSession(environment);
-  } catch {
-    return createQaTimingSession(environment);
+    try {
+      const parsed: unknown = JSON.parse(raw);
+
+      if (isQaTimingSession(parsed)) {
+        return parsed;
+      }
+
+      if (isQaTimingSessionV3(parsed)) {
+        return migrateQaTimingSessionV3(parsed);
+      }
+
+      if (isQaTimingSessionV2(parsed)) {
+        return migrateQaTimingSessionV2(parsed);
+      }
+    } catch {
+      // Keep checking older evidence rather than trusting malformed data.
+    }
   }
+
+  return createQaTimingSession(environment);
 };
 
 export const persistQaTimingSession = (
@@ -522,10 +656,15 @@ export const persistQaTimingSession = (
 ): void => {
   storage.setItem(QA_TIMING_STORAGE_KEY, JSON.stringify(session));
 
-  try {
-    storage.removeItem(LEGACY_QA_TIMING_STORAGE_KEY);
-  } catch {
-    // Legacy cleanup must not invalidate a successfully persisted v3 session.
+  for (const legacyKey of [
+    PREVIOUS_QA_TIMING_STORAGE_KEY,
+    LEGACY_QA_TIMING_STORAGE_KEY,
+  ]) {
+    try {
+      storage.removeItem(legacyKey);
+    } catch {
+      // Legacy cleanup must not invalidate a successfully persisted v4 session.
+    }
   }
 };
 
@@ -546,6 +685,50 @@ export const appendQaTimingSample = (
     samples: [...session.samples, sample],
   };
 };
+
+export const documentQaTimingInterruption = (
+  session: QaTimingSession,
+  sampleId: string,
+  reason: string,
+): QaTimingSession => {
+  if (!session.samples.some((sample) => sample.id === sampleId)) {
+    throw new RangeError("Cannot exclude an unknown QA timing sample");
+  }
+
+  const normalizedReason = reason.trim();
+
+  if (
+    normalizedReason.length === 0 ||
+    normalizedReason.length > 240
+  ) {
+    throw new RangeError(
+      "QA timing interruption reason must be 1-240 characters",
+    );
+  }
+
+  return {
+    ...session,
+    exclusions: [
+      ...session.exclusions.filter(
+        (exclusion) => exclusion.sampleId !== sampleId,
+      ),
+      Object.freeze({
+        sampleId,
+        reason: normalizedReason,
+      }),
+    ],
+  };
+};
+
+export const restoreQaTimingSample = (
+  session: QaTimingSession,
+  sampleId: string,
+): QaTimingSession => ({
+  ...session,
+  exclusions: session.exclusions.filter(
+    (exclusion) => exclusion.sampleId !== sampleId,
+  ),
+});
 
 export const updateQaChecklist = (
   session: QaTimingSession,
@@ -620,6 +803,7 @@ export const resetQaTimingSamples = (
 ): QaTimingSession => ({
   ...session,
   samples: [],
+  exclusions: [],
 });
 
 const percentile = (
@@ -673,9 +857,17 @@ const isRepresentativeTimingSample = (
 export const summarizeQaTimingSamples = (
   samples: readonly QaTimingSample[],
   lineTotalMinor: number,
+  exclusions: readonly QaTimingExclusion[] = [],
 ): QaTimingSummary => {
+  const excludedSampleIds = new Set(
+    exclusions.map((exclusion) => exclusion.sampleId),
+  );
   const durations = samples
-    .filter((sample) => isRepresentativeTimingSample(sample, lineTotalMinor))
+    .filter(
+      (sample) =>
+        !excludedSampleIds.has(sample.id) &&
+        isRepresentativeTimingSample(sample, lineTotalMinor),
+    )
     .map((sample) => sample.durationMs);
 
   const medianMs = median(durations);
@@ -705,15 +897,25 @@ export const qaChecklistComplete = (
   checklist: QaTimingChecklist,
 ): boolean => Object.values(checklist).every(Boolean);
 
+const isTargetTimingSample = (sample: QaTimingSample): boolean =>
+  isRepresentativeTimingSample(sample) &&
+  (sample.lineTotalMinor === QA_TARGET_PRICE_479 ||
+    sample.lineTotalMinor === QA_TARGET_PRICE_1250);
+
 const targetSampleCount = (
   samples: readonly QaTimingSample[],
-): number =>
-  samples.filter(
+  exclusions: readonly QaTimingExclusion[],
+): number => {
+  const excludedSampleIds = new Set(
+    exclusions.map((exclusion) => exclusion.sampleId),
+  );
+
+  return samples.filter(
     (sample) =>
-      isRepresentativeTimingSample(sample) &&
-      (sample.lineTotalMinor === QA_TARGET_PRICE_479 ||
-        sample.lineTotalMinor === QA_TARGET_PRICE_1250),
+      !excludedSampleIds.has(sample.id) &&
+      isTargetTimingSample(sample),
   ).length;
+};
 
 const isPhonePortraitEnvironment = (
   environment: QaTimingEnvironment,
@@ -728,10 +930,12 @@ export const summarizeQaEmpiricalGate = (
   const eur479 = summarizeQaTimingSamples(
     session.samples,
     QA_TARGET_PRICE_479,
+    session.exclusions,
   );
   const eur1250 = summarizeQaTimingSamples(
     session.samples,
     QA_TARGET_PRICE_1250,
+    session.exclusions,
   );
   const checklistComplete = qaChecklistComplete(session.checklist);
   const deviceLabelPresent = session.deviceLabel.trim().length > 0;
@@ -753,8 +957,13 @@ export const summarizeQaEmpiricalGate = (
   const phonePortraitViewport = isPhonePortraitEnvironment(
     session.environment,
   );
+  const documentedInterruptionCount = session.exclusions.length;
+  const nonFixtureSampleCount = session.samples.filter(
+    (sample) => !isTargetTimingSample(sample),
+  ).length;
   const ignoredSampleCount =
-    session.samples.length - targetSampleCount(session.samples);
+    session.samples.length -
+    targetSampleCount(session.samples, session.exclusions);
 
   const evidenceComplete =
     eur479.count >= QA_TARGET_SAMPLE_COUNT &&
@@ -798,6 +1007,8 @@ export const summarizeQaEmpiricalGate = (
     phonePortraitViewport,
     secondarySpotChecksRecorded,
     secondarySpotCheckFailures,
+    documentedInterruptionCount,
+    nonFixtureSampleCount,
     ignoredSampleCount,
     status,
     b6Eligible:
@@ -877,6 +1088,8 @@ const sameQaEmpiricalGate = (
       "phonePortraitViewport",
       "secondarySpotChecksRecorded",
       "secondarySpotCheckFailures",
+      "documentedInterruptionCount",
+      "nonFixtureSampleCount",
       "ignoredSampleCount",
       "status",
       "b6Eligible",
@@ -910,6 +1123,14 @@ const sameQaEmpiricalGate = (
       record.secondarySpotCheckFailures,
       expected.secondarySpotCheckFailures,
     ) &&
+    Object.is(
+      record.documentedInterruptionCount,
+      expected.documentedInterruptionCount,
+    ) &&
+    Object.is(
+      record.nonFixtureSampleCount,
+      expected.nonFixtureSampleCount,
+    ) &&
     Object.is(record.ignoredSampleCount, expected.ignoredSampleCount) &&
     Object.is(record.status, expected.status) &&
     Object.is(record.b6Eligible, expected.b6Eligible)
@@ -929,7 +1150,7 @@ export const buildQaTimingExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "shopping-timing-evidence",
     generatedAt,
     privacy: Object.freeze({
@@ -961,7 +1182,7 @@ export const parseQaTimingExport = (
       "session",
       "gate",
     ]) ||
-    record.schemaVersion !== 1 ||
+    record.schemaVersion !== 2 ||
     record.kind !== "shopping-timing-evidence" ||
     !isCanonicalIsoTimestamp(record.generatedAt) ||
     !isQaTimingExportPrivacy(record.privacy) ||
