@@ -6,7 +6,7 @@ This document describes the **current** architecture of the public Shopping Budg
 
 The repository no longer contains an alternate prototype product shell. The public root, timing QA route and retention-beta route all compose the same shopping product. The public build resolves the evidence boundary to a NoOp adapter; guarded QA/beta builds resolve the same boundary to evidence tooling at build time.
 
-Human timing and retention gates remain unverified. PWA, barcode and OCR capabilities are future/gated work, not current architecture.
+Human timing and retention gates remain unverified. The installable offline PWA shell is implemented; barcode and OCR remain future/gated capabilities.
 
 ## Architectural goal
 
@@ -305,11 +305,16 @@ Do not introduce remote state pre-emptively.
 
 ## PWA / offline
 
-The shopping logic and local data path do not require network access once the application is loaded.
+The public product ships an **IMPLEMENTED** installable/offline application shell.
 
-An installable/offline shell is **not yet implemented**. Service-worker/PWA tooling remains roadmap-gated.
+- `vite-plugin-pwa` generates the service worker through Workbox `generateSW`.
+- Workbox precaches application-shell assets only.
+- canonical shopping state remains owned by the application/localStorage persistence adapters, never Cache Storage or the service worker;
+- `/qa/` and `/beta/` evidence builds do not generate/register their own PWA service workers;
+- service-worker updates use a prompt flow rather than auto-update;
+- the update prompt is withheld during active/recovery/completed-summary shopping lifecycle states and is only offered from the idle state, so a new worker never forces a reload during an active trip.
 
-When implemented, the service worker must cache application assets only and must never become an owner of canonical shopping state.
+Offline browser coverage verifies that an already installed/cached shell can restore an active trip, complete it while offline, persist history and restore that history after another offline reload.
 
 ## Scanner extension points
 

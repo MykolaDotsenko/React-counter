@@ -44,6 +44,7 @@ Returning shoppers can reuse a previous spending plan, Recent Items, and local P
 - **Independent Price Memory:** advisory remembered prices cannot corrupt active-cart/history durability.
 - **Proportional state architecture:** a plain TypeScript `ShoppingAppController` + `useSyncExternalStore`; no Redux/Zustand/XState/router/backend required.
 - **Evidence separation:** QA timing and retention instrumentation never become product state.
+- **Installable offline shell:** Workbox precaches only application assets; shopping state remains localStorage-owned and updates are user-controlled.
 
 ## Architecture
 
@@ -75,7 +76,7 @@ See [Architecture](./docs/ARCHITECTURE.md).
 
 ## Tech stack
 
-**Runtime:** React 19.3, TypeScript 6 strict, Vite 8, Zod 4, CSS Modules, native Web APIs, versioned `localStorage`.
+**Runtime:** React 19.3, TypeScript 6 strict, Vite 8, Zod 4, CSS Modules, native Web APIs, versioned `localStorage`, Workbox-generated PWA shell.
 
 **Quality:** ESLint 10, Vitest 5, React Testing Library, user-event, fast-check, Playwright, axe-core, GitHub Actions.
 
@@ -103,6 +104,7 @@ CI additionally validates the exact release artifact before it can be deployed:
 - keyboard/focus behavior
 - forced-colours critical paths
 - reload/restore and storage failure recovery
+- installable manifest/service-worker artifact checks and offline active-trip/history recovery
 - exact-money flagship journeys
 - independent history / Price Memory deletion semantics
 - public-bundle isolation from guarded QA/beta tooling
@@ -130,6 +132,7 @@ CI additionally validates the exact release artifact before it can be deployed:
 - ✅ completed-trip history and Shop again
 - ✅ Recent Items and Price Memory
 - ✅ local-data controls
+- ✅ installable offline PWA shell
 - ✅ privacy-safe retention evidence harness
 - ✅ cohort-level retention analysis
 - ✅ Chromium / Firefox / WebKit CI
@@ -141,7 +144,7 @@ CI additionally validates the exact release artifact before it can be deployed:
 - ⏳ 20–50 real-shopper retention beta
 - ⏳ measured second-trip and third-trip behavior
 
-PWA, barcode, and OCR breadth remain evidence-gated.
+Barcode and OCR breadth remain evidence-gated.
 
 Public guarded evidence builds (validation surfaces, not private/security boundaries):
 

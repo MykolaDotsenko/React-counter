@@ -64,11 +64,11 @@ Implemented:
 - Shop again, Recent Items and local Price Memory;
 - independent local-data controls;
 - timing QA and retention-beta evidence tooling;
+- installable offline PWA shell with prompt-based updates;
 - Chromium / Firefox / WebKit browser and accessibility coverage.
 
 Gated / not implemented:
 
-- installable offline PWA shell;
 - production barcode identification;
 - production shelf-label OCR;
 - representative human one-hand/timing/bright-store validation;

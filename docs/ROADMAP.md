@@ -6,7 +6,7 @@ This file describes **current validation gates and future sequencing**.
 
 It is not a chronological implementation diary. The detailed phase-by-phase plan through repeat-trip engineering is preserved in [archive/ROADMAP-THROUGH-PHASE-8.md](./archive/ROADMAP-THROUGH-PHASE-8.md).
 
-## Current status — 2026-09-22
+## Current status — 2026-09-23
 
 The core Shopping Budget Companion engineering path is implemented:
 
@@ -23,6 +23,7 @@ The core Shopping Budget Companion engineering path is implemented:
 - Recent Items
 - Price Memory
 - local-data controls
+- installable offline PWA shell
 - privacy-safe timing QA and retention-beta evidence tooling
 - Chromium / Firefox / WebKit quality coverage
 
@@ -105,31 +106,21 @@ Before adding a new major user-facing capability, answer:
 
 ### A. Installable offline PWA
 
-**Status: gated / not implemented.**
+**Status: IMPLEMENTED.**
 
-Goal:
+The public product now ships a Vite/Workbox-generated installable application shell:
 
-- make the already local-first product reliably launchable offline after installation/caching
+- manifest + 192/512 install icons;
+- application-shell precaching;
+- GitHub Pages-aware scope/base;
+- prompt-based service-worker updates;
+- no forced reload during an active shopping lifecycle;
+- canonical trip/history/Price Memory state remains in localStorage rather than Cache Storage;
+- guarded `/qa/` and `/beta/` evidence builds remain outside PWA registration.
 
-Candidate implementation:
+Automated browser coverage verifies active-trip restore, offline completion/history persistence and a second offline history restore.
 
-- Vite PWA tooling / Workbox only if it remains the smallest reliable solution
-- application-shell asset caching
-- explicit offline-install/reload tests
-
-Must not:
-
-- move canonical shopping state into the service worker
-- hide stale/degraded local data
-- introduce a backend requirement
-
-Acceptance:
-
-- installed shell launches offline
-- active trip/history remain correct
-- update/reload behaviour does not lose committed shopping state
-- browser tests cover supported offline critical paths
-
+Human one-hand/timing and real-shopper retention gates remain independent and still open.
 ### B. Barcode identification
 
 **Status: gated / not implemented.**

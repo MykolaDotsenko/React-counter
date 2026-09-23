@@ -6,7 +6,7 @@ This is the executable contract for the current shopping-budget release.
 
 The original core MVP is implemented. Several post-core capabilities are also implemented and are explicitly listed below.
 
-Installable PWA, barcode and OCR are **PLANNED / GATED**, not current release requirements.
+The installable offline PWA shell is **IMPLEMENTED**. Barcode and OCR remain **PLANNED / GATED**.
 
 ## Core job
 
@@ -44,11 +44,10 @@ A shopper can:
 - local Price Memory;
 - local history deletion;
 - independent Price Memory deletion;
-- retention/timing evidence tooling that does not own shopping state.
+- retention/timing evidence tooling that does not own shopping state;
+- installable offline application shell with prompt-based updates.
 
 ### PLANNED / GATED
-
-- installable offline PWA shell;
 - barcode identification;
 - shelf-label OCR;
 - weighted goods;
@@ -199,9 +198,7 @@ The complete core workflow remains achievable through semantic controls and keyb
 
 ### FR-025 — Local-first core
 
-After the page is loaded, shopping state, manual entry, editing, completion and history do not require a remote business service.
-
-This does **not** claim installable/offline-shell PWA support.
+Shopping state, manual entry, editing, completion and history do not require a remote business service. After the application shell has been cached, the core flow remains available without network access.
 
 ### FR-026 — Continue/reopen after finish
 
@@ -220,6 +217,21 @@ Barcode may identify product context but cannot be treated as authoritative curr
 **PLANNED / GATED.**
 
 OCR produces candidate price data requiring appropriate confirmation.
+
+### FR-029 — Installable offline shell
+
+**IMPLEMENTED.**
+
+The public release exposes an installable manifest and Workbox-generated service worker that precaches application-shell assets.
+
+The service worker:
+
+- does not own or mutate canonical shopping state;
+- does not generate for guarded QA/beta evidence builds;
+- uses prompt-based updates;
+- never forces a reload during an active shopping lifecycle.
+
+After a successful online cache/install pass, active-trip and completed-history workflows remain available offline through the existing local persistence contract.
 
 ## Canonical state requirements
 
@@ -269,7 +281,7 @@ The primary flow is usable one-handed on compact phone widths.
 
 ### NFR-007 — Bundle discipline
 
-Gated future scanner/PWA dependencies must not penalise the current critical path before they ship.
+The shipped PWA shell must remain small and asset-only; gated future scanner/OCR dependencies must not penalise the current critical path before they ship.
 
 ### NFR-008 — Privacy
 
