@@ -7,9 +7,18 @@ const appPath =
     ? "/shopping-budget-companion/"
     : "/";
 
-test("is installable and restores active/history state while offline", async ({
+const waitForInstalledShell = async (page) => {
+  await page.evaluate(async () => {
+    if (!("serviceWorker" in navigator)) {
+      throw new Error("Service workers are not available in this browser.");
+    }
+
+    await navigator.serviceWorker.ready;
+  });
+};
+
+test("exposes an installable shell and precaches the application entry", async ({
   page,
-  context,
 }) => {
   await page.goto(appPath);
 
@@ -38,13 +47,47 @@ test("is installable and restores active/history state while offline", async ({
     ]),
   );
 
-  await page.evaluate(async () => {
-    if (!("serviceWorker" in navigator)) {
-      throw new Error("Service workers are not available in this browser.");
+  await waitForInstalledShell(page);
+
+  const shell = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.ready;
+    const cacheNames = await caches.keys();
+    const indexUrl = new URL("index.html", location.href).href;
+    let cachedIndex = false;
+
+    for (const cacheName of cacheNames) {
+      const cache = await caches.open(cacheName);
+
+      if ((await cache.match(indexUrl)) !== undefined) {
+        cachedIndex = true;
+        break;
+      }
     }
 
-    await navigator.serviceWorker.ready;
+    return {
+      scopePath: new URL(registration.scope).pathname,
+      cacheCount: cacheNames.length,
+      cachedIndex,
+    };
   });
+
+  expect(shell.scopePath).toBe(appPath);
+  expect(shell.cacheCount).toBeGreaterThan(0);
+  expect(shell.cachedIndex).toBe(true);
+});
+
+test("restores active and completed shopping state with the browser offline", async ({
+  page,
+  context,
+  browserName,
+}) => {
+  test.skip(
+    browserName === "webkit",
+    "Playwright WebKit cannot reliably navigate in offline mode; install and precache coverage runs separately.",
+  );
+
+  await page.goto(appPath);
+  await waitForInstalledShell(page);
 
   await page.reload();
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
@@ -60,9 +103,7 @@ test("is installable and restores active/history state while offline", async ({
   );
   expect(activeBeforeOffline).not.toBeNull();
 
-  await context.route("**/*", async (route) => {
-    await route.abort();
-  });
+  await context.setOffline(true);
 
   try {
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -110,6 +151,6 @@ test("is installable and restores active/history state while offline", async ({
 
     await expect(page.getByText("€4.79 tracked")).toBeVisible();
   } finally {
-    await context.unroute("**/*");
+    await context.setOffline(false);
   }
 });

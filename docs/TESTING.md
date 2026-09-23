@@ -158,7 +158,7 @@ Automation must prove:
 - history restores after a subsequent offline reload;
 - Cache Storage/service-worker behaviour never becomes shopping-state authority.
 
-Service-worker updates must remain prompt-based. Automated or runtime update logic must never force an active shopping trip to reload.
+Service-worker updates must remain prompt-based. Automated or runtime update logic must never force an active shopping trip to reload.\n\nCI runs the full browser-offline reload journey in Chromium and Firefox. WebKit CI verifies the manifest, service-worker registration and precached application entry; Playwright WebKit offline navigation is not treated as Safari/device evidence because its Web Inspector harness cannot reliably navigate once offline.
 
 ## Exact-money contract
 
