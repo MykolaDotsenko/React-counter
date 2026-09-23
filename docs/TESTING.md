@@ -152,7 +152,7 @@ Automation must prove:
 
 - the public release artifact contains a valid install manifest, install icons and generated service worker;
 - guarded QA/beta builds do not create competing service workers;
-- after one successful online install/cache pass, the shell opens while the browser context is offline;
+- after one successful online install/cache pass, the shell opens when network requests are unavailable;
 - an active trip restores offline with exact canonical values;
 - completion/history persistence continues offline;
 - history restores after a subsequent offline reload;

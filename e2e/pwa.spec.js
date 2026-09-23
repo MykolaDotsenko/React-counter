@@ -60,7 +60,9 @@ test("is installable and restores active/history state while offline", async ({
   );
   expect(activeBeforeOffline).not.toBeNull();
 
-  await context.setOffline(true);
+  await context.route("**/*", async (route) => {
+    await route.abort();
+  });
 
   try {
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -108,6 +110,6 @@ test("is installable and restores active/history state while offline", async ({
 
     await expect(page.getByText("€4.79 tracked")).toBeVisible();
   } finally {
-    await context.setOffline(false);
+    await context.unroute("**/*");
   }
 });
