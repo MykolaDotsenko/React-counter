@@ -30,10 +30,12 @@ The QA evidence recorder now treats empirical evidence as a strict contract rath
 - dark appearance, 200%/large text, and reduced-motion physical spot-checks are recorded independently when available
 - a recorded secondary spot-check failure blocks B6 eligibility; not-run remains visible and does not pretend that a physical check happened
 - samples outside the fixture remain visible as excluded evidence rather than silently contaminating the KPI
-- QA schema v3 preserves valid v2 samples/device labels through migration but intentionally requires the new physical-context evidence before B6 eligibility
+- QA schema v4 preserves valid v3 physical-context evidence and valid v2 samples/device labels through migration without inventing exclusion records
 - every timing sample is integrity-checked: non-empty unique ID, positive finite duration, canonical ISO completion time, positive exact minor-unit price, safe integer quantity, and exact unit-price × quantity line-total consistency
 - duplicate sample IDs and mathematically inconsistent samples are rejected instead of entering evidence summaries
 - copied evidence uses a versioned `shopping-timing-evidence` export with a recomputed B6 summary; tampered exported summaries fail parser validation
+- QA schema v4 preserves valid v3/v2 sessions while adding structured external-interruption exclusions: the original timing sample remains in evidence, every exclusion requires a reason tied to a real sample ID, and KPI summaries recompute without excluded attempts
+- exclusion is deliberately narrow: slow attempts, typo corrections, app friction, awkward grip, or confusing UI must remain in the KPI; only unrelated external interruptions may be documented and excluded
 - exports explicitly disclose that device metadata is present while item names/store history are absent and no network transmission occurs
 - **Start fresh QA session** clears all QA evidence and recaptures the current viewport/appearance/environment so a changed physical setup cannot inherit stale environment metadata
 
@@ -161,7 +163,7 @@ The QA build:
 - records a sample from intentional **Add price** activation until the canonical summary has rendered again
 - automatically calculates median, P75 and maximum for the two required ordinary price-only tasks using only the documented EUR 500 / zero-buffer measurement fixture
 - provides a manual one-hand/bright-store checklist
-- can copy a versioned, parseable evidence export as JSON; the derived B6 gate is recomputed from the validated session instead of trusted as free-form data
+- can copy a versioned, parseable evidence export as JSON; export schema v2 includes all recorded timing samples plus any documented interruption exclusions, and the derived B6 gate is recomputed from validated evidence instead of trusted as free-form data
 - offers a two-step **Start fresh QA session** action that clears QA evidence and recaptures environment metadata
 
 The small **QA n/20** tab is fixed outside document layout. Keep the panel closed while measuring so it does not cover the shopping UI.
@@ -248,8 +250,9 @@ For ordinary price-only timing:
 
 - at least 10 measured EUR 4.79 adds
 - at least 10 measured EUR 12.50 adds
-- discard only clearly documented interruptions unrelated to the app
-- record all other attempts, including corrections
+- keep every captured attempt in the evidence record
+- if an unrelated external interruption invalidates an attempt, use the structured sample audit to document the reason and exclude it from the KPI without deleting the sample
+- never exclude a sample merely because it was slow, included a correction, exposed app friction, or produced an inconvenient result
 
 Report:
 
