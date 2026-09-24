@@ -138,7 +138,13 @@ Reset is two-step and must not be available in the middle of an active trip.
 
 ## Export
 
-Open **Beta evidence** and choose:
+Open **Beta evidence** and prefer:
+
+> Download JSON evidence
+
+The app creates a local `.json` file whose default filename is derived only from the beta session timestamp. No participant identity is added.
+
+If download is unavailable, use:
 
 > Copy privacy-safe evidence
 

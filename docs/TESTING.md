@@ -49,7 +49,7 @@ npm run test:e2e
 
 `npm run check` covers lint, typecheck, unit/component tests and production build.
 
-CI builds one immutable site artifact containing the public app plus guarded QA/beta variants and the local cohort analyzer. Production browser tests run against the exact public build artifact; beta-specific and cohort-analyzer browser tests run separately against their guarded artifacts. Deployment may promote the artifact only after all browser gates succeed.
+CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer and the isolated barcode benchmark. Production browser tests run against the exact public build artifact; beta-, cohort- and barcode-benchmark-specific browser tests run separately against their guarded artifacts. Deployment may promote the artifact only after all browser gates succeed.
 
 ## Test layers
 
@@ -151,7 +151,7 @@ At minimum cover:
 Automation must prove:
 
 - the public release artifact contains a valid install manifest, install icons and generated service worker;
-- guarded QA/beta/cohort builds do not create competing service workers;
+- guarded QA/beta/cohort/barcode-benchmark builds do not create competing service workers;
 - after one successful online install/cache pass, the shell opens when network requests are unavailable;
 - an active trip restores offline with exact canonical values;
 - completion/history persistence continues offline;
@@ -269,7 +269,7 @@ Timing-evidence tests must also prove:
 
 Tests must prove:
 
-- evidence remains local unless explicitly copied;
+- evidence remains local unless explicitly copied or downloaded by the facilitator;
 - no prices, budgets, item names, product/store identities or checkout values enter the evidence schema;
 - event history is bounded;
 - trip ordinals are session-relative;
@@ -280,16 +280,23 @@ Tests must prove:
 - beta UI cannot block the primary flow;
 - retained events cannot predate the beta session start;
 - export `generatedAt` cannot predate retained session evidence;
+- export UI handles invalid device-clock chronology without crashing the beta panel;
+- local JSON download uses a non-identifying session-timestamp filename and preserves the same privacy-safe export contract as clipboard copy;
 - 7/14/30-day retention uses maturity-aware denominators so right-censored participants are not counted as failures;
 - each window-specific cohort summary exposes its eligible participant count;
+- the cohort analyzer keeps recruitment readiness (20–50 real shoppers) separate from 7/14/30-day interpretation readiness;
+- a window is not marked ready for interpretation until at least 20 participants are eligible for that specific window;
+- aggregate second-/third-trip shares are visibly labelled as observed-so-far rather than time-normalized retention;
 - second-/third-trip metrics require contiguous chronological trip starts rather than ordinal gaps;
 - orphan or pre-start finish events do not inflate completed-trip counts;
 - partial interaction evidence remains available for friction analysis without being promoted to retention/completion evidence;
 - the local cohort analyzer rejects invalid/tampered exports and implausibly future-dated observation timestamps before aggregation;
 - a newer export from the same retained evidence session replaces an older one rather than double-counting it;
-- analyzer state remains page-memory only and aggregate copy output excludes raw participant events and filenames.
+- analyzer state remains page-memory only and aggregate copy/download output excludes raw participant events and filenames;
+- local aggregate download uses a non-identifying timestamp filename and the exact same aggregate payload contract as clipboard copy.
 
 Real-store retention evidence remains a human/product-validation gate.
+
 
 ### Barcode interaction benchmark
 
