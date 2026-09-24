@@ -113,36 +113,51 @@ jobs:
           node-version-file: .node-version
           cache: npm
 
-      - name: Generate and validate production CycloneDX SBOM
+      - name: Generate production CycloneDX SBOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          SBOM_FILE="shopping-budget-companion-${GITHUB_SHA}.cdx.json"
+          npm sbom --sbom-format=cyclonedx --package-lock-only --omit=dev > "${SBOM_FILE}"
+          sha256sum "${SBOM_FILE}" > "${SBOM_FILE}.sha256"
+
+      - name: Validate production CycloneDX SBOM
         shell: bash
         run: |
           set -euo pipefail
           SBOM_FILE="shopping-budget-companion-${GITHUB_SHA}.cdx.json"
 
-          npm sbom --sbom-format=cyclonedx --package-lock-only --omit=dev > "${SBOM_FILE}"
-
+          echo "Validate CycloneDX envelope"
           jq -e '.bomFormat == "CycloneDX"' "${SBOM_FILE}" >/dev/null
           jq -e '.specVersion | type == "string"' "${SBOM_FILE}" >/dev/null
+
+          echo "Validate root package identity"
           jq -e '.metadata.component.name == "shopping-budget-companion"' "${SBOM_FILE}" >/dev/null
           jq -e '.metadata.component.version == "2.0.0"' "${SBOM_FILE}" >/dev/null
+
+          echo "Validate component inventory"
           jq -e '.components | type == "array" and length > 0' "${SBOM_FILE}" >/dev/null
 
           while IFS= read -r dependency; do
+            echo "Require runtime dependency: ${dependency}"
             jq -e --arg dependency "${dependency}"               'any(.components[]; .name == $dependency)'               "${SBOM_FILE}" >/dev/null
           done < <(jq -r '.dependencies | keys[]' package.json)
 
+          echo "Reject development-only coverage/test packages"
           jq -e 'all(.components[]; .name != "vitest" and .name != "@vitest/coverage-v8")'             "${SBOM_FILE}" >/dev/null
 
-          sha256sum "${SBOM_FILE}" > "${SBOM_FILE}.sha256"
+          echo "Verify SHA-256 sidecar"
+          sha256sum --check "${SBOM_FILE}.sha256"
 
       - name: Upload SBOM evidence
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sbom-${{ github.sha }}
           path: |
             shopping-budget-companion-${{ github.sha }}.cdx.json
             shopping-budget-companion-${{ github.sha }}.cdx.json.sha256
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
 
   artifact-integrity:
