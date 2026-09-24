@@ -74,14 +74,21 @@ jobs:
           npm run build -- --base=/shopping-budget-companion/barcode-benchmark/ --outDir=dist-barcode
           npm run barcode:prepare-index
 
+      - name: Generate and validate release SBOM evidence
+        run: |
+          npm run sbom:generate
+          npm run sbom:check
+
       - name: Stage immutable site artifact
         run: |
-          mkdir -p site/qa site/beta site/cohort site/barcode-benchmark
+          mkdir -p site/qa site/beta site/cohort site/barcode-benchmark site/sbom
           cp -R dist/. site/
           cp -R dist-qa/. site/qa/
           cp -R dist-beta/. site/beta/
           cp -R dist-cohort/. site/cohort/
           cp -R dist-barcode/. site/barcode-benchmark/
+          cp .build-evidence/sbom/runtime.cdx.json site/sbom/runtime.cdx.json
+          cp .build-evidence/sbom/build.cdx.json site/sbom/build.cdx.json
           touch site/.nojekyll
           test ! -e site/node_modules
           test ! -e site/package.json
@@ -129,6 +136,10 @@ jobs:
           test ! -e /tmp/pages-site/barcode-benchmark/manifest.webmanifest
           test ! -e /tmp/pages-site/barcode-benchmark/sw.js
           test -f /tmp/pages-site/barcode-benchmark/index.html
+          test -s /tmp/pages-site/sbom/runtime.cdx.json
+          test -s /tmp/pages-site/sbom/build.cdx.json
+          grep -q '"bomFormat": "CycloneDX"' /tmp/pages-site/sbom/runtime.cdx.json
+          grep -q '"bomFormat": "CycloneDX"' /tmp/pages-site/sbom/build.cdx.json
           test ! -e /tmp/pages-site/node_modules
           test ! -e /tmp/pages-site/package.json
           test ! -e /tmp/pages-site/package-lock.json
@@ -408,6 +419,8 @@ jobs:
           test -f /tmp/pages-site/manifest.webmanifest
           test -f /tmp/pages-site/sw.js
           test -f /tmp/pages-site/barcode-benchmark/index.html
+          test -s /tmp/pages-site/sbom/runtime.cdx.json
+          test -s /tmp/pages-site/sbom/build.cdx.json
           test ! -e /tmp/pages-site/barcode-benchmark/manifest.webmanifest
           test ! -e /tmp/pages-site/barcode-benchmark/sw.js
           test ! -e /tmp/pages-site/node_modules
