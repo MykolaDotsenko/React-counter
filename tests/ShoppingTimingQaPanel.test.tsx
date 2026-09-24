@@ -256,4 +256,85 @@ describe("ShoppingTimingQaPanel", () => {
     );
   });
 
+
+  it("downloads versioned timing evidence and revokes the object URL", async () => {
+    const user = userEvent.setup();
+    const createdBlobs: Blob[] = [];
+    const createObjectURL = vi.fn((blob: Blob) => {
+      createdBlobs.push(blob);
+      return "blob:timing-evidence";
+    });
+    const revokeObjectURL = vi.fn();
+    let downloadedFileName = "";
+
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: createObjectURL,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: revokeObjectURL,
+    });
+
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        downloadedFileName = this.download;
+      });
+
+    try {
+      render(
+        <ShoppingTimingQaPanel
+          session={createQaTimingSession(environment)}
+          onChecklistChange={vi.fn()}
+          onDeviceLabelChange={vi.fn()}
+          onCompactDeviceLabelChange={vi.fn()}
+          onInputMethodLabelChange={vi.fn()}
+          onPhysicalContextChange={vi.fn()}
+          onSpotCheckChange={vi.fn()}
+          onNotesChange={vi.fn()}
+          onDocumentInterruption={vi.fn()}
+          onRestoreSample={vi.fn()}
+          onResetSamples={vi.fn()}
+          onResetSession={vi.fn()}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole("button", { name: "QA 0/20" }),
+      );
+      await user.click(
+        screen.getByRole("button", {
+          name: "Download JSON results",
+        }),
+      );
+
+      expect(downloadedFileName).toMatch(
+        /^shopping-timing-\d{8}T\d{9}Z\.json$/,
+      );
+      expect(createObjectURL).toHaveBeenCalledTimes(1);
+      expect(revokeObjectURL).toHaveBeenCalledWith(
+        "blob:timing-evidence",
+      );
+
+      const blob = createdBlobs[0];
+
+      if (blob === undefined) {
+        throw new Error("Expected timing evidence download blob");
+      }
+
+      const exported = JSON.parse(await blob.text());
+
+      expect(exported).toMatchObject({
+        schemaVersion: 3,
+        kind: "shopping-timing-evidence",
+        buildRevision: "local-dev",
+      });
+    } finally {
+      click.mockRestore();
+      Reflect.deleteProperty(URL, "createObjectURL");
+      Reflect.deleteProperty(URL, "revokeObjectURL");
+    }
+  });
+
 });
