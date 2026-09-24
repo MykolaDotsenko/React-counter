@@ -73,7 +73,7 @@ Coverage does **not** replace browser, accessibility, persistence-failure, real-
 
 Pull requests also run a least-privilege Dependency Review workflow. It fails when a changed runtime, development or unknown-scope dependency introduces a high/critical known vulnerability, while showing patched-version guidance when GitHub Advisory data provides it. The action is pinned to an immutable commit SHA and does not receive pull-request write permission.
 
-CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer, the isolated barcode benchmark and the isolated visual-product-recognition benchmark harness. Production browser tests run against the exact public build artifact; QA-, beta-, cohort-, barcode-benchmark- and visual-benchmark-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed, the same tested revision has produced a validated production CycloneDX SBOM, and the exact uploaded `pages-site` artifact digest has both signed build-provenance and SBOM attestations. The scanner is commit-pinned, its Syft version is pinned, JavaScript devDependencies are omitted and Syft's GitHub Actions catalogers are explicitly disabled so workflow metadata nested inside installed packages cannot contaminate the product inventory. The SBOM is retained as CI evidence with a SHA-256 digest while remaining outside the public Pages site.
+CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer, the isolated barcode benchmark, the isolated visual-product-recognition benchmark harness and the isolated shelf-label OCR benchmark harness. Production browser tests run against the exact public build artifact; QA-, beta-, cohort-, barcode-benchmark-, visual-benchmark- and OCR-benchmark-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed, the same tested revision has produced a validated production CycloneDX SBOM, and the exact uploaded `pages-site` artifact digest has both signed build-provenance and SBOM attestations. The scanner is commit-pinned, its Syft version is pinned, JavaScript devDependencies are omitted and Syft's GitHub Actions catalogers are explicitly disabled so workflow metadata nested inside installed packages cannot contaminate the product inventory. The SBOM is retained as CI evidence with a SHA-256 digest while remaining outside the public Pages site.
 
 ## Test layers
 
@@ -175,7 +175,7 @@ At minimum cover:
 Automation must prove:
 
 - the public release artifact contains a valid install manifest, install icons and generated service worker;
-- guarded QA/beta/cohort/barcode-benchmark builds do not create competing service workers;
+- guarded QA/beta/cohort/barcode-benchmark/visual-benchmark/OCR-benchmark builds do not create competing service workers;
 - after one successful online install/cache pass, the shell opens when network requests are unavailable;
 - an active trip restores offline with exact canonical values;
 - completion/history persistence continues offline;
@@ -380,6 +380,35 @@ Tests must prove:
 - local download uses a non-identifying session timestamp filename;
 - a concrete model/provider remains an evidence-gated follow-up tracked by issue #88.
 
+### Shelf-label OCR benchmark
+
+Automation may verify OCR harness isolation, deterministic price parsing, candidate-decision state, privacy and evidence integrity. It may not claim OCR value without a named engine/model and representative physical-device data.
+
+Tests must prove:
+
+- the OCR harness is a standalone guarded build with no ShoppingTrip/cart access and no PWA/service worker;
+- the public production JavaScript contains no OCR benchmark markers/storage key;
+- camera image bytes, raw OCR text and parsed price values never enter retained/exported evidence;
+- the OCR adapter declares a stable engine identity and `local-only` or `remote-image` data boundary;
+- OCR output is bounded and runtime-validated before parsing;
+- comma/dot decimal candidates route through the existing exact-money parser;
+- split cents require an explicit euro anchor;
+- bare digits never receive an invented decimal separator;
+- percentage-only discounts are not parsed as money;
+- direct product prices rank above nearby unit-price and multi-buy candidates;
+- regular/loyalty price context remains distinguishable for human review;
+- duplicate monetary values are deduplicated after ranking;
+- capture → OCR → parse → human rank confirmation is timed as one interaction;
+- top-1 and rank 2–3 confirmations remain distinguishable;
+- rejected/no-candidate/timeout/manual-fallback/OCR-error/parser-error/capture-error outcomes remain distinguishable;
+- timeout/fallback/teardown invalidates late OCR results;
+- camera tracks are released on stop/unmount/failure;
+- malformed retained evidence is preserved until explicit reset;
+- viewport/engine/data-boundary changes freeze retained evidence instead of mixing environments;
+- export carries the exact guarded-build `buildRevision`;
+- local download uses a non-identifying session timestamp filename;
+- a concrete OCR engine/provider remains an evidence-gated follow-up tracked by issue #90.
+
 ## Performance
 
 ### Public bundle budget
@@ -406,7 +435,7 @@ Protect:
 - fast initial product load;
 - immediate local add/edit/undo response;
 - stable bundle trend;
-- no QA/beta/cohort/barcode-benchmark/visual-benchmark evidence markers in the public JavaScript bundle;
+- no QA/beta/cohort/barcode-benchmark/visual-benchmark/OCR-benchmark evidence markers in the public JavaScript bundle;
 - public JS/CSS remain within the enforced bundle budgets;
 - optional future capability isolation.
 

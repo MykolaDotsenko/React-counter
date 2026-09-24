@@ -6,19 +6,22 @@ import {
   stopBenchmarkMediaStream,
 } from "./camera-benchmark-capture";
 import type {
-  VisualProductBenchmarkEnvironment,
-  VisualProductBenchmarkFailureType,
-  VisualProductBenchmarkOutcome,
-  VisualProductBenchmarkSample,
-} from "./visual-product-benchmark";
+  ShelfLabelOcrEnvironment,
+  ShelfLabelOcrFailureType,
+  ShelfLabelOcrOutcome,
+  ShelfLabelOcrSample,
+} from "./shelf-label-ocr-benchmark";
 import {
-  runVisualProductRecognition,
-  visualProductRecognizer,
-  type VisualProductCandidate,
-} from "./visual-product-benchmark-adapter";
+  runShelfLabelOcr,
+  shelfLabelOcrEngine,
+} from "./shelf-label-ocr-adapter";
+import {
+  parseShelfPriceCandidates,
+  type ShelfPriceCandidate,
+} from "./shelf-label-price-parser";
 import styles from "./BarcodeBenchmarkApp.module.css";
 
-const RECOGNITION_TIMEOUT_MS = 12_000;
+const OCR_TIMEOUT_MS = 12_000;
 
 interface ActiveAttempt {
   readonly id: string;
@@ -27,33 +30,53 @@ interface ActiveAttempt {
   readonly abortController: AbortController;
 }
 
-export interface VisualProductBenchmarkCaptureProps {
-  readonly environment: VisualProductBenchmarkEnvironment;
-  readonly onFailure: (type: VisualProductBenchmarkFailureType) => void;
-  readonly onSample: (sample: VisualProductBenchmarkSample) => void;
+export interface ShelfLabelOcrBenchmarkCaptureProps {
+  readonly environment: ShelfLabelOcrEnvironment;
+  readonly onFailure: (type: ShelfLabelOcrFailureType) => void;
+  readonly onSample: (sample: ShelfLabelOcrSample) => void;
   readonly onStatus: (message: string) => void;
   readonly onAttemptActiveChange: (active: boolean) => void;
 }
 
 const attemptId = (): string =>
   globalThis.crypto?.randomUUID?.() ??
-  "visual-" +
-    Date.now().toString(16) +
-    "-" +
-    Math.random().toString(16).slice(2);
+  `ocr-${Date.now().toString(16)}-${Math.random()
+    .toString(16)
+    .slice(2)}`;
 
-export function VisualProductBenchmarkCapture({
+const contextLabel = (candidate: ShelfPriceCandidate): string => {
+  if (candidate.context.unitPrice) {
+    return "unit price";
+  }
+
+  if (candidate.context.multiBuy) {
+    return "multi-buy";
+  }
+
+  if (candidate.context.loyaltyPrice) {
+    return "loyalty";
+  }
+
+  if (candidate.context.regularPrice) {
+    return "regular";
+  }
+
+  return "direct price";
+};
+
+export function ShelfLabelOcrBenchmarkCapture({
   environment,
   onFailure,
   onSample,
   onStatus,
   onAttemptActiveChange,
-}: VisualProductBenchmarkCaptureProps) {
+}: ShelfLabelOcrBenchmarkCaptureProps) {
   const [cameraReady, setCameraReady] = useState(false);
   const [recognizing, setRecognizing] = useState(false);
   const [attemptActive, setAttemptActive] = useState(false);
   const [candidates, setCandidates] =
-    useState<readonly VisualProductCandidate[]>([]);
+    useState<readonly ShelfPriceCandidate[]>([]);
+  const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const activeAttemptRef = useRef<ActiveAttempt | null>(null);
@@ -68,10 +91,10 @@ export function VisualProductBenchmarkCapture({
   };
 
   const finishAttempt = (
-    outcome: VisualProductBenchmarkOutcome,
+    outcome: ShelfLabelOcrOutcome,
     selectedRank: 1 | 2 | 3 | null,
     candidateCount: number,
-    topConfidence: number | null,
+    confidence: number | null,
   ): void => {
     const attempt = activeAttemptRef.current;
 
@@ -94,24 +117,24 @@ export function VisualProductBenchmarkCapture({
       outcome,
       candidateCount,
       selectedRank,
-      topConfidence,
+      ocrConfidence: confidence,
     });
 
     activeAttemptRef.current = null;
     setAttemptActive(false);
     setRecognizing(false);
     setCandidates([]);
+    setOcrConfidence(null);
     onAttemptActiveChange(false);
   };
 
   const stopCamera = (recordFallback: boolean): void => {
     if (recordFallback && activeAttemptRef.current !== null) {
-      const topConfidence = candidates[0]?.confidence ?? null;
       finishAttempt(
         "manual-fallback",
         null,
         candidates.length,
-        topConfidence,
+        ocrConfidence,
       );
     } else {
       generationRef.current += 1;
@@ -121,11 +144,11 @@ export function VisualProductBenchmarkCapture({
       setAttemptActive(false);
       setRecognizing(false);
       setCandidates([]);
+      setOcrConfidence(null);
       onAttemptActiveChange(false);
     }
 
     stopBenchmarkMediaStream(streamRef.current);
-
     streamRef.current = null;
     setCameraReady(false);
 
@@ -139,9 +162,7 @@ export function VisualProductBenchmarkCapture({
       generationRef.current += 1;
       clearTimeoutHandle();
       activeAttemptRef.current?.abortController.abort();
-
       stopBenchmarkMediaStream(streamRef.current);
-
       onAttemptActiveChange(false);
     },
     [onAttemptActiveChange],
@@ -176,9 +197,9 @@ export function VisualProductBenchmarkCapture({
       streamRef.current = stream;
       setCameraReady(true);
       onStatus(
-        environment.recognizerAvailable
-          ? "Camera ready. Keep one product package prominent in frame."
-          : "Camera ready, but no visual recognizer adapter is configured.",
+        environment.ocrAvailable
+          ? "Camera ready. Fill the frame with one shelf label."
+          : "Camera ready, but no OCR benchmark adapter is configured.",
       );
     } catch (error) {
       stopBenchmarkMediaStream(stream);
@@ -193,7 +214,7 @@ export function VisualProductBenchmarkCapture({
     }
   };
 
-  const startRecognition = async (): Promise<void> => {
+  const startOcr = async (): Promise<void> => {
     if (activeAttemptRef.current !== null) {
       return;
     }
@@ -203,21 +224,21 @@ export function VisualProductBenchmarkCapture({
       window.innerHeight !== environment.viewportHeight
     ) {
       onStatus(
-        "Viewport changed. Export/reset before recording more comparable visual-recognition evidence.",
+        "Viewport changed. Export/reset before recording more comparable OCR evidence.",
       );
       return;
     }
 
-    const recognizer = visualProductRecognizer();
+    const engine = shelfLabelOcrEngine();
 
     if (
-      recognizer === null ||
-      recognizer.id !== environment.recognizerId ||
-      recognizer.dataBoundary !== environment.dataBoundary
+      engine === null ||
+      engine.id !== environment.engineId ||
+      engine.dataBoundary !== environment.dataBoundary
     ) {
-      onFailure("recognizer-unavailable");
+      onFailure("ocr-unavailable");
       onStatus(
-        "Visual recognizer adapter is unavailable or changed. Start a fresh benchmark session after configuring it.",
+        "OCR adapter is unavailable or changed. Start a fresh benchmark session after configuring it.",
       );
       return;
     }
@@ -225,7 +246,7 @@ export function VisualProductBenchmarkCapture({
     const video = videoRef.current;
 
     if (video === null || !cameraReady) {
-      onStatus("Start the camera before a timed recognition attempt.");
+      onStatus("Start the camera before a timed OCR attempt.");
       return;
     }
 
@@ -241,10 +262,11 @@ export function VisualProductBenchmarkCapture({
     };
 
     setCandidates([]);
+    setOcrConfidence(null);
     setAttemptActive(true);
     setRecognizing(true);
     onAttemptActiveChange(true);
-    onStatus("Recognizing product candidate…");
+    onStatus("Reading shelf label and extracting price candidates…");
 
     timeoutRef.current = window.setTimeout(() => {
       if (
@@ -253,10 +275,10 @@ export function VisualProductBenchmarkCapture({
       ) {
         finishAttempt("timeout", null, 0, null);
         onStatus(
-          "Recognition timed out. Manual entry remains the fallback.",
+          "OCR timed out. Manual price entry remains the fallback.",
         );
       }
-    }, RECOGNITION_TIMEOUT_MS);
+    }, OCR_TIMEOUT_MS);
 
     try {
       const frame = await captureBenchmarkFrame(video);
@@ -268,7 +290,7 @@ export function VisualProductBenchmarkCapture({
         return;
       }
 
-      const result = await runVisualProductRecognition(
+      const result = await runShelfLabelOcr(
         frame,
         abortController.signal,
       );
@@ -280,20 +302,33 @@ export function VisualProductBenchmarkCapture({
         return;
       }
 
-      const topThree = result.slice(0, 3);
+      let parsed: readonly ShelfPriceCandidate[];
+
+      try {
+        parsed = parseShelfPriceCandidates(result.text);
+      } catch {
+        finishAttempt("parser-error", null, 0, result.confidence);
+        onStatus(
+          "OCR text could not be parsed safely. Manual entry remains available.",
+        );
+        return;
+      }
+
+      const topThree = parsed.slice(0, 3);
 
       if (topThree.length === 0) {
-        finishAttempt("no-result", null, 0, null);
+        finishAttempt("no-candidate", null, 0, result.confidence);
         onStatus(
-          "Recognizer returned no candidates. Use manual entry or retry.",
+          "No safe price candidate was found. Use manual entry or retry.",
         );
         return;
       }
 
       setCandidates(topThree);
+      setOcrConfidence(result.confidence);
       setRecognizing(false);
       onStatus(
-        "Review the candidates and record the first correct rank, or reject them all.",
+        "Review the ranked price candidates. Confirm the correct one or reject them all.",
       );
     } catch (error) {
       if (
@@ -309,15 +344,15 @@ export function VisualProductBenchmarkCapture({
 
       const outcome =
         error instanceof Error &&
-        error.message.includes("capture")
+        error.message.toLowerCase().includes("capture")
           ? "capture-error"
-          : "recognizer-error";
+          : "ocr-error";
 
       finishAttempt(outcome, null, 0, null);
       onStatus(
         outcome === "capture-error"
           ? "Camera frame capture failed."
-          : "Visual recognizer failed. Manual entry remains available.",
+          : "OCR engine failed. Manual price entry remains available.",
       );
     }
   };
@@ -331,9 +366,11 @@ export function VisualProductBenchmarkCapture({
       rank === 1 ? "top1-confirmed" : "top3-confirmed",
       rank,
       candidates.length,
-      candidates[0]?.confidence ?? null,
+      ocrConfidence,
     );
-    onStatus("Candidate decision recorded without storing its label.");
+    onStatus(
+      "Price-candidate decision recorded without storing the price or OCR text.",
+    );
   };
 
   const rejectAll = (): void => {
@@ -345,19 +382,19 @@ export function VisualProductBenchmarkCapture({
       "rejected",
       null,
       candidates.length,
-      candidates[0]?.confidence ?? null,
+      ocrConfidence,
     );
     onStatus(
-      "All visual candidates rejected. Candidate labels were not persisted.",
+      "All OCR price candidates rejected. Prices and OCR text were not persisted.",
     );
   };
 
   return (
-    <section className={styles.card} aria-labelledby="visual-camera-title">
+    <section className={styles.card} aria-labelledby="ocr-camera-title">
       <div className={styles.sectionHeading}>
         <div>
           <p className={styles.eyebrow}>Timed interaction</p>
-          <h2 id="visual-camera-title">Camera recognition attempt</h2>
+          <h2 id="ocr-camera-title">Shelf-label OCR attempt</h2>
         </div>
         <span className={styles.badge}>
           {cameraReady ? "Camera ready" : "Camera stopped"}
@@ -369,37 +406,41 @@ export function VisualProductBenchmarkCapture({
           ref={videoRef}
           muted
           playsInline
-          aria-label="Visual product recognition camera preview"
+          aria-label="Shelf-label OCR camera preview"
         />
         {!cameraReady ? (
           <p className={styles.cameraPlaceholder}>
-            Camera frames stay transient. The benchmark never stores or
-            exports an image.
+            Camera frames and raw OCR text stay transient. Neither is stored
+            in benchmark evidence.
           </p>
         ) : null}
       </div>
 
       {candidates.length > 0 ? (
         <div className={styles.candidate} aria-live="polite">
-          <p>Recognizer candidates</p>
+          <p>Price candidates</p>
           {candidates.map((candidate, index) => (
-            <div key={index}>
-              <strong>{index + 1}. {candidate.label}</strong>
+            <div key={`${Number(candidate.minorUnits)}-${index}`}>
+              <strong>
+                {index + 1}. {candidate.displayValue}
+              </strong>
               <small>
-                Confidence: {candidate.confidence === null
-                  ? "not reported"
-                  : (candidate.confidence * 100).toFixed(1) + "%"}
+                {contextLabel(candidate)}
+                {" · "}
+                {candidate.kind}
               </small>
               <button
                 type="button"
-                onClick={() => confirmRank((index + 1) as 1 | 2 | 3)}
+                onClick={() =>
+                  confirmRank((index + 1) as 1 | 2 | 3)
+                }
               >
                 Candidate {index + 1} is correct
               </button>
             </div>
           ))}
           <button type="button" onClick={rejectAll}>
-            None of these candidates is correct
+            None of these prices is correct
           </button>
         </div>
       ) : null}
@@ -413,17 +454,17 @@ export function VisualProductBenchmarkCapture({
           <>
             <button
               type="button"
-              onClick={() => void startRecognition()}
+              onClick={() => void startOcr()}
               disabled={
                 attemptActive ||
-                !environment.recognizerAvailable
+                !environment.ocrAvailable
               }
             >
               {recognizing
-                ? "Recognizing…"
+                ? "Reading label…"
                 : candidates.length > 0
                   ? "Decision pending"
-                  : "Start timed recognition"}
+                  : "Start timed OCR"}
             </button>
             <button
               type="button"
@@ -434,9 +475,9 @@ export function VisualProductBenchmarkCapture({
                     "manual-fallback",
                     null,
                     candidates.length,
-                    candidates[0]?.confidence ?? null,
+                    ocrConfidence,
                   );
-                  onStatus("Manual fallback recorded.");
+                  onStatus("Manual price-entry fallback recorded.");
                 }
               }}
               disabled={!attemptActive}
