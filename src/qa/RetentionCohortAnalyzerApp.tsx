@@ -4,7 +4,11 @@ import {
   parseRetentionBetaExport,
   type RetentionBetaExport,
 } from "./retention-beta";
-import { summarizeRetentionBetaCohort } from "./retention-beta-cohort";
+import {
+  summarizeRetentionBetaCohort,
+  summarizeRetentionBetaCohortReadiness,
+  type RetentionWindowReadiness,
+} from "./retention-beta-cohort";
 import styles from "./RetentionCohortAnalyzerApp.module.css";
 
 interface ImportedReport {
@@ -58,6 +62,10 @@ export function App() {
         reports.map(({ report }) => report),
       ),
     [reports],
+  );
+  const readiness = useMemo(
+    () => summarizeRetentionBetaCohortReadiness(summary),
+    [summary],
   );
 
   useEffect(() => {
@@ -166,6 +174,7 @@ export function App() {
         containsParticipantFileNames: false,
         networkTransmission: false,
       },
+      readiness,
       summary,
     };
 
@@ -227,6 +236,65 @@ export function App() {
         </div>
       </section>
 
+      <section
+        className={styles.readiness}
+        aria-labelledby="readiness-title"
+      >
+        <div className={styles.readinessHeader}>
+          <div>
+            <p className={styles.eyebrow}>Decision guard</p>
+            <h2 id="readiness-title">Cohort interpretation readiness</h2>
+          </div>
+          <span className={styles.target}>
+            Minimum 20 real shoppers
+          </span>
+        </div>
+
+        <p className={styles.readinessLead}>
+          Do not interpret a window-specific retention rate until that
+          window has at least 20 eligible real participants. Participants
+          still inside the observation window are right-censored, not
+          failures.
+        </p>
+
+        <div className={styles.readinessGrid}>
+          <ReadinessItem
+            label="Cohort size"
+            current={readiness.participantCount}
+            minimum={readiness.minimumParticipants}
+            state={
+              readiness.participantStatus === "collecting"
+                ? "Collect more"
+                : readiness.participantStatus === "target-range"
+                  ? "Target range reached"
+                  : "Above target range"
+            }
+            ready={
+              readiness.participantStatus !== "collecting"
+            }
+          />
+          <WindowReadiness
+            label="7-day evidence"
+            readiness={readiness.sevenDay}
+          />
+          <WindowReadiness
+            label="14-day evidence"
+            readiness={readiness.fourteenDay}
+          />
+          <WindowReadiness
+            label="30-day evidence"
+            readiness={readiness.thirtyDay}
+          />
+        </div>
+
+        <p className={styles.readinessNote}>
+          “Observed second-trip share” and “Observed third-trip share”
+          describe what has happened so far across activated participants.
+          Use the maturity-aware 7/14/30-day rates for time-bounded
+          retention decisions.
+        </p>
+      </section>
+
       <section className={styles.summary} aria-labelledby="summary-title">
         <div className={styles.summaryHeader}>
           <div>
@@ -247,12 +315,14 @@ export function App() {
             value={String(summary.activatedParticipants)}
           />
           <Metric
-            label="Second-trip rate"
+            label="Observed second-trip share"
             value={percent(summary.secondTripRate)}
+            detail="All activated · not time-normalized"
           />
           <Metric
-            label="Third-trip rate"
+            label="Observed third-trip share"
             value={percent(summary.thirdTripRate)}
+            detail="All activated · not time-normalized"
           />
           <Metric
             label="Trip completion"
@@ -343,6 +413,53 @@ export function App() {
         </p>
       ) : null}
     </main>
+  );
+}
+
+
+interface ReadinessItemProps {
+  readonly label: string;
+  readonly current: number;
+  readonly minimum: number;
+  readonly state: string;
+  readonly ready: boolean;
+}
+
+function ReadinessItem({
+  label,
+  current,
+  minimum,
+  state,
+  ready,
+}: ReadinessItemProps) {
+  return (
+    <article className={styles.readinessItem}>
+      <span>{label}</span>
+      <strong>
+        {current} / {minimum}
+      </strong>
+      <small data-ready={ready ? "true" : "false"}>{state}</small>
+    </article>
+  );
+}
+
+interface WindowReadinessProps {
+  readonly label: string;
+  readonly readiness: RetentionWindowReadiness;
+}
+
+function WindowReadiness({
+  label,
+  readiness,
+}: WindowReadinessProps) {
+  return (
+    <ReadinessItem
+      label={label}
+      current={readiness.eligibleParticipants}
+      minimum={readiness.minimumRequired}
+      state={readiness.ready ? "Ready to interpret" : "Wait / collect"}
+      ready={readiness.ready}
+    />
   );
 }
 
