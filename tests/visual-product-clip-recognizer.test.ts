@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   clearVisualProductRecognizer,
+  installVisualProductRecognizer,
   visualProductRecognizer,
 } from "../src/qa/visual-product-benchmark-adapter";
 import {
@@ -208,6 +209,60 @@ describe("visual CLIP recognizer experiment", () => {
     resolveInference?.([
       { label: "Product A", score: 1 },
     ]);
+  });
+
+  it("disposes CLIP resources exactly once and refuses inference afterwards", async () => {
+    const dispose = vi.fn(async () => undefined);
+    const catalog = parseVisualClipCatalog({
+      schemaVersion: 1,
+      labels: ["Product A", "Product B", "Product C"],
+    });
+    const loader: VisualClipClassifierLoader = vi.fn(async () => ({
+      classifier: vi.fn(async () => []),
+      device: "wasm" as const,
+      dispose,
+    }));
+
+    const recognizer = await createVisualClipRecognizer(catalog!, loader);
+
+    await recognizer.dispose?.();
+    await recognizer.dispose?.();
+
+    expect(dispose).toHaveBeenCalledTimes(1);
+    await expect(
+      recognizer.recognize(
+        new Blob(["frame"]),
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow(/disposed/i);
+  });
+
+  it("disposes an installed recognizer when it is replaced or cleared", () => {
+    const firstDispose = vi.fn();
+    const secondDispose = vi.fn();
+    const first = {
+      id: "first",
+      dataBoundary: "local-only" as const,
+      recognize: vi.fn(async () => []),
+      dispose: firstDispose,
+    };
+    const second = {
+      id: "second",
+      dataBoundary: "local-only" as const,
+      recognize: vi.fn(async () => []),
+      dispose: secondDispose,
+    };
+
+    installVisualProductRecognizer(first);
+    installVisualProductRecognizer(second);
+
+    expect(firstDispose).toHaveBeenCalledTimes(1);
+    expect(visualProductRecognizer()).toBe(second);
+
+    clearVisualProductRecognizer();
+
+    expect(secondDispose).toHaveBeenCalledTimes(1);
+    expect(visualProductRecognizer()).toBeNull();
   });
 
   it("does not install a recognizer merely by creating one", async () => {
