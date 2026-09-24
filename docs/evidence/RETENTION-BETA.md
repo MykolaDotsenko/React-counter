@@ -155,6 +155,7 @@ If download is unavailable, use:
 The export contains:
 
 - schema version
+- exact evidence build revision (`buildRevision`)
 - export timestamp
 - explicit privacy flags
 - local event session
@@ -170,7 +171,7 @@ Recommended cohort:
 
 > 20–50 real shoppers
 
-Use the guarded local cohort analyzer after collecting exports. Invalid/tampered files must be rejected before aggregation; repeated exports from the same retained session must not be counted twice.
+Use the guarded local cohort analyzer after collecting exports. Invalid/tampered files must be rejected before aggregation; repeated exports from the same retained session must not be counted twice; one in-memory cohort must contain exactly one source `buildRevision`. Mixed deploy revisions are rejected rather than silently combined.
 
 Where practical:
 
