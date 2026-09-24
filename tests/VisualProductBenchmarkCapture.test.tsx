@@ -178,7 +178,7 @@ describe("VisualProductBenchmarkCapture", () => {
       id: "fixture-recognizer-v1",
       dataBoundary: "local-only",
       recognize: vi.fn(
-        (_image: Blob, _signal: AbortSignal) =>
+        () =>
           new Promise<readonly VisualProductCandidate[]>((resolve) => {
             resolveRecognition = resolve;
           }),
