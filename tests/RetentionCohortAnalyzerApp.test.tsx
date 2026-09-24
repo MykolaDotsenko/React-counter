@@ -159,4 +159,33 @@ describe("RetentionCohortAnalyzerApp", () => {
       "invalid 1",
     );
   });
+
+  it("rejects implausibly future-dated evidence before cohort aggregation", async () => {
+    const user = userEvent.setup();
+    const future = report(
+      [
+        at("trip_started", 1, "2099-01-01T08:00:00.000Z", {
+          source: "new",
+        }),
+      ],
+      "2099-01-01T09:00:00.000Z",
+      "2099-01-01T07:00:00.000Z",
+    );
+
+    render(<App />);
+
+    await user.upload(
+      screen.getByLabelText("Select JSON exports"),
+      file("future.json", future),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "0 participants" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Invalid 1")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "invalid 1",
+    );
+  });
+
 });
