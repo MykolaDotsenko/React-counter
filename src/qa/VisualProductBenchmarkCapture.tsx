@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
+import {
+  benchmarkCameraFailureType,
+  captureBenchmarkFrame,
+  stopBenchmarkMediaStream,
+} from "./camera-benchmark-capture";
 import type {
   VisualProductBenchmarkEnvironment,
   VisualProductBenchmarkFailureType,
@@ -30,54 +35,12 @@ export interface VisualProductBenchmarkCaptureProps {
   readonly onAttemptActiveChange: (active: boolean) => void;
 }
 
-const cameraFailureType = (
-  error: unknown,
-): "permission-denied" | "camera-error" =>
-  error instanceof DOMException &&
-  (error.name === "NotAllowedError" ||
-    error.name === "SecurityError")
-    ? "permission-denied"
-    : "camera-error";
-
 const attemptId = (): string =>
   globalThis.crypto?.randomUUID?.() ??
   "visual-" +
     Date.now().toString(16) +
     "-" +
     Math.random().toString(16).slice(2);
-
-const captureFrame = async (
-  video: HTMLVideoElement,
-): Promise<Blob> => {
-  const width = Math.max(1, video.videoWidth || 640);
-  const height = Math.max(1, video.videoHeight || 480);
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-
-  const context = canvas.getContext("2d");
-
-  if (context === null) {
-    throw new Error("Canvas capture is unavailable");
-  }
-
-  context.drawImage(video, 0, 0, width, height);
-
-  return await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob === null) {
-          reject(new Error("Camera frame capture failed"));
-          return;
-        }
-
-        resolve(blob);
-      },
-      "image/jpeg",
-      0.86,
-    );
-  });
-};
 
 export function VisualProductBenchmarkCapture({
   environment,
@@ -161,9 +124,7 @@ export function VisualProductBenchmarkCapture({
       onAttemptActiveChange(false);
     }
 
-    for (const track of streamRef.current?.getTracks() ?? []) {
-      track.stop();
-    }
+    stopBenchmarkMediaStream(streamRef.current);
 
     streamRef.current = null;
     setCameraReady(false);
@@ -179,9 +140,7 @@ export function VisualProductBenchmarkCapture({
       clearTimeoutHandle();
       activeAttemptRef.current?.abortController.abort();
 
-      for (const track of streamRef.current?.getTracks() ?? []) {
-        track.stop();
-      }
+      stopBenchmarkMediaStream(streamRef.current);
 
       onAttemptActiveChange(false);
     },
@@ -222,11 +181,9 @@ export function VisualProductBenchmarkCapture({
           : "Camera ready, but no visual recognizer adapter is configured.",
       );
     } catch (error) {
-      for (const track of stream?.getTracks() ?? []) {
-        track.stop();
-      }
+      stopBenchmarkMediaStream(stream);
 
-      const failureType = cameraFailureType(error);
+      const failureType = benchmarkCameraFailureType(error);
       onFailure(failureType);
       onStatus(
         failureType === "permission-denied"
@@ -302,7 +259,7 @@ export function VisualProductBenchmarkCapture({
     }, RECOGNITION_TIMEOUT_MS);
 
     try {
-      const frame = await captureFrame(video);
+      const frame = await captureBenchmarkFrame(video);
 
       if (
         activeAttemptRef.current === null ||
