@@ -103,10 +103,10 @@ export default defineConfig(() => {
                 : ocrBenchmarkEnabled
                   ? "src/qa/ShelfLabelOcrBenchmarkApp.tsx"
                   : barcodePairedAnalyzerEnabled
-                  ? "src/qa/BarcodePairedAnalyzerApp.tsx"
-                  : cohortAnalysisEnabled
-                    ? "src/qa/RetentionCohortAnalyzerApp.tsx"
-                    : "src/App.tsx",
+                    ? "src/qa/BarcodePairedAnalyzerApp.tsx"
+                    : cohortAnalysisEnabled
+                      ? "src/qa/RetentionCohortAnalyzerApp.tsx"
+                      : "src/App.tsx",
         ),
         "#shopping-evidence": path.resolve(
           rootDir,
