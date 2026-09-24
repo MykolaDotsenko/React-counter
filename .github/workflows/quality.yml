@@ -16,6 +16,8 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    outputs:
+      pages_site_digest: ${{ steps.upload-pages-site.outputs.artifact-digest }}
 
     steps:
       - name: Checkout
@@ -148,6 +150,7 @@ jobs:
           test ! -e site/tests
 
       - name: Upload tested site artifact
+        id: upload-pages-site
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pages-site
@@ -155,6 +158,57 @@ jobs:
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 3
+
+  provenance:
+    needs: quality
+    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Download exact SBOM evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sbom-${{ github.sha }}
+          path: /tmp/sbom
+
+      - name: Verify SBOM digest before attestation
+        shell: bash
+        working-directory: /tmp/sbom
+        run: sha256sum --check "shopping-budget-companion-${GITHUB_SHA}.cdx.json.sha256"
+
+      - name: Attest exact pages-site build provenance
+        id: provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: pages-site
+          subject-digest: sha256:${{ needs.quality.outputs.pages_site_digest }}
+
+      - name: Attest production SBOM to exact pages-site artifact
+        id: sbom-attestation
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: pages-site
+          subject-digest: sha256:${{ needs.quality.outputs.pages_site_digest }}
+          sbom-path: /tmp/sbom/shopping-budget-companion-${{ github.sha }}.cdx.json
+
+      - name: Verify attestation outputs
+        shell: bash
+        env:
+          PROVENANCE_URL: ${{ steps.provenance.outputs.attestation-url }}
+          PROVENANCE_ID: ${{ steps.provenance.outputs.attestation-id }}
+          SBOM_URL: ${{ steps.sbom-attestation.outputs.attestation-url }}
+          SBOM_ID: ${{ steps.sbom-attestation.outputs.attestation-id }}
+        run: |
+          set -euo pipefail
+          test -n "${PROVENANCE_URL}"
+          test -n "${PROVENANCE_ID}"
+          test -n "${SBOM_URL}"
+          test -n "${SBOM_ID}"
 
   artifact-integrity:
     needs: quality
@@ -439,7 +493,7 @@ jobs:
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [artifact-integrity, browser, qa-browser, beta-browser, cohort-browser, barcode-benchmark-browser]
+    needs: [artifact-integrity, provenance, browser, qa-browser, beta-browser, cohort-browser, barcode-benchmark-browser]
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
