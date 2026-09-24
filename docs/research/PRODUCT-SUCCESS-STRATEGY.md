@@ -177,6 +177,10 @@ The exact cohort window should follow observed shopping cadence, but initial ana
 - second trip within 14 days
 - second trip within 30 days
 
+For interpretation discipline, do not apply a time-window retention conclusion until at least 20 participants are eligible for that specific window. Imported cohort size alone is insufficient because newer participants may still be right-censored.
+
+The aggregate share of activated users who have started a second or third trip is still useful as descriptive “observed so far” evidence, but it is not a time-normalized retention rate.
+
 ## Retention interpretation bands
 
 These are provisional internal decision thresholds until enough real data exists. They are not claimed as industry benchmarks.
