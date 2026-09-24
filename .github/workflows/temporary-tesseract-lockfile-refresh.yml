@@ -1,0 +1,41 @@
+name: Temporary Tesseract lockfile refresh
+
+on:
+  push:
+    branches:
+      - experiment/tesseract-ocr-adapter
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-lock:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: experiment/tesseract-ocr-adapter
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Generate exact dependency metadata
+        run: |
+          npm install --package-lock-only --ignore-scripts --save-exact tesseract.js@7.0.0
+          npm audit --omit=dev --audit-level=high
+
+      - name: Commit generated lockfile and remove temporary workflow
+        run: |
+          rm .github/workflows/temporary-tesseract-lockfile-refresh.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json .github/workflows/temporary-tesseract-lockfile-refresh.yml
+          git commit -m "build: add pinned Tesseract.js dependency"
+          git push origin HEAD:experiment/tesseract-ocr-adapter
