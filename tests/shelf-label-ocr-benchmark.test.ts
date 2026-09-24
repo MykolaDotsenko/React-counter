@@ -6,6 +6,7 @@ import {
   buildShelfLabelOcrExport,
   createShelfLabelOcrSession,
   loadShelfLabelOcrSession,
+  parseShelfLabelOcrExport,
   summarizeShelfLabelOcr,
 } from "../src/qa/shelf-label-ocr-benchmark";
 
@@ -88,6 +89,85 @@ describe("shelf-label OCR benchmark evidence", () => {
     });
     expect(json).not.toContain("4,29");
     expect(json).not.toContain("Hinta");
+  });
+
+  it("round-trips a valid export through the authoritative parser", () => {
+    let session = createShelfLabelOcrSession(
+      environment,
+      "2026-09-24T10:00:00.000Z",
+    );
+    session = appendShelfLabelOcrSample(session, {
+      id: "ocr-valid",
+      startedAt: "2026-09-24T10:00:01.000Z",
+      completedAt: "2026-09-24T10:00:03.000Z",
+      durationMs: 2_000,
+      outcome: "top1-confirmed",
+      candidateCount: 1,
+      selectedRank: 1,
+      ocrConfidence: 0.9,
+    });
+
+    const exported = buildShelfLabelOcrExport(
+      session,
+      "2026-09-24T10:00:04.000Z",
+    );
+
+    expect(parseShelfLabelOcrExport(exported)).toEqual(exported);
+  });
+
+  it("rejects tampered OCR summary and privacy metadata", () => {
+    const session = createShelfLabelOcrSession(
+      environment,
+      "2026-09-24T10:00:00.000Z",
+    );
+    const exported = buildShelfLabelOcrExport(
+      session,
+      "2026-09-24T10:00:01.000Z",
+    );
+
+    expect(
+      parseShelfLabelOcrExport({
+        ...exported,
+        summary: {
+          ...exported.summary,
+          attempts: 999,
+        },
+      }),
+    ).toBeNull();
+
+    expect(
+      parseShelfLabelOcrExport({
+        ...exported,
+        privacy: {
+          ...exported.privacy,
+          containsRawOcrText: true,
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("requires generatedAt to cover the latest retained OCR observation", () => {
+    let session = createShelfLabelOcrSession(
+      environment,
+      "2026-09-24T10:00:00.000Z",
+    );
+    session = appendShelfLabelOcrSample(session, {
+      id: "ocr-late",
+      startedAt: "2026-09-24T10:00:04.000Z",
+      completedAt: "2026-09-24T10:00:06.000Z",
+      durationMs: 2_000,
+      outcome: "top1-confirmed",
+      candidateCount: 1,
+      selectedRank: 1,
+      ocrConfidence: 0.9,
+    });
+
+    expect(() =>
+      buildShelfLabelOcrExport(
+        session,
+        "2026-09-24T10:00:05.000Z",
+      ),
+    ).toThrow(/export time is invalid/i);
   });
 
   it("reports remote-image transmission when the engine declares it", () => {
