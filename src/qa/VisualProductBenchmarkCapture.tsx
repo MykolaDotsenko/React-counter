@@ -88,6 +88,7 @@ export function VisualProductBenchmarkCapture({
 }: VisualProductBenchmarkCaptureProps) {
   const [cameraReady, setCameraReady] = useState(false);
   const [recognizing, setRecognizing] = useState(false);
+  const [attemptActive, setAttemptActive] = useState(false);
   const [candidates, setCandidates] =
     useState<readonly VisualProductCandidate[]>([]);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -134,6 +135,7 @@ export function VisualProductBenchmarkCapture({
     });
 
     activeAttemptRef.current = null;
+    setAttemptActive(false);
     setRecognizing(false);
     setCandidates([]);
     onAttemptActiveChange(false);
@@ -153,6 +155,7 @@ export function VisualProductBenchmarkCapture({
       clearTimeoutHandle();
       activeAttemptRef.current?.abortController.abort();
       activeAttemptRef.current = null;
+      setAttemptActive(false);
       setRecognizing(false);
       setCandidates([]);
       onAttemptActiveChange(false);
@@ -281,6 +284,7 @@ export function VisualProductBenchmarkCapture({
     };
 
     setCandidates([]);
+    setAttemptActive(true);
     setRecognizing(true);
     onAttemptActiveChange(true);
     onStatus("Recognizing product candidate…");
@@ -454,7 +458,7 @@ export function VisualProductBenchmarkCapture({
               type="button"
               onClick={() => void startRecognition()}
               disabled={
-                activeAttemptRef.current !== null ||
+                attemptActive ||
                 !environment.recognizerAvailable
               }
             >
@@ -478,7 +482,7 @@ export function VisualProductBenchmarkCapture({
                   onStatus("Manual fallback recorded.");
                 }
               }}
-              disabled={activeAttemptRef.current === null}
+              disabled={!attemptActive}
             >
               Manual fallback
             </button>
