@@ -20,6 +20,7 @@ import type {
   VisualProductBenchmarkSample,
 } from "../src/qa/visual-product-benchmark";
 import type {
+  VisualProductCandidate,
   VisualProductRecognizer,
 } from "../src/qa/visual-product-benchmark-adapter";
 
@@ -177,8 +178,8 @@ describe("VisualProductBenchmarkCapture", () => {
       id: "fixture-recognizer-v1",
       dataBoundary: "local-only",
       recognize: vi.fn(
-        () =>
-          new Promise((resolve) => {
+        (_image: Blob, _signal: AbortSignal) =>
+          new Promise<readonly VisualProductCandidate[]>((resolve) => {
             resolveRecognition = resolve;
           }),
       ),
