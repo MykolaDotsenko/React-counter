@@ -101,6 +101,9 @@ test("@cohort downloads a privacy-safe aggregate report", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "1 participant" }),
   ).toBeVisible();
+  await expect(
+    page.getByText("Field export ready", { exact: true }),
+  ).toBeVisible();
 
   const [download] = await Promise.all([
     page.waitForEvent("download"),
@@ -119,7 +122,7 @@ test("@cohort downloads a privacy-safe aggregate report", async ({ page }) => {
   const aggregate = JSON.parse(await readFile(path, "utf8"));
 
   expect(aggregate).toMatchObject({
-    schemaVersion: 2,
+    schemaVersion: 3,
     kind: "retention-cohort-summary",
     sourceBuildRevision: expectedBuildRevision,
     analyzerBuildRevision: expectedBuildRevision,
@@ -127,7 +130,16 @@ test("@cohort downloads a privacy-safe aggregate report", async ({ page }) => {
     privacy: {
       containsRawParticipantEvents: false,
       containsParticipantFileNames: false,
+      containsParticipantIdentifiers: false,
       networkTransmission: false,
+    },
+    readiness: {
+      participantCount: 1,
+      minimumParticipants: 20,
+      sevenDay: {
+        minimumRequired: 20,
+        ready: false,
+      },
     },
     summary: {
       participantCount: 1,
