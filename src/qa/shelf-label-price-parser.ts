@@ -65,9 +65,6 @@ const classifyContext = (
   const unitPrice =
     /^\s*(?:€\s*)?\/\s*(?:kg|g|100\s*g|l|cl|ml|kpl|pcs|st)\b/i.test(
       window.after,
-    ) ||
-    /(?:€\s*)?\/\s*(?:kg|g|100\s*g|l|cl|ml|kpl|pcs|st)\b/i.test(
-      window.around,
     );
 
   const multiBuy =
@@ -76,12 +73,12 @@ const classifyContext = (
 
   const regularPrice =
     /\b(?:norm\.?|normaali(?:hinta)?|regular|ennen|was)\b/i.test(
-      window.around,
+      window.before,
     );
 
   const loyaltyPrice =
     /\b(?:jäsen|plussa|k-plussa|s-etukortti|member|club)\b/i.test(
-      window.around,
+      window.before,
     );
 
   return Object.freeze({
