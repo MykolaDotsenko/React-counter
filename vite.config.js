@@ -20,6 +20,8 @@ export default defineConfig(() => {
     process.env.VITE_SHOPPING_OCR_TESSERACT_BENCHMARK === "1";
   const barcodePairedAnalyzerEnabled =
     process.env.VITE_SHOPPING_BARCODE_PAIRED_ANALYZER === "1";
+  const ocrPairedAnalyzerEnabled =
+    process.env.VITE_SHOPPING_OCR_PAIRED_ANALYZER === "1";
   const evidenceEnabled =
     process.env.VITE_SHOPPING_QA_TIMING === "1" ||
     process.env.VITE_SHOPPING_BETA_EVIDENCE === "1" ||
@@ -28,7 +30,8 @@ export default defineConfig(() => {
     visualBenchmarkEnabled ||
     ocrBenchmarkEnabled ||
     ocrTesseractBenchmarkEnabled ||
-    barcodePairedAnalyzerEnabled;
+    barcodePairedAnalyzerEnabled ||
+    ocrPairedAnalyzerEnabled;
 
   return {
     plugins: [
@@ -83,6 +86,7 @@ export default defineConfig(() => {
             /\/shelf-label-ocr-benchmark(?:\/|$)/,
             /\/shelf-label-ocr-tesseract-benchmark(?:\/|$)/,
             /\/barcode-paired-analyzer(?:\/|$)/,
+            /\/ocr-paired-analyzer(?:\/|$)/,
           ],
           globPatterns: [
             "**/*.{js,css,html,svg,png,webmanifest}",
@@ -104,7 +108,9 @@ export default defineConfig(() => {
                   ? "src/qa/ShelfLabelOcrBenchmarkApp.tsx"
                   : barcodePairedAnalyzerEnabled
                     ? "src/qa/BarcodePairedAnalyzerApp.tsx"
-                    : cohortAnalysisEnabled
+                    : ocrPairedAnalyzerEnabled
+                      ? "src/qa/OcrPairedAnalyzerApp.tsx"
+                      : cohortAnalysisEnabled
                       ? "src/qa/RetentionCohortAnalyzerApp.tsx"
                       : "src/App.tsx",
         ),
