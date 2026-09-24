@@ -170,7 +170,8 @@ const isOutcome = (
   value === "confirmed" ||
   value === "rejected" ||
   value === "timeout" ||
-  value === "manual-fallback";
+  value === "manual-fallback" ||
+  value === "detector-error";
 
 const isSample = (value: unknown): value is BarcodeBenchmarkSample => {
   if (typeof value !== "object" || value === null) {
