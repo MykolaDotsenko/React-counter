@@ -1,0 +1,53 @@
+name: SBOM diagnostic
+
+on:
+  push:
+    branches: [chore/release-sbom]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compare native npm SBOM modes
+        shell: bash
+        run: |
+          npm sbom --package-lock-only --omit=dev --sbom-format=cyclonedx --sbom-type=application > /tmp/lock-runtime.json
+          npm sbom --package-lock-only --sbom-format=cyclonedx --sbom-type=application > /tmp/lock-build.json
+          npm sbom --omit=dev --sbom-format=cyclonedx --sbom-type=application > /tmp/tree-runtime.json
+          npm sbom --sbom-format=cyclonedx --sbom-type=application > /tmp/tree-build.json
+          node --input-type=module <<'NODE'
+          import { readFileSync } from "node:fs";
+          for (const name of ["lock-runtime", "lock-build", "tree-runtime", "tree-build"]) {
+            const value = JSON.parse(readFileSync(`/tmp/${name}.json`, "utf8"));
+            const components = value.components ?? [];
+            const dependencies = value.dependencies ?? [];
+            const names = components.map((component) => component.group ? `${component.group}/${component.name}` : component.name);
+            console.log(JSON.stringify({
+              name,
+              componentCount: components.length,
+              dependencyCount: dependencies.length,
+              rootDependsOn: dependencies.find((entry) => entry.ref === value.metadata?.component?.["bom-ref"])?.dependsOn?.length ?? null,
+              hasReact: names.includes("react"),
+              hasZod: names.includes("zod"),
+              hasVitest: names.includes("vitest"),
+              hasCoverage: names.includes("@vitest/coverage-v8"),
+              topLevelKeys: Object.keys(value),
+            }));
+          }
+          NODE
