@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import {
   afterEach,
+  beforeEach,
   describe,
   expect,
   it,
@@ -72,11 +73,35 @@ const installCamera = (
   };
 };
 
+const originalViewport = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
+
+beforeEach(() => {
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    value: environment.viewportWidth,
+  });
+  Object.defineProperty(window, "innerHeight", {
+    configurable: true,
+    value: environment.viewportHeight,
+  });
+});
+
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   Reflect.deleteProperty(globalThis, "BarcodeDetector");
   Reflect.deleteProperty(navigator, "mediaDevices");
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    value: originalViewport.width,
+  });
+  Object.defineProperty(window, "innerHeight", {
+    configurable: true,
+    value: originalViewport.height,
+  });
 });
 
 describe("BarcodeBenchmarkCamera", () => {
@@ -194,19 +219,7 @@ describe("BarcodeBenchmarkCamera", () => {
     installCamera(async () => []);
     const onSample = vi.fn<(sample: BarcodeBenchmarkSample) => void>();
     const onStatus = vi.fn();
-    const originalWidth = window.innerWidth;
-    const originalHeight = window.innerHeight;
-
     try {
-      Object.defineProperty(window, "innerWidth", {
-        configurable: true,
-        value: environment.viewportWidth,
-      });
-      Object.defineProperty(window, "innerHeight", {
-        configurable: true,
-        value: environment.viewportHeight,
-      });
-
       render(
         <BarcodeBenchmarkCamera
           environment={environment}
@@ -242,11 +255,11 @@ describe("BarcodeBenchmarkCamera", () => {
     } finally {
       Object.defineProperty(window, "innerWidth", {
         configurable: true,
-        value: originalWidth,
+        value: environment.viewportWidth,
       });
       Object.defineProperty(window, "innerHeight", {
         configurable: true,
-        value: originalHeight,
+        value: environment.viewportHeight,
       });
     }
   });
