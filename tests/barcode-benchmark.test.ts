@@ -9,6 +9,7 @@ import {
   loadBarcodeBenchmarkSession,
   parseBarcodeBenchmarkExport,
   persistBarcodeBenchmarkSession,
+  sameBarcodeBenchmarkEnvironment,
   summarizeBarcodeBenchmark,
   updateBarcodeBenchmarkSubjective,
   type BarcodeBenchmarkEnvironment,
@@ -82,7 +83,7 @@ describe("barcode benchmark evidence", () => {
       medianConfirmedMs: 2_200,
       p75ConfirmedMs: 3_000,
       p90ConfirmedMs: 3_000,
-      recognitionFailureRate: 3 / 7,
+      recognitionFailureRate: 2 / 7,
       correctionRate: 1 / 4,
       fallbackRate: 1 / 7,
       detectorUnsupported: 0,
@@ -225,4 +226,38 @@ describe("barcode benchmark evidence", () => {
       ),
     ).toThrow("observation end");
   });
+
+  it("treats environment identity as exact benchmark context", () => {
+    expect(
+      sameBarcodeBenchmarkEnvironment(environment, {
+        ...environment,
+        supportedFormats: ["ean_13", "ean_8"],
+      }),
+    ).toBe(true);
+
+    expect(
+      sameBarcodeBenchmarkEnvironment(environment, {
+        ...environment,
+        viewportWidth: 844,
+        viewportHeight: 390,
+      }),
+    ).toBe(false);
+
+    expect(
+      sameBarcodeBenchmarkEnvironment(environment, {
+        ...environment,
+        supportedFormats: ["ean_8", "ean_13"],
+      }),
+    ).toBe(false);
+  });
+
+  it("keeps long human-confirm attempts as evidence instead of silently dropping them", () => {
+    const session = appendBarcodeBenchmarkSample(
+      createBarcodeBenchmarkSession(environment, CREATED),
+      sample("long-confirm", "confirmed", 120_000, "ean_13"),
+    );
+
+    expect(session.samples[0]?.durationMs).toBe(120_000);
+  });
+
 });
