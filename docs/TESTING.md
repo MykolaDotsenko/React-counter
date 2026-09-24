@@ -49,7 +49,7 @@ npm run test:e2e
 
 `npm run check` covers lint, typecheck, unit/component tests and production build.
 
-CI builds one immutable site artifact containing the public app plus guarded QA/beta variants. Production browser tests run against the exact public build artifact; beta-specific browser tests run separately against the guarded beta artifact. Deployment may promote the artifact only after all browser gates succeed.
+CI builds one immutable site artifact containing the public app plus guarded QA/beta variants and the local cohort analyzer. Production browser tests run against the exact public build artifact; beta-specific and cohort-analyzer browser tests run separately against their guarded artifacts. Deployment may promote the artifact only after all browser gates succeed.
 
 ## Test layers
 
@@ -151,7 +151,7 @@ At minimum cover:
 Automation must prove:
 
 - the public release artifact contains a valid install manifest, install icons and generated service worker;
-- guarded QA/beta builds do not create competing service workers;
+- guarded QA/beta/cohort builds do not create competing service workers;
 - after one successful online install/cache pass, the shell opens when network requests are unavailable;
 - an active trip restores offline with exact canonical values;
 - completion/history persistence continues offline;
@@ -284,7 +284,10 @@ Tests must prove:
 - each window-specific cohort summary exposes its eligible participant count;
 - second-/third-trip metrics require contiguous chronological trip starts rather than ordinal gaps;
 - orphan or pre-start finish events do not inflate completed-trip counts;
-- partial interaction evidence remains available for friction analysis without being promoted to retention/completion evidence.
+- partial interaction evidence remains available for friction analysis without being promoted to retention/completion evidence;
+- the local cohort analyzer rejects invalid/tampered exports before aggregation;
+- a newer export from the same retained evidence session replaces an older one rather than double-counting it;
+- analyzer state remains page-memory only and aggregate copy output excludes raw participant events and filenames.
 
 Real-store retention evidence remains a human/product-validation gate.
 
@@ -295,7 +298,7 @@ Protect:
 - fast initial product load;
 - immediate local add/edit/undo response;
 - stable bundle trend;
-- no QA/beta evidence markers in the public JavaScript bundle;
+- no QA/beta/cohort evidence markers in the public JavaScript bundle;
 - public JS/CSS remain within the enforced bundle budgets;
 - optional future capability isolation.
 
