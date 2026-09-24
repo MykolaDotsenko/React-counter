@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { RetentionBetaPanel } from "../src/qa/RetentionBetaPanel";
 import {
+  RETENTION_BETA_EVENT_LIMIT,
   appendRetentionBetaEvent,
   createRetentionBetaSession,
 } from "../src/qa/retention-beta";
@@ -195,6 +196,70 @@ describe("RetentionBetaPanel", () => {
     );
     expect(screen.getByRole("status").textContent).toContain(
       "device date and time",
+    );
+  });
+
+
+  it("warns when evidence is only durable in memory", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <RetentionBetaPanel
+        session={createRetentionBetaSession(
+          "2026-09-22T08:00:00.000Z",
+        )}
+        recordingStatus="memory-only"
+        onReset={vi.fn()}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Beta evidence" }),
+    );
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Evidence storage is unavailable",
+    );
+    expect(screen.getByRole("alert").textContent).toContain(
+      "may be lost on reload",
+    );
+  });
+
+  it("warns when the retained session reaches event capacity", async () => {
+    const user = userEvent.setup();
+    const base = createRetentionBetaSession(
+      "2026-09-22T08:00:00.000Z",
+    );
+    const session = {
+      ...base,
+      events: Array.from(
+        { length: RETENTION_BETA_EVENT_LIMIT },
+        (_, index) => ({
+          type: "manual_entry_abandoned" as const,
+          at: new Date(
+            Date.parse("2026-09-22T08:05:00.000Z") + index,
+          ).toISOString(),
+          tripOrdinal: 1,
+        }),
+      ),
+    };
+
+    render(
+      <RetentionBetaPanel
+        session={session}
+        onReset={vi.fn()}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Beta evidence" }),
+    );
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Evidence event capacity reached",
+    );
+    expect(screen.getByRole("alert").textContent).toContain(
+      "exclude it from primary cohort interpretation",
     );
   });
 

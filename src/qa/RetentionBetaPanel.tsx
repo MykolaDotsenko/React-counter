@@ -1,16 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  RETENTION_BETA_EVENT_LIMIT,
   buildRetentionBetaExport,
   summarizeRetentionBeta,
   type RetentionBetaSession,
 } from "./retention-beta";
 import styles from "./RetentionBetaPanel.module.css";
 
+export type RetentionBetaRecordingStatus =
+  | "persisted"
+  | "memory-only"
+  | "recording-error";
+
 export interface RetentionBetaPanelProps {
   readonly session: RetentionBetaSession;
   readonly onReset: () => void;
   readonly resetDisabled?: boolean;
+  readonly recordingStatus?: RetentionBetaRecordingStatus;
 }
 
 const seconds = (milliseconds: number | null): string =>
@@ -23,6 +30,7 @@ export function RetentionBetaPanel({
   session,
   onReset,
   resetDisabled = false,
+  recordingStatus = "persisted",
 }: RetentionBetaPanelProps) {
   const [open, setOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
@@ -155,6 +163,31 @@ export function RetentionBetaPanel({
             Stored only on this device. No prices, budgets, item names,
             stores, camera content, or network telemetry are recorded.
           </p>
+
+          {recordingStatus === "memory-only" ? (
+            <p className={styles.warning} role="alert">
+              Evidence storage is unavailable. New beta evidence is
+              memory-only and may be lost on reload. Keep shopping data
+              unaffected, but export this evidence before leaving the tab.
+            </p>
+          ) : null}
+
+          {recordingStatus === "recording-error" ? (
+            <p className={styles.warning} role="alert">
+              Evidence recording encountered an internal error. Shopping
+              remains unaffected, but this beta session may be incomplete
+              and must not be treated as complete retention evidence.
+            </p>
+          ) : null}
+
+          {session.events.length >= RETENTION_BETA_EVENT_LIMIT ? (
+            <p className={styles.warning} role="alert">
+              Evidence event capacity reached. Earlier events were
+              preserved, but no additional beta events can be recorded.
+              Export this session for audit and exclude it from primary
+              cohort interpretation.
+            </p>
+          ) : null}
 
           <dl className={styles.metrics}>
             <div>

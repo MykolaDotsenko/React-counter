@@ -1203,6 +1203,63 @@ test("@beta downloads a privacy-safe retention export locally", async ({
   expect(report.session.events).toEqual([]);
 });
 
+test("@beta keeps shopping usable when retention evidence storage fails", async ({
+  page,
+}) => {
+  await page.addInitScript((retentionKey) => {
+    const original = Storage.prototype.setItem;
+
+    Storage.prototype.setItem = function setItem(key, value) {
+      if (key === retentionKey) {
+        throw new DOMException(
+          "Simulated retention evidence write failure",
+          "QuotaExceededError",
+        );
+      }
+
+      return original.call(this, key, value);
+    };
+  }, RETENTION_BETA_KEY);
+
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Beta evidence" }).click();
+  await page.getByRole("button", { name: "Reset evidence" }).click();
+  await page.getByRole("button", { name: "Confirm reset" }).click();
+
+  await expect(page.getByRole("alert")).toContainText(
+    "Evidence storage is unavailable",
+  );
+  await expect(page.getByRole("alert")).toContainText(
+    "memory-only",
+  );
+
+  await page.getByRole("button", { name: "Beta evidence" }).click();
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  await expect(
+    page.getByText("€4.79 of €50.00", { exact: true }),
+  ).toBeVisible();
+
+  const persisted = await page.evaluate(
+    ({ retentionKey, activeKey }) => ({
+      retention: localStorage.getItem(retentionKey),
+      active: localStorage.getItem(activeKey),
+    }),
+    {
+      retentionKey: RETENTION_BETA_KEY,
+      activeKey: ACTIVE_TRIP_KEY,
+    },
+  );
+
+  expect(persisted.retention).toBeNull();
+  expect(persisted.active).not.toBeNull();
+});
+
 test("@beta records an active-trip restore without placing beta UI over the trip", async ({
   page,
 }) => {

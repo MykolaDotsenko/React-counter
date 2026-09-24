@@ -1,11 +1,20 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import type { ShoppingAppController } from "../application/shopping-app-controller";
 import {
   itemCount,
   type ActiveTrip,
 } from "../domain/shopping-trip";
-import { RetentionBetaPanel } from "./RetentionBetaPanel";
+import {
+  RetentionBetaPanel,
+  type RetentionBetaRecordingStatus,
+} from "./RetentionBetaPanel";
 import {
   appendRetentionBetaEvent,
   createRetentionBetaSession,
@@ -68,26 +77,57 @@ export function useRetentionBetaEvidence({
         return createRetentionBetaSession(now);
       }
     });
+  const sessionRef = useRef<RetentionBetaSession | null>(session);
+  const [recordingStatus, setRecordingStatus] =
+    useState<RetentionBetaRecordingStatus>("persisted");
 
-  const updateSession = (
-    updater: (current: RetentionBetaSession) => RetentionBetaSession,
-  ): void => {
-    setSession((current) => {
-      if (current === null) {
-        return null;
-      }
-
-      const next = updater(current);
+  const commitSession = useCallback(
+    (next: RetentionBetaSession): void => {
+      sessionRef.current = next;
+      setSession(next);
 
       try {
         persistRetentionBetaSession(localStorage, next);
+        setRecordingStatus("persisted");
       } catch {
-        // Beta evidence must never change shopping product behaviour.
+        setRecordingStatus("memory-only");
+      }
+    },
+    [],
+  );
+
+  const updateSession = useCallback(
+    (
+      updater: (
+        current: RetentionBetaSession,
+      ) => RetentionBetaSession,
+    ): void => {
+      const current = sessionRef.current;
+
+      if (current === null) {
+        return;
       }
 
-      return next;
-    });
-  };
+      let next: RetentionBetaSession;
+
+      try {
+        next = updater(current);
+      } catch (error) {
+        if (
+          error instanceof RangeError &&
+          error.message === "Retention beta event limit reached"
+        ) {
+          return;
+        }
+
+        setRecordingStatus("recording-error");
+        return;
+      }
+
+      commitSession(next);
+    },
+    [commitSession],
+  );
 
   const recordEvent = (event: RetentionBetaEvent): void => {
     if (!betaEvidenceEnabled) {
@@ -100,28 +140,29 @@ export function useRetentionBetaEvidence({
   };
 
   const activeTripOrdinal = (): number | null => {
-    if (session === null) {
-      return null;
-    }
+    const current = sessionRef.current;
 
-    return currentRetentionTripOrdinal(session);
+    return current === null
+      ? null
+      : currentRetentionTripOrdinal(current);
   };
 
   const recordTripStarted = (
     source: RetentionBetaTripSource,
   ): void => {
-    if (session === null) {
-      return;
-    }
+    const current = sessionRef.current;
 
-    if (controller.getSnapshot().activeTrip === null) {
+    if (
+      current === null ||
+      controller.getSnapshot().activeTrip === null
+    ) {
       return;
     }
 
     recordEvent({
       type: "trip_started",
       at: new Date().toISOString(),
-      tripOrdinal: nextRetentionTripOrdinal(session),
+      tripOrdinal: nextRetentionTripOrdinal(current),
       source,
     });
   };
@@ -234,11 +275,7 @@ export function useRetentionBetaEvidence({
 
     restoreRecordedRef.current = true;
 
-    setSession((current) => {
-      if (current === null) {
-        return null;
-      }
-
+    updateSession((current) => {
       const observedOrdinal = currentRetentionTripOrdinal(current);
       const tripOrdinal =
         observedOrdinal ?? nextRetentionTripOrdinal(current);
@@ -254,37 +291,23 @@ export function useRetentionBetaEvidence({
         });
       }
 
-      next = appendRetentionBetaEvent(next, {
+      return appendRetentionBetaEvent(next, {
         type: "trip_restored",
         at,
         tripOrdinal,
       });
-
-      try {
-        persistRetentionBetaSession(localStorage, next);
-      } catch {
-        // Restore evidence must never change shopping product behaviour.
-      }
-
-      return next;
     });
-  }, [activeTrip]);
+  }, [activeTrip, updateSession]);
 
   const panel =
     session === null || !showPanel ? null : (
       <RetentionBetaPanel
         session={session}
+        recordingStatus={recordingStatus}
         onReset={() => {
-          const next = createRetentionBetaSession(
-            new Date().toISOString(),
+          commitSession(
+            createRetentionBetaSession(new Date().toISOString()),
           );
-          setSession(next);
-
-          try {
-            persistRetentionBetaSession(localStorage, next);
-          } catch {
-            // Reset remains effective in memory when storage is unavailable.
-          }
         }}
       />
     );

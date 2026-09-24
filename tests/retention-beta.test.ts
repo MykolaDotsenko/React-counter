@@ -13,6 +13,7 @@ import {
   parseRetentionBetaExport,
   summarizeRetentionBeta,
   type RetentionBetaEvent,
+  type RetentionBetaSession,
 } from "../src/qa/retention-beta";
 
 const START = "2026-09-22T08:00:00.000Z";
@@ -40,6 +41,27 @@ const storage = () => {
       values.set(key, value);
     },
   };
+};
+
+const atCapacitySession = (): RetentionBetaSession => {
+  const base = createRetentionBetaSession(START);
+
+  return Object.freeze({
+    ...base,
+    events: Object.freeze(
+      Array.from(
+        { length: RETENTION_BETA_EVENT_LIMIT },
+        (_, index) =>
+          event({
+            type: "manual_entry_abandoned",
+            tripOrdinal: 1,
+            at: new Date(
+              Date.parse(LATER) + index,
+            ).toISOString(),
+          }),
+      ),
+    ),
+  });
 };
 
 describe("retention beta evidence", () => {
@@ -137,20 +159,33 @@ describe("retention beta evidence", () => {
     expect(twice.events).toHaveLength(1);
   });
 
-  it("keeps a bounded local event history", () => {
-    let session = createRetentionBetaSession(START);
+  it("fails closed at the event limit without dropping earlier evidence", () => {
+    const session = atCapacitySession();
+    const first = session.events[0];
+    const last = session.events.at(-1);
 
-    for (let index = 0; index < RETENTION_BETA_EVENT_LIMIT + 10; index += 1) {
-      session = appendRetentionBetaEvent(
+    expect(session.events).toHaveLength(RETENTION_BETA_EVENT_LIMIT);
+    expect(() =>
+      appendRetentionBetaEvent(
         session,
         event({
           type: "manual_entry_abandoned",
           tripOrdinal: 1,
+          at: "2026-09-22T09:30:00.000Z",
         }),
-      );
-    }
+      ),
+    ).toThrow("Retention beta event limit reached");
+    expect(session.events[0]).toEqual(first);
+    expect(session.events.at(-1)).toEqual(last);
+  });
 
-    expect(session.events).toHaveLength(RETENTION_BETA_EVENT_LIMIT);
+  it("rejects at-capacity exports from cohort ingestion", () => {
+    const report = buildRetentionBetaExport(
+      atCapacitySession(),
+      "2026-09-22T09:30:00.000Z",
+    );
+
+    expect(parseRetentionBetaExport(report)).toBeNull();
   });
 
   it("keeps trip ordinals relative to the beta session rather than shopping history", () => {

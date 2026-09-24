@@ -252,13 +252,13 @@ export const appendRetentionBetaEvent = (
     return session;
   }
 
-  const events = [...session.events, event].slice(
-    -RETENTION_BETA_EVENT_LIMIT,
-  );
+  if (session.events.length >= RETENTION_BETA_EVENT_LIMIT) {
+    throw new RangeError("Retention beta event limit reached");
+  }
 
   return Object.freeze({
     ...session,
-    events: Object.freeze(events),
+    events: Object.freeze([...session.events, event]),
   });
 };
 
@@ -579,6 +579,10 @@ export const parseRetentionBetaExport = (
     !isIsoTimestamp(record.generatedAt) ||
     !isSession(record.session)
   ) {
+    return null;
+  }
+
+  if (record.session.events.length >= RETENTION_BETA_EVENT_LIMIT) {
     return null;
   }
 
