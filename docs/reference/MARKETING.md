@@ -278,14 +278,15 @@ If commercialised later:
 - charge for genuinely advanced/ongoing-cost value;
 - test willingness to pay only after repeat value exists.
 
-Possible advanced paid value may include:
+Possible advanced paid value, only after retention and evidence justify it, should prefer local-first capabilities such as:
 
-- cross-device/household sync;
-- expensive server-side OCR;
-- long-term analytics;
-- retailer integrations.
+- high-volume scanning after a positive scanner gate;
+- deeper local price history;
+- recurring local templates;
+- richer local export/reporting;
+- evidence-backed advanced pricing mechanics.
 
-These are not current commitments.
+Backend accounts, cloud sync and shared-shopping infrastructure are outside the active product roadmap.
 
 ## Ratings / reviews
 
