@@ -53,10 +53,12 @@ describe("BarcodePairedAnalyzerApp", () => {
       await screen.findByText(/Analysis invalid/i),
     ).toBeTruthy();
     expect(
-      screen.getByRole("button", {
-        name: "Download paired aggregate",
-      }),
-    ).toBeDisabled();
+      (
+        screen.getByRole("button", {
+          name: "Download paired aggregate",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
     expect(storageSpy).not.toHaveBeenCalled();
 
     storageSpy.mockRestore();
