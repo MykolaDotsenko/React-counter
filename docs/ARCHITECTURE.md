@@ -293,17 +293,24 @@ No committed financial mutation may depend on animation or View Transition compl
 
 Reduced-motion behaviour must preserve the same information and controls.
 
-## Network and backend
+## Local-first / network boundary
 
-No backend is required for the current product.
+The product is intentionally **account-free, backend-free and offline-first**.
 
-A backend becomes justified only by a validated requirement such as:
+Canonical shopping state, history and Price Memory remain device-local. The active roadmap does not include:
 
-- multi-device sync
-- household collaboration
-- server-side OCR/product lookup
-- cross-device history/Price Memory
-- aggregate telemetry with explicit privacy/consent design
+- authentication;
+- backend account infrastructure;
+- cloud sync;
+- shared-shopping collaboration;
+- remote shopping-state persistence.
+
+Optional future product-identity lookup may use a narrow external network adapter, but it must remain an accelerator rather than infrastructure authority:
+
+- provider payloads are runtime validated;
+- network failure degrades to manual entry;
+- product identity is not current-price authority;
+- no external service may become required to start, continue, recover or finish a shopping trip.
 
 Do not introduce remote state pre-emptively.
 
