@@ -267,20 +267,26 @@ describe("RetentionCohortAnalyzerApp", () => {
     ).toBeTruthy();
     expect(screen.getByText("Field export not immutable")).toBeTruthy();
     expect(
-      screen.getByRole("button", {
-        name: "Download aggregate summary",
-      }),
-    ).toBeDisabled();
+      (
+        screen.getByRole("button", {
+          name: "Download aggregate summary",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
     expect(
-      screen.getByRole("button", {
-        name: "Copy aggregate summary",
-      }),
-    ).toBeDisabled();
+      (
+        screen.getByRole("button", {
+          name: "Copy aggregate summary",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
     expect(
-      screen.getByRole("button", {
-        name: "Clear analysis",
-      }),
-    ).not.toBeDisabled();
+      (
+        screen.getByRole("button", {
+          name: "Clear analysis",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
   });
 
 });
