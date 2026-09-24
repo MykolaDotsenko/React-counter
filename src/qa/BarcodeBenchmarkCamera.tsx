@@ -136,7 +136,11 @@ export function BarcodeBenchmarkCamera({
   useEffect(
     () => () => {
       loopGenerationRef.current += 1;
-      clearScanTimeout();
+
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
 
       for (const track of streamRef.current?.getTracks() ?? []) {
         track.stop();
