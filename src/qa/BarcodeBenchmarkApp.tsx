@@ -36,6 +36,7 @@ export function App() {
   const [status, setStatus] = useState(
     "Preparing benchmark environment…",
   );
+  const [attemptActive, setAttemptActive] = useState(false);
 
   const summary = useMemo(
     () =>
@@ -143,6 +144,7 @@ export function App() {
 
     setEnvironment(captured);
     setSession(fresh);
+    setAttemptActive(false);
 
     try {
       persistBarcodeBenchmarkSession(localStorage, fresh);
@@ -274,6 +276,7 @@ export function App() {
           onFailure={recordFailure}
           onSample={recordSample}
           onStatus={setStatus}
+          onAttemptActiveChange={setAttemptActive}
         />
       )}
 
@@ -383,13 +386,18 @@ export function App() {
         </div>
 
         <div className={styles.actions}>
-          <button type="button" onClick={() => void copyEvidence()}>
+          <button
+            type="button"
+            onClick={() => void copyEvidence()}
+            disabled={attemptActive}
+          >
             Copy privacy-safe benchmark JSON
           </button>
           <button
             type="button"
             className={styles.secondary}
             onClick={() => void resetSession()}
+            disabled={attemptActive}
           >
             Start fresh benchmark session
           </button>
