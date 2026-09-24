@@ -439,7 +439,19 @@ Tests must prove:
 - viewport/engine/data-boundary changes freeze retained evidence instead of mixing environments;
 - export carries the exact guarded-build `buildRevision`;
 - local download uses a non-identifying session timestamp filename;
-- a concrete OCR engine/provider remains an evidence-gated follow-up tracked by issue #90.
+- provider-neutral OCR harness behaviour remains separately testable from concrete engine implementation;
+- the concrete Tesseract.js 7.0.0 experiment is dependency-pinned and isolated in its own guarded entry;
+- its stable engine ID includes runtime, LSTM mode, `fin+swe+eng` and the dataset family;
+- image bytes remain `local-only`; worker/core/language asset downloads do not receive the camera frame;
+- model/worker preparation stays outside timed attempts;
+- pre-aborted calls never invoke recognition;
+- in-flight abort terminates the active worker and a later attempt recreates it;
+- OCR failure invalidates the failed worker before retry;
+- explicit dispose is idempotent and post-dispose inference is rejected;
+- Tesseract 0–100 confidence is normalized to the harness 0–1 contract;
+- concrete browser smoke verifies route isolation without preparing/downloading OCR assets in CI;
+- public production JavaScript contains no Tesseract concrete experiment markers;
+- physical OCR quality remains evidence-gated by issue #90 even when automated adapter tests are green.
 
 ## Performance
 
@@ -467,7 +479,7 @@ Protect:
 - fast initial product load;
 - immediate local add/edit/undo response;
 - stable bundle trend;
-- no QA/beta/cohort/barcode-benchmark/paired-barcode/visual-benchmark/OCR-benchmark evidence markers in the public JavaScript bundle;
+- no QA/beta/cohort/barcode-benchmark/paired-barcode/visual-benchmark/OCR-benchmark/Tesseract-OCR evidence markers in the public JavaScript bundle;
 - public JS/CSS remain within the enforced bundle budgets;
 - optional future capability isolation.
 

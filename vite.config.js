@@ -16,6 +16,8 @@ export default defineConfig(() => {
     process.env.VITE_SHOPPING_VISUAL_BENCHMARK === "1";
   const ocrBenchmarkEnabled =
     process.env.VITE_SHOPPING_OCR_BENCHMARK === "1";
+  const ocrTesseractBenchmarkEnabled =
+    process.env.VITE_SHOPPING_OCR_TESSERACT_BENCHMARK === "1";
   const barcodePairedAnalyzerEnabled =
     process.env.VITE_SHOPPING_BARCODE_PAIRED_ANALYZER === "1";
   const evidenceEnabled =
@@ -25,6 +27,7 @@ export default defineConfig(() => {
     barcodeBenchmarkEnabled ||
     visualBenchmarkEnabled ||
     ocrBenchmarkEnabled ||
+    ocrTesseractBenchmarkEnabled ||
     barcodePairedAnalyzerEnabled;
 
   return {
@@ -78,6 +81,7 @@ export default defineConfig(() => {
             /\/barcode-benchmark(?:\/|$)/,
             /\/visual-recognition-benchmark(?:\/|$)/,
             /\/shelf-label-ocr-benchmark(?:\/|$)/,
+            /\/shelf-label-ocr-tesseract-benchmark(?:\/|$)/,
             /\/barcode-paired-analyzer(?:\/|$)/,
           ],
           globPatterns: [
@@ -94,13 +98,15 @@ export default defineConfig(() => {
             ? "src/qa/BarcodeBenchmarkApp.tsx"
             : visualBenchmarkEnabled
               ? "src/qa/VisualProductBenchmarkApp.tsx"
-              : ocrBenchmarkEnabled
-                ? "src/qa/ShelfLabelOcrBenchmarkApp.tsx"
-                : barcodePairedAnalyzerEnabled
-                  ? "src/qa/BarcodePairedAnalyzerApp.tsx"
-                  : cohortAnalysisEnabled
-                    ? "src/qa/RetentionCohortAnalyzerApp.tsx"
-                    : "src/App.tsx",
+              : ocrTesseractBenchmarkEnabled
+                ? "src/qa/ShelfLabelTesseractBenchmarkApp.tsx"
+                : ocrBenchmarkEnabled
+                  ? "src/qa/ShelfLabelOcrBenchmarkApp.tsx"
+                  : barcodePairedAnalyzerEnabled
+                    ? "src/qa/BarcodePairedAnalyzerApp.tsx"
+                    : cohortAnalysisEnabled
+                      ? "src/qa/RetentionCohortAnalyzerApp.tsx"
+                      : "src/App.tsx",
         ),
         "#shopping-evidence": path.resolve(
           rootDir,

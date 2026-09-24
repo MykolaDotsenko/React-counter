@@ -44,7 +44,9 @@ A concrete `ShelfLabelOcrEngine` adapter must declare:
 - an async OCR call that accepts one transient image plus an `AbortSignal`;
 - bounded OCR text and optional 0–1 confidence.
 
-No concrete OCR dependency is admitted by the harness itself.
+The provider-neutral harness remains independently testable from concrete OCR engines.
+
+The first concrete engine experiment is documented in [TESSERACT-OCR-EXPERIMENT.md](./TESSERACT-OCR-EXPERIMENT.md): pinned Tesseract.js 7.0.0 with LSTM `fin+swe+eng`, browser-local camera-image inference and explicit worker lifecycle cleanup.
 
 ### Deterministic price parser
 
