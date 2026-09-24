@@ -274,6 +274,12 @@ const isSample = (
     (candidate.outcome === "rejected"
       ? candidate.selectedRank === null
       : true) &&
+    (candidate.outcome === "top1-confirmed" ||
+    candidate.outcome === "top3-confirmed"
+      ? candidate.selectedRank !== null
+      : candidate.selectedRank === null) &&
+    (Number(candidate.candidateCount) > 0 ||
+      candidate.topConfidence === null) &&
     (candidate.selectedRank === null ||
       candidate.selectedRank <= Number(candidate.candidateCount))
   );
@@ -347,6 +353,8 @@ export const isVisualProductBenchmarkSession = (
     !Array.isArray(candidate.failures) ||
     candidate.failures.length > VISUAL_PRODUCT_BENCHMARK_FAILURE_LIMIT ||
     !candidate.failures.every(isFailure) ||
+    new Set(candidate.failures.map((failure) => failure.type)).size !==
+      candidate.failures.length ||
     (candidate.preference !== null &&
       !isPreference(candidate.preference)) ||
     (candidate.effort !== null && !isEffort(candidate.effort))
@@ -612,14 +620,31 @@ export const loadVisualProductBenchmarkSession = (
   environment: VisualProductBenchmarkEnvironment,
   createdAt: string,
 ): VisualProductBenchmarkLoadResult => {
-  const raw = storage.getItem(VISUAL_PRODUCT_BENCHMARK_STORAGE_KEY);
+  let raw: string | null = null;
+
+  try {
+    raw = storage.getItem(VISUAL_PRODUCT_BENCHMARK_STORAGE_KEY);
+  } catch {
+    return {
+      status: "ready",
+      session: createVisualProductBenchmarkSession(
+        environment,
+        createdAt,
+      ),
+    };
+  }
 
   if (raw === null) {
     const session = createVisualProductBenchmarkSession(
       environment,
       createdAt,
     );
-    persistVisualProductBenchmarkSession(storage, session);
+
+    try {
+      persistVisualProductBenchmarkSession(storage, session);
+    } catch {
+      // Evidence storage failure must not break the isolated benchmark UI.
+    }
 
     return {
       status: "ready",
