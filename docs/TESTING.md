@@ -281,7 +281,10 @@ Tests must prove:
 - retained events cannot predate the beta session start;
 - export `generatedAt` cannot predate retained session evidence;
 - 7/14/30-day retention uses maturity-aware denominators so right-censored participants are not counted as failures;
-- each window-specific cohort summary exposes its eligible participant count.
+- each window-specific cohort summary exposes its eligible participant count;
+- second-/third-trip metrics require contiguous chronological trip starts rather than ordinal gaps;
+- orphan or pre-start finish events do not inflate completed-trip counts;
+- partial interaction evidence remains available for friction analysis without being promoted to retention/completion evidence.
 
 Real-store retention evidence remains a human/product-validation gate.
 
