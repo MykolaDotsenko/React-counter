@@ -28,7 +28,8 @@ The core Shopping Budget Companion engineering path is implemented:
 - local-only retention cohort analyzer
 - guarded native barcode interaction benchmark harness (not a production scanner)
 - local-only paired barcode/manual evidence analyzer for issue #73
-- guarded provider-neutral visual product recognition benchmark harness (no model/provider bundled)
+- guarded provider-neutral visual product recognition benchmark harness
+- guarded pinned Transformers.js/CLIP zero-shot experiment for issue #88 (not production recognition)
 - guarded provider-neutral shelf-label OCR benchmark harness with deterministic exact-money price parser (no OCR engine bundled)
 - Chromium / Firefox / WebKit quality coverage
 
@@ -122,10 +123,12 @@ The active roadmap is intentionally narrow and local-first.
 
 4. **Visual product recognizer evidence — issue #88**
    - keep the provider-neutral camera/evidence harness isolated from shopping state;
-   - select one explicit experimental recognizer/model adapter rather than a generic demo;
-   - declare whether image bytes remain local or cross a remote boundary;
+   - use the pinned Transformers.js 4.3.0 + `Xenova/clip-vit-base-patch32` revision `d15189d` zero-shot adapter as the first explicit baseline;
+   - keep image bytes `local-only`; only model assets are downloaded/cached from the model host;
+   - freeze one exact 3–30-label candidate set and one inference device per analytical cohort;
    - benchmark representative retail products and same-brand/similar-package confusions;
-   - compare ranked accuracy, end-to-end human decision time, corrections and fallback against manual interaction.
+   - compare ranked accuracy, end-to-end human decision time, corrections and fallback against manual interaction;
+   - if zero-shot labels are too weak for SKU variants, remediate with a stronger bounded recognizer hypothesis rather than silently promoting it.
 
 5. **Shelf-label OCR engine evidence — issue #90**
    - keep OCR text/images transient and outside retained evidence;
@@ -156,11 +159,13 @@ Barcode identifies **product identity only**. It never supplies authoritative cu
 
 ### C. Visual product recognition — concrete adapter evidence before production
 
-**Harness status: IMPLEMENTED. Recognizer/model evidence: PLANNED / GATED. Production recognition: PLANNED / GATED.**
+**Harness status: IMPLEMENTED. Concrete CLIP experiment: IMPLEMENTED / FIELD EVIDENCE GATED. Production recognition: PLANNED / GATED.**
 
-The guarded benchmark owns camera capture, timeout/cancellation, ranked candidate review, privacy-safe evidence and adapter boundaries. It deliberately ships no concrete recognition model.
+The provider-neutral benchmark owns camera capture, timeout/cancellation, ranked candidate review, privacy-safe evidence and adapter boundaries.
 
-Use issue #88 to evaluate one explicit adapter/model on representative retail products before production work.
+The first concrete experiment is now pinned to Transformers.js 4.3.0 plus `Xenova/clip-vit-base-patch32` revision `d15189d`, using a closed 3–30-label zero-shot candidate set. Model preparation occurs before timed attempts; camera frames remain local to browser inference and labels remain transient.
+
+Use issue #88 to evaluate this explicit adapter/model on representative physical retail products. A weak zero-shot result should trigger remediation (for example a reference-image retrieval hypothesis) or deferral, not production integration.
 
 Production visual recognition, if approved, must preserve:
 

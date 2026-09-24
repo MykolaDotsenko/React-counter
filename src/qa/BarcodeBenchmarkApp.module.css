@@ -110,7 +110,8 @@
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   min-height: 48px;
   width: 100%;
   border: 1px solid #cdd2cd;
@@ -121,8 +122,14 @@
   font: inherit;
 }
 
+.field textarea {
+  min-height: 180px;
+  resize: vertical;
+}
+
 .field input:focus-visible,
 .field select:focus-visible,
+.field textarea:focus-visible,
 .actions button:focus-visible {
   outline: 3px solid #245fca;
   outline-offset: 2px;

@@ -21,6 +21,50 @@ type VisualRecognizerGlobal = typeof globalThis & {
   __SBC_VISUAL_PRODUCT_RECOGNIZER__?: VisualProductRecognizer;
 };
 
+const isRecognizer = (
+  value: unknown,
+): value is VisualProductRecognizer => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const recognizer = value as Partial<VisualProductRecognizer>;
+
+  return (
+    typeof recognizer.id === "string" &&
+    recognizer.id.trim().length > 0 &&
+    recognizer.id.length <= 160 &&
+    (recognizer.dataBoundary === "local-only" ||
+      recognizer.dataBoundary === "remote-image") &&
+    typeof recognizer.recognize === "function"
+  );
+};
+
+export const installVisualProductRecognizer = (
+  recognizer: VisualProductRecognizer,
+): (() => void) => {
+  if (!isRecognizer(recognizer)) {
+    throw new RangeError("Invalid visual product recognizer");
+  }
+
+  const target = globalThis as VisualRecognizerGlobal;
+  const previous = target.__SBC_VISUAL_PRODUCT_RECOGNIZER__;
+  target.__SBC_VISUAL_PRODUCT_RECOGNIZER__ = recognizer;
+
+  return () => {
+    if (target.__SBC_VISUAL_PRODUCT_RECOGNIZER__ === recognizer) {
+      if (previous === undefined) {
+        Reflect.deleteProperty(
+          target,
+          "__SBC_VISUAL_PRODUCT_RECOGNIZER__",
+        );
+      } else {
+        target.__SBC_VISUAL_PRODUCT_RECOGNIZER__ = previous;
+      }
+    }
+  };
+};
+
 const isCandidate = (
   value: unknown,
 ): value is VisualProductCandidate => {
@@ -48,15 +92,7 @@ export const visualProductRecognizer =
       globalThis as VisualRecognizerGlobal
     ).__SBC_VISUAL_PRODUCT_RECOGNIZER__;
 
-    if (
-      recognizer === undefined ||
-      typeof recognizer.id !== "string" ||
-      recognizer.id.trim().length === 0 ||
-      recognizer.id.length > 160 ||
-      (recognizer.dataBoundary !== "local-only" &&
-        recognizer.dataBoundary !== "remote-image") ||
-      typeof recognizer.recognize !== "function"
-    ) {
+    if (!isRecognizer(recognizer)) {
       return null;
     }
 

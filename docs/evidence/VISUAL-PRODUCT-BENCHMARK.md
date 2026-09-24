@@ -41,9 +41,11 @@ A recognizer adapter must declare:
 - an async recognition method accepting one transient image plus an `AbortSignal`;
 - ranked candidates with optional 0–1 confidence.
 
-No concrete AI/model dependency is admitted by this harness PR.
+The provider-neutral harness remains independently testable from concrete recognizers.
 
-That separation is intentional. A generic ImageNet demo must not be presented as retail SKU recognition.
+The first concrete model experiment is documented in [VISUAL-CLIP-EXPERIMENT.md](./VISUAL-CLIP-EXPERIMENT.md): pinned Transformers.js + CLIP zero-shot classification with a frozen closed candidate set. That adapter is still an experiment, not production recognition.
+
+That separation is intentional. A generic or weak classifier must not be presented as retail SKU recognition.
 
 ## Timed interaction
 

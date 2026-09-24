@@ -14,6 +14,8 @@ export default defineConfig(() => {
     process.env.VITE_SHOPPING_BARCODE_BENCHMARK === "1";
   const visualBenchmarkEnabled =
     process.env.VITE_SHOPPING_VISUAL_BENCHMARK === "1";
+  const visualClipBenchmarkEnabled =
+    process.env.VITE_SHOPPING_VISUAL_CLIP_BENCHMARK === "1";
   const ocrBenchmarkEnabled =
     process.env.VITE_SHOPPING_OCR_BENCHMARK === "1";
   const barcodePairedAnalyzerEnabled =
@@ -24,6 +26,7 @@ export default defineConfig(() => {
     cohortAnalysisEnabled ||
     barcodeBenchmarkEnabled ||
     visualBenchmarkEnabled ||
+    visualClipBenchmarkEnabled ||
     ocrBenchmarkEnabled ||
     barcodePairedAnalyzerEnabled;
 
@@ -77,6 +80,7 @@ export default defineConfig(() => {
             /\/cohort(?:\/|$)/,
             /\/barcode-benchmark(?:\/|$)/,
             /\/visual-recognition-benchmark(?:\/|$)/,
+            /\/visual-recognition-clip-benchmark(?:\/|$)/,
             /\/shelf-label-ocr-benchmark(?:\/|$)/,
             /\/barcode-paired-analyzer(?:\/|$)/,
           ],
@@ -92,15 +96,17 @@ export default defineConfig(() => {
           rootDir,
           barcodeBenchmarkEnabled
             ? "src/qa/BarcodeBenchmarkApp.tsx"
-            : visualBenchmarkEnabled
-              ? "src/qa/VisualProductBenchmarkApp.tsx"
-              : ocrBenchmarkEnabled
-                ? "src/qa/ShelfLabelOcrBenchmarkApp.tsx"
-                : barcodePairedAnalyzerEnabled
-                  ? "src/qa/BarcodePairedAnalyzerApp.tsx"
-                  : cohortAnalysisEnabled
-                    ? "src/qa/RetentionCohortAnalyzerApp.tsx"
-                    : "src/App.tsx",
+            : visualClipBenchmarkEnabled
+              ? "src/qa/VisualClipBenchmarkApp.tsx"
+              : visualBenchmarkEnabled
+                ? "src/qa/VisualProductBenchmarkApp.tsx"
+                : ocrBenchmarkEnabled
+                  ? "src/qa/ShelfLabelOcrBenchmarkApp.tsx"
+                  : barcodePairedAnalyzerEnabled
+                    ? "src/qa/BarcodePairedAnalyzerApp.tsx"
+                    : cohortAnalysisEnabled
+                      ? "src/qa/RetentionCohortAnalyzerApp.tsx"
+                      : "src/App.tsx",
         ),
         "#shopping-evidence": path.resolve(
           rootDir,

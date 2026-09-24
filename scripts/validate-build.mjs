@@ -70,6 +70,8 @@ const forbiddenMarkers = [
   "budget-cart:qa:barcode-benchmark-v1",
   "Visual product recognition benchmark",
   "budget-cart:qa:visual-product-benchmark-v1",
+  "Transformers.js CLIP retail benchmark",
+  "Xenova/clip-vit-base-patch32",
   "Shelf-label OCR benchmark",
   "budget-cart:qa:shelf-label-ocr-benchmark-v1",
   "Barcode paired evidence analyzer",

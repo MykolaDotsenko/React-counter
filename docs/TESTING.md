@@ -175,7 +175,7 @@ At minimum cover:
 Automation must prove:
 
 - the public release artifact contains a valid install manifest, install icons and generated service worker;
-- guarded QA/beta/cohort/barcode-benchmark/paired-barcode/visual-benchmark/OCR-benchmark builds do not create competing service workers;
+- guarded QA/beta/cohort/barcode-benchmark/paired-barcode/visual-benchmark/visual-CLIP/OCR-benchmark builds do not create competing service workers;
 - after one successful online install/cache pass, the shell opens when network requests are unavailable;
 - an active trip restores offline with exact canonical values;
 - completion/history persistence continues offline;
@@ -402,7 +402,14 @@ Tests must prove:
 - viewport/recognizer/data-boundary changes freeze retained evidence instead of mixing environments;
 - export carries the exact guarded-build `buildRevision`;
 - local download uses a non-identifying session timestamp filename;
-- a concrete model/provider remains an evidence-gated follow-up tracked by issue #88.
+- provider-neutral harness behaviour remains separately testable from concrete recognizer implementation;
+- the concrete Transformers.js/CLIP experiment is dependency-pinned and isolated in its own guarded entry;
+- the concrete setup accepts only 3–30 normalized unique labels and never persists the label list;
+- recognizer identity contains model/runtime/device plus a one-way label-set digest, never raw labels;
+- malformed model outputs fail closed before reaching benchmark evidence;
+- pre-aborted calls never invoke inference, disposed recognizers cannot be reused, and late results remain governed by the existing benchmark stale-result rules;
+- the concrete browser smoke verifies route isolation without downloading model weights in CI;
+- actual CLIP retail quality remains a physical evidence gate tracked by issue #88.
 
 ### Shelf-label OCR benchmark
 
@@ -459,7 +466,7 @@ Protect:
 - fast initial product load;
 - immediate local add/edit/undo response;
 - stable bundle trend;
-- no QA/beta/cohort/barcode-benchmark/paired-barcode/visual-benchmark/OCR-benchmark evidence markers in the public JavaScript bundle;
+- no QA/beta/cohort/barcode-benchmark/paired-barcode/visual-benchmark/visual-CLIP/OCR-benchmark evidence markers in the public JavaScript bundle;
 - public JS/CSS remain within the enforced bundle budgets;
 - optional future capability isolation.
 

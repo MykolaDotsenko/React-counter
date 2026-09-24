@@ -98,7 +98,7 @@ jobs:
 
       - name: Build public release artifact
         run: |
-          rm -rf dist dist-qa dist-beta dist-cohort dist-barcode dist-visual dist-ocr dist-barcode-paired site
+          rm -rf dist dist-qa dist-beta dist-cohort dist-barcode dist-visual dist-visual-clip dist-ocr dist-barcode-paired site
           npm run build -- --base=/shopping-budget-companion/
           npm run build:check
 
@@ -150,6 +150,14 @@ jobs:
           npm run build -- --base=/shopping-budget-companion/visual-recognition-benchmark/ --outDir=dist-visual
           npm run visual:prepare-index
 
+      - name: Build concrete Transformers.js CLIP benchmark
+        env:
+          VITE_SHOPPING_VISUAL_CLIP_BENCHMARK: "1"
+          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
+        run: |
+          npm run build -- --base=/shopping-budget-companion/visual-recognition-clip-benchmark/ --outDir=dist-visual-clip
+          npm run visual-clip:prepare-index
+
       - name: Build experimental shelf-label OCR benchmark
         env:
           VITE_SHOPPING_OCR_BENCHMARK: "1"
@@ -160,7 +168,7 @@ jobs:
 
       - name: Stage immutable site artifact
         run: |
-          mkdir -p site/qa site/beta site/cohort site/barcode-benchmark site/barcode-paired-analyzer site/visual-recognition-benchmark site/shelf-label-ocr-benchmark
+          mkdir -p site/qa site/beta site/cohort site/barcode-benchmark site/barcode-paired-analyzer site/visual-recognition-benchmark site/visual-recognition-clip-benchmark site/shelf-label-ocr-benchmark
           cp -R dist/. site/
           cp -R dist-qa/. site/qa/
           cp -R dist-beta/. site/beta/
@@ -168,6 +176,7 @@ jobs:
           cp -R dist-barcode/. site/barcode-benchmark/
           cp -R dist-barcode-paired/. site/barcode-paired-analyzer/
           cp -R dist-visual/. site/visual-recognition-benchmark/
+          cp -R dist-visual-clip/. site/visual-recognition-clip-benchmark/
           cp -R dist-ocr/. site/shelf-label-ocr-benchmark/
           touch site/.nojekyll
           test ! -e site/node_modules
@@ -269,6 +278,9 @@ jobs:
           test ! -e /tmp/pages-site/barcode-benchmark/sw.js
           test ! -e /tmp/pages-site/visual-recognition-benchmark/manifest.webmanifest
           test ! -e /tmp/pages-site/visual-recognition-benchmark/sw.js
+          test -f /tmp/pages-site/visual-recognition-clip-benchmark/index.html
+          test ! -e /tmp/pages-site/visual-recognition-clip-benchmark/manifest.webmanifest
+          test ! -e /tmp/pages-site/visual-recognition-clip-benchmark/sw.js
           test ! -e /tmp/pages-site/shelf-label-ocr-benchmark/manifest.webmanifest
           test ! -e /tmp/pages-site/shelf-label-ocr-benchmark/sw.js
           test -f /tmp/pages-site/barcode-benchmark/index.html
@@ -289,6 +301,7 @@ jobs:
           test ! -e /tmp/pages-site/dist-barcode
           test ! -e /tmp/pages-site/dist-barcode-paired
           test ! -e /tmp/pages-site/dist-visual
+          test ! -e /tmp/pages-site/dist-visual-clip
           test ! -e /tmp/pages-site/dist-ocr
           test -z "$(find /tmp/pages-site -maxdepth 1 -type f -name 'shopping-budget-companion-*.cdx.json*' -print -quit)"
 
@@ -329,7 +342,7 @@ jobs:
       - name: Run production browser and accessibility tests
         env:
           PLAYWRIGHT_STAGED_SITE: "1"
-        run: npm run test:e2e -- --project=${{ matrix.browser }} --grep-invert "@qa|@beta|@cohort|@barcode-benchmark|@barcode-paired|@visual-benchmark|@ocr-benchmark"
+        run: npm run test:e2e -- --project=${{ matrix.browser }} --grep-invert "@qa|@beta|@cohort|@barcode-benchmark|@barcode-paired|@visual-benchmark|@visual-clip|@ocr-benchmark"
 
       - name: Upload browser failure evidence
         if: failure()
@@ -624,6 +637,53 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  visual-clip-browser:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download exact release artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: pages-site
+          path: .playwright-site-root/shopping-budget-companion
+
+      - name: Expose concrete CLIP benchmark index at test origin
+        run: cp .playwright-site-root/shopping-budget-companion/visual-recognition-clip-benchmark/index.html .playwright-site-root/index.html
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run concrete CLIP benchmark browser smoke
+        env:
+          PLAYWRIGHT_STAGED_SITE: "1"
+          EVIDENCE_BUILD_REVISION: ${{ github.sha }}
+        run: npm run test:e2e -- --project=chromium --grep @visual-clip
+
+      - name: Upload CLIP benchmark browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-visual-clip-${{ github.run_attempt }}
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
   ocr-benchmark-browser:
     needs: quality
     runs-on: ubuntu-latest
@@ -673,7 +733,7 @@ jobs:
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [artifact-integrity, provenance, browser, qa-browser, beta-browser, cohort-browser, barcode-benchmark-browser, barcode-paired-browser, visual-benchmark-browser, ocr-benchmark-browser]
+    needs: [artifact-integrity, provenance, browser, qa-browser, beta-browser, cohort-browser, barcode-benchmark-browser, barcode-paired-browser, visual-benchmark-browser, visual-clip-browser, ocr-benchmark-browser]
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
@@ -709,6 +769,9 @@ jobs:
           test -f /tmp/pages-site/visual-recognition-benchmark/index.html
           test ! -e /tmp/pages-site/visual-recognition-benchmark/manifest.webmanifest
           test ! -e /tmp/pages-site/visual-recognition-benchmark/sw.js
+          test -f /tmp/pages-site/visual-recognition-clip-benchmark/index.html
+          test ! -e /tmp/pages-site/visual-recognition-clip-benchmark/manifest.webmanifest
+          test ! -e /tmp/pages-site/visual-recognition-clip-benchmark/sw.js
           test -f /tmp/pages-site/shelf-label-ocr-benchmark/index.html
           test ! -e /tmp/pages-site/shelf-label-ocr-benchmark/manifest.webmanifest
           test ! -e /tmp/pages-site/shelf-label-ocr-benchmark/sw.js
