@@ -271,7 +271,9 @@ Tests must prove:
 
 - evidence remains local unless explicitly copied or downloaded by the facilitator;
 - no prices, budgets, item names, product/store identities or checkout values enter the evidence schema;
-- event history is bounded;
+- event history is bounded without sliding-window truncation of earlier evidence;
+- the event-capacity boundary fails closed and at-capacity exports are rejected from primary cohort ingestion;
+- storage write failure leaves shopping behaviour unchanged while surfacing a visible memory-only evidence warning;
 - trip ordinals are session-relative;
 - milestones deduplicate;
 - entry completion/abandonment remain distinguishable;
