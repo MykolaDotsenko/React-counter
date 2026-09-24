@@ -1,3 +1,8 @@
+import {
+  EVIDENCE_BUILD_REVISION,
+  isEvidenceBuildRevision,
+} from "./evidence-build";
+
 export const RETENTION_BETA_STORAGE_KEY =
   "budget-cart:qa:retention-v1";
 
@@ -90,7 +95,8 @@ export interface RetentionBetaSummary {
 }
 
 export interface RetentionBetaExport {
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
+  readonly buildRevision: string;
   readonly generatedAt: string;
   readonly privacy: {
     readonly networkTransmission: false;
@@ -582,7 +588,8 @@ export const buildRetentionBetaExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
+    buildRevision: EVIDENCE_BUILD_REVISION,
     generatedAt,
     privacy: Object.freeze({
       networkTransmission: false,
@@ -607,12 +614,14 @@ export const parseRetentionBetaExport = (
   if (
     !hasExactKeys(record, [
       "schemaVersion",
+      "buildRevision",
       "generatedAt",
       "privacy",
       "session",
       "summary",
     ]) ||
-    record.schemaVersion !== 1 ||
+    record.schemaVersion !== 2 ||
+    !isEvidenceBuildRevision(record.buildRevision) ||
     !isIsoTimestamp(record.generatedAt) ||
     !isSession(record.session)
   ) {
@@ -667,7 +676,8 @@ export const parseRetentionBetaExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
+    buildRevision: record.buildRevision,
     generatedAt: record.generatedAt,
     privacy: Object.freeze({
       networkTransmission: false,
