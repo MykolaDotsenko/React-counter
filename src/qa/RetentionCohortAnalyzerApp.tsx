@@ -4,7 +4,10 @@ import {
   parseRetentionBetaExport,
   type RetentionBetaExport,
 } from "./retention-beta";
-import { summarizeRetentionBetaCohort } from "./retention-beta-cohort";
+import {
+  summarizeRetentionBetaCohort,
+  type RetentionBetaCohortSummary,
+} from "./retention-beta-cohort";
 import styles from "./RetentionCohortAnalyzerApp.module.css";
 
 interface ImportedReport {
@@ -43,6 +46,26 @@ const observationEndIsPlausible = (
 ): boolean =>
   Date.parse(report.generatedAt) <=
   nowMs + MAX_FUTURE_CLOCK_SKEW_MS;
+
+const aggregateFileName = (generatedAt: string): string =>
+  `retention-cohort-summary-${generatedAt.replace(/[-:.]/g, "")}.json`;
+
+const buildAggregatePayload = (
+  summary: RetentionBetaCohortSummary,
+  sourceReportCount: number,
+  generatedAt: string,
+) => ({
+  schemaVersion: 1 as const,
+  kind: "retention-cohort-summary" as const,
+  generatedAt,
+  sourceReportCount,
+  privacy: {
+    containsRawParticipantEvents: false as const,
+    containsParticipantFileNames: false as const,
+    networkTransmission: false as const,
+  },
+  summary,
+});
 
 export function App() {
   const [reports, setReports] = useState<readonly ImportedReport[]>([]);
@@ -155,27 +178,64 @@ export function App() {
     );
   };
 
+  const aggregateJson = (
+    generatedAt: string,
+  ): {
+    readonly json: string;
+    readonly fileName: string;
+  } => ({
+    json: JSON.stringify(
+      buildAggregatePayload(
+        summary,
+        reports.length,
+        generatedAt,
+      ),
+      null,
+      2,
+    ),
+    fileName: aggregateFileName(generatedAt),
+  });
+
   const copySummary = async (): Promise<void> => {
-    const payload = {
-      schemaVersion: 1,
-      kind: "retention-cohort-summary",
-      generatedAt: new Date().toISOString(),
-      sourceReportCount: reports.length,
-      privacy: {
-        containsRawParticipantEvents: false,
-        containsParticipantFileNames: false,
-        networkTransmission: false,
-      },
-      summary,
-    };
+    const payload = aggregateJson(new Date().toISOString());
 
     try {
-      await navigator.clipboard.writeText(
-        JSON.stringify(payload, null, 2),
-      );
+      await navigator.clipboard.writeText(payload.json);
       setStatus("Cohort summary copied without raw participant events.");
     } catch {
       setStatus("Copy failed. Imported reports remain only in this page memory.");
+    }
+  };
+
+  const downloadSummary = (): void => {
+    const payload = aggregateJson(new Date().toISOString());
+    let objectUrl: string | null = null;
+
+    try {
+      const blob = new Blob([payload.json], {
+        type: "application/json",
+      });
+      objectUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = payload.fileName;
+      link.hidden = true;
+      document.body.append(link);
+      link.click();
+      link.remove();
+
+      setStatus(
+        `Aggregate summary downloaded as ${payload.fileName}`,
+      );
+    } catch {
+      setStatus(
+        "Download failed. Imported reports remain only in this page memory; copy the aggregate instead.",
+      );
+    } finally {
+      if (objectUrl !== null) {
+        URL.revokeObjectURL(objectUrl);
+      }
     }
   };
 
@@ -320,6 +380,13 @@ export function App() {
       </section>
 
       <div className={styles.actions}>
+        <button
+          type="button"
+          onClick={downloadSummary}
+          disabled={reports.length === 0}
+        >
+          Download aggregate summary
+        </button>
         <button
           type="button"
           onClick={() => void copySummary()}

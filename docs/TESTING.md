@@ -289,7 +289,8 @@ Tests must prove:
 - partial interaction evidence remains available for friction analysis without being promoted to retention/completion evidence;
 - the local cohort analyzer rejects invalid/tampered exports and implausibly future-dated observation timestamps before aggregation;
 - a newer export from the same retained evidence session replaces an older one rather than double-counting it;
-- analyzer state remains page-memory only and aggregate copy output excludes raw participant events and filenames.
+- analyzer state remains page-memory only and aggregate copy/download output excludes raw participant events and filenames;
+- local aggregate download uses a non-identifying timestamp filename and the exact same aggregate payload contract as clipboard copy.
 
 Real-store retention evidence remains a human/product-validation gate.
 
