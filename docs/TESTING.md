@@ -48,7 +48,28 @@ npm run check
 npm run test:e2e
 ```
 
-`npm run check` covers lint, typecheck, unit/component tests and production build.
+`npm run check` covers lint, typecheck, coverage-aware unit/component tests and production build.
+
+### Critical-layer coverage floor
+
+Coverage is a regression guard for code where arithmetic, lifecycle or durability defects can change user outcomes. It is intentionally scoped to:
+
+- `src/domain/**`;
+- `src/application/**`;
+- `src/infrastructure/storage/**`.
+
+The current baseline measured on 2026-09-24 was:
+
+| Scope | Statements | Branches | Functions | Lines |
+| --- | ---: | ---: | ---: | ---: |
+| Critical aggregate | 83.80% | 73.33% | 96.25% | 83.65% |
+| Domain | 86.51% | 77.15% | 100% | 86.31% |
+| Application | 82.48% | 74.40% | 95.55% | 82.37% |
+| Storage infrastructure | 81.10% | 67.10% | 91.07% | 81.03% |
+
+CI enforces floors slightly below that measured baseline instead of claiming an arbitrary 100% target. Domain has the strongest aggregate floor; application and storage retain their own risk-based floors. Per-file minimums also prevent a newly added critical module from silently entering the repository with no meaningful tests.
+
+Coverage does **not** replace browser, accessibility, persistence-failure, real-device or human-evidence gates. Presentation and QA evidence code remain primarily protected by behavior-focused tests rather than the same numeric threshold.
 
 Pull requests also run a least-privilege Dependency Review workflow. It fails when a changed runtime, development or unknown-scope dependency introduces a high/critical known vulnerability, while showing patched-version guidance when GitHub Advisory data provides it. The action is pinned to an immutable commit SHA and does not receive pull-request write permission.
 
