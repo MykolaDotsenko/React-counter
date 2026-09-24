@@ -1,3 +1,8 @@
+import {
+  EVIDENCE_BUILD_REVISION,
+  isEvidenceBuildRevision,
+} from "./evidence-build";
+
 export const QA_TIMING_STORAGE_KEY = "budget-cart:qa:timing-v4";
 export const PREVIOUS_QA_TIMING_STORAGE_KEY =
   "budget-cart:qa:timing-v3";
@@ -126,8 +131,9 @@ export interface QaEmpiricalGateSummary {
 }
 
 export interface QaTimingExport {
-  readonly schemaVersion: 2;
+  readonly schemaVersion: 3;
   readonly kind: "shopping-timing-evidence";
+  readonly buildRevision: string;
   readonly generatedAt: string;
   readonly privacy: {
     readonly networkTransmission: false;
@@ -1150,8 +1156,9 @@ export const buildQaTimingExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 2,
+    schemaVersion: 3,
     kind: "shopping-timing-evidence",
+    buildRevision: EVIDENCE_BUILD_REVISION,
     generatedAt,
     privacy: Object.freeze({
       networkTransmission: false,
@@ -1177,13 +1184,15 @@ export const parseQaTimingExport = (
     !hasExactKeys(record, [
       "schemaVersion",
       "kind",
+      "buildRevision",
       "generatedAt",
       "privacy",
       "session",
       "gate",
     ]) ||
-    record.schemaVersion !== 2 ||
+    record.schemaVersion !== 3 ||
     record.kind !== "shopping-timing-evidence" ||
+    !isEvidenceBuildRevision(record.buildRevision) ||
     !isCanonicalIsoTimestamp(record.generatedAt) ||
     !isQaTimingExportPrivacy(record.privacy) ||
     !isQaTimingSession(record.session)
@@ -1198,8 +1207,9 @@ export const parseQaTimingExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 2,
+    schemaVersion: 3,
     kind: "shopping-timing-evidence",
+    buildRevision: record.buildRevision,
     generatedAt: record.generatedAt,
     privacy: Object.freeze({
       networkTransmission: false,
