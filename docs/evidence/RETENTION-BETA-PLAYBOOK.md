@@ -78,7 +78,8 @@ Do not add participant names, email addresses, store names, shopping lists, pric
 7. If local download is unavailable, use **Copy privacy-safe evidence** as the fallback and save the copied JSON outside the app.
 8. Keep the downloaded/copied export as a separate JSON file. The default filename contains only the beta session timestamp, not participant identity.
 9. On the facilitator device, import the retained exports into `/cohort/` and review invalid/duplicate/replacement counts before interpreting metrics.
-10. Save the cohort result with **Download aggregate summary**. Use **Copy aggregate summary** only when a local download is unavailable.
+10. Confirm the analyzer reports no revision mismatches and record the source `buildRevision`.
+11. Save the cohort result with **Download aggregate summary**. Use **Copy aggregate summary** only when a local download is unavailable. The aggregate records both the source evidence revision and analyzer revision.
 
 A facilitator may rename the exported file with an external study code such as `P001`. That external code must remain outside the app payload and must not be injected into the evidence JSON.
 
@@ -87,6 +88,8 @@ A facilitator may rename the exported file with an external study code such as `
 Before an export enters cohort analysis:
 
 - it must use the current schema version
+- it must contain a valid `buildRevision`
+- all exports interpreted as one cohort must use the same source `buildRevision`; mixed revisions require separate analyses
 - its privacy declaration must match the current contract
 - its embedded session must pass runtime validation
 - imported summary values are not trusted; summaries are recomputed from validated events
