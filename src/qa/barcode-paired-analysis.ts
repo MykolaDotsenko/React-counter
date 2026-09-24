@@ -10,7 +10,6 @@ import {
 } from "./shopping-timing";
 import {
   parseBarcodeBenchmarkExport,
-  type BarcodeBenchmarkExport,
   type BarcodeBenchmarkSummary,
 } from "./barcode-benchmark";
 import {
