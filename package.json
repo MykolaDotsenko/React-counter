@@ -17,7 +17,8 @@
     "qa:prepare-index": "node scripts/prepare-qa-index.mjs",
     "beta:prepare-index": "node scripts/prepare-beta-index.mjs",
     "docs:check": "node scripts/validate-docs.mjs",
-    "cohort:prepare-index": "node scripts/prepare-cohort-index.mjs"
+    "cohort:prepare-index": "node scripts/prepare-cohort-index.mjs",
+    "barcode:prepare-index": "node scripts/prepare-barcode-index.mjs"
   },
   "dependencies": {
     "react": "19.3.0",
