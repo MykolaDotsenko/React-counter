@@ -57,6 +57,12 @@ describe("useRetentionBetaEvidence", () => {
     render(<Harness />);
 
     await user.click(
+      screen.getByRole("button", { name: "Record trip start" }),
+    );
+
+    expect(setItem).toHaveBeenCalled();
+
+    await user.click(
       screen.getByRole("button", { name: "Beta evidence" }),
     );
 
@@ -66,11 +72,6 @@ describe("useRetentionBetaEvidence", () => {
       );
     });
 
-    await user.click(
-      screen.getByRole("button", { name: "Record trip start" }),
-    );
-
-    expect(setItem).toHaveBeenCalled();
     expect(
       screen.getByRole("button", { name: "Record trip start" }),
     ).not.toBeNull();
