@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { VisualClipRecognizerSetup } from "./VisualClipRecognizerSetup";
 import { VisualProductBenchmarkCapture } from "./VisualProductBenchmarkCapture";
 import {
   VISUAL_PRODUCT_BENCHMARK_SAMPLE_LIMIT,
@@ -376,11 +377,23 @@ export function App() {
           />
         </label>
 
+        <VisualClipRecognizerSetup
+          disabled={attemptActive}
+          onConfigured={() => {
+            setEnvironment(
+              captureVisualProductBenchmarkEnvironment(),
+            );
+          }}
+          onStatus={setStatus}
+        />
+
         {!environment.recognizerAvailable ? (
           <p className={styles.note}>
-            No recognizer is bundled deliberately. A benchmark adapter must
-            declare its identity and whether image bytes stay local or cross a
-            network boundary before timed evidence can be collected.
+            Timed recognition remains disabled until a concrete recognizer is
+            configured. Loading the experimental CLIP adapter changes the
+            benchmark environment; start a fresh session before collecting
+            evidence unless the retained session already has the exact same
+            recognizer ID.
           </p>
         ) : null}
       </section>

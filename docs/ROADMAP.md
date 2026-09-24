@@ -28,7 +28,7 @@ The core Shopping Budget Companion engineering path is implemented:
 - local-only retention cohort analyzer
 - guarded native barcode interaction benchmark harness (not a production scanner)
 - local-only paired barcode/manual evidence analyzer for issue #73
-- guarded provider-neutral visual product recognition benchmark harness (no model/provider bundled)
+- guarded provider-neutral visual product recognition benchmark harness with a pinned local CLIP experimental adapter; physical evidence still pending
 - guarded provider-neutral shelf-label OCR benchmark harness with deterministic exact-money price parser (no OCR engine bundled)
 - Chromium / Firefox / WebKit quality coverage
 
@@ -156,11 +156,13 @@ Barcode identifies **product identity only**. It never supplies authoritative cu
 
 ### C. Visual product recognition — concrete adapter evidence before production
 
-**Harness status: IMPLEMENTED. Recognizer/model evidence: PLANNED / GATED. Production recognition: PLANNED / GATED.**
+**Harness status: IMPLEMENTED. Concrete experimental adapter: IMPLEMENTED. Physical recognizer evidence: PENDING / GATED. Production recognition: PLANNED / GATED.**
 
-The guarded benchmark owns camera capture, timeout/cancellation, ranked candidate review, privacy-safe evidence and adapter boundaries. It deliberately ships no concrete recognition model.
+The guarded benchmark owns camera capture, timeout/cancellation, ranked candidate review, privacy-safe evidence and adapter boundaries. It now includes a pinned local Transformers.js CLIP adapter for issue #88, loaded only after an explicit facilitator action and a bounded in-memory candidate catalog.
 
-Use issue #88 to evaluate one explicit adapter/model on representative retail products before production work.
+The public shopping PWA does not import the model runtime. The guarded experiment may download/cache model files, but image inference stays local. WebGPU is attempted first with a WASM fallback.
+
+Use issue #88 to evaluate this exact adapter/model/catalog protocol on representative retail products before production work.
 
 Production visual recognition, if approved, must preserve:
 

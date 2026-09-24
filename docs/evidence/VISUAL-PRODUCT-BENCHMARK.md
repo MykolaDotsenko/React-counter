@@ -2,7 +2,7 @@
 
 ## Status
 
-**IMPLEMENTED provider-neutral benchmark harness; recognizer/model evidence pending.**
+**IMPLEMENTED provider-neutral benchmark harness + pinned local CLIP experimental adapter; representative physical-device evidence pending.**
 
 This document owns the experimental protocol for camera-based product/package recognition.
 
@@ -41,9 +41,22 @@ A recognizer adapter must declare:
 - an async recognition method accepting one transient image plus an `AbortSignal`;
 - ranked candidates with optional 0–1 confidence.
 
-No concrete AI/model dependency is admitted by this harness PR.
+The guarded benchmark now includes one explicit experimental adapter for issue #88:
 
-That separation is intentional. A generic ImageNet demo must not be presented as retail SKU recognition.
+- Transformers.js `4.3.0`;
+- model `Xenova/clip-vit-base-patch32`;
+- pinned model revision `d15189d7028b43f1d3e65039190477f6af591c2a`;
+- task `zero-shot-image-classification`;
+- local image inference;
+- WebGPU attempted first, with WASM fallback;
+- a facilitator-supplied closed-set candidate catalog of 3–30 SKU-specific labels;
+- a stable recognizer ID containing the model revision, execution device, prompt version and a SHA-256 catalog fingerprint.
+
+The first model setup may download/cache model files from Hugging Face. That network activity is **model acquisition**, not image inference: captured product images and candidate labels are passed to the local pipeline and are not uploaded by this adapter.
+
+The catalog stays in page memory. Product labels are neither persisted nor exported. Changing the model/device/catalog fingerprint changes the recognizer ID and therefore freezes any retained session until the facilitator starts a fresh benchmark session.
+
+CLIP scores are closed-set ranking scores, not calibrated probability or SKU authority. A generic category hit is still insufficient; the benchmark must use deliberately confusing product variants.
 
 ## Timed interaction
 
@@ -105,8 +118,8 @@ Candidate labels exist only in transient UI memory for human review.
 
 Before any production visual-recognition work:
 
-1. choose one concrete experimental recognizer adapter;
-2. publish its model/provider identity and data-boundary behavior;
+1. use the pinned local CLIP experimental adapter defined above;
+2. preserve its exact model revision, prompt version and candidate-catalog fingerprint per retained session;
 3. use a representative retail fixture/device corpus;
 4. include same-brand/different-size and same-design/different-flavour confusions;
 5. include glare, angle, partial occlusion and ordinary store lighting;

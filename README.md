@@ -136,6 +136,9 @@ CI additionally validates the exact release artifact before it can be deployed:
 - ✅ installable offline PWA shell
 - ✅ privacy-safe retention evidence harness
 - ✅ cohort-level retention analysis
+- ✅ isolated barcode/manual paired evidence analysis
+- ✅ provider-neutral visual-recognition benchmark + pinned local CLIP experimental adapter
+- ✅ shelf-label OCR benchmark + deterministic exact-money candidate parser
 - ✅ Chromium / Firefox / WebKit CI
 
 ### Evidence still pending
@@ -145,8 +148,10 @@ CI additionally validates the exact release artifact before it can be deployed:
 - ⏳ 20–50 real-shopper retention beta
 - ⏳ maturity-aware second-/third-trip evidence
 - ⏳ representative physical barcode benchmark + paired quantitative manual baseline
+- ⏳ physical retail evidence for the pinned local CLIP visual recognizer
+- ⏳ physical shelf-label evidence for a concrete OCR engine
 
-Production barcode and OCR remain evidence-gated.
+Production barcode, visual recognition, and OCR remain evidence-gated.
 
 Public guarded evidence builds (validation surfaces, not private/security boundaries):
 
@@ -154,6 +159,9 @@ Public guarded evidence builds (validation surfaces, not private/security bounda
 - **Retention beta:** https://mykoladotsenko.github.io/shopping-budget-companion/beta/
 - **Retention cohort analyzer:** https://mykoladotsenko.github.io/shopping-budget-companion/cohort/
 - **Barcode benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/barcode-benchmark/
+- **Barcode paired analyzer:** https://mykoladotsenko.github.io/shopping-budget-companion/barcode-paired-analyzer/
+- **Visual recognition benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/visual-recognition-benchmark/
+- **Shelf-label OCR benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/shelf-label-ocr-benchmark/
 
 ---
 
