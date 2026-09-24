@@ -24,6 +24,8 @@ VITE_SHOPPING_BETA_EVIDENCE=1
 
 The timing/one-hand QA build remains separate at `/qa/`.
 
+Facilitator cohort aggregation is also separate at `/cohort/`. That route reads selected export files only in page memory and never participates in the shopping lifecycle.
+
 ## Purpose
 
 Measure whether real shoppers complete trips, return for second and third trips, and benefit from Phase 8 repeat acceleration.
@@ -157,6 +159,8 @@ Do not add personal identifiers to the exported JSON.
 Recommended cohort:
 
 > 20–50 real shoppers
+
+Use the guarded local cohort analyzer after collecting exports. Invalid/tampered files must be rejected before aggregation; repeated exports from the same retained session must not be counted twice.
 
 Where practical:
 
