@@ -111,8 +111,8 @@ export default defineConfig(() => {
                     : ocrPairedAnalyzerEnabled
                       ? "src/qa/OcrPairedAnalyzerApp.tsx"
                       : cohortAnalysisEnabled
-                      ? "src/qa/RetentionCohortAnalyzerApp.tsx"
-                      : "src/App.tsx",
+                        ? "src/qa/RetentionCohortAnalyzerApp.tsx"
+                        : "src/App.tsx",
         ),
         "#shopping-evidence": path.resolve(
           rootDir,
