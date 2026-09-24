@@ -45,6 +45,7 @@ jobs:
       - name: Build guarded shopping timing QA
         env:
           VITE_SHOPPING_QA_TIMING: "1"
+          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
           npm run build -- --base=/shopping-budget-companion/qa/ --outDir=dist-qa
           npm run qa:prepare-index
@@ -52,6 +53,7 @@ jobs:
       - name: Build guarded retention beta
         env:
           VITE_SHOPPING_BETA_EVIDENCE: "1"
+          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
           npm run build -- --base=/shopping-budget-companion/beta/ --outDir=dist-beta
           npm run beta:prepare-index
@@ -59,6 +61,7 @@ jobs:
       - name: Build local retention cohort analyzer
         env:
           VITE_SHOPPING_COHORT_ANALYSIS: "1"
+          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
           npm run build -- --base=/shopping-budget-companion/cohort/ --outDir=dist-cohort
           npm run cohort:prepare-index
@@ -66,6 +69,7 @@ jobs:
       - name: Build experimental barcode benchmark
         env:
           VITE_SHOPPING_BARCODE_BENCHMARK: "1"
+          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
           npm run build -- --base=/shopping-budget-companion/barcode-benchmark/ --outDir=dist-barcode
           npm run barcode:prepare-index
