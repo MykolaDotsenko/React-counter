@@ -87,8 +87,7 @@ jobs:
           cp -R dist-beta/. site/beta/
           cp -R dist-cohort/. site/cohort/
           cp -R dist-barcode/. site/barcode-benchmark/
-          cp .build-evidence/sbom/runtime.cdx.json site/sbom/runtime.cdx.json
-          cp .build-evidence/sbom/build.cdx.json site/sbom/build.cdx.json
+          cp .build-evidence/sbom/release.cdx.json site/sbom/release.cdx.json
           touch site/.nojekyll
           test ! -e site/node_modules
           test ! -e site/package.json
@@ -136,10 +135,8 @@ jobs:
           test ! -e /tmp/pages-site/barcode-benchmark/manifest.webmanifest
           test ! -e /tmp/pages-site/barcode-benchmark/sw.js
           test -f /tmp/pages-site/barcode-benchmark/index.html
-          test -s /tmp/pages-site/sbom/runtime.cdx.json
-          test -s /tmp/pages-site/sbom/build.cdx.json
-          grep -q '"bomFormat": "CycloneDX"' /tmp/pages-site/sbom/runtime.cdx.json
-          grep -q '"bomFormat": "CycloneDX"' /tmp/pages-site/sbom/build.cdx.json
+          test -s /tmp/pages-site/sbom/release.cdx.json
+          grep -q '"bomFormat": "CycloneDX"' /tmp/pages-site/sbom/release.cdx.json
           test ! -e /tmp/pages-site/node_modules
           test ! -e /tmp/pages-site/package.json
           test ! -e /tmp/pages-site/package-lock.json
@@ -419,8 +416,7 @@ jobs:
           test -f /tmp/pages-site/manifest.webmanifest
           test -f /tmp/pages-site/sw.js
           test -f /tmp/pages-site/barcode-benchmark/index.html
-          test -s /tmp/pages-site/sbom/runtime.cdx.json
-          test -s /tmp/pages-site/sbom/build.cdx.json
+          test -s /tmp/pages-site/sbom/release.cdx.json
           test ! -e /tmp/pages-site/barcode-benchmark/manifest.webmanifest
           test ! -e /tmp/pages-site/barcode-benchmark/sw.js
           test ! -e /tmp/pages-site/node_modules
