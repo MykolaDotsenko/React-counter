@@ -85,7 +85,7 @@ describe("RetentionCohortAnalyzerApp", () => {
     ).toBeTruthy();
 
     const secondTripMetric = screen
-      .getByText("Second-trip rate")
+      .getByText("Observed second-trip share")
       .closest("article");
     expect(secondTripMetric?.textContent).toContain("50.0%");
 
@@ -94,6 +94,18 @@ describe("RetentionCohortAnalyzerApp", () => {
       .closest("article");
     expect(sevenDayMetric?.textContent).toContain("50.0%");
     expect(sevenDayMetric?.textContent).toContain("2 eligible");
+
+    const cohortReadiness = screen
+      .getByText("Cohort size")
+      .closest("article");
+    expect(cohortReadiness?.textContent).toContain("2 / 20");
+    expect(cohortReadiness?.textContent).toContain("Collect more");
+
+    const sevenDayReadiness = screen
+      .getByText("7-day evidence")
+      .closest("article");
+    expect(sevenDayReadiness?.textContent).toContain("2 / 20");
+    expect(sevenDayReadiness?.textContent).toContain("Wait / collect");
 
     expect(screen.getByRole("status").textContent).toContain(
       "Imported 2",
@@ -136,7 +148,7 @@ describe("RetentionCohortAnalyzerApp", () => {
     );
 
     const secondTripMetric = screen
-      .getByText("Second-trip rate")
+      .getByText("Observed second-trip share")
       .closest("article");
     expect(secondTripMetric?.textContent).toContain("100.0%");
   });
