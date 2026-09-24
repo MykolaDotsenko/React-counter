@@ -500,4 +500,102 @@ describe("retention beta evidence", () => {
     ).toBeNull();
   });
 
+
+  it("does not upgrade skipped trip ordinals into second- or third-trip retention", () => {
+    let session = createRetentionBetaSession(START);
+
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "new",
+        at: "2026-09-22T08:01:00.000Z",
+      }),
+    );
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 3,
+        source: "repeat",
+        at: "2026-09-22T08:03:00.000Z",
+      }),
+    );
+
+    expect(summarizeRetentionBeta(session)).toMatchObject({
+      tripsStarted: 1,
+      secondTripStarted: false,
+      thirdTripStarted: false,
+      daysToSecondTrip: null,
+      repeatTripStarts: 0,
+    });
+  });
+
+  it("requires chronological contiguous starts for retention qualification", () => {
+    let session = createRetentionBetaSession(START);
+
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "new",
+        at: "2026-09-22T08:10:00.000Z",
+      }),
+    );
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 2,
+        source: "repeat",
+        at: "2026-09-22T08:05:00.000Z",
+      }),
+    );
+
+    expect(summarizeRetentionBeta(session)).toMatchObject({
+      tripsStarted: 1,
+      secondTripStarted: false,
+      thirdTripStarted: false,
+      daysToSecondTrip: null,
+      repeatTripStarts: 0,
+    });
+  });
+
+  it("counts a trip as finished only after its matching observed start", () => {
+    let session = createRetentionBetaSession(START);
+
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_finished",
+        tripOrdinal: 1,
+        at: "2026-09-22T08:04:00.000Z",
+      }),
+    );
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "new",
+        at: "2026-09-22T08:05:00.000Z",
+      }),
+    );
+
+    expect(summarizeRetentionBeta(session).tripsFinished).toBe(0);
+
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_finished",
+        tripOrdinal: 1,
+        at: "2026-09-22T08:06:00.000Z",
+      }),
+    );
+
+    expect(summarizeRetentionBeta(session).tripsFinished).toBe(1);
+  });
+
 });
