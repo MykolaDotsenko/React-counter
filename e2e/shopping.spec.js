@@ -1224,6 +1224,9 @@ test("@beta keeps shopping usable when retention evidence storage fails", async 
   await page.goto("/");
 
   await page.getByRole("button", { name: "Beta evidence" }).click();
+  await page.getByRole("button", { name: "Reset evidence" }).click();
+  await page.getByRole("button", { name: "Confirm reset" }).click();
+
   await expect(page.getByRole("alert")).toContainText(
     "Evidence storage is unavailable",
   );
