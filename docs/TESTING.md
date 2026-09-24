@@ -258,6 +258,13 @@ It may not claim the human timing target was passed.
 
 The QA recorder must not mutate shopping state or fabricate physical evidence.
 
+Timing-evidence tests must also prove:
+
+- an excluded timing sample stays in evidence;
+- each exclusion references a real sample ID and requires a bounded non-empty reason;
+- documented external interruptions are omitted from timing KPIs without deleting the sample;
+- malformed/unknown exclusion references and tampered derived gate summaries are rejected.
+
 ### Retention beta
 
 Tests must prove:
@@ -271,8 +278,10 @@ Tests must prove:
 - remembered reuse/current-price override remain distinguishable;
 - recorder/storage failure cannot alter shopping behaviour;
 - beta UI cannot block the primary flow;
-- timing exclusions remain auditable: an excluded sample stays in evidence, references a real sample ID, requires a bounded non-empty reason, and is omitted from timing KPIs only as a documented external interruption;
-- malformed/unknown exclusion references and tampered derived gate summaries are rejected.
+- retained events cannot predate the beta session start;
+- export `generatedAt` cannot predate retained session evidence;
+- 7/14/30-day retention uses maturity-aware denominators so right-censored participants are not counted as failures;
+- each window-specific cohort summary exposes its eligible participant count.
 
 Real-store retention evidence remains a human/product-validation gate.
 

@@ -17,7 +17,9 @@ The automated code head has passed:
 
 The first expanded B6 browser run exposed a real 360×800 price-entry overflow: the Add action ended below the viewport. The compact layout was corrected without reducing frequent controls below the 48 CSS px product target, and the subsequent browser matrix passed.
 
-The empirical human timing/device section below is still pending. Under D-039, it is explicitly waived as a **development-sequencing blocker only** so Phase 6 implementation may continue. It remains unverified evidence and must not be described as passed.
+For the 2026-09-24 validation cycle, the representative physical-phone interaction check was accepted by explicit repository-owner/user attestation. The check was reported as responsibly completed with no blocking usability problem.
+
+No machine-verifiable timing JSON was retained. Therefore this attestation closes the physical-usability blocker for the current cycle but does **not** establish an exact median, P75, max, or <=2.5 s human timing claim.
 
 The QA evidence recorder now treats empirical evidence as a strict contract rather than a free-form note:
 - only EUR 4.79 / EUR 12.50 quantity-1 samples captured under the documented EUR 500, zero-buffer fixture count toward timing
@@ -46,7 +48,7 @@ This document separates:
 
 The two must not be conflated.
 
-The public Shopping Budget Companion may ship while this evidence remains pending, but the B6 human speed/usability target must stay labelled unverified until the required representative one-hand/manual checks are recorded.
+The public Shopping Budget Companion may treat B6 physical usability as accepted for the current validation cycle by owner attestation. Exact quantitative human timing claims remain unverified unless a future run preserves the structured QA JSON.
 
 ## Contract
 
@@ -304,7 +306,7 @@ Record pass/fail for:
 
 ## B6 exit rule
 
-B6 can be marked complete only when:
+General evidence-quality exit remains:
 
 1. CI quality gate is green
 2. Chromium is green
@@ -313,13 +315,13 @@ B6 can be marked complete only when:
 5. flagship E2E is green
 6. accessibility checks are green
 7. automated mobile/200%/reduced-motion/offline-runtime checks are green
-8. human timing results are recorded
-9. one-hand and bright-store checks are recorded
+8. representative physical-phone usability is checked
+9. one-hand and bright-store behaviour is checked
 10. no unresolved B6 blocker from docs/archive/CORE-UI-EXECUTION-BRIEF.md remains
 
-Until then:
+Current-cycle resolution:
 
-- keep the human B6 result labelled unverified
-- do not claim the <=2.5 second KPI has been achieved
-- do not use automation as a substitute for physical one-hand evidence
-- D-039 permits Phase 6 implementation to continue, but does not itself prove release quality
+- items 1–7 and 10 are covered by automated/repository evidence;
+- items 8–9 were accepted on 2026-09-24 by explicit owner/user attestation;
+- no structured timing export was retained, so exact median/P75/max and the <=2.5 s KPI remain unclaimed;
+- a future quantitative timing claim must use the structured QA recorder rather than retroactively upgrading this attestation.

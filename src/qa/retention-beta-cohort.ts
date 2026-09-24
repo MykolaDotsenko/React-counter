@@ -1,7 +1,10 @@
 import {
   summarizeRetentionBeta,
-  type RetentionBetaSession,
+  type RetentionBetaEvent,
+  type RetentionBetaExport,
 } from "./retention-beta";
+
+const DAY_MS = 86_400_000;
 
 export interface RetentionBetaCohortSummary {
   readonly participantCount: number;
@@ -11,6 +14,9 @@ export interface RetentionBetaCohortSummary {
   readonly secondTripWithin7DaysParticipants: number;
   readonly secondTripWithin14DaysParticipants: number;
   readonly secondTripWithin30DaysParticipants: number;
+  readonly secondTripWithin7DaysEligibleParticipants: number;
+  readonly secondTripWithin14DaysEligibleParticipants: number;
+  readonly secondTripWithin30DaysEligibleParticipants: number;
   readonly secondTripRate: number | null;
   readonly thirdTripRate: number | null;
   readonly thirdTripAmongSecondTripRate: number | null;
@@ -39,6 +45,12 @@ export interface RetentionBetaCohortSummary {
   readonly currentPriceOverrides: number;
 }
 
+interface ParticipantSnapshot {
+  readonly report: RetentionBetaExport;
+  readonly summary: ReturnType<typeof summarizeRetentionBeta>;
+  readonly firstTripStartedAt: string | null;
+}
+
 const rate = (
   numerator: number,
   denominator: number,
@@ -64,41 +76,102 @@ const median = (values: readonly number[]): number | null => {
     : (lower + upper) / 2;
 };
 
+const firstTripStartedAt = (
+  events: readonly RetentionBetaEvent[],
+): string | null =>
+  events.find(
+    (event) =>
+      event.type === "trip_started" &&
+      event.tripOrdinal === 1,
+  )?.at ?? null;
+
+const windowMature = (
+  snapshot: ParticipantSnapshot,
+  windowDays: number,
+  alreadySucceeded: boolean,
+): boolean => {
+  if (alreadySucceeded) {
+    return true;
+  }
+
+  if (snapshot.firstTripStartedAt === null) {
+    return false;
+  }
+
+  return (
+    Date.parse(snapshot.report.generatedAt) -
+      Date.parse(snapshot.firstTripStartedAt) >=
+    windowDays * DAY_MS
+  );
+};
+
 export const summarizeRetentionBetaCohort = (
-  sessions: readonly RetentionBetaSession[],
+  reports: readonly RetentionBetaExport[],
 ): RetentionBetaCohortSummary => {
-  const summaries = sessions.map(summarizeRetentionBeta);
-  const activated = summaries.filter((summary) => summary.tripsStarted > 0);
+  const snapshots = reports.map((report) => ({
+    report,
+    summary: summarizeRetentionBeta(report.session),
+    firstTripStartedAt: firstTripStartedAt(report.session.events),
+  }));
+  const activated = snapshots.filter(
+    ({ summary }) => summary.tripsStarted > 0,
+  );
   const activatedParticipants = activated.length;
 
   const secondTripParticipants = activated.filter(
-    (summary) => summary.secondTripStarted,
+    ({ summary }) => summary.secondTripStarted,
   ).length;
   const thirdTripParticipants = activated.filter(
-    (summary) => summary.thirdTripStarted,
+    ({ summary }) => summary.thirdTripStarted,
   ).length;
+
   const secondTripWithin7DaysParticipants = activated.filter(
-    (summary) => summary.secondTripWithin7Days,
+    ({ summary }) => summary.secondTripWithin7Days,
   ).length;
   const secondTripWithin14DaysParticipants = activated.filter(
-    (summary) => summary.secondTripWithin14Days,
+    ({ summary }) => summary.secondTripWithin14Days,
   ).length;
   const secondTripWithin30DaysParticipants = activated.filter(
-    (summary) => summary.secondTripWithin30Days,
+    ({ summary }) => summary.secondTripWithin30Days,
+  ).length;
+
+  const secondTripWithin7DaysEligibleParticipants = activated.filter(
+    (snapshot) =>
+      windowMature(
+        snapshot,
+        7,
+        snapshot.summary.secondTripWithin7Days,
+      ),
+  ).length;
+  const secondTripWithin14DaysEligibleParticipants = activated.filter(
+    (snapshot) =>
+      windowMature(
+        snapshot,
+        14,
+        snapshot.summary.secondTripWithin14Days,
+      ),
+  ).length;
+  const secondTripWithin30DaysEligibleParticipants = activated.filter(
+    (snapshot) =>
+      windowMature(
+        snapshot,
+        30,
+        snapshot.summary.secondTripWithin30Days,
+      ),
   ).length;
 
   const totalTripsStarted = activated.reduce(
-    (sum, summary) => sum + summary.tripsStarted,
+    (sum, { summary }) => sum + summary.tripsStarted,
     0,
   );
-  const totalTripsFinished = sessions.reduce((sum, session) => {
+  const totalTripsFinished = reports.reduce((sum, report) => {
     const startedOrdinals = new Set(
-      session.events
+      report.session.events
         .filter((event) => event.type === "trip_started")
         .map((event) => event.tripOrdinal),
     );
     const completedStartedTrips = new Set(
-      session.events
+      report.session.events
         .filter(
           (event) =>
             event.type === "trip_finished" &&
@@ -111,67 +184,76 @@ export const summarizeRetentionBetaCohort = (
   }, 0);
 
   const firstItemParticipants = activated.filter(
-    (summary) => summary.firstItemTrips > 0,
+    ({ summary }) => summary.firstItemTrips > 0,
   ).length;
   const fifthItemParticipants = activated.filter(
-    (summary) => summary.fifthItemTrips > 0,
+    ({ summary }) => summary.fifthItemTrips > 0,
   ).length;
   const tenthItemParticipants = activated.filter(
-    (summary) => summary.tenthItemTrips > 0,
+    ({ summary }) => summary.tenthItemTrips > 0,
   ).length;
 
   const repeatTripStarts = activated.reduce(
-    (sum, summary) => sum + summary.repeatTripStarts,
+    (sum, { summary }) => sum + summary.repeatTripStarts,
     0,
   );
   const repeatTripParticipants = activated.filter(
-    (summary) => summary.repeatTripStarts > 0,
+    ({ summary }) => summary.repeatTripStarts > 0,
   ).length;
 
-  const manualDurations = sessions.flatMap((session) =>
-    session.events.flatMap((event) =>
+  const manualDurations = reports.flatMap((report) =>
+    report.session.events.flatMap((event) =>
       event.type === "manual_entry_completed" ? [event.durationMs] : [],
     ),
   );
   const manualEntriesCompleted = manualDurations.length;
-  const manualEntriesAbandoned = summaries.reduce(
-    (sum, summary) => sum + summary.manualEntriesAbandoned,
+  const manualEntriesAbandoned = snapshots.reduce(
+    (sum, { summary }) => sum + summary.manualEntriesAbandoned,
     0,
   );
 
-  const rememberedItemUses = summaries.reduce(
-    (sum, summary) => sum + summary.rememberedItemUses,
+  const rememberedItemUses = snapshots.reduce(
+    (sum, { summary }) => sum + summary.rememberedItemUses,
     0,
   );
   const rememberedItemParticipants = activated.filter(
-    (summary) => summary.rememberedItemUses > 0,
+    ({ summary }) => summary.rememberedItemUses > 0,
   ).length;
 
   return Object.freeze({
-    participantCount: sessions.length,
+    participantCount: reports.length,
     activatedParticipants,
     secondTripParticipants,
     thirdTripParticipants,
     secondTripWithin7DaysParticipants,
     secondTripWithin14DaysParticipants,
     secondTripWithin30DaysParticipants,
-    secondTripRate: rate(secondTripParticipants, activatedParticipants),
-    thirdTripRate: rate(thirdTripParticipants, activatedParticipants),
+    secondTripWithin7DaysEligibleParticipants,
+    secondTripWithin14DaysEligibleParticipants,
+    secondTripWithin30DaysEligibleParticipants,
+    secondTripRate: rate(
+      secondTripParticipants,
+      activatedParticipants,
+    ),
+    thirdTripRate: rate(
+      thirdTripParticipants,
+      activatedParticipants,
+    ),
     thirdTripAmongSecondTripRate: rate(
       thirdTripParticipants,
       secondTripParticipants,
     ),
     secondTripWithin7DaysRate: rate(
       secondTripWithin7DaysParticipants,
-      activatedParticipants,
+      secondTripWithin7DaysEligibleParticipants,
     ),
     secondTripWithin14DaysRate: rate(
       secondTripWithin14DaysParticipants,
-      activatedParticipants,
+      secondTripWithin14DaysEligibleParticipants,
     ),
     secondTripWithin30DaysRate: rate(
       secondTripWithin30DaysParticipants,
-      activatedParticipants,
+      secondTripWithin30DaysEligibleParticipants,
     ),
     totalTripsStarted,
     totalTripsFinished,
@@ -179,9 +261,18 @@ export const summarizeRetentionBetaCohort = (
     firstItemParticipants,
     fifthItemParticipants,
     tenthItemParticipants,
-    firstItemReachRate: rate(firstItemParticipants, activatedParticipants),
-    fifthItemReachRate: rate(fifthItemParticipants, activatedParticipants),
-    tenthItemReachRate: rate(tenthItemParticipants, activatedParticipants),
+    firstItemReachRate: rate(
+      firstItemParticipants,
+      activatedParticipants,
+    ),
+    fifthItemReachRate: rate(
+      fifthItemParticipants,
+      activatedParticipants,
+    ),
+    tenthItemReachRate: rate(
+      tenthItemParticipants,
+      activatedParticipants,
+    ),
     repeatTripStarts,
     repeatTripParticipants,
     repeatTripParticipantRate: rate(
@@ -201,8 +292,8 @@ export const summarizeRetentionBetaCohort = (
       rememberedItemParticipants,
       activatedParticipants,
     ),
-    currentPriceOverrides: summaries.reduce(
-      (sum, summary) => sum + summary.currentPriceOverrides,
+    currentPriceOverrides: snapshots.reduce(
+      (sum, { summary }) => sum + summary.currentPriceOverrides,
       0,
     ),
   });

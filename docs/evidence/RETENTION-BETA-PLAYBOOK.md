@@ -82,7 +82,9 @@ Before an export enters cohort analysis:
 The implementation provides:
 
 - `parseRetentionBetaExport(...)` for runtime validation and summary recomputation
-- `summarizeRetentionBetaCohort(...)` for cohort-level aggregation
+- `summarizeRetentionBetaCohort(...)` for cohort-level aggregation from current validated exports
+
+Cohort aggregation uses each export's `generatedAt` as that participant's observed-through timestamp. An export whose timestamp predates retained session evidence is invalid.
 
 ## Primary denominator
 
@@ -94,6 +96,19 @@ Participants who opened the beta but never started a trip are not counted as act
 
 Keep the raw participant count separately so activation loss remains visible.
 
+### 7 / 14 / 30 day denominator maturity
+
+Do not count a participant as a failure for a time window that has not elapsed.
+
+For each window:
+
+- a participant is eligible immediately if a qualifying second trip has already occurred within that window;
+- otherwise the participant enters that denominator only when `generatedAt - first trip start` reaches the full window;
+- participants still inside the window are right-censored and excluded from that window-specific denominator;
+- report the eligible-participant count next to every window-specific rate.
+
+This prevents an actively recruiting cohort from artificially depressing 7-, 14-, or 30-day retention.
+
 ## Primary metrics
 
 Report at minimum:
@@ -102,9 +117,9 @@ Report at minimum:
 - activated participants
 - second-trip participants
 - second-trip rate
-- second trip within 7 days
-- second trip within 14 days
-- second trip within 30 days
+- second trip within 7 days + eligible participant count
+- second trip within 14 days + eligible participant count
+- second trip within 30 days + eligible participant count
 - third-trip participants
 - third-trip rate
 - third trip among second-trip participants
@@ -155,10 +170,10 @@ Do not start Phase 9 merely because the engineering backlog is ready.
 
 Human cohort evidence must drive the gate. Code, automated browser tests, synthetic fixtures, and manually constructed event JSON cannot substitute for real repeated shopping behaviour.
 
-## B6 timing debt
+## B6 timing status
 
-The Phase 5 B6 human timing/physical-usability gate remains separate from retention.
+The physical-phone interaction gate is separate from retention and was accepted for the current cycle on 2026-09-24 by explicit owner/user attestation.
 
-Before making release-quality speed claims, collect the representative one-hand, software-keyboard, repeated-add, typo, compact-device/equivalent, and bright-store evidence defined in `docs/evidence/SPRINT-B-QUALITY-GATE.md`.
+No structured timing JSON was retained, so exact human timing statistics and the <=2.5 s KPI must not be quoted from that attestation.
 
-Retention success does not automatically satisfy the B6 timing gate.
+Retention success does not retroactively create quantitative B6 timing evidence.

@@ -192,9 +192,11 @@ Primary metric:
 
 Analyze at least:
 
-- within 7 days
-- within 14 days
-- within 30 days
+- within 7 days, using only participants whose 7-day outcome is known
+- within 14 days, using only participants whose 14-day outcome is known
+- within 30 days, using only participants whose 30-day outcome is known
+
+For a window-specific rate, an outcome is known when the participant already returned within that window or the full observation window has elapsed by the export's `generatedAt` timestamp. Report the eligible denominator with each rate so right-censored participants are never silently counted as failures.
 
 Also inspect:
 

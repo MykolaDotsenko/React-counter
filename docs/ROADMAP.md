@@ -27,32 +27,19 @@ The core Shopping Budget Companion engineering path is implemented:
 - privacy-safe timing QA and retention-beta evidence tooling
 - Chromium / Firefox / WebKit quality coverage
 
-Two product-evidence gates remain open:
+The representative physical-phone interaction gate was accepted by explicit repository-owner/user attestation on 2026-09-24. The check was reported as responsibly completed with no blocking usability problem.
 
-1. representative human one-hand/timing/bright-store validation
-2. real-shopper retention validation, including second- and third-trip behaviour
+That attestation closes the manual physical-usability blocker for this validation cycle, but no machine-verifiable timing JSON was retained. Therefore the repository must **not** quote an exact human median/P75/max or claim the <=2.5 s KPI from this cycle.
 
-These gates are intentionally stronger than “CI is green”.
+One product-evidence gate remains open:
+
+1. real-shopper retention validation, including second- and third-trip behaviour
+
+This gate is intentionally stronger than “CI is green”.
 
 ## Current priority
 
-### 1. Close the human interaction evidence gate
-
-Validate the manual price-entry path on representative physical devices.
-
-Evidence must cover the structured conditions defined in:
-
-- [evidence/SPRINT-B-QUALITY-GATE.md](./evidence/SPRINT-B-QUALITY-GATE.md)
-- relevant decisions in [DECISIONS.md](./DECISIONS.md)
-
-Required conclusion:
-
-- either the manual path meets the release-quality interaction target
-- or the product is adjusted and re-tested
-
-Automated browser timing cannot substitute for this gate.
-
-### 2. Run the real-store retention beta
+### 1. Run the real-store retention beta
 
 Use the guarded beta evidence path defined in:
 
