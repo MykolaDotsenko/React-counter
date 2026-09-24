@@ -418,6 +418,7 @@ export const parseRetentionCohortAggregateExport = (
     !isImmutableEvidenceBuildRevision(record.analyzerBuildRevision) ||
     !isCanonicalIsoTimestamp(record.generatedAt) ||
     !isCount(record.sourceReportCount) ||
+    record.sourceReportCount === 0 ||
     !isPrivacy(record.privacy) ||
     !isRetentionCohortSummary(record.summary)
   ) {
