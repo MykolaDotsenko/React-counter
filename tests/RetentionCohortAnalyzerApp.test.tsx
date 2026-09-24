@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { App } from "../src/qa/RetentionCohortAnalyzerApp";
 import {
@@ -244,96 +244,43 @@ describe("RetentionCohortAnalyzerApp", () => {
   });
 
 
-  it("downloads an aggregate report without raw participant events or filenames", async () => {
+  it("keeps local-dev metrics inspectable but blocks field aggregate export", async () => {
     const user = userEvent.setup();
-    const createdBlobs: Blob[] = [];
-    const createObjectURL = vi.fn((blob: Blob) => {
-      createdBlobs.push(blob);
-      return "blob:cohort-summary";
-    });
-    const revokeObjectURL = vi.fn();
-    let downloadedFileName = "";
-
-    Object.defineProperty(URL, "createObjectURL", {
-      configurable: true,
-      value: createObjectURL,
-    });
-    Object.defineProperty(URL, "revokeObjectURL", {
-      configurable: true,
-      value: revokeObjectURL,
-    });
-
-    const click = vi
-      .spyOn(HTMLAnchorElement.prototype, "click")
-      .mockImplementation(function (this: HTMLAnchorElement) {
-        downloadedFileName = this.download;
-      });
-
-    try {
-      const participant = report(
-        [
-          at("trip_started", 1, "2026-09-01T08:00:00.000Z", {
-            source: "new",
-          }),
-        ],
-        "2026-09-10T08:00:00.000Z",
-      );
-
-      render(<App />);
-
-      await user.upload(
-        screen.getByLabelText("Select JSON exports"),
-        file("P001-private-filename.json", participant),
-      );
-      await user.click(
-        screen.getByRole("button", {
-          name: "Download aggregate summary",
+    const participant = report(
+      [
+        at("trip_started", 1, "2026-09-01T08:00:00.000Z", {
+          source: "new",
         }),
-      );
+      ],
+      "2026-09-10T08:00:00.000Z",
+    );
 
-      expect(createObjectURL).toHaveBeenCalledTimes(1);
-      expect(downloadedFileName).toMatch(
-        /^retention-cohort-summary-\d{8}T\d{9}Z\.json$/,
-      );
-      expect(revokeObjectURL).toHaveBeenCalledWith(
-        "blob:cohort-summary",
-      );
+    render(<App />);
 
-      const blob = createdBlobs[0];
+    await user.upload(
+      screen.getByLabelText("Select JSON exports"),
+      file("P001-private-filename.json", participant),
+    );
 
-      if (blob === undefined) {
-        throw new Error("Expected aggregate download blob");
-      }
-
-      const exported = await blob.text();
-
-      expect(exported).toContain(
-        '"kind": "retention-cohort-summary"',
-      );
-      expect(exported).toContain('"schemaVersion": 2');
-      expect(exported).toContain(
-        '"sourceBuildRevision": "local-dev"',
-      );
-      expect(exported).toContain(
-        '"analyzerBuildRevision": "local-dev"',
-      );
-      expect(exported).toContain('"sourceReportCount": 1');
-      expect(exported).toContain(
-        '"containsRawParticipantEvents": false',
-      );
-      expect(exported).toContain(
-        '"containsParticipantFileNames": false',
-      );
-      expect(exported).not.toContain("P001-private-filename");
-      expect(exported).not.toContain('"events"');
-      expect(screen.getByRole("status").textContent).toContain(
-        "Aggregate summary downloaded as retention-cohort-summary-",
-      );
-    } finally {
-      click.mockRestore();
-      Reflect.deleteProperty(URL, "createObjectURL");
-      Reflect.deleteProperty(URL, "revokeObjectURL");
-    }
+    expect(
+      screen.getByRole("heading", { name: "1 participant" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Field export not immutable")).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "Download aggregate summary",
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Copy aggregate summary",
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Clear analysis",
+      }),
+    ).not.toBeDisabled();
   });
 
 });
