@@ -42,6 +42,8 @@ export interface BarcodePairedCompatibility {
   readonly sameDeviceLabel: boolean;
   readonly manualInputMethodPresent: boolean;
   readonly manualPhysicalContextComplete: boolean;
+  readonly manualLightAppearanceRecorded: boolean;
+  readonly manualPhonePortraitViewport: boolean;
   readonly manualFixtureEvidenceComplete: boolean;
   readonly barcodeConfirmedEvidenceComplete: boolean;
   readonly barcodePreferenceRecorded: boolean;
@@ -233,6 +235,8 @@ export const analyzeBarcodePairedEvidence = (
         sameDeviceLabel: false,
         manualInputMethodPresent: false,
         manualPhysicalContextComplete: false,
+        manualLightAppearanceRecorded: false,
+        manualPhonePortraitViewport: false,
         manualFixtureEvidenceComplete: false,
         barcodeConfirmedEvidenceComplete: false,
         barcodePreferenceRecorded: false,
@@ -275,6 +279,8 @@ export const analyzeBarcodePairedEvidence = (
     manualInputMethodPresent:
       manual.session.inputMethodLabel.trim().length > 0,
     manualPhysicalContextComplete: manualPhysicalContextComplete(manual),
+    manualLightAppearanceRecorded: manual.gate.lightAppearanceRecorded,
+    manualPhonePortraitViewport: manual.gate.phonePortraitViewport,
     manualFixtureEvidenceComplete:
       manualLowFixture.count >= QA_TARGET_SAMPLE_COUNT &&
       manualHighFixture.count >= QA_TARGET_SAMPLE_COUNT,
@@ -296,6 +302,8 @@ export const analyzeBarcodePairedEvidence = (
   const evidenceComplete =
     compatibility.manualInputMethodPresent &&
     compatibility.manualPhysicalContextComplete &&
+    compatibility.manualLightAppearanceRecorded &&
+    compatibility.manualPhonePortraitViewport &&
     compatibility.manualFixtureEvidenceComplete &&
     compatibility.barcodeConfirmedEvidenceComplete &&
     compatibility.barcodePreferenceRecorded &&
@@ -323,6 +331,12 @@ export const analyzeBarcodePairedEvidence = (
   }
   if (!compatibility.manualPhysicalContextComplete) {
     issues.push("Manual timing physical-context checklist is incomplete.");
+  }
+  if (!compatibility.manualLightAppearanceRecorded) {
+    issues.push("Manual timing baseline is not recorded in the required light appearance.");
+  }
+  if (!compatibility.manualPhonePortraitViewport) {
+    issues.push("Manual timing baseline is not recorded in a phone portrait viewport.");
   }
   if (!compatibility.manualFixtureEvidenceComplete) {
     issues.push(
