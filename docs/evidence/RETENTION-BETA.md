@@ -198,6 +198,13 @@ Analyze at least:
 
 For a window-specific rate, an outcome is known when the participant already returned within that window or the full observation window has elapsed by the export's `generatedAt` timestamp. Report the eligible denominator with each rate so right-censored participants are never silently counted as failures.
 
+Retention qualification rules:
+
+- second trip requires observed chronological starts for ordinals 1 and 2;
+- third trip requires observed chronological starts for ordinals 1, 2 and 3;
+- skipped/reversed ordinals remain partial evidence and do not upgrade retention;
+- completion requires a matching start at or before the finish event.
+
 Also inspect:
 
 - third-trip behaviour
