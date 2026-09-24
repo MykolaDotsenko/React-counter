@@ -30,12 +30,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Download pinned Syft
+        id: syft
+        uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          syft-version: v1.52.0
+
       - name: Generate production CycloneDX SBOM
         shell: bash
         run: |
           set -euo pipefail
           SBOM_FILE="shopping-budget-companion-${GITHUB_SHA}.cdx.json"
-          npm sbom --sbom-format=cyclonedx --omit=dev > "${SBOM_FILE}"
+
+          "${{ steps.syft.outputs.cmd }}" dir:.             --exclude './.github/**'             --source-name shopping-budget-companion             --source-version 2.0.0             -o "cyclonedx-json=${SBOM_FILE}"
+
           sha256sum "${SBOM_FILE}" > "${SBOM_FILE}.sha256"
 
       - name: Validate production CycloneDX SBOM
@@ -48,7 +56,7 @@ jobs:
           jq -e '.bomFormat == "CycloneDX"' "${SBOM_FILE}" >/dev/null
           jq -e '.specVersion | type == "string"' "${SBOM_FILE}" >/dev/null
 
-          echo "Validate root package identity"
+          echo "Validate product source identity"
           jq -e '.metadata.component.name == "shopping-budget-companion"' "${SBOM_FILE}" >/dev/null
           jq -e '.metadata.component.version == "2.0.0"' "${SBOM_FILE}" >/dev/null
 
@@ -60,8 +68,11 @@ jobs:
             jq -e --arg dependency "${dependency}"               'any(.components[]; .name == $dependency)'               "${SBOM_FILE}" >/dev/null
           done < <(jq -r '.dependencies | keys[]' package.json)
 
-          echo "Reject development-only coverage/test packages"
+          echo "Reject development-only test packages"
           jq -e 'all(.components[]; .name != "vitest" and .name != "@vitest/coverage-v8")'             "${SBOM_FILE}" >/dev/null
+
+          echo "Reject GitHub Actions from product SBOM"
+          jq -e '[.components[] | select((.purl // "") | startswith("pkg:github/"))] | length == 0'             "${SBOM_FILE}" >/dev/null
 
           echo "Verify SHA-256 sidecar"
           sha256sum --check "${SBOM_FILE}.sha256"
