@@ -588,7 +588,17 @@ export function App() {
           <button
             type="button"
             className={styles.secondary}
-            onClick={stopCamera}
+            onClick={() => {
+              if (activeAttemptRef.current !== null) {
+                finalizeAttempt(
+                  "manual-fallback",
+                  pendingCandidate?.format ?? null,
+                );
+              }
+
+              stopCamera();
+              setStatus("Camera stopped.");
+            }}
             disabled={!cameraReady}
           >
             Stop camera
