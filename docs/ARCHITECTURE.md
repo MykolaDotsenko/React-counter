@@ -6,6 +6,8 @@ This document describes the **current** architecture of the public Shopping Budg
 
 The repository no longer contains an alternate prototype product shell. The public root, timing QA route and retention-beta route all compose the same shopping product. The public build resolves the evidence boundary to a NoOp adapter; guarded QA/beta builds resolve the same boundary to evidence tooling at build time.
 
+The guarded `/cohort/` route is intentionally different: it is a facilitator-only local analyzer that imports already-exported retention evidence and never composes or mutates shopping state.
+
 Human timing and retention gates remain unverified. The installable offline PWA shell is implemented; barcode and OCR remain future/gated capabilities.
 
 ## Architectural goal
@@ -112,7 +114,7 @@ Keep environment-specific construction here instead of scattering singleton crea
 
 ### QA
 
-`src/qa/` records validation evidence only. Production code depends on the `#shopping-evidence` adapter contract, which resolves to a NoOp implementation in the public build and to the guarded evidence implementation only when a QA/beta build flag is enabled.
+`src/qa/` records and analyzes validation evidence only. Production shopping code depends on the `#shopping-evidence` adapter contract, which resolves to a NoOp implementation in the public build and to the guarded evidence implementation only when a QA/beta build flag is enabled. The cohort build uses a separate `#app-entry` alias so facilitator analysis code is not bundled into the public product.
 
 QA data:
 
@@ -310,7 +312,7 @@ The public product ships an **IMPLEMENTED** installable/offline application shel
 - `vite-plugin-pwa` generates the service worker through Workbox `generateSW`.
 - Workbox precaches application-shell assets only.
 - canonical shopping state remains owned by the application/localStorage persistence adapters, never Cache Storage or the service worker;
-- `/qa/` and `/beta/` evidence builds do not generate/register their own PWA service workers;
+- `/qa/`, `/beta/` and `/cohort/` guarded evidence builds do not generate/register their own PWA service workers;
 - service-worker updates use a prompt flow rather than auto-update;
 - the update prompt is withheld during active/recovery/completed-summary shopping lifecycle states and is only offered from the idle state, so a new worker never forces a reload during an active trip.
 
