@@ -91,110 +91,133 @@ Before adding a new major user-facing capability, answer:
 5. Does it preserve exact-money, persistence and accessibility invariants?
 6. Is the previous validation gate sufficiently resolved?
 
-## Future sequence
+## Execution sequence
 
-### A. Installable offline PWA
+The active roadmap is intentionally narrow and local-first.
 
-**Status: IMPLEMENTED.**
+### A. Current validation gates
 
-The public product now ships a Vite/Workbox-generated installable application shell:
+1. **Repository governance — issue #58**
+   - protect `main`;
+   - require pull requests and current branches;
+   - require the full quality/browser/CodeQL matrix;
+   - block force pushes and deletion;
+   - automatically remove merged head branches.
 
-- manifest + 192/512 install icons;
-- application-shell precaching;
-- GitHub Pages-aware scope/base;
-- prompt-based service-worker updates;
-- no forced reload during an active shopping lifecycle;
-- canonical trip/history/Price Memory state remains in localStorage rather than Cache Storage;
-- guarded `/qa/`, `/beta/`, `/cohort/` and `/barcode-benchmark/` evidence builds remain outside PWA registration.
+2. **Real-shopper retention — issue #72**
+   - recruit 20–50 real shoppers;
+   - preserve one retained beta session per participant;
+   - interpret 7/14/30-day retention only when each window has at least 20 eligible participants;
+   - use repeat use, abandonment, Price Memory/reuse and trust/friction evidence to decide whether the core flow needs remediation.
 
-Automated browser coverage verifies active-trip restore, offline completion/history persistence and a second offline history restore.
+3. **Physical barcode benchmark — issue #73**
+   - collect representative phone evidence from the isolated benchmark;
+   - collect a same-device quantitative manual-entry baseline;
+   - compare end-to-end human decision time, failures, corrections, fallback, preference and cognitive effort.
 
-The physical-phone usability gate was accepted for the current cycle by owner attestation; exact quantitative timing remains unclaimed. Real-shopper retention remains open.
+These gates are not replaceable by automated fixtures or green CI.
 
-### B. Barcode identification
+### B. Production barcode — only after positive physical evidence
 
-**Production status: PLANNED / GATED. Experimental native benchmark harness: IMPLEMENTED; empirical result pending.**
+**Production status: PLANNED / GATED. Experimental native benchmark harness: IMPLEMENTED.**
 
-The isolated benchmark lives at `/barcode-benchmark/` and is governed by [evidence/BARCODE-BENCHMARK.md](./evidence/BARCODE-BENCHMARK.md). It measures native camera scan → human decision latency, timeout/correction/manual-fallback behaviour and structured repeated-use preference without adding scanner code to the production shopping path.
+If issue #73 demonstrates meaningful net interaction benefit, implement production barcode in small layers:
 
-The benchmark does not include product lookup, current-price lookup or the D-031 WASM fallback. Production barcode work remains gated until representative mobile benchmark evidence and a paired quantitative manual baseline show meaningful benefit.
+1. product-identity domain contracts;
+2. provider-neutral `BarcodeScanner` application port;
+3. native `BarcodeDetector` adapter;
+4. lazy fallback only if target-device evidence requires it;
+5. provider-neutral `ProductLookup` port;
+6. runtime-validated product-identity adapter;
+7. scan → identity candidate → explicit user confirmation;
+8. permission/error/manual-fallback UX;
+9. production barcode release gate.
 
-Goal:
+Barcode identifies **product identity only**. It never supplies authoritative current shelf price. Manual current-price entry remains complete and always available.
 
-- reduce repeated product-identification friction when evidence shows the interaction actually saves work
+### C. Shelf-label OCR — benchmark before production
 
-Rules:
+OCR remains **GATED / NOT IMPLEMENTED**.
 
-- barcode identifies product, not authoritative current price
-- remembered price must retain freshness/store context
-- current-price confirmation remains explicit
-- manual entry remains available
-- provider/network failure cannot block the core trip
+First build an isolated benchmark:
 
-Ship only if the end-to-end flow removes more interaction than it adds.
+1. controlled shelf-label fixture corpus;
+2. accuracy/latency/correction metrics;
+3. worker-based experimental OCR adapter;
+4. deterministic shelf-price candidate parser;
+5. benchmark candidate-selection UI;
+6. real-device quality gate.
 
-### C. Shelf-label price capture
+Only a positive result may authorize production OCR. Production OCR must preserve:
 
-**Status: gated / not implemented.**
+- OCR output is a candidate, never canonical money;
+- ambiguous candidates require explicit user choice;
+- user confirmation precedes a ShoppingTrip mutation;
+- slow/failing OCR returns cleanly to manual entry;
+- OCR code remains lazy and outside the critical initial bundle.
 
-Goal:
+### D. Evidence-selected advanced pricing
 
-- capture the value the user actually needs: current shelf price
+Advanced pricing is not a package to implement wholesale. Add one mechanic at a time only after repeated real-user need.
 
-Rules:
+Candidate order:
 
-- OCR output is a candidate
-- ambiguous candidates require user choice
-- no detected value commits automatically
-- camera/OCR failure returns cleanly to manual entry
+1. weighted goods;
+2. unit-price comparison;
+3. discounts;
+4. refundable deposits.
 
-Evaluate latency, accuracy, permission friction and correction cost on real devices.
+Tax-exclusive consumer pricing is outside the active roadmap unless a concrete use case appears.
 
-### D. Advanced price mechanics
+Every accepted mechanic requires:
 
-Only after evidence demonstrates recurring need.
+- an exact deterministic money contract;
+- property/unit tests before UI;
+- persistence compatibility;
+- application orchestration;
+- focused UX;
+- browser/accessibility regression coverage.
 
-Examples may include:
+### E. Completed-trip reopen — optional
 
-- discounts
-- weighted goods
-- taxes/deposits where relevant
-- more explicit store context
-- confidence-aware buffer suggestions
+Do not add reopen semantics unless real-user evidence shows recurring need.
 
-Each mechanic must have an exact deterministic money contract before UI work.
+If approved, reopening must derive a **new active trip** from immutable completed history. A completed history record must never be mutated back into an active transaction.
 
-### E. Launch / recruiter-grade proof
+### F. Launch / recruiter-grade proof
 
-Build the case study from verified evidence, not claims.
+Build the final case study from verified evidence:
 
-Target proof:
+- clear product problem and deliberately narrow scope;
+- exact-money architecture;
+- loss-safe local persistence;
+- offline/PWA reliability;
+- accessibility and cross-browser evidence;
+- real retention evidence;
+- barcode/OCR go/no-go decisions;
+- explicit examples of capabilities deliberately rejected or deferred.
 
-- clear product problem and narrow scope
-- exact-money architecture
-- loss-safe local persistence
-- cross-browser/accessibility evidence
-- measured human interaction results
-- retention evidence
-- explicit decisions about features deliberately not built
+## Explicit product non-goals
 
-## Explicitly not planned by default
+The active product is intentionally:
 
-Do not expand into:
+> **local-first · offline-first · account-free · no mandatory network**
 
-- bank-linked personal finance
-- net-worth dashboards
-- investment/bill management
-- meal planning
-- nutrition tracking
-- grocery delivery
-- coupon marketplace
-- retailer loyalty platform
-- social features
-- AI financial advice
-- account/backend infrastructure without a validated requirement
+Do not add the following to the active roadmap:
 
-A new request in these areas needs a product decision, not opportunistic implementation.
+- backend/account infrastructure;
+- authentication;
+- cloud sync;
+- shared-shopping collaboration;
+- bank-linked personal finance;
+- net-worth dashboards;
+- investment/bill management;
+- AI financial advice;
+- retailer loyalty/social-platform breadth.
+
+A future external product-identity lookup may use a narrowly scoped network adapter, but network failure must never block the core trip and remote state must never become canonical shopping authority.
+
+Receipt scanning, voice input and a global store-price database are also outside the active execution roadmap until real-user evidence identifies a recurring problem they uniquely solve.
 
 ## Technical-debt policy
 
