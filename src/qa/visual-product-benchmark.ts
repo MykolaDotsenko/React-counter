@@ -635,20 +635,12 @@ export const loadVisualProductBenchmarkSession = (
   }
 
   if (raw === null) {
-    const session = createVisualProductBenchmarkSession(
-      environment,
-      createdAt,
-    );
-
-    try {
-      persistVisualProductBenchmarkSession(storage, session);
-    } catch {
-      // Evidence storage failure must not break the isolated benchmark UI.
-    }
-
     return {
       status: "ready",
-      session,
+      session: createVisualProductBenchmarkSession(
+        environment,
+        createdAt,
+      ),
     };
   }
 
