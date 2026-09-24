@@ -326,7 +326,12 @@ Tests must prove:
 - aggregate output records both the source evidence revision and the analyzer build revision;
 - a newer export from the same retained evidence session replaces an older one rather than double-counting it;
 - analyzer state remains page-memory only and aggregate copy/download output excludes raw participant events and filenames;
-- local aggregate download uses a non-identifying timestamp filename and the exact same aggregate payload contract as clipboard copy.
+- local aggregate download uses a non-identifying timestamp filename and the exact same aggregate payload contract as clipboard copy;
+- local-development revisions remain inspectable but cannot produce downloadable/copyable field aggregate evidence;
+- field aggregate schema requires non-empty source evidence plus immutable full-Git-SHA source and analyzer revisions;
+- the aggregate embeds a recomputable maturity-aware readiness snapshot;
+- aggregate runtime parsing rejects tampered counts/rates/readiness, empty field aggregates and source-report-count mismatches;
+- aggregate privacy flags explicitly exclude raw events, participant filenames and participant identifiers.
 
 Real-store retention evidence remains a human/product-validation gate.
 

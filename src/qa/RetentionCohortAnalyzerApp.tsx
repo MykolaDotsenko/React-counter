@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { EVIDENCE_BUILD_REVISION } from "./evidence-build";
+import {
+  EVIDENCE_BUILD_REVISION,
+  isImmutableEvidenceBuildRevision,
+} from "./evidence-build";
+import {
+  buildRetentionCohortAggregateExport,
+} from "./retention-cohort-export";
 import {
   parseRetentionBetaExport,
   type RetentionBetaExport,
@@ -8,7 +14,6 @@ import {
 import {
   summarizeRetentionBetaCohort,
   summarizeRetentionBetaCohortReadiness,
-  type RetentionBetaCohortSummary,
   type RetentionWindowReadiness,
 } from "./retention-beta-cohort";
 import styles from "./RetentionCohortAnalyzerApp.module.css";
@@ -55,26 +60,6 @@ const observationEndIsPlausible = (
 const aggregateFileName = (generatedAt: string): string =>
   `retention-cohort-summary-${generatedAt.replace(/[-:.]/g, "")}.json`;
 
-const buildAggregatePayload = (
-  summary: RetentionBetaCohortSummary,
-  sourceReportCount: number,
-  sourceBuildRevision: string,
-  generatedAt: string,
-) => ({
-  schemaVersion: 2 as const,
-  kind: "retention-cohort-summary" as const,
-  sourceBuildRevision,
-  analyzerBuildRevision: EVIDENCE_BUILD_REVISION,
-  generatedAt,
-  sourceReportCount,
-  privacy: {
-    containsRawParticipantEvents: false as const,
-    containsParticipantFileNames: false as const,
-    networkTransmission: false as const,
-  },
-  summary,
-});
-
 export function App() {
   const [reports, setReports] = useState<readonly ImportedReport[]>([]);
   const reportsRef = useRef<readonly ImportedReport[]>([]);
@@ -94,6 +79,12 @@ export function App() {
     () => summarizeRetentionBetaCohortReadiness(summary),
     [summary],
   );
+  const sourceBuildRevision =
+    reports[0]?.report.buildRevision ?? null;
+  const fieldAggregateReady =
+    sourceBuildRevision !== null &&
+    isImmutableEvidenceBuildRevision(sourceBuildRevision) &&
+    isImmutableEvidenceBuildRevision(EVIDENCE_BUILD_REVISION);
 
   useEffect(() => {
     document.title =
@@ -221,22 +212,46 @@ export function App() {
   ): {
     readonly json: string;
     readonly fileName: string;
-  } => ({
-    json: JSON.stringify(
-      buildAggregatePayload(
-        summary,
-        reports.length,
-        reports[0]?.report.buildRevision ?? EVIDENCE_BUILD_REVISION,
-        generatedAt,
-      ),
-      null,
-      2,
-    ),
-    fileName: aggregateFileName(generatedAt),
-  });
+  } | null => {
+    if (
+      sourceBuildRevision === null ||
+      !fieldAggregateReady
+    ) {
+      setStatus(
+        "Field aggregate export requires full immutable Git SHA revisions for both source evidence and this analyzer build.",
+      );
+      return null;
+    }
+
+    try {
+      return {
+        json: JSON.stringify(
+          buildRetentionCohortAggregateExport(
+            summary,
+            reports.length,
+            sourceBuildRevision,
+            EVIDENCE_BUILD_REVISION,
+            generatedAt,
+          ),
+          null,
+          2,
+        ),
+        fileName: aggregateFileName(generatedAt),
+      };
+    } catch {
+      setStatus(
+        "Field aggregate export failed validation. Preserve the source reports and review the cohort evidence.",
+      );
+      return null;
+    }
+  };
 
   const copySummary = async (): Promise<void> => {
     const payload = aggregateJson(new Date().toISOString());
+
+    if (payload === null) {
+      return;
+    }
 
     try {
       await navigator.clipboard.writeText(payload.json);
@@ -248,6 +263,11 @@ export function App() {
 
   const downloadSummary = (): void => {
     const payload = aggregateJson(new Date().toISOString());
+
+    if (payload === null) {
+      return;
+    }
+
     let objectUrl: string | null = null;
 
     try {
@@ -324,6 +344,9 @@ export function App() {
           <span>Duplicate/stale {lastImport.duplicateOrStale}</span>
           <span>Revision mismatch {lastImport.revisionMismatch}</span>
           <span>Invalid {lastImport.invalid}</span>
+          <span>
+            Field export {fieldAggregateReady ? "ready" : "not immutable"}
+          </span>
         </div>
       </section>
 
@@ -465,6 +488,12 @@ export function App() {
             mixed deploy versions are rejected instead of silently combined.
           </li>
           <li>
+            Field aggregate export requires immutable 40-character Git SHA
+            revisions for both the source cohort and analyzer build. Local
+            development revisions remain inspectable but cannot produce field
+            aggregate evidence.
+          </li>
+          <li>
             7/14/30-day denominators exclude right-censored participants.
           </li>
           <li>
@@ -484,14 +513,14 @@ export function App() {
         <button
           type="button"
           onClick={downloadSummary}
-          disabled={reports.length === 0}
+          disabled={reports.length === 0 || !fieldAggregateReady}
         >
           Download aggregate summary
         </button>
         <button
           type="button"
           onClick={() => void copySummary()}
-          disabled={reports.length === 0}
+          disabled={reports.length === 0 || !fieldAggregateReady}
         >
           Copy aggregate summary
         </button>

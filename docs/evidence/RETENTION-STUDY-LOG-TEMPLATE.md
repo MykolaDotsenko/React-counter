@@ -103,7 +103,10 @@ Before interpreting the cohort:
 - [ ] Duplicate/stale exports are replaced rather than double-counted.
 - [ ] The cohort analyzer invalid/duplicate/replacement/revision-mismatch counters were reviewed.
 - [ ] Every included export has the same source `buildRevision`.
-- [ ] The aggregate summary was downloaded and preserved.
+- [ ] The schema-v3 aggregate summary was downloaded and preserved from a stamped analyzer build.
+- [ ] The aggregate `sourceBuildRevision` matches every included participant export and is a full immutable Git SHA.
+- [ ] The aggregate `analyzerBuildRevision` is a full immutable Git SHA.
+- [ ] The aggregate readiness snapshot was reviewed before interpreting any 7/14/30-day rate.
 - [ ] Qualitative notes remain separate from app evidence.
 - [ ] No participant PII was added to app JSON or committed to the repository.
 

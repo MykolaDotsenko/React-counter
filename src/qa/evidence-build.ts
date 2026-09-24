@@ -2,11 +2,15 @@ export type EvidenceBuildRevision = string;
 
 const FULL_GIT_SHA = /^[0-9a-f]{40}$/;
 
+export const isImmutableEvidenceBuildRevision = (
+  value: unknown,
+): value is EvidenceBuildRevision =>
+  typeof value === "string" && FULL_GIT_SHA.test(value);
+
 export const isEvidenceBuildRevision = (
   value: unknown,
 ): value is EvidenceBuildRevision =>
-  value === "local-dev" ||
-  (typeof value === "string" && FULL_GIT_SHA.test(value));
+  value === "local-dev" || isImmutableEvidenceBuildRevision(value);
 
 const configuredBuildRevision =
   import.meta.env.VITE_EVIDENCE_BUILD_REVISION?.trim();
