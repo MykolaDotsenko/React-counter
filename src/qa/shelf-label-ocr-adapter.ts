@@ -21,6 +21,52 @@ type ShelfLabelOcrGlobal = typeof globalThis & {
   __SBC_SHELF_LABEL_OCR_ENGINE__?: ShelfLabelOcrEngine;
 };
 
+const isShelfLabelOcrEngine = (
+  value: unknown,
+): value is ShelfLabelOcrEngine => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const engine = value as Partial<ShelfLabelOcrEngine>;
+
+  return (
+    typeof engine.id === "string" &&
+    engine.id.trim().length > 0 &&
+    engine.id.length <= 160 &&
+    (engine.dataBoundary === "local-only" ||
+      engine.dataBoundary === "remote-image") &&
+    typeof engine.recognize === "function"
+  );
+};
+
+export const installShelfLabelOcrEngine = (
+  engine: ShelfLabelOcrEngine,
+): (() => void) => {
+  if (!isShelfLabelOcrEngine(engine)) {
+    throw new RangeError("Invalid shelf-label OCR engine");
+  }
+
+  const target = globalThis as ShelfLabelOcrGlobal;
+  const previous = target.__SBC_SHELF_LABEL_OCR_ENGINE__;
+  target.__SBC_SHELF_LABEL_OCR_ENGINE__ = engine;
+
+  return () => {
+    if (target.__SBC_SHELF_LABEL_OCR_ENGINE__ !== engine) {
+      return;
+    }
+
+    if (previous === undefined) {
+      Reflect.deleteProperty(
+        target,
+        "__SBC_SHELF_LABEL_OCR_ENGINE__",
+      );
+    } else {
+      target.__SBC_SHELF_LABEL_OCR_ENGINE__ = previous;
+    }
+  };
+};
+
 const MAX_OCR_RESULT_LENGTH = 20_000;
 
 const isConfidence = (value: unknown): value is number =>
@@ -35,15 +81,7 @@ export const shelfLabelOcrEngine =
       globalThis as ShelfLabelOcrGlobal
     ).__SBC_SHELF_LABEL_OCR_ENGINE__;
 
-    if (
-      engine === undefined ||
-      typeof engine.id !== "string" ||
-      engine.id.trim().length === 0 ||
-      engine.id.length > 160 ||
-      (engine.dataBoundary !== "local-only" &&
-        engine.dataBoundary !== "remote-image") ||
-      typeof engine.recognize !== "function"
-    ) {
+    if (!isShelfLabelOcrEngine(engine)) {
       return null;
     }
 
