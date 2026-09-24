@@ -226,8 +226,7 @@ export function App() {
       | "detector-unsupported"
       | "camera-unsupported"
       | "permission-denied"
-      | "camera-error"
-      | "detector-error",
+      | "camera-error",
   ): void => {
     updateSession((current) =>
       appendBarcodeBenchmarkFailure(current, {
@@ -397,8 +396,7 @@ export function App() {
           return;
         }
       } catch {
-        recordFailure("detector-error");
-        finalizeAttempt("timeout", null);
+        finalizeAttempt("detector-error", null);
         setStatus(
           "Detector error. The attempt was recorded as a recognition failure; manual fallback remains available.",
         );
