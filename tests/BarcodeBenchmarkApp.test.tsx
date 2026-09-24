@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../src/qa/BarcodeBenchmarkApp";
 import {
@@ -8,6 +8,7 @@ import {
   createBarcodeBenchmarkSession,
   persistBarcodeBenchmarkSession,
 } from "../src/qa/barcode-benchmark";
+import { captureBarcodeBenchmarkEnvironment } from "../src/qa/barcode-benchmark-native";
 
 describe("BarcodeBenchmarkApp", () => {
   afterEach(() => {
@@ -29,9 +30,12 @@ describe("BarcodeBenchmarkApp", () => {
     expect(screen.queryByRole("button", { name: "Add price" })).toBeNull();
     expect(screen.getByText("Detector unavailable")).toBeTruthy();
 
-    await user.click(
-      screen.getByRole("button", { name: "Start camera" }),
-    );
+    const startCamera = screen.getByRole("button", {
+      name: "Start camera",
+    });
+
+    await user.click(startCamera);
+    await user.click(startCamera);
 
     await waitFor(() => {
       expect(screen.getByRole("status").textContent).toContain(
@@ -41,7 +45,13 @@ describe("BarcodeBenchmarkApp", () => {
 
     const stored = localStorage.getItem(BARCODE_BENCHMARK_STORAGE_KEY);
     expect(stored).not.toBeNull();
-    expect(stored).toContain("detector-unsupported");
+
+    const parsed = JSON.parse(stored ?? "{}");
+    expect(parsed.failures).toEqual([
+      expect.objectContaining({
+        type: "detector-unsupported",
+      }),
+    ]);
   });
 
   it("states the privacy boundary that raw codes are not exported", async () => {
@@ -104,6 +114,106 @@ describe("BarcodeBenchmarkApp", () => {
         name: "Device / browser label",
       }) as HTMLInputElement).disabled,
     ).toBe(true);
+  });
+
+
+  it("downloads a privacy-safe benchmark export with a non-identifying filename", async () => {
+    const user = userEvent.setup();
+    const createdBlobs: Blob[] = [];
+    const createObjectURL = vi.fn((blob: Blob) => {
+      createdBlobs.push(blob);
+      return "blob:barcode-benchmark";
+    });
+    const revokeObjectURL = vi.fn();
+    let downloadedFileName = "";
+
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: createObjectURL,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: revokeObjectURL,
+    });
+
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        downloadedFileName = this.download;
+      });
+
+    try {
+      render(<App />);
+
+      await screen.findByRole("heading", {
+        name: "Barcode interaction benchmark",
+      });
+
+      await user.click(
+        screen.getByRole("button", {
+          name: "Download benchmark JSON",
+        }),
+      );
+
+      expect(createObjectURL).toHaveBeenCalledTimes(1);
+      expect(downloadedFileName).toMatch(
+        /^barcode-benchmark-\d{8}T\d{9}Z\.json$/,
+      );
+      expect(revokeObjectURL).toHaveBeenCalledWith(
+        "blob:barcode-benchmark",
+      );
+
+      const blob = createdBlobs[0];
+
+      if (blob === undefined) {
+        throw new Error("Expected benchmark download blob");
+      }
+
+      const exported = await blob.text();
+
+      expect(exported).toContain(
+        '"kind": "barcode-benchmark-evidence"',
+      );
+      expect(exported).toContain(
+        '"containsRawBarcodes": false',
+      );
+      expect(exported).not.toContain('"rawValue"');
+    } finally {
+      click.mockRestore();
+      Reflect.deleteProperty(URL, "createObjectURL");
+      Reflect.deleteProperty(URL, "revokeObjectURL");
+    }
+  });
+
+  it("keeps export failure inside the evidence UI when device time predates retained evidence", async () => {
+    const user = userEvent.setup();
+    const currentEnvironment =
+      await captureBarcodeBenchmarkEnvironment();
+    const retained = createBarcodeBenchmarkSession(
+      currentEnvironment,
+      "2099-01-01T08:00:00.000Z",
+    );
+
+    persistBarcodeBenchmarkSession(localStorage, retained);
+
+    render(<App />);
+
+    await screen.findByRole("heading", {
+      name: "Barcode interaction benchmark",
+    });
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Copy privacy-safe benchmark JSON",
+      }),
+    );
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "Benchmark export unavailable",
+    );
+    expect(screen.getByRole("status").textContent).toContain(
+      "device date and time",
+    );
   });
 
 });
