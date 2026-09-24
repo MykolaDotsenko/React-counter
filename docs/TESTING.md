@@ -305,6 +305,7 @@ Tests must prove:
 - capability/permission/camera failures remain distinguishable from timed attempts;
 - duplicate/malformed/tampered evidence is rejected;
 - stopping an active scan records a fallback rather than silently dropping the attempt;
+- evidence copy/reset is unavailable while a timed attempt is still in flight;
 - production barcode promotion still requires representative mobile evidence plus a paired quantitative manual baseline.
 
 The current benchmark intentionally tests native `BarcodeDetector` only. Unsupported target devices are evidence, not a reason to silently add a fallback dependency.
