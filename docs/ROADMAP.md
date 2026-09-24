@@ -29,7 +29,8 @@ The core Shopping Budget Companion engineering path is implemented:
 - guarded native barcode interaction benchmark harness (not a production scanner)
 - local-only paired barcode/manual evidence analyzer for issue #73
 - guarded provider-neutral visual product recognition benchmark harness with a pinned local CLIP experimental adapter; physical evidence still pending
-- guarded provider-neutral shelf-label OCR benchmark harness with deterministic exact-money price parser (no OCR engine bundled)
+- guarded provider-neutral shelf-label OCR benchmark harness with deterministic exact-money price parser
+- guarded pinned Tesseract.js 7 multilingual OCR experiment for issue #90 (not production OCR)
 - Chromium / Firefox / WebKit quality coverage
 
 The representative physical-phone interaction gate was accepted by explicit repository-owner/user attestation on 2026-09-24. The check was reported as responsibly completed with no blocking usability problem.
@@ -129,10 +130,11 @@ The active roadmap is intentionally narrow and local-first.
 
 5. **Shelf-label OCR engine evidence — issue #90**
    - keep OCR text/images transient and outside retained evidence;
-   - select one explicit OCR engine/model adapter;
-   - declare whether image bytes remain local or cross a remote boundary;
+   - use pinned Tesseract.js 7.0.0 with LSTM `fin+swe+eng` as the first explicit local-only baseline;
+   - keep camera image bytes local; worker/core/language assets may download/cache separately;
    - test representative shelf-label fixtures and physical-device conditions;
-   - compare ranked exact-money candidate accuracy and end-to-end decision time against manual entry.
+   - compare ranked exact-money candidate accuracy and end-to-end decision time against manual entry;
+   - if Tesseract is too slow/inaccurate, remediate or defer rather than weakening parser/money invariants.
 
 These gates are not replaceable by automated fixtures or green CI.
 
@@ -180,7 +182,7 @@ Category-only recognition is not sufficient when the intended interaction needs 
 
 ### D. Shelf-label OCR — concrete engine evidence before production
 
-**Harness status: IMPLEMENTED. OCR engine/model evidence: PLANNED / GATED. Production OCR: PLANNED / GATED.**
+**Harness status: IMPLEMENTED. Concrete Tesseract experiment: IMPLEMENTED / FIELD EVIDENCE GATED. Production OCR: PLANNED / GATED.**
 
 The guarded OCR benchmark now owns:
 
@@ -195,7 +197,9 @@ The guarded OCR benchmark now owns:
 
 The parser deliberately reuses the existing `parseEurDraft` money contract. It does not invent decimals in bare OCR digits, does not treat percentages as money, and keeps unit-price/multi-buy/regular-price context distinguishable for ranking and human review.
 
-Use issue #90 to evaluate one named OCR engine/model on representative static fixtures and physical shelf-label conditions.
+The first concrete engine baseline is Tesseract.js 7.0.0 in LSTM mode with `fin+swe+eng`. Worker/core/language preparation occurs before timed attempts; abort/failure invalidates worker resources and explicit dispose releases them.
+
+Use issue #90 to evaluate this exact engine/configuration on representative static fixtures and physical shelf-label conditions.
 
 Only positive evidence may authorize production OCR. Production OCR must preserve:
 
