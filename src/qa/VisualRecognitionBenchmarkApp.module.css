@@ -1,0 +1,25 @@
+.candidateField {
+  margin-top: 18px;
+}
+
+.candidateField textarea {
+  min-height: 132px;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #cdd2cd;
+  border-radius: 12px;
+  padding: 12px;
+  background: #ffffff;
+  color: #1f2925;
+  font: inherit;
+  line-height: 1.45;
+}
+
+.candidateField textarea:focus-visible {
+  outline: 3px solid #245fca;
+  outline-offset: 2px;
+}
+
+.candidateField textarea:disabled {
+  opacity: 0.62;
+}
