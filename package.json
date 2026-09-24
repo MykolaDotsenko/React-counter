@@ -19,7 +19,9 @@
     "docs:check": "node scripts/validate-docs.mjs",
     "cohort:prepare-index": "node scripts/prepare-cohort-index.mjs",
     "barcode:prepare-index": "node scripts/prepare-barcode-index.mjs",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "sbom:generate": "node scripts/generate-sbom.mjs",
+    "sbom:check": "node scripts/validate-sbom.mjs"
   },
   "dependencies": {
     "react": "19.3.0",
