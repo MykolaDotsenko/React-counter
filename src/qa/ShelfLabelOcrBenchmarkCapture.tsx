@@ -340,7 +340,7 @@ export function ShelfLabelOcrBenchmarkCapture({
 
       const outcome =
         error instanceof Error &&
-        error.message.toLocaleLowerCase().includes("capture")
+        error.message.toLowerCase().includes("capture")
           ? "capture-error"
           : "ocr-error";
 
