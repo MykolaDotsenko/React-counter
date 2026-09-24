@@ -358,13 +358,16 @@ export const appendBarcodeBenchmarkSample = (
     throw new RangeError("Duplicate barcode benchmark sample ID");
   }
 
+  if (session.samples.length >= BARCODE_BENCHMARK_SAMPLE_LIMIT) {
+    throw new RangeError("Barcode benchmark sample limit reached");
+  }
+
   return Object.freeze({
     ...session,
-    samples: Object.freeze(
-      [...session.samples, Object.freeze({ ...sample })].slice(
-        -BARCODE_BENCHMARK_SAMPLE_LIMIT,
-      ),
-    ),
+    samples: Object.freeze([
+      ...session.samples,
+      Object.freeze({ ...sample }),
+    ]),
   });
 };
 
@@ -382,13 +385,16 @@ export const appendBarcodeBenchmarkFailure = (
     );
   }
 
+  if (session.failures.length >= BARCODE_BENCHMARK_FAILURE_LIMIT) {
+    throw new RangeError("Barcode benchmark failure limit reached");
+  }
+
   return Object.freeze({
     ...session,
-    failures: Object.freeze(
-      [...session.failures, Object.freeze({ ...failure })].slice(
-        -BARCODE_BENCHMARK_FAILURE_LIMIT,
-      ),
-    ),
+    failures: Object.freeze([
+      ...session.failures,
+      Object.freeze({ ...failure }),
+    ]),
   });
 };
 
