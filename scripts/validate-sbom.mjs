@@ -8,7 +8,7 @@ function readJson(filename) {
   try {
     return JSON.parse(readFileSync(path, "utf8"));
   } catch (error) {
-    throw new Error(`Unable to read valid SBOM JSON from ${path}: ${error.message}`);
+    throw new Error(`Unable to read valid SBOM JSON from ${path}: ${error.message}`, { cause: error });
   }
 }
 
