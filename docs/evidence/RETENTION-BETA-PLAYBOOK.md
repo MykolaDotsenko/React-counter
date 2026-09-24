@@ -126,6 +126,22 @@ For each window:
 
 This prevents an actively recruiting cohort from artificially depressing 7-, 14-, or 30-day retention.
 
+### Interpretation readiness
+
+The target cohort remains **20–50 real shoppers**, but imported participant count and time-window eligibility are different concepts.
+
+For a time-window retention decision:
+
+- do not interpret the 7-day rate until at least 20 participants are eligible for the 7-day window;
+- do not interpret the 14-day rate until at least 20 participants are eligible for the 14-day window;
+- do not interpret the 30-day rate until at least 20 participants are eligible for the 30-day window;
+- a participant who has already returned successfully inside a window is immediately eligible for that window;
+- a non-returner becomes eligible only after the full window has elapsed.
+
+The analyzer exposes this readiness explicitly. It does not convert readiness into a “good/bad” product verdict.
+
+The aggregate second-trip and third-trip values across all activated users are descriptive **observed-so-far shares**, not time-normalized retention outcomes. Use the maturity-aware 7/14/30-day rates for time-bounded retention decisions.
+
 ## Primary metrics
 
 Report at minimum:

@@ -7,6 +7,7 @@
 
 .hero,
 .importCard,
+.readiness,
 .summary,
 .integrity {
   border: 1px solid #d9d8d1;
@@ -32,6 +33,7 @@
 }
 
 .hero h1,
+.readiness h2,
 .summary h2,
 .importCard h2,
 .integrity h2 {
@@ -53,6 +55,7 @@
 }
 
 .importCard,
+.readiness,
 .summary,
 .integrity {
   margin-top: 18px;
@@ -65,6 +68,8 @@
 }
 
 .importCard p,
+.readinessLead,
+.readinessNote,
 .integrity li {
   color: #5d6863;
   line-height: 1.55;
@@ -119,6 +124,73 @@
   border-radius: 999px;
   padding: 7px 10px;
   background: #f0f2ee;
+}
+
+
+.readiness {
+  display: grid;
+  gap: 18px;
+}
+
+.readinessHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.readinessLead,
+.readinessNote {
+  margin: 0;
+}
+
+.readinessNote {
+  padding: 12px 14px;
+  border-left: 4px solid #718a7e;
+  border-radius: 0 12px 12px 0;
+  background: #f4f3ed;
+  font-size: 0.86rem;
+}
+
+.readinessGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 12px;
+}
+
+.readinessItem {
+  display: grid;
+  gap: 7px;
+  border: 1px solid #d9d8d1;
+  border-radius: 16px;
+  padding: 14px;
+  background: #fffefa;
+}
+
+.readinessItem > span {
+  color: #5a665f;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.readinessItem strong {
+  font-size: 1.35rem;
+  letter-spacing: -0.035em;
+}
+
+.readinessItem small {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: #f1eee7;
+  color: #665c4e;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.readinessItem small[data-ready="true"] {
+  background: #e6f0e9;
+  color: #315e49;
 }
 
 .summaryHeader {
@@ -222,11 +294,13 @@
 
   .hero,
   .importCard,
+  .readiness,
   .summary,
   .integrity {
     border-radius: 18px;
   }
 
+  .readinessHeader,
   .summaryHeader {
     align-items: start;
     flex-direction: column;

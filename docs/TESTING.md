@@ -284,6 +284,9 @@ Tests must prove:
 - local JSON download uses a non-identifying session-timestamp filename and preserves the same privacy-safe export contract as clipboard copy;
 - 7/14/30-day retention uses maturity-aware denominators so right-censored participants are not counted as failures;
 - each window-specific cohort summary exposes its eligible participant count;
+- the cohort analyzer keeps recruitment readiness (20–50 real shoppers) separate from 7/14/30-day interpretation readiness;
+- a window is not marked ready for interpretation until at least 20 participants are eligible for that specific window;
+- aggregate second-/third-trip shares are visibly labelled as observed-so-far rather than time-normalized retention;
 - second-/third-trip metrics require contiguous chronological trip starts rather than ordinal gaps;
 - orphan or pre-start finish events do not inflate completed-trip counts;
 - partial interaction evidence remains available for friction analysis without being promoted to retention/completion evidence;

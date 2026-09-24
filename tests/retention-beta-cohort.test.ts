@@ -8,7 +8,11 @@ import {
   type RetentionBetaExport,
   type RetentionBetaSession,
 } from "../src/qa/retention-beta";
-import { summarizeRetentionBetaCohort } from "../src/qa/retention-beta-cohort";
+import {
+  RETENTION_BETA_MIN_INTERPRETABLE_COHORT,
+  summarizeRetentionBetaCohort,
+  summarizeRetentionBetaCohortReadiness,
+} from "../src/qa/retention-beta-cohort";
 
 const session = (
   events: readonly RetentionBetaEvent[],
@@ -313,6 +317,42 @@ describe("retention beta cohort analysis", () => {
     expect(summary.secondTripRate).toBe(0);
     expect(summary.thirdTripRate).toBe(0);
     expect(summary.repeatTripStarts).toBe(0);
+  });
+
+
+  it("requires the cohort minimum before marking recruitment readiness", () => {
+    const summary = summarizeRetentionBetaCohort([]);
+    const nineteen = summarizeRetentionBetaCohortReadiness({
+      ...summary,
+      participantCount: 19,
+    });
+    const twenty = summarizeRetentionBetaCohortReadiness({
+      ...summary,
+      participantCount: RETENTION_BETA_MIN_INTERPRETABLE_COHORT,
+    });
+
+    expect(nineteen.participantStatus).toBe("collecting");
+    expect(twenty.participantStatus).toBe("target-range");
+  });
+
+  it("tracks 7/14/30-day interpretation readiness from eligible denominators independently", () => {
+    const base = summarizeRetentionBetaCohort([]);
+    const readiness = summarizeRetentionBetaCohortReadiness({
+      ...base,
+      participantCount: 25,
+      secondTripWithin7DaysEligibleParticipants: 20,
+      secondTripWithin14DaysEligibleParticipants: 12,
+      secondTripWithin30DaysEligibleParticipants: 4,
+    });
+
+    expect(readiness.participantStatus).toBe("target-range");
+    expect(readiness.sevenDay).toMatchObject({
+      eligibleParticipants: 20,
+      minimumRequired: 20,
+      ready: true,
+    });
+    expect(readiness.fourteenDay.ready).toBe(false);
+    expect(readiness.thirtyDay.ready).toBe(false);
   });
 
 });
