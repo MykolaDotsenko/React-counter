@@ -26,6 +26,7 @@ The core Shopping Budget Companion engineering path is implemented:
 - installable offline PWA shell
 - privacy-safe timing QA and retention-beta evidence tooling
 - local-only retention cohort analyzer
+- guarded native barcode interaction benchmark harness (not a production scanner)
 - Chromium / Firefox / WebKit quality coverage
 
 The representative physical-phone interaction gate was accepted by explicit repository-owner/user attestation on 2026-09-24. The check was reported as responsibly completed with no blocking usability problem.
@@ -104,14 +105,19 @@ The public product now ships a Vite/Workbox-generated installable application sh
 - prompt-based service-worker updates;
 - no forced reload during an active shopping lifecycle;
 - canonical trip/history/Price Memory state remains in localStorage rather than Cache Storage;
-- guarded `/qa/`, `/beta/` and `/cohort/` evidence builds remain outside PWA registration.
+- guarded `/qa/`, `/beta/`, `/cohort/` and `/barcode-benchmark/` evidence builds remain outside PWA registration.
 
 Automated browser coverage verifies active-trip restore, offline completion/history persistence and a second offline history restore.
 
-The physical-phone interaction gate is accepted for the current validation cycle by owner/user attestation; the real-shopper retention gate remains open.
+The physical-phone usability gate was accepted for the current cycle by owner attestation; exact quantitative timing remains unclaimed. Real-shopper retention remains open.
+
 ### B. Barcode identification
 
-**Status: gated / not implemented.**
+**Production status: PLANNED / GATED. Experimental native benchmark harness: IMPLEMENTED; empirical result pending.**
+
+The isolated benchmark lives at `/barcode-benchmark/` and is governed by [evidence/BARCODE-BENCHMARK.md](./evidence/BARCODE-BENCHMARK.md). It measures native camera scan → human decision latency, timeout/correction/manual-fallback behaviour and structured repeated-use preference without adding scanner code to the production shopping path.
+
+The benchmark does not include product lookup, current-price lookup or the D-031 WASM fallback. Production barcode work remains gated until representative mobile benchmark evidence and a paired quantitative manual baseline show meaningful benefit.
 
 Goal:
 

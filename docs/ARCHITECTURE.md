@@ -8,7 +8,9 @@ The repository no longer contains an alternate prototype product shell. The publ
 
 The guarded `/cohort/` route is intentionally different: it is a facilitator-only local analyzer that imports already-exported retention evidence and never composes or mutates shopping state.
 
-Human timing and retention gates remain unverified. The installable offline PWA shell is implemented; barcode and OCR remain future/gated capabilities.
+The guarded `/barcode-benchmark/` route is also standalone: it measures experimental native barcode interaction on physical devices and never composes or mutates shopping state.
+
+Physical-phone usability was accepted for the current cycle by owner attestation, exact human timing statistics remain unverified, and the real-shopper retention gate remains open. The installable offline PWA shell is implemented; production barcode and OCR remain future/gated capabilities.
 
 ## Architectural goal
 
@@ -312,7 +314,7 @@ The public product ships an **IMPLEMENTED** installable/offline application shel
 - `vite-plugin-pwa` generates the service worker through Workbox `generateSW`.
 - Workbox precaches application-shell assets only.
 - canonical shopping state remains owned by the application/localStorage persistence adapters, never Cache Storage or the service worker;
-- `/qa/`, `/beta/` and `/cohort/` guarded evidence builds do not generate/register their own PWA service workers;
+- `/qa/`, `/beta/`, `/cohort/` and `/barcode-benchmark/` guarded evidence builds do not generate/register their own PWA service workers;
 - service-worker updates use a prompt flow rather than auto-update;
 - the update prompt is withheld during active/recovery/completed-summary shopping lifecycle states and is only offered from the idle state, so a new worker never forces a reload during an active trip.
 
@@ -322,7 +324,9 @@ Offline browser coverage verifies that an already installed/cached shell can res
 
 Barcode/OCR are not current production capabilities.
 
-Future adapters must preserve these boundaries:
+The current `/barcode-benchmark/` route is an evidence-only native `BarcodeDetector` harness. It is excluded from the public product bundle, stores no raw barcode value, has no ProductLookup/provider integration and does not authorize the D-031 WASM fallback.
+
+Future production adapters must preserve these boundaries:
 
 - barcode → identity candidate, not current price authority
 - OCR → price candidate, not committed cart mutation

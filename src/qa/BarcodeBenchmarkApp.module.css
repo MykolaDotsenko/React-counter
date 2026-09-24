@@ -1,0 +1,292 @@
+.page {
+  width: min(100% - 24px, 980px);
+  margin: 0 auto;
+  padding: 28px 0 64px;
+  color: #1f2925;
+}
+
+.hero,
+.card {
+  border: 1px solid #d9d8d1;
+  border-radius: 24px;
+  background: #fffefa;
+  box-shadow: 0 14px 40px rgb(39 48 43 / 0.08);
+}
+
+.hero {
+  padding: clamp(24px, 5vw, 48px);
+  background:
+    radial-gradient(circle at top right, rgb(74 118 99 / 0.13), transparent 42%),
+    #fffefa;
+}
+
+.card {
+  margin-top: 18px;
+  padding: clamp(20px, 4vw, 32px);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #4d685d;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.card h2 {
+  margin: 0;
+  letter-spacing: -0.035em;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  line-height: 0.98;
+}
+
+.lead,
+.note,
+.privacy {
+  color: #58665f;
+  line-height: 1.55;
+}
+
+.lead {
+  max-width: 720px;
+  margin: 20px 0 0;
+  font-size: 1.05rem;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.badge {
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #eef2ee;
+  color: #53645d;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.capabilities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.capabilities div,
+.metric {
+  border-radius: 16px;
+  padding: 14px;
+  background: #f4f3ed;
+}
+
+.capabilities dt,
+.metric span {
+  color: #5a665f;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.capabilities dd {
+  margin: 6px 0 0;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  color: #3d4c45;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.field input,
+.field select {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid #cdd2cd;
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: #ffffff;
+  color: #1f2925;
+  font: inherit;
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+.actions button:focus-visible {
+  outline: 3px solid #245fca;
+  outline-offset: 2px;
+}
+
+.cameraFrame {
+  position: relative;
+  min-height: 300px;
+  margin-top: 20px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #17201c;
+}
+
+.cameraFrame video {
+  display: block;
+  width: 100%;
+  min-height: 300px;
+  max-height: 520px;
+  object-fit: cover;
+}
+
+.cameraPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #d9e0dc;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.actions button {
+  min-height: 48px;
+  border: 1px solid #2f6652;
+  border-radius: 14px;
+  padding: 0 16px;
+  background: #2f6652;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.actions .secondary {
+  border-color: #c9cec9;
+  background: #fffefa;
+  color: #26322d;
+}
+
+.actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.candidate {
+  margin-top: 16px;
+  border: 1px solid #b8c8bf;
+  border-radius: 18px;
+  padding: 16px;
+  background: #f2f7f3;
+}
+
+.candidate p {
+  margin: 0 0 8px;
+  font-weight: 800;
+}
+
+.candidate code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 1.05rem;
+}
+
+.candidate small {
+  display: block;
+  margin-top: 4px;
+  color: #5b6962;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.metric {
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.metric strong {
+  font-size: 1.6rem;
+  letter-spacing: -0.04em;
+}
+
+.subjective {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.privacy {
+  margin: 18px 0 0;
+  font-size: 0.82rem;
+}
+
+.note {
+  margin: 16px 0 0;
+  font-size: 0.86rem;
+}
+
+.status {
+  margin: 16px 4px 0;
+  color: #42544c;
+  font-weight: 750;
+}
+
+@media (max-width: 620px) {
+  .page {
+    width: min(100% - 16px, 980px);
+    padding-top: 12px;
+  }
+
+  .hero,
+  .card {
+    border-radius: 18px;
+  }
+
+  .sectionHeading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .cameraFrame,
+  .cameraFrame video {
+    min-height: 260px;
+  }
+
+  .subjective {
+    grid-template-columns: 1fr;
+  }
+
+  .actions button {
+    flex: 1 1 145px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
