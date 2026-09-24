@@ -304,8 +304,16 @@ Tests must prove:
 - confirmed latency reports median/P75/P90 deterministically;
 - capability/permission/camera failures remain distinguishable from timed attempts;
 - duplicate/malformed/tampered evidence is rejected;
+- timed sample/failure capacity fails closed instead of silently truncating earlier evidence;
+- an unresolved detector call cannot extend the eight-second timeout;
+- stale detector results arriving after fallback/stop/timeout cannot resurrect a candidate or create a second outcome;
+- camera startup failure releases acquired media tracks;
+- repeated identical capability failure clicks do not inflate retained failure evidence;
+- a changed viewport cannot start another timed scan in the retained environment;
 - stopping an active scan records a fallback rather than silently dropping the attempt;
-- evidence copy/reset is unavailable while a timed attempt is still in flight;
+- evidence copy/download/reset is unavailable while a timed attempt is still in flight;
+- local benchmark download uses a non-identifying timestamp filename and contains no raw barcode value;
+- export/clock failure remains inside the evidence UI instead of crashing the benchmark;
 - production barcode promotion still requires representative mobile evidence plus a paired quantitative manual baseline.
 
 The current benchmark intentionally tests native `BarcodeDetector` only. Unsupported target devices are evidence, not a reason to silently add a fallback dependency.
