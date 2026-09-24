@@ -28,6 +28,13 @@ describe("shelf-label price candidate parser", () => {
     expect(values("EAN 6411401034290")).toEqual([]);
   });
 
+  it("requires explicit price context when a decimal has no euro marker", () => {
+    expect(values("Päivä 24.09.2026")).toEqual([]);
+    expect(values("Paino 2.5 kg")).toEqual([]);
+    expect(values("Tarjous 2.5")).toEqual([250]);
+    expect(values("Price 3.79")).toEqual([379]);
+  });
+
   it("does not parse percentage discounts as money", () => {
     expect(values("ALE -30%")).toEqual([]);
     expect(values("ALE 30%\nHinta 3,49 €")).toEqual([349]);
