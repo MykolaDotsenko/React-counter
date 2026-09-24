@@ -104,7 +104,11 @@ Malformed evidence falls back to a fresh evidence session and must never affect 
 
 The event history is bounded.
 
+The recorder never drops older events to make room for newer ones. When the hard event capacity is reached, earlier evidence remains intact and additional events are refused. An at-capacity export is not eligible for primary cohort aggregation.
+
 Evidence storage failure must never change the active cart, completed history, Price Memory, or completion transaction.
+
+If a write fails, the recorder continues only in memory and the beta panel shows an explicit **memory-only** warning. Export the current evidence before reload/close; do not treat a memory-only session as safely durable until persistence recovers.
 
 ## Trip ordinals
 
