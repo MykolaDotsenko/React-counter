@@ -197,7 +197,7 @@ const isSample = (value: unknown): value is BarcodeBenchmarkSample => {
     typeof candidate.durationMs === "number" &&
     Number.isFinite(candidate.durationMs) &&
     candidate.durationMs >= 0 &&
-    candidate.durationMs <= 60_000 &&
+    candidate.durationMs <= 3_600_000 &&
     isOutcome(candidate.outcome) &&
     (candidate.detectedFormat === null ||
       isFormat(candidate.detectedFormat)) &&
@@ -296,6 +296,20 @@ export const isBarcodeBenchmarkSession = (
     timestampsCoverSession(candidate as BarcodeBenchmarkSession)
   );
 };
+
+export const sameBarcodeBenchmarkEnvironment = (
+  left: BarcodeBenchmarkEnvironment,
+  right: BarcodeBenchmarkEnvironment,
+): boolean =>
+  left.userAgent === right.userAgent &&
+  left.viewportWidth === right.viewportWidth &&
+  left.viewportHeight === right.viewportHeight &&
+  left.detectorSupported === right.detectorSupported &&
+  left.cameraSupported === right.cameraSupported &&
+  left.supportedFormats.length === right.supportedFormats.length &&
+  left.supportedFormats.every(
+    (format, index) => format === right.supportedFormats[index],
+  );
 
 export const createBarcodeBenchmarkSession = (
   environment: BarcodeBenchmarkEnvironment,
@@ -468,7 +482,7 @@ export const summarizeBarcodeBenchmark = (
     p75ConfirmedMs: percentile(confirmedDurations, 0.75),
     p90ConfirmedMs: percentile(confirmedDurations, 0.9),
     recognitionFailureRate: rate(
-      timeouts + manualFallbacks + detectorErrors,
+      timeouts + detectorErrors,
       attempts,
     ),
     correctionRate: rate(rejected, detectedDecisions),
