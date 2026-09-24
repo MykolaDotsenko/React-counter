@@ -8,9 +8,12 @@ import { VitePWA } from "vite-plugin-pwa";
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(() => {
+  const cohortAnalysisEnabled =
+    process.env.VITE_SHOPPING_COHORT_ANALYSIS === "1";
   const evidenceEnabled =
     process.env.VITE_SHOPPING_QA_TIMING === "1" ||
-    process.env.VITE_SHOPPING_BETA_EVIDENCE === "1";
+    process.env.VITE_SHOPPING_BETA_EVIDENCE === "1" ||
+    cohortAnalysisEnabled;
 
   return {
     plugins: [
@@ -59,6 +62,7 @@ export default defineConfig(() => {
           navigateFallbackDenylist: [
             /\/qa(?:\/|$)/,
             /\/beta(?:\/|$)/,
+            /\/cohort(?:\/|$)/,
           ],
           globPatterns: [
             "**/*.{js,css,html,svg,png,webmanifest}",
@@ -68,6 +72,12 @@ export default defineConfig(() => {
     ],
     resolve: {
       alias: {
+        "#app-entry": path.resolve(
+          rootDir,
+          cohortAnalysisEnabled
+            ? "src/qa/RetentionCohortAnalyzerApp.tsx"
+            : "src/App.tsx",
+        ),
         "#shopping-evidence": path.resolve(
           rootDir,
           evidenceEnabled
