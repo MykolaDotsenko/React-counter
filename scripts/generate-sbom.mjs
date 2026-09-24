@@ -33,7 +33,7 @@ function generateSbom(filename, extraArgs = []) {
   try {
     parsed = JSON.parse(result.stdout);
   } catch (error) {
-    throw new Error(`npm sbom returned invalid JSON for ${filename}: ${error.message}`);
+    throw new Error(`npm sbom returned invalid JSON for ${filename}: ${error.message}`, { cause: error });
   }
 
   writeFileSync(join(outputDirectory, filename), `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
