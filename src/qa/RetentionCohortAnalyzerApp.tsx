@@ -32,8 +32,17 @@ const percent = (value: number | null): string =>
 const seconds = (value: number | null): string =>
   value === null ? "—" : `${(value / 1_000).toFixed(2)} s`;
 
+const MAX_FUTURE_CLOCK_SKEW_MS = 5 * 60 * 1_000;
+
 const sessionKey = (report: RetentionBetaExport): string =>
   `${report.session.variant}:${report.session.createdAt}`;
+
+const observationEndIsPlausible = (
+  report: RetentionBetaExport,
+  nowMs: number,
+): boolean =>
+  Date.parse(report.generatedAt) <=
+  nowMs + MAX_FUTURE_CLOCK_SKEW_MS;
 
 export function App() {
   const [reports, setReports] = useState<readonly ImportedReport[]>([]);
@@ -79,7 +88,10 @@ export function App() {
         const raw: unknown = JSON.parse(await file.text());
         const report = parseRetentionBetaExport(raw);
 
-        if (report === null) {
+        if (
+          report === null ||
+          !observationEndIsPlausible(report, Date.now())
+        ) {
           invalid += 1;
           continue;
         }
@@ -287,7 +299,10 @@ export function App() {
       <section className={styles.integrity} aria-labelledby="integrity-title">
         <h2 id="integrity-title">Evidence boundaries</h2>
         <ul>
-          <li>Invalid or tampered exports never enter the cohort.</li>
+          <li>
+            Invalid, tampered, or implausibly future-dated exports never enter
+            the cohort.
+          </li>
           <li>
             7/14/30-day denominators exclude right-censored participants.
           </li>
