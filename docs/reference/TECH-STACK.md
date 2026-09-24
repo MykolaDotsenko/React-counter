@@ -82,19 +82,13 @@ Prefer platform APIs and explicit wrappers where testability matters.
 
 Financial formatting follows the money contract.
 
-## Backend
+## Remote/backend scope
 
-None required for current product.
+Backend, authentication, cloud sync and collaborative remote shopping state are **outside the active product roadmap**.
 
-A backend becomes justified only by a validated need such as:
+The product remains local-first, offline-first and account-free. Do not add server-owned shopping state, remote history or account infrastructure as speculative architecture.
 
-- multi-device sync;
-- collaboration;
-- server-side OCR/provider proxy;
-- account-owned remote history;
-- privacy-reviewed aggregate telemetry requiring server ingestion.
-
-Choose a backend only after the requirement exists.
+A future product-identity lookup may use a narrow external provider adapter only when barcode evidence justifies it. That adapter must be optional, runtime-validated and failure-safe; the core trip remains fully usable without network access.
 
 ## Analytics
 
