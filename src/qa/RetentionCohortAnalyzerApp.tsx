@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { EVIDENCE_BUILD_REVISION } from "./evidence-build";
 import {
   parseRetentionBetaExport,
   type RetentionBetaExport,
@@ -21,6 +22,7 @@ interface ImportResult {
   readonly accepted: number;
   readonly replaced: number;
   readonly duplicateOrStale: number;
+  readonly revisionMismatch: number;
   readonly invalid: number;
 }
 
@@ -28,6 +30,7 @@ const emptyImportResult = (): ImportResult => ({
   accepted: 0,
   replaced: 0,
   duplicateOrStale: 0,
+  revisionMismatch: 0,
   invalid: 0,
 });
 
@@ -55,10 +58,13 @@ const aggregateFileName = (generatedAt: string): string =>
 const buildAggregatePayload = (
   summary: RetentionBetaCohortSummary,
   sourceReportCount: number,
+  sourceBuildRevision: string,
   generatedAt: string,
 ) => ({
-  schemaVersion: 1 as const,
+  schemaVersion: 2 as const,
   kind: "retention-cohort-summary" as const,
+  sourceBuildRevision,
+  analyzerBuildRevision: EVIDENCE_BUILD_REVISION,
   generatedAt,
   sourceReportCount,
   privacy: {
@@ -134,6 +140,31 @@ export function App() {
       }
     }
 
+    const existingBuildRevision =
+      reportsRef.current[0]?.report.buildRevision ?? null;
+    let revisionMismatch = 0;
+    let compatible = parsed;
+
+    if (existingBuildRevision !== null) {
+      compatible = parsed.filter((entry) => {
+        if (entry.report.buildRevision === existingBuildRevision) {
+          return true;
+        }
+
+        revisionMismatch += 1;
+        return false;
+      });
+    } else {
+      const revisions = new Set(
+        parsed.map((entry) => entry.report.buildRevision),
+      );
+
+      if (revisions.size > 1) {
+        revisionMismatch = parsed.length;
+        compatible = [];
+      }
+    }
+
     const bySession = new Map(
       reportsRef.current.map((entry) => [
         sessionKey(entry.report),
@@ -144,7 +175,7 @@ export function App() {
     let replaced = 0;
     let duplicateOrStale = 0;
 
-    for (const entry of parsed) {
+    for (const entry of compatible) {
       const key = sessionKey(entry.report);
       const existing = bySession.get(key);
 
@@ -177,10 +208,11 @@ export function App() {
       accepted,
       replaced,
       duplicateOrStale,
+      revisionMismatch,
       invalid,
     });
     setStatus(
-      `Imported ${accepted}; replaced ${replaced}; ignored duplicate/stale ${duplicateOrStale}; invalid ${invalid}.`,
+      `Imported ${accepted}; replaced ${replaced}; ignored duplicate/stale ${duplicateOrStale}; revision mismatch ${revisionMismatch}; invalid ${invalid}.`,
     );
   };
 
@@ -194,6 +226,7 @@ export function App() {
       buildAggregatePayload(
         summary,
         reports.length,
+        reports[0]?.report.buildRevision ?? EVIDENCE_BUILD_REVISION,
         generatedAt,
       ),
       null,
@@ -289,6 +322,7 @@ export function App() {
           <span>Accepted {lastImport.accepted}</span>
           <span>Replaced {lastImport.replaced}</span>
           <span>Duplicate/stale {lastImport.duplicateOrStale}</span>
+          <span>Revision mismatch {lastImport.revisionMismatch}</span>
           <span>Invalid {lastImport.invalid}</span>
         </div>
       </section>
@@ -425,6 +459,10 @@ export function App() {
           <li>
             Invalid, tampered, or implausibly future-dated exports never enter
             the cohort.
+          </li>
+          <li>
+            One in-memory cohort accepts exactly one source build revision;
+            mixed deploy versions are rejected instead of silently combined.
           </li>
           <li>
             7/14/30-day denominators exclude right-censored participants.
