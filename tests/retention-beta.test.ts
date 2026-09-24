@@ -8,6 +8,7 @@ import {
   createRetentionBetaSession,
   currentRetentionTripOrdinal,
   loadRetentionBetaSession,
+  loadRetentionBetaSessionResult,
   nextRetentionTripOrdinal,
   persistRetentionBetaSession,
   parseRetentionBetaExport,
@@ -82,6 +83,92 @@ describe("retention beta evidence", () => {
 
     expect(loadRetentionBetaSession(store, LATER)).toEqual(session);
     expect(store.values.has(RETENTION_BETA_STORAGE_KEY)).toBe(true);
+  });
+
+
+
+  it("reports fresh, restored, unavailable and invalid retained load states explicitly", () => {
+    const emptyStore = storage();
+
+    expect(
+      loadRetentionBetaSessionResult(emptyStore, START),
+    ).toEqual({
+      session: createRetentionBetaSession(START),
+      status: "fresh",
+    });
+
+    let valid = createRetentionBetaSession(START);
+    valid = appendRetentionBetaEvent(
+      valid,
+      event({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "new",
+      }),
+    );
+    persistRetentionBetaSession(emptyStore, valid);
+
+    expect(
+      loadRetentionBetaSessionResult(emptyStore, LATER),
+    ).toEqual({
+      session: valid,
+      status: "restored",
+    });
+
+    expect(
+      loadRetentionBetaSessionResult(
+        {
+          getItem: () => {
+            throw new DOMException(
+              "Storage unavailable",
+              "SecurityError",
+            );
+          },
+        },
+        START,
+      ),
+    ).toEqual({
+      session: createRetentionBetaSession(START),
+      status: "storage-unavailable",
+    });
+
+    const malformedStore = storage();
+    malformedStore.setItem(RETENTION_BETA_STORAGE_KEY, "{broken");
+
+    expect(
+      loadRetentionBetaSessionResult(malformedStore, START),
+    ).toEqual({
+      session: createRetentionBetaSession(START),
+      status: "invalid-retained",
+    });
+    expect(
+      malformedStore.values.get(RETENTION_BETA_STORAGE_KEY),
+    ).toBe("{broken");
+
+    const structurallyInvalidStore = storage();
+    const structurallyInvalid = JSON.stringify({
+      version: 1,
+      variant: "repeat-acceleration",
+      createdAt: START,
+      events: [],
+      participantId: "must-not-enter-schema",
+    });
+    structurallyInvalidStore.setItem(
+      RETENTION_BETA_STORAGE_KEY,
+      structurallyInvalid,
+    );
+
+    expect(
+      loadRetentionBetaSessionResult(
+        structurallyInvalidStore,
+        START,
+      ).status,
+    ).toBe("invalid-retained");
+    expect(
+      structurallyInvalidStore.values.get(
+        RETENTION_BETA_STORAGE_KEY,
+      ),
+    ).toBe(structurallyInvalid);
   });
 
   it("falls back safely when retained evidence is malformed", () => {

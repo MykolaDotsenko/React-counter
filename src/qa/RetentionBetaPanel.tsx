@@ -11,7 +11,8 @@ import styles from "./RetentionBetaPanel.module.css";
 export type RetentionBetaRecordingStatus =
   | "persisted"
   | "memory-only"
-  | "recording-error";
+  | "recording-error"
+  | "invalid-retained";
 
 export interface RetentionBetaPanelProps {
   readonly session: RetentionBetaSession;
@@ -39,6 +40,7 @@ export function RetentionBetaPanel({
     () => summarizeRetentionBeta(session),
     [session],
   );
+  const exportBlocked = recordingStatus === "invalid-retained";
 
   useEffect(() => {
     document.title = "Shopping Budget Companion — Retention Beta";
@@ -69,6 +71,13 @@ export function RetentionBetaPanel({
     readonly json: string;
     readonly fileName: string;
   } | null => {
+    if (exportBlocked) {
+      setCopyStatus(
+        "Export blocked — retained evidence failed validation. Reset only after recording the exclusion.",
+      );
+      return null;
+    }
+
     try {
       const report = buildRetentionBetaExport(
         session,
@@ -180,6 +189,16 @@ export function RetentionBetaPanel({
             </p>
           ) : null}
 
+          {recordingStatus === "invalid-retained" ? (
+            <p className={styles.warning} role="alert">
+              Retained beta evidence failed validation. Recording and
+              export are frozen so the invalid data is not silently
+              overwritten or mistaken for a fresh participant session.
+              Record the exclusion first, then reset evidence to begin a
+              new session.
+            </p>
+          ) : null}
+
           {session.events.length >= RETENTION_BETA_EVENT_LIMIT ? (
             <p className={styles.warning} role="alert">
               Evidence event capacity reached. Earlier events were
@@ -259,10 +278,28 @@ export function RetentionBetaPanel({
           </p>
 
           <div className={styles.actions}>
-            <button type="button" onClick={downloadEvidence}>
+            <button
+              type="button"
+              disabled={exportBlocked}
+              title={
+                exportBlocked
+                  ? "Reset invalid retained evidence before exporting a new session."
+                  : undefined
+              }
+              onClick={downloadEvidence}
+            >
               Download JSON evidence
             </button>
-            <button type="button" onClick={copyEvidence}>
+            <button
+              type="button"
+              disabled={exportBlocked}
+              title={
+                exportBlocked
+                  ? "Reset invalid retained evidence before exporting a new session."
+                  : undefined
+              }
+              onClick={copyEvidence}
+            >
               Copy privacy-safe evidence
             </button>
             <button

@@ -57,6 +57,17 @@ export interface RetentionBetaSession {
   readonly events: readonly RetentionBetaEvent[];
 }
 
+export type RetentionBetaLoadStatus =
+  | "fresh"
+  | "restored"
+  | "storage-unavailable"
+  | "invalid-retained";
+
+export interface RetentionBetaLoadResult {
+  readonly session: RetentionBetaSession;
+  readonly status: RetentionBetaLoadStatus;
+}
+
 export interface RetentionBetaSummary {
   readonly tripsStarted: number;
   readonly tripsFinished: number;
@@ -262,30 +273,56 @@ export const appendRetentionBetaEvent = (
   });
 };
 
-export const loadRetentionBetaSession = (
+export const loadRetentionBetaSessionResult = (
   storage: Pick<Storage, "getItem">,
   now: string,
-): RetentionBetaSession => {
+): RetentionBetaLoadResult => {
   const fallback = createRetentionBetaSession(now);
   let raw: string | null;
 
   try {
     raw = storage.getItem(RETENTION_BETA_STORAGE_KEY);
   } catch {
-    return fallback;
+    return Object.freeze({
+      session: fallback,
+      status: "storage-unavailable",
+    });
   }
 
   if (raw === null) {
-    return fallback;
+    return Object.freeze({
+      session: fallback,
+      status: "fresh",
+    });
   }
 
   try {
     const parsed: unknown = JSON.parse(raw);
-    return isSession(parsed) ? parsed : fallback;
+
+    if (!isSession(parsed)) {
+      return Object.freeze({
+        session: fallback,
+        status: "invalid-retained",
+      });
+    }
+
+    return Object.freeze({
+      session: parsed,
+      status: "restored",
+    });
   } catch {
-    return fallback;
+    return Object.freeze({
+      session: fallback,
+      status: "invalid-retained",
+    });
   }
 };
+
+export const loadRetentionBetaSession = (
+  storage: Pick<Storage, "getItem">,
+  now: string,
+): RetentionBetaSession =>
+  loadRetentionBetaSessionResult(storage, now).session;
 
 export const persistRetentionBetaSession = (
   storage: Pick<Storage, "setItem">,

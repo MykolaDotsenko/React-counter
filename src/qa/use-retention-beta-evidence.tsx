@@ -19,7 +19,7 @@ import {
   appendRetentionBetaEvent,
   createRetentionBetaSession,
   currentRetentionTripOrdinal,
-  loadRetentionBetaSession,
+  loadRetentionBetaSessionResult,
   nextRetentionTripOrdinal,
   persistRetentionBetaSession,
   type RetentionBetaEvent,
@@ -63,23 +63,35 @@ export function useRetentionBetaEvidence({
   const manualStartedAtRef = useRef<number | null>(null);
   const restoreRecordedRef = useRef(false);
   const initialActiveTripRef = useRef(activeTrip !== null);
-  const [session, setSession] =
-    useState<RetentionBetaSession | null>(() => {
-      if (!betaEvidenceEnabled) {
-        return null;
-      }
+  const [initialLoad] = useState(() => {
+    if (!betaEvidenceEnabled) {
+      return null;
+    }
 
-      const now = new Date().toISOString();
-
-      try {
-        return loadRetentionBetaSession(localStorage, now);
-      } catch {
-        return createRetentionBetaSession(now);
-      }
-    });
+    return loadRetentionBetaSessionResult(
+      localStorage,
+      new Date().toISOString(),
+    );
+  });
+  const [session, setSession] = useState<RetentionBetaSession | null>(
+    initialLoad?.session ?? null,
+  );
   const sessionRef = useRef<RetentionBetaSession | null>(session);
+  const invalidRetainedRef = useRef(
+    initialLoad?.status === "invalid-retained",
+  );
   const [recordingStatus, setRecordingStatus] =
-    useState<RetentionBetaRecordingStatus>("persisted");
+    useState<RetentionBetaRecordingStatus>(() => {
+      if (initialLoad?.status === "storage-unavailable") {
+        return "memory-only";
+      }
+
+      if (initialLoad?.status === "invalid-retained") {
+        return "invalid-retained";
+      }
+
+      return "persisted";
+    });
 
   const commitSession = useCallback(
     (next: RetentionBetaSession): void => {
@@ -104,7 +116,7 @@ export function useRetentionBetaEvidence({
     ): void => {
       const current = sessionRef.current;
 
-      if (current === null) {
+      if (current === null || invalidRetainedRef.current) {
         return;
       }
 
@@ -305,6 +317,8 @@ export function useRetentionBetaEvidence({
         session={session}
         recordingStatus={recordingStatus}
         onReset={() => {
+          invalidRetainedRef.current = false;
+          manualStartedAtRef.current = null;
           commitSession(
             createRetentionBetaSession(new Date().toISOString()),
           );

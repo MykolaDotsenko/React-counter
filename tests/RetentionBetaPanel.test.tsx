@@ -263,4 +263,37 @@ describe("RetentionBetaPanel", () => {
     );
   });
 
+
+  it("blocks export when retained evidence failed validation", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <RetentionBetaPanel
+        session={createRetentionBetaSession(
+          "2026-09-22T08:00:00.000Z",
+        )}
+        recordingStatus="invalid-retained"
+        onReset={vi.fn()}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Beta evidence" }),
+    );
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Retained beta evidence failed validation",
+    );
+
+    const download = screen.getByRole("button", {
+      name: "Download JSON evidence",
+    }) as HTMLButtonElement;
+    const copy = screen.getByRole("button", {
+      name: "Copy privacy-safe evidence",
+    }) as HTMLButtonElement;
+
+    expect(download.disabled).toBe(true);
+    expect(copy.disabled).toBe(true);
+  });
+
 });

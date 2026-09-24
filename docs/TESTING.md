@@ -274,6 +274,7 @@ Tests must prove:
 - event history is bounded without sliding-window truncation of earlier evidence;
 - the event-capacity boundary fails closed and at-capacity exports are rejected from primary cohort ingestion;
 - storage write failure leaves shopping behaviour unchanged while surfacing a visible memory-only evidence warning;
+- malformed retained evidence is preserved unchanged, freezes recorder/export, and requires explicit reset before a fresh session can be written;
 - trip ordinals are session-relative;
 - milestones deduplicate;
 - entry completion/abandonment remain distinguishable;
