@@ -113,16 +113,13 @@ jobs:
           node-version-file: .node-version
           cache: npm
 
-      - name: Install production dependency graph
-        run: npm ci --omit=dev --ignore-scripts
-
       - name: Generate and validate production CycloneDX SBOM
         shell: bash
         run: |
           set -euo pipefail
           SBOM_FILE="shopping-budget-companion-${GITHUB_SHA}.cdx.json"
 
-          npm sbom --sbom-format=cyclonedx --omit=dev > "${SBOM_FILE}"
+          npm sbom --sbom-format=cyclonedx --package-lock-only --omit=dev > "${SBOM_FILE}"
 
           jq -e '.bomFormat == "CycloneDX"' "${SBOM_FILE}" >/dev/null
           jq -e '.specVersion | type == "string"' "${SBOM_FILE}" >/dev/null
