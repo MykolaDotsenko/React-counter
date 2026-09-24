@@ -30,6 +30,64 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Download pinned Syft
+        id: syft
+        uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          syft-version: v1.52.0
+
+      - name: Generate production CycloneDX SBOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          SBOM_FILE="shopping-budget-companion-${GITHUB_SHA}.cdx.json"
+
+          "${{ steps.syft.outputs.cmd }}" dir:.             --select-catalogers '-github-actions-usage-cataloger,-github-action-workflow-usage-cataloger'             --source-name shopping-budget-companion             --source-version 2.0.0             -o "cyclonedx-json=${SBOM_FILE}"
+
+          sha256sum "${SBOM_FILE}" > "${SBOM_FILE}.sha256"
+
+      - name: Validate production CycloneDX SBOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          SBOM_FILE="shopping-budget-companion-${GITHUB_SHA}.cdx.json"
+
+          echo "Validate CycloneDX envelope"
+          jq -e '.bomFormat == "CycloneDX"' "${SBOM_FILE}" >/dev/null
+          jq -e '.specVersion | type == "string"' "${SBOM_FILE}" >/dev/null
+
+          echo "Validate product source identity"
+          jq -e '.metadata.component.name == "shopping-budget-companion"' "${SBOM_FILE}" >/dev/null
+          jq -e '.metadata.component.version == "2.0.0"' "${SBOM_FILE}" >/dev/null
+
+          echo "Validate runtime dependency inventory"
+          jq -e '.components | type == "array" and length > 0' "${SBOM_FILE}" >/dev/null
+
+          while IFS= read -r dependency; do
+            echo "Require runtime dependency: ${dependency}"
+            jq -e --arg dependency "${dependency}"               'any(.components[]; .name == $dependency)'               "${SBOM_FILE}" >/dev/null
+          done < <(jq -r '.dependencies | keys[]' package.json)
+
+          echo "Reject development-only test packages"
+          jq -e 'all(.components[]; .name != "vitest" and .name != "@vitest/coverage-v8")'             "${SBOM_FILE}" >/dev/null
+
+          echo "Reject GitHub Actions from product SBOM"
+          jq -e '[.components[] | select((.purl // "") | startswith("pkg:github/"))] | length == 0'             "${SBOM_FILE}" >/dev/null
+
+          echo "Verify SHA-256 sidecar"
+          sha256sum --check "${SBOM_FILE}.sha256"
+
+      - name: Upload SBOM evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom-${{ github.sha }}
+          path: |
+            shopping-budget-companion-${{ github.sha }}.cdx.json
+            shopping-budget-companion-${{ github.sha }}.cdx.json.sha256
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
@@ -139,6 +197,7 @@ jobs:
           test ! -e /tmp/pages-site/dist-beta
           test ! -e /tmp/pages-site/dist-cohort
           test ! -e /tmp/pages-site/dist-barcode
+          test -z "$(find /tmp/pages-site -maxdepth 1 -type f -name 'shopping-budget-companion-*.cdx.json*' -print -quit)"
 
   browser:
     needs: quality
