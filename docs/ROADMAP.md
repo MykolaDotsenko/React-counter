@@ -6,7 +6,7 @@ This file describes **current validation gates and future sequencing**.
 
 It is not a chronological implementation diary. The detailed phase-by-phase plan through repeat-trip engineering is preserved in [archive/ROADMAP-THROUGH-PHASE-8.md](./archive/ROADMAP-THROUGH-PHASE-8.md).
 
-## Current status — 2026-09-23
+## Current status — 2026-09-24
 
 The core Shopping Budget Companion engineering path is implemented:
 
