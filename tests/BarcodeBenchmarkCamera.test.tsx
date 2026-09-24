@@ -197,4 +197,66 @@ describe("BarcodeBenchmarkCamera", () => {
       detectedFormat: null,
     });
   });
+
+  it("refuses to mix a changed viewport into the retained benchmark session", async () => {
+    installCamera(async () => []);
+    const onSample = vi.fn<(sample: BarcodeBenchmarkSample) => void>();
+    const onStatus = vi.fn();
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+
+    try {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: environment.viewportWidth,
+      });
+      Object.defineProperty(window, "innerHeight", {
+        configurable: true,
+        value: environment.viewportHeight,
+      });
+
+      render(
+        <BarcodeBenchmarkCamera
+          environment={environment}
+          onFailure={vi.fn()}
+          onSample={onSample}
+          onStatus={onStatus}
+          onAttemptActiveChange={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Start camera" }),
+      );
+      await screen.findByRole("button", { name: "Camera ready" });
+
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: 844,
+      });
+      Object.defineProperty(window, "innerHeight", {
+        configurable: true,
+        value: 390,
+      });
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Start timed scan" }),
+      );
+
+      expect(onSample).not.toHaveBeenCalled();
+      expect(onStatus).toHaveBeenLastCalledWith(
+        expect.stringContaining("Viewport changed"),
+      );
+    } finally {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: originalWidth,
+      });
+      Object.defineProperty(window, "innerHeight", {
+        configurable: true,
+        value: originalHeight,
+      });
+    }
+  });
+
 });
