@@ -20,8 +20,10 @@ Record the retained files without editing their JSON bodies.
 - orientation / viewport:
 - lighting/context:
 - barcode benchmark export filename:
+- barcode `buildRevision`:
 - barcode export `generatedAt`:
 - manual timing export filename:
+- manual `buildRevision`:
 - manual export `generatedAt`:
 - manual input method:
 
@@ -39,6 +41,8 @@ Before comparing:
 - [ ] manual evidence follows the documented EUR 4.79 / EUR 12.50 QA fixture;
 - [ ] barcode timing measures scan → human confirm/reject/fallback rather than detector-only latency;
 - [ ] neither export was manually edited;
+- [ ] both exports contain valid full-Git-SHA `buildRevision` values;
+- [ ] both exports use the same `buildRevision`; otherwise the comparison is invalid and must be repeated or kept separate;
 - [ ] barcode evidence contains no raw barcode values.
 
 If contexts are not comparable, mark the comparison as invalid and repeat rather than normalizing the data by hand.
