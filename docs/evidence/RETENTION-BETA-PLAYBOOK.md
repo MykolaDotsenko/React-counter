@@ -78,6 +78,8 @@ Before an export enters cohort analysis:
 - one participant contributes one retained beta session
 - synthetic/manual fixture data must never be mixed with real cohort data
 - incomplete evidence may remain useful, but must not be silently upgraded to completed-trip evidence
+- second- and third-trip retention require a contiguous observed start sequence (1 → 2 → 3) with non-decreasing start timestamps
+- a `trip_finished` event counts as completion only when the same trip ordinal has an observed start at or before that finish timestamp
 
 The implementation provides:
 
@@ -127,7 +129,9 @@ Report at minimum:
 - completed-started trips
 - trip completion rate
 
-Completion rate counts only a `trip_finished` event whose trip ordinal also has a corresponding `trip_started` event. Orphan/partial finish evidence must not inflate completion.
+Completion rate counts only a `trip_finished` event whose trip ordinal has a corresponding `trip_started` event at or before the finish timestamp. Orphan, reversed, or partial finish evidence must not inflate completion.
+
+Second-trip and third-trip metrics likewise require contiguous chronological starts. Observing trip ordinal 3 without a valid ordinal 2 does not imply either second- or third-trip retention.
 
 ## Friction and acceleration metrics
 
