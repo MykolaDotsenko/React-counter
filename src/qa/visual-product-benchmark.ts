@@ -270,7 +270,7 @@ const isSample = (
     (candidate.outcome === "top3-confirmed"
       ? candidate.selectedRank === 2 || candidate.selectedRank === 3
       : true) &&
-    (!decisionOutcome || candidate.candidateCount > 0) &&
+    (!decisionOutcome || Number(candidate.candidateCount) > 0) &&
     (candidate.outcome === "rejected"
       ? candidate.selectedRank === null
       : true) &&
