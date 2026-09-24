@@ -149,8 +149,9 @@ describe("shopping timing QA model", () => {
     );
 
     expect(exported).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 3,
       kind: "shopping-timing-evidence",
+      buildRevision: "local-dev",
       privacy: {
         networkTransmission: false,
         containsItemNames: false,
@@ -159,6 +160,17 @@ describe("shopping timing QA model", () => {
       },
     });
     expect(parseQaTimingExport(exported)).not.toBeNull();
+
+    const withoutRevision = { ...exported } as Record<string, unknown>;
+    delete withoutRevision.buildRevision;
+
+    expect(parseQaTimingExport(withoutRevision)).toBeNull();
+    expect(
+      parseQaTimingExport({
+        ...exported,
+        buildRevision: "not-a-git-revision",
+      }),
+    ).toBeNull();
 
     const tampered = {
       ...exported,

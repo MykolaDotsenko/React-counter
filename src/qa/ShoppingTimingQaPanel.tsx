@@ -60,6 +60,9 @@ const PHYSICAL_CONTEXT: readonly {
   },
 ] as const;
 
+const timingEvidenceFileName = (generatedAt: string): string =>
+  `shopping-timing-${generatedAt.replace(/[-:.]/g, "")}.json`;
+
 const SPOT_CHECKS: readonly {
   readonly key: keyof QaSpotChecks;
   readonly label: string;
@@ -248,21 +251,69 @@ export function ShoppingTimingQaPanel({
                             : gate.status === "fail"
                               ? "Gate failed; redesign before marking B6 passed or expanding input breadth."
                               : "Review evidence before marking B6 passed.";
-  const copyResults = async (): Promise<void> => {
-    let report: ReturnType<typeof buildQaTimingExport>;
+  const buildEvidencePayload = (): {
+    readonly json: string;
+    readonly fileName: string;
+  } | null => {
+    const generatedAt = new Date().toISOString();
 
     try {
-      report = buildQaTimingExport(session, new Date().toISOString());
+      const report = buildQaTimingExport(session, generatedAt);
+
+      return {
+        json: JSON.stringify(report, null, 2),
+        fileName: timingEvidenceFileName(generatedAt),
+      };
     } catch {
       setCopyStatus("Evidence is invalid and cannot be exported");
+      return null;
+    }
+  };
+
+  const copyResults = async (): Promise<void> => {
+    const payload = buildEvidencePayload();
+
+    if (payload === null) {
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+      await navigator.clipboard.writeText(payload.json);
       setCopyStatus("Copied verifiable JSON");
     } catch {
-      setCopyStatus("Copy failed — use browser devtools/session storage");
+      setCopyStatus("Copy failed — download the JSON instead");
+    }
+  };
+
+  const downloadResults = (): void => {
+    const payload = buildEvidencePayload();
+
+    if (payload === null) {
+      return;
+    }
+
+    let objectUrl: string | null = null;
+
+    try {
+      objectUrl = URL.createObjectURL(
+        new Blob([payload.json], { type: "application/json" }),
+      );
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = payload.fileName;
+      link.hidden = true;
+      document.body.append(link);
+      link.click();
+      link.remove();
+
+      setCopyStatus(`Downloaded ${payload.fileName}`);
+    } catch {
+      setCopyStatus("Download failed — copy the JSON instead");
+    } finally {
+      if (objectUrl !== null) {
+        URL.revokeObjectURL(objectUrl);
+      }
     }
   };
 
@@ -541,6 +592,9 @@ export function ShoppingTimingQaPanel({
           </label>
 
           <div className={styles.actions}>
+            <button type="button" onClick={downloadResults}>
+              Download JSON results
+            </button>
             <button type="button" onClick={() => void copyResults()}>
               Copy JSON results
             </button>

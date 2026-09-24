@@ -35,7 +35,7 @@ The QA evidence recorder now treats empirical evidence as a strict contract rath
 - QA schema v4 preserves valid v3 physical-context evidence and valid v2 samples/device labels through migration without inventing exclusion records
 - every timing sample is integrity-checked: non-empty unique ID, positive finite duration, canonical ISO completion time, positive exact minor-unit price, safe integer quantity, and exact unit-price × quantity line-total consistency
 - duplicate sample IDs and mathematically inconsistent samples are rejected instead of entering evidence summaries
-- copied evidence uses a versioned `shopping-timing-evidence` export with a recomputed B6 summary; tampered exported summaries fail parser validation
+- downloaded/copied evidence uses a versioned `shopping-timing-evidence` export with a recomputed B6 summary and exact `buildRevision`; tampered summaries or invalid revision metadata fail parser validation
 - QA schema v4 preserves valid v3/v2 sessions while adding structured external-interruption exclusions: the original timing sample remains in evidence, every exclusion requires a reason tied to a real sample ID, and KPI summaries recompute without excluded attempts
 - exclusion is deliberately narrow: slow attempts, typo corrections, app friction, awkward grip, or confusing UI must remain in the KPI; only unrelated external interruptions may be documented and excluded
 - exports explicitly disclose that device metadata is present while item names/store history are absent and no network transmission occurs
@@ -159,13 +159,13 @@ The QA build:
 
 - is not the public/default product
 - injects `noindex,nofollow,noarchive`
-- stores timing evidence only in tab-scoped `sessionStorage` under the versioned QA-only key `budget-cart:qa:timing-v3`
-- reads legacy `budget-cart:qa:timing-v2` evidence and migrates valid timing samples without granting the new v3 physical-context requirements automatically
+- stores timing evidence only in tab-scoped `sessionStorage` under the versioned QA-only key `budget-cart:qa:timing-v4`
+- reads legacy `budget-cart:qa:timing-v3` and `budget-cart:qa:timing-v2` evidence and migrates valid prior samples/context without inventing v4 exclusion records
 - never writes timing evidence into ShoppingTrip or production persistence DTOs
 - records a sample from intentional **Add price** activation until the canonical summary has rendered again
 - automatically calculates median, P75 and maximum for the two required ordinary price-only tasks using only the documented EUR 500 / zero-buffer measurement fixture
 - provides a manual one-hand/bright-store checklist
-- can copy a versioned, parseable evidence export as JSON; export schema v2 includes all recorded timing samples plus any documented interruption exclusions, and the derived B6 gate is recomputed from validated evidence instead of trusted as free-form data
+- can download or copy a versioned, parseable evidence export as JSON; export schema v3 includes the exact guarded-build `buildRevision`, all recorded timing samples plus any documented interruption exclusions, and the derived B6 gate is recomputed from validated evidence instead of trusted as free-form data
 - offers a two-step **Start fresh QA session** action that clears QA evidence and recaptures environment metadata
 
 The small **QA n/20** tab is fixed outside document layout. Keep the panel closed while measuring so it does not cover the shopping UI.

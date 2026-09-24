@@ -499,7 +499,22 @@ describe("retention beta evidence", () => {
 
     const report = buildRetentionBetaExport(session, LATER);
 
+    expect(report).toMatchObject({
+      schemaVersion: 2,
+      buildRevision: "local-dev",
+    });
     expect(parseRetentionBetaExport(report)).toEqual(report);
+
+    const withoutRevision = { ...report } as Record<string, unknown>;
+    delete withoutRevision.buildRevision;
+
+    expect(parseRetentionBetaExport(withoutRevision)).toBeNull();
+    expect(
+      parseRetentionBetaExport({
+        ...report,
+        buildRevision: "not-a-git-revision",
+      }),
+    ).toBeNull();
     expect(
       parseRetentionBetaExport({
         ...report,

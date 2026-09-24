@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 
 import { expect, test } from "@playwright/test";
 
+const expectedBuildRevision = process.env.EVIDENCE_BUILD_REVISION;
+
 test("@cohort loads the isolated local-only retention analyzer", async ({
   page,
 }) => {
@@ -50,8 +52,11 @@ test("@cohort loads the isolated local-only retention analyzer", async ({
 test("@cohort downloads a privacy-safe aggregate report", async ({ page }) => {
   await page.goto("/");
 
+  expect(expectedBuildRevision).toMatch(/^[0-9a-f]{40}$/);
+
   const participant = {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    buildRevision: expectedBuildRevision,
     generatedAt: "2026-09-10T08:00:00.000Z",
     privacy: {
       networkTransmission: false,
@@ -114,8 +119,10 @@ test("@cohort downloads a privacy-safe aggregate report", async ({ page }) => {
   const aggregate = JSON.parse(await readFile(path, "utf8"));
 
   expect(aggregate).toMatchObject({
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "retention-cohort-summary",
+    sourceBuildRevision: expectedBuildRevision,
+    analyzerBuildRevision: expectedBuildRevision,
     sourceReportCount: 1,
     privacy: {
       containsRawParticipantEvents: false,

@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 
 import { expect, test } from "@playwright/test";
 
+const expectedBuildRevision = process.env.EVIDENCE_BUILD_REVISION;
+
 test("@barcode-benchmark loads the isolated native scanner benchmark", async ({
   page,
 }) => {
@@ -67,9 +69,11 @@ test("@barcode-benchmark loads the isolated native scanner benchmark", async ({
     await readFile(downloadPath, "utf8"),
   );
 
+  expect(expectedBuildRevision).toMatch(/^[0-9a-f]{40}$/);
   expect(exported).toMatchObject({
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "barcode-benchmark-evidence",
+    buildRevision: expectedBuildRevision,
     privacy: {
       networkTransmission: false,
       containsRawBarcodes: false,

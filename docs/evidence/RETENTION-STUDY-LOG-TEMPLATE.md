@@ -26,9 +26,9 @@ Keep participant uniqueness, observation timing and qualitative notes outside th
 
 Copy this table into a private facilitator document.
 
-| Study code | First real trip | Latest export filename | Latest `generatedAt` | Import status | 7-day due/known | 14-day due/known | 30-day due/known |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| P001 | YYYY-MM-DD | P001-retention.json | ISO timestamp | valid / replace / exclude | date / known | date / known | date / known |
+| Study code | First real trip | Latest export filename | `buildRevision` | Latest `generatedAt` | Import status | 7-day due/known | 14-day due/known | 30-day due/known |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| P001 | YYYY-MM-DD | P001-retention.json | 40-char Git SHA | ISO timestamp | valid / replace / exclude | date / known | date / known | date / known |
 
 Rules:
 
@@ -36,7 +36,8 @@ Rules:
 - one study code = one retained beta session in the final cohort;
 - newer exports from the same retained session replace older exports;
 - invalidated/reset sessions are excluded rather than counted as new participants;
-- synthetic fixtures and manually constructed JSON never enter the real cohort.
+- synthetic fixtures and manually constructed JSON never enter the real cohort;
+- all participants interpreted in one cohort must have the same `buildRevision`; keep different revisions in separate analyses.
 
 ## Per-participant qualitative notes
 
@@ -64,7 +65,8 @@ Before interpreting the cohort:
 - [ ] Current-schema exports are preserved unchanged.
 - [ ] Invalid/tampered exports are excluded and recorded as exclusions.
 - [ ] Duplicate/stale exports are replaced rather than double-counted.
-- [ ] The cohort analyzer invalid/duplicate/replacement counters were reviewed.
+- [ ] The cohort analyzer invalid/duplicate/replacement/revision-mismatch counters were reviewed.
+- [ ] Every included export has the same source `buildRevision`.
 - [ ] The aggregate summary was downloaded and preserved.
 - [ ] Qualitative notes remain separate from app evidence.
 - [ ] No participant PII was added to app JSON or committed to the repository.

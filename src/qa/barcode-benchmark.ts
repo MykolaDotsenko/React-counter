@@ -1,3 +1,8 @@
+import {
+  EVIDENCE_BUILD_REVISION,
+  isEvidenceBuildRevision,
+} from "./evidence-build";
+
 export const BARCODE_BENCHMARK_STORAGE_KEY =
   "budget-cart:qa:barcode-benchmark-v1";
 
@@ -80,8 +85,9 @@ export interface BarcodeBenchmarkSummary {
 }
 
 export interface BarcodeBenchmarkExport {
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
   readonly kind: "barcode-benchmark-evidence";
+  readonly buildRevision: string;
   readonly generatedAt: string;
   readonly privacy: {
     readonly networkTransmission: false;
@@ -576,8 +582,9 @@ export const buildBarcodeBenchmarkExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "barcode-benchmark-evidence",
+    buildRevision: EVIDENCE_BUILD_REVISION,
     generatedAt,
     privacy: Object.freeze({
       networkTransmission: false,
@@ -626,13 +633,15 @@ export const parseBarcodeBenchmarkExport = (
     !hasExactKeys(record, [
       "schemaVersion",
       "kind",
+      "buildRevision",
       "generatedAt",
       "privacy",
       "session",
       "summary",
     ]) ||
-    record.schemaVersion !== 1 ||
+    record.schemaVersion !== 2 ||
     record.kind !== "barcode-benchmark-evidence" ||
+    !isEvidenceBuildRevision(record.buildRevision) ||
     !isCanonicalIsoTimestamp(record.generatedAt) ||
     !isBarcodeBenchmarkSession(record.session) ||
     !observationEndCoversSession(record.session, record.generatedAt)
@@ -670,8 +679,9 @@ export const parseBarcodeBenchmarkExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "barcode-benchmark-evidence",
+    buildRevision: record.buildRevision,
     generatedAt: record.generatedAt,
     privacy: Object.freeze({
       networkTransmission: false,

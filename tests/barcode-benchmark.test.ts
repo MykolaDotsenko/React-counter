@@ -193,6 +193,10 @@ describe("barcode benchmark evidence", () => {
     );
     const raw = JSON.stringify(evidence);
 
+    expect(evidence).toMatchObject({
+      schemaVersion: 2,
+      buildRevision: "local-dev",
+    });
     expect(evidence.privacy).toEqual({
       networkTransmission: false,
       containsRawBarcodes: false,
@@ -203,6 +207,17 @@ describe("barcode benchmark evidence", () => {
     expect(raw).not.toContain("rawValue");
     expect(raw).not.toContain("6412345678901");
     expect(parseBarcodeBenchmarkExport(evidence)).toEqual(evidence);
+
+    const withoutRevision = { ...evidence } as Record<string, unknown>;
+    delete withoutRevision.buildRevision;
+
+    expect(parseBarcodeBenchmarkExport(withoutRevision)).toBeNull();
+    expect(
+      parseBarcodeBenchmarkExport({
+        ...evidence,
+        buildRevision: "not-a-git-revision",
+      }),
+    ).toBeNull();
 
     expect(
       parseBarcodeBenchmarkExport({
