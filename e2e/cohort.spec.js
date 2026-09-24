@@ -11,6 +11,17 @@ test("@cohort loads the isolated local-only retention analyzer", async ({
   await expect(
     page.getByText("Target cohort 20–50 real shoppers"),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Cohort interpretation readiness",
+    }),
+  ).toBeVisible();
+
+  const cohortSize = page
+    .getByText("Cohort size")
+    .locator("..");
+  await expect(cohortSize).toContainText("0 / 20");
+  await expect(cohortSize).toContainText("Collect more");
 
   await expect(
     page.getByRole("button", { name: "Add price" }),
