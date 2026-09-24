@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { expect, test } from "@playwright/test";
 
 const ACTIVE_TRIP_KEY = "budget-cart:active-trip";
@@ -1158,6 +1160,47 @@ test("@beta records privacy-safe retention evidence across a repeated trip", asy
       }),
     ]),
   );
+});
+
+test("@beta downloads a privacy-safe retention export locally", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Beta evidence" }).click();
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", {
+      name: "Download JSON evidence",
+    }).click(),
+  ]);
+
+  expect(download.suggestedFilename()).toMatch(
+    /^retention-beta-\d{8}T\d{9}Z\.json$/,
+  );
+
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+
+  const report = JSON.parse(
+    await readFile(downloadPath, "utf8"),
+  );
+
+  expect(report).toMatchObject({
+    schemaVersion: 1,
+    privacy: {
+      networkTransmission: false,
+      containsMoney: false,
+      containsItemNames: false,
+      containsStoreHistory: false,
+    },
+    session: {
+      version: 1,
+      variant: "repeat-acceleration",
+    },
+  });
+  expect(report.session.events).toEqual([]);
 });
 
 test("@beta records an active-trip restore without placing beta UI over the trip", async ({
