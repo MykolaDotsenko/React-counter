@@ -73,6 +73,7 @@ export function ShelfLabelOcrBenchmarkCapture({
 }: ShelfLabelOcrBenchmarkCaptureProps) {
   const [cameraReady, setCameraReady] = useState(false);
   const [recognizing, setRecognizing] = useState(false);
+  const [attemptActive, setAttemptActive] = useState(false);
   const [candidates, setCandidates] =
     useState<readonly ShelfPriceCandidate[]>([]);
   const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
@@ -120,6 +121,7 @@ export function ShelfLabelOcrBenchmarkCapture({
     });
 
     activeAttemptRef.current = null;
+    setAttemptActive(false);
     setRecognizing(false);
     setCandidates([]);
     setOcrConfidence(null);
@@ -139,6 +141,7 @@ export function ShelfLabelOcrBenchmarkCapture({
       clearTimeoutHandle();
       activeAttemptRef.current?.abortController.abort();
       activeAttemptRef.current = null;
+      setAttemptActive(false);
       setRecognizing(false);
       setCandidates([]);
       setOcrConfidence(null);
@@ -260,6 +263,7 @@ export function ShelfLabelOcrBenchmarkCapture({
 
     setCandidates([]);
     setOcrConfidence(null);
+    setAttemptActive(true);
     setRecognizing(true);
     onAttemptActiveChange(true);
     onStatus("Reading shelf label and extracting price candidates…");
@@ -452,7 +456,7 @@ export function ShelfLabelOcrBenchmarkCapture({
               type="button"
               onClick={() => void startOcr()}
               disabled={
-                activeAttemptRef.current !== null ||
+                attemptActive ||
                 !environment.ocrAvailable
               }
             >
@@ -476,7 +480,7 @@ export function ShelfLabelOcrBenchmarkCapture({
                   onStatus("Manual price-entry fallback recorded.");
                 }
               }}
-              disabled={activeAttemptRef.current === null}
+              disabled={!attemptActive}
             >
               Manual fallback
             </button>
