@@ -264,22 +264,6 @@ export function useRetentionBetaEvidence({
   };
 
   useEffect(() => {
-    if (!betaEvidenceEnabled || sessionRef.current === null) {
-      return;
-    }
-
-    try {
-      persistRetentionBetaSession(
-        localStorage,
-        sessionRef.current,
-      );
-      setRecordingStatus("persisted");
-    } catch {
-      setRecordingStatus("memory-only");
-    }
-  }, []);
-
-  useEffect(() => {
     if (
       !betaEvidenceEnabled ||
       restoreRecordedRef.current ||
