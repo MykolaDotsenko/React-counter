@@ -21,6 +21,7 @@ import type {
 } from "../src/qa/shelf-label-ocr-benchmark";
 import type {
   ShelfLabelOcrEngine,
+  ShelfLabelOcrResult,
 } from "../src/qa/shelf-label-ocr-adapter";
 
 const environment: ShelfLabelOcrEnvironment = {
@@ -175,7 +176,7 @@ describe("ShelfLabelOcrBenchmarkCapture", () => {
       dataBoundary: "local-only",
       recognize: vi.fn(
         () =>
-          new Promise((resolve) => {
+          new Promise<ShelfLabelOcrResult>((resolve) => {
             resolveOcr = resolve;
           }),
       ),
