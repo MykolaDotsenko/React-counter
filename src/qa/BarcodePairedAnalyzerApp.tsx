@@ -283,13 +283,13 @@ export function App() {
             <div className={styles.metricGrid}>
               <Metric
                 label="Manual €4.79 median"
-                value={seconds(summary.manual479.medianMs)}
-                detail={`${summary.manual479.count} valid samples`}
+                value={seconds(summary.manualLowFixture.medianMs)}
+                detail={`${summary.manualLowFixture.count} valid samples`}
               />
               <Metric
                 label="Manual €12.50 median"
-                value={seconds(summary.manual1250.medianMs)}
-                detail={`${summary.manual1250.count} valid samples`}
+                value={seconds(summary.manualHighFixture.medianMs)}
+                detail={`${summary.manualHighFixture.count} valid samples`}
               />
               <Metric
                 label="Barcode median"
@@ -327,13 +327,13 @@ export function App() {
 
           <ComparisonSection
             title="Barcode vs manual €4.79 fixture"
-            manual={summary.manual479}
-            comparison={summary.versus479}
+            manual={summary.manualLowFixture}
+            comparison={summary.versusLowFixture}
           />
           <ComparisonSection
             title="Barcode vs manual €12.50 fixture"
-            manual={summary.manual1250}
-            comparison={summary.versus1250}
+            manual={summary.manualHighFixture}
+            comparison={summary.versusHighFixture}
           />
 
           <section className={styles.integrity} aria-labelledby="paired-boundaries-title">
