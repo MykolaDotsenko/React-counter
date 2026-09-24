@@ -444,6 +444,14 @@ function Readiness({
           ready={summary.compatibility.sameDeviceLabel}
         />
         <ReadinessItem
+          label="Light appearance"
+          ready={summary.compatibility.manualLightAppearanceRecorded}
+        />
+        <ReadinessItem
+          label="Phone portrait"
+          ready={summary.compatibility.manualPhonePortraitViewport}
+        />
+        <ReadinessItem
           label="Manual fixtures"
           ready={summary.compatibility.manualFixtureEvidenceComplete}
         />
