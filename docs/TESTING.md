@@ -371,7 +371,7 @@ Tests must prove:
 - tampered derived summaries are rejected;
 - mixed `buildRevision` values are incompatible rather than normalized;
 - browser user agent, viewport and non-empty normalized device label must match before evidence is ready;
-- manual evidence requires the documented input method, complete physical context and at least 10 valid EUR 4.79 plus 10 valid EUR 12.50 fixture samples;
+- manual evidence requires the documented input method, complete physical context, light appearance, phone-portrait viewport and at least 10 valid EUR 4.79 plus 10 valid EUR 12.50 fixture samples;
 - barcode evidence requires at least 10 confirmed attempts plus recorded repeated-use preference and cognitive effort;
 - manual P90 is deterministically derived from the same valid, non-excluded representative fixture samples;
 - aggregate output contains no raw samples, raw barcode values, prices, filenames or device labels;
