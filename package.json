@@ -12,7 +12,7 @@
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "npm run docs:check && npm run lint && npm run typecheck && npm test && npm run build && npm run build:check",
+    "check": "npm run docs:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run build:check",
     "typecheck": "tsc --noEmit",
     "qa:prepare-index": "node scripts/prepare-qa-index.mjs",
     "beta:prepare-index": "node scripts/prepare-beta-index.mjs",
