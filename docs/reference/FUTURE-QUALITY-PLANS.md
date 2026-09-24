@@ -20,6 +20,24 @@ When barcode work is approved:
 
 Barcode tests must never imply barcode identity is authoritative current shelf price.
 
+## Visual product recognition
+
+The provider-neutral benchmark harness is implemented, but a concrete model/provider remains gated by issue #88.
+
+Before production recognition:
+
+- test a named adapter/model against representative retail fixtures and physical devices;
+- separate top-1 from top-3 accuracy;
+- include same-brand/different-size and same-design/different-flavour confusions;
+- include glare, angle, partial occlusion and low-light conditions;
+- measure capture → human-decision latency rather than model-only inference;
+- verify timeout, cancellation, late-result suppression and manual fallback;
+- verify candidate labels and images never enter retained evidence;
+- document any remote-image boundary explicitly;
+- require human confirmation before any product identity is accepted.
+
+A generic category classifier is not evidence of SKU-level product recognition.
+
 ## Shelf-label OCR
 
 When OCR work is approved, benchmark before locking a provider.
