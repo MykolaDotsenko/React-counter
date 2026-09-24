@@ -191,7 +191,9 @@ Remembered-item participant reach uses activated participants as the denominator
 
 The local recorder cannot answer why a participant abandoned or returned.
 
-Use [RETENTION-STUDY-LOG-TEMPLATE.md](./RETENTION-STUDY-LOG-TEMPLATE.md) as the private facilitator-log structure. Do not commit completed participant logs to the public repository.
+Use [RETENTION-STUDY-LOG-TEMPLATE.md](./RETENTION-STUDY-LOG-TEMPLATE.md) as the private facilitator-log structure. It also owns the standardized participant instruction, facilitator-neutrality rules and missing-follow-up/right-censoring handling. Do not commit completed participant logs to the public repository.
+
+Use the same neutral participant framing across the cohort. Do not disclose the second-trip target in advance, coach repeat use or prompt specific acceleration features; those interventions would contaminate the behaviour the study is trying to observe.
 
 After a real trip, capture short facilitator notes outside the evidence JSON:
 
