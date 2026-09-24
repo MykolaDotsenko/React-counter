@@ -157,7 +157,9 @@ describe("useRetentionBetaEvidence", () => {
     );
 
     expect(setItem).toHaveBeenCalled();
-    expect(screen.queryByText(/failed validation/i)).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText(/failed validation/i)).toBeNull();
+    });
 
     await user.click(
       screen.getByRole("button", { name: "Record trip start" }),
