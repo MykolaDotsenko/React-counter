@@ -64,9 +64,18 @@ export function BarcodeBenchmarkCamera({
   const detectorRef = useRef<NativeBarcodeDetector | null>(null);
   const activeAttemptRef = useRef<ActiveAttempt | null>(null);
   const loopGenerationRef = useRef(0);
+  const timeoutRef = useRef<number | null>(null);
+
+  const clearScanTimeout = (): void => {
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  };
 
   const stopDetectionLoop = (): void => {
     loopGenerationRef.current += 1;
+    clearScanTimeout();
     setScanning(false);
   };
 
@@ -127,12 +136,15 @@ export function BarcodeBenchmarkCamera({
   useEffect(
     () => () => {
       loopGenerationRef.current += 1;
+      clearScanTimeout();
 
       for (const track of streamRef.current?.getTracks() ?? []) {
         track.stop();
       }
+
+      onAttemptActiveChange(false);
     },
-    [],
+    [onAttemptActiveChange],
   );
 
   const openCamera = async (): Promise<void> => {
@@ -150,8 +162,10 @@ export function BarcodeBenchmarkCamera({
       return;
     }
 
+    let stream: MediaStream | null = null;
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
         video: {
           facingMode: { ideal: "environment" },
@@ -179,6 +193,19 @@ export function BarcodeBenchmarkCamera({
           : "Camera ready · using detector default formats.",
       );
     } catch (error) {
+      for (const track of stream?.getTracks() ?? []) {
+        track.stop();
+      }
+
+      streamRef.current = null;
+      detectorRef.current = null;
+
+      if (videoRef.current !== null) {
+        videoRef.current.srcObject = null;
+      }
+
+      setCameraReady(false);
+
       const type = cameraFailureType(error);
       onFailure(type);
       onStatus(
@@ -216,6 +243,18 @@ export function BarcodeBenchmarkCamera({
     onAttemptActiveChange(true);
     onStatus("Scanning… keep the barcode steady in the camera view.");
 
+    timeoutRef.current = window.setTimeout(() => {
+      if (
+        loopGenerationRef.current === generation &&
+        activeAttemptRef.current?.id === attempt.id
+      ) {
+        finalizeAttempt("timeout", null);
+        onStatus(
+          "No barcode was detected within 8 seconds. Try again or use manual fallback.",
+        );
+      }
+    }, SCAN_TIMEOUT_MS);
+
     const detect = async (): Promise<void> => {
       if (
         loopGenerationRef.current !== generation ||
@@ -224,16 +263,24 @@ export function BarcodeBenchmarkCamera({
         return;
       }
 
-      if (performance.now() - attempt.startedPerf >= SCAN_TIMEOUT_MS) {
-        finalizeAttempt("timeout", null);
-        onStatus(
-          "No barcode was detected within 8 seconds. Try again or use manual fallback.",
-        );
-        return;
-      }
-
       try {
         const results = await detector.detect(video);
+
+        if (
+          loopGenerationRef.current !== generation ||
+          activeAttemptRef.current?.id !== attempt.id
+        ) {
+          return;
+        }
+
+        if (performance.now() - attempt.startedPerf >= SCAN_TIMEOUT_MS) {
+          finalizeAttempt("timeout", null);
+          onStatus(
+            "No barcode was detected within 8 seconds. Try again or use manual fallback.",
+          );
+          return;
+        }
+
         const candidate = results.find(
           (result) => result.rawValue.trim().length > 0,
         );
