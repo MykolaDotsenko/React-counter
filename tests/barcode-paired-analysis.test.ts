@@ -146,11 +146,11 @@ describe("barcode paired analysis", () => {
       manualFixtureEvidenceComplete: true,
       barcodeConfirmedEvidenceComplete: true,
     });
-    expect(summary.manual479.count).toBe(10);
-    expect(summary.manual1250.count).toBe(10);
+    expect(summary.manualLowFixture.count).toBe(10);
+    expect(summary.manualHighFixture.count).toBe(10);
     expect(summary.barcode?.confirmed).toBe(10);
-    expect(summary.versus479.medianDeltaMs).toBeLessThan(0);
-    expect(summary.versus1250.medianDeltaMs).toBeLessThan(0);
+    expect(summary.versusLowFixture.medianDeltaMs).toBeLessThan(0);
+    expect(summary.versusHighFixture.medianDeltaMs).toBeLessThan(0);
   });
 
   it("rejects mixed build revisions as incompatible", () => {
