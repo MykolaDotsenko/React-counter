@@ -30,7 +30,7 @@ Changes must preserve:
 - no unsafe HTML injection;
 - least-privilege GitHub Actions permissions;
 - dependency lockfile integrity;
-- each quality run emits a SHA-scoped CycloneDX SBOM plus SHA-256 digest using pinned supply-chain tooling;
+- each quality run emits a SHA-scoped production CycloneDX SBOM plus SHA-256 digest using the repository-pinned Node/npm toolchain;
 - pull-request dependency changes must pass the pinned Dependency Review gate for high/critical vulnerabilities across runtime, development and unknown scopes;
 - no secrets committed to the repository;
 - manual/local-first functionality without mandatory third-party providers.
