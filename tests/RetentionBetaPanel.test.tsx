@@ -111,4 +111,91 @@ describe("RetentionBetaPanel", () => {
     );
     expect(onReset).toHaveBeenCalledTimes(1);
   });
+
+  it("downloads a privacy-safe JSON export with a stable session filename", async () => {
+    const user = userEvent.setup();
+    const createObjectURL = vi.fn(() => "blob:retention-evidence");
+    const revokeObjectURL = vi.fn();
+    let downloadedFileName = "";
+
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: createObjectURL,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: revokeObjectURL,
+    });
+
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        downloadedFileName = this.download;
+      });
+
+    try {
+      render(
+        <RetentionBetaPanel
+          session={createRetentionBetaSession(
+            "2026-09-22T08:00:00.000Z",
+          )}
+          onReset={vi.fn()}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole("button", { name: "Beta evidence" }),
+      );
+      await user.click(
+        screen.getByRole("button", {
+          name: "Download JSON evidence",
+        }),
+      );
+
+      expect(createObjectURL).toHaveBeenCalledTimes(1);
+      expect(downloadedFileName).toBe(
+        "retention-beta-20260922T080000000Z.json",
+      );
+      expect(revokeObjectURL).toHaveBeenCalledWith(
+        "blob:retention-evidence",
+      );
+      expect(screen.getByRole("status").textContent).toContain(
+        "Evidence downloaded as retention-beta-20260922T080000000Z.json",
+      );
+    } finally {
+      click.mockRestore();
+      Reflect.deleteProperty(URL, "createObjectURL");
+      Reflect.deleteProperty(URL, "revokeObjectURL");
+    }
+  });
+
+  it("keeps the panel usable when device time predates retained evidence", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <RetentionBetaPanel
+        session={createRetentionBetaSession(
+          "2099-01-01T08:00:00.000Z",
+        )}
+        onReset={vi.fn()}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Beta evidence" }),
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Copy privacy-safe evidence",
+      }),
+    );
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "Evidence export unavailable",
+    );
+    expect(screen.getByRole("status").textContent).toContain(
+      "device date and time",
+    );
+  });
+
 });

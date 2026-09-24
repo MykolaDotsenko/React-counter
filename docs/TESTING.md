@@ -269,7 +269,7 @@ Timing-evidence tests must also prove:
 
 Tests must prove:
 
-- evidence remains local unless explicitly copied;
+- evidence remains local unless explicitly copied or downloaded by the facilitator;
 - no prices, budgets, item names, product/store identities or checkout values enter the evidence schema;
 - event history is bounded;
 - trip ordinals are session-relative;
@@ -280,6 +280,8 @@ Tests must prove:
 - beta UI cannot block the primary flow;
 - retained events cannot predate the beta session start;
 - export `generatedAt` cannot predate retained session evidence;
+- export UI handles invalid device-clock chronology without crashing the beta panel;
+- local JSON download uses a non-identifying session-timestamp filename and preserves the same privacy-safe export contract as clipboard copy;
 - 7/14/30-day retention uses maturity-aware denominators so right-censored participants are not counted as failures;
 - each window-specific cohort summary exposes its eligible participant count;
 - second-/third-trip metrics require contiguous chronological trip starts rather than ordinal gaps;

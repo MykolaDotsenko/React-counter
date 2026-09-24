@@ -16,6 +16,9 @@ export interface RetentionBetaPanelProps {
 const seconds = (milliseconds: number | null): string =>
   milliseconds === null ? "—" : `${(milliseconds / 1_000).toFixed(2)} s`;
 
+const exportFileName = (createdAt: string): string =>
+  `retention-beta-${createdAt.replace(/[-:.]/g, "")}.json`;
+
 export function RetentionBetaPanel({
   session,
   onReset,
@@ -54,19 +57,75 @@ export function RetentionBetaPanel({
     }
   }, []);
 
+  const buildEvidencePayload = (): {
+    readonly json: string;
+    readonly fileName: string;
+  } | null => {
+    try {
+      const report = buildRetentionBetaExport(
+        session,
+        new Date().toISOString(),
+      );
+
+      return {
+        json: JSON.stringify(report, null, 2),
+        fileName: exportFileName(session.createdAt),
+      };
+    } catch {
+      setCopyStatus(
+        "Evidence export unavailable — check this device date and time, then try again.",
+      );
+      return null;
+    }
+  };
+
   const copyEvidence = async (): Promise<void> => {
-    const report = buildRetentionBetaExport(
-      session,
-      new Date().toISOString(),
-    );
+    const payload = buildEvidencePayload();
+
+    if (payload === null) {
+      return;
+    }
 
     try {
-      await navigator.clipboard.writeText(
-        JSON.stringify(report, null, 2),
-      );
+      await navigator.clipboard.writeText(payload.json);
       setCopyStatus("Evidence copied");
     } catch {
       setCopyStatus("Copy failed — evidence remains in local storage");
+    }
+  };
+
+  const downloadEvidence = (): void => {
+    const payload = buildEvidencePayload();
+
+    if (payload === null) {
+      return;
+    }
+
+    let objectUrl: string | null = null;
+
+    try {
+      const blob = new Blob([payload.json], {
+        type: "application/json",
+      });
+      objectUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = payload.fileName;
+      link.hidden = true;
+      document.body.append(link);
+      link.click();
+      link.remove();
+
+      setCopyStatus(`Evidence downloaded as ${payload.fileName}`);
+    } catch {
+      setCopyStatus(
+        "Download failed — evidence remains in local storage. Copy it instead.",
+      );
+    } finally {
+      if (objectUrl !== null) {
+        URL.revokeObjectURL(objectUrl);
+      }
     }
   };
 
@@ -167,6 +226,9 @@ export function RetentionBetaPanel({
           </p>
 
           <div className={styles.actions}>
+            <button type="button" onClick={downloadEvidence}>
+              Download JSON evidence
+            </button>
             <button type="button" onClick={copyEvidence}>
               Copy privacy-safe evidence
             </button>
