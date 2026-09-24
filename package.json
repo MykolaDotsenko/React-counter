@@ -21,7 +21,8 @@
     "barcode:prepare-index": "node scripts/prepare-barcode-index.mjs",
     "test:coverage": "vitest run --coverage",
     "visual:prepare-index": "node scripts/prepare-visual-index.mjs",
-    "ocr:prepare-index": "node scripts/prepare-ocr-index.mjs"
+    "ocr:prepare-index": "node scripts/prepare-ocr-index.mjs",
+    "barcode-paired:prepare-index": "node scripts/prepare-barcode-paired-index.mjs"
   },
   "dependencies": {
     "react": "19.3.0",

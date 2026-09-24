@@ -73,7 +73,7 @@ Coverage does **not** replace browser, accessibility, persistence-failure, real-
 
 Pull requests also run a least-privilege Dependency Review workflow. It fails when a changed runtime, development or unknown-scope dependency introduces a high/critical known vulnerability, while showing patched-version guidance when GitHub Advisory data provides it. The action is pinned to an immutable commit SHA and does not receive pull-request write permission.
 
-CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer, the isolated barcode benchmark, the isolated visual-product-recognition benchmark harness and the isolated shelf-label OCR benchmark harness. Production browser tests run against the exact public build artifact; QA-, beta-, cohort-, barcode-benchmark-, visual-benchmark- and OCR-benchmark-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed, the same tested revision has produced a validated production CycloneDX SBOM, and the exact uploaded `pages-site` artifact digest has both signed build-provenance and SBOM attestations. The scanner is commit-pinned, its Syft version is pinned, JavaScript devDependencies are omitted and Syft's GitHub Actions catalogers are explicitly disabled so workflow metadata nested inside installed packages cannot contaminate the product inventory. The SBOM is retained as CI evidence with a SHA-256 digest while remaining outside the public Pages site.
+CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer, the isolated barcode benchmark, the local paired barcode/manual analyzer, the isolated visual-product-recognition benchmark harness and the isolated shelf-label OCR benchmark harness. Production browser tests run against the exact public build artifact; QA-, beta-, cohort-, barcode-benchmark-, paired-barcode-, visual-benchmark- and OCR-benchmark-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed, the same tested revision has produced a validated production CycloneDX SBOM, and the exact uploaded `pages-site` artifact digest has both signed build-provenance and SBOM attestations. The scanner is commit-pinned, its Syft version is pinned, JavaScript devDependencies are omitted and Syft's GitHub Actions catalogers are explicitly disabled so workflow metadata nested inside installed packages cannot contaminate the product inventory. The SBOM is retained as CI evidence with a SHA-256 digest while remaining outside the public Pages site.
 
 ## Test layers
 
@@ -175,7 +175,7 @@ At minimum cover:
 Automation must prove:
 
 - the public release artifact contains a valid install manifest, install icons and generated service worker;
-- guarded QA/beta/cohort/barcode-benchmark/visual-benchmark/OCR-benchmark builds do not create competing service workers;
+- guarded QA/beta/cohort/barcode-benchmark/paired-barcode/visual-benchmark/OCR-benchmark builds do not create competing service workers;
 - after one successful online install/cache pass, the shell opens when network requests are unavailable;
 - an active trip restores offline with exact canonical values;
 - completion/history persistence continues offline;
@@ -359,6 +359,25 @@ Tests must prove:
 
 The current benchmark intentionally tests native `BarcodeDetector` only. Unsupported target devices are evidence, not a reason to silently add a fallback dependency.
 
+### Paired barcode/manual analyzer
+
+Automation may validate comparison integrity; it must not manufacture the issue #73 product decision.
+
+Tests must prove:
+
+- the analyzer is a standalone guarded build with no shopping-state access and no PWA/service worker;
+- imported manual/barcode JSON remains page-memory only and is never uploaded or persisted;
+- both source exports are parsed through their authoritative runtime validators before comparison;
+- tampered derived summaries are rejected;
+- mixed `buildRevision` values are incompatible rather than normalized;
+- browser user agent, viewport and non-empty normalized device label must match before evidence is ready;
+- manual evidence requires the documented input method, complete physical context, light appearance, phone-portrait viewport and at least 10 valid EUR 4.79 plus 10 valid EUR 12.50 fixture samples;
+- barcode evidence requires at least 10 confirmed attempts plus recorded repeated-use preference and cognitive effort;
+- manual P90 is deterministically derived from the same valid, non-excluded representative fixture samples;
+- aggregate output contains no raw samples, raw barcode values, prices, filenames or device labels;
+- aggregate output is unavailable unless structural evidence readiness is `ready`;
+- the analyzer reports descriptive deltas/ratios only and never emits PROMOTE / REMEDIATE / DEFER.
+
 ### Visual product recognition benchmark
 
 Automation may verify harness isolation, candidate-decision state, privacy and evidence integrity. It may not claim retail recognition quality without a concrete recognizer/model and representative physical-device data.
@@ -435,7 +454,7 @@ Protect:
 - fast initial product load;
 - immediate local add/edit/undo response;
 - stable bundle trend;
-- no QA/beta/cohort/barcode-benchmark/visual-benchmark/OCR-benchmark evidence markers in the public JavaScript bundle;
+- no QA/beta/cohort/barcode-benchmark/paired-barcode/visual-benchmark/OCR-benchmark evidence markers in the public JavaScript bundle;
 - public JS/CSS remain within the enforced bundle budgets;
 - optional future capability isolation.
 

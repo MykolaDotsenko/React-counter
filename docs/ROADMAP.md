@@ -27,6 +27,7 @@ The core Shopping Budget Companion engineering path is implemented:
 - privacy-safe timing QA and retention-beta evidence tooling
 - local-only retention cohort analyzer
 - guarded native barcode interaction benchmark harness (not a production scanner)
+- local-only paired barcode/manual evidence analyzer for issue #73
 - guarded provider-neutral visual product recognition benchmark harness (no model/provider bundled)
 - guarded provider-neutral shelf-label OCR benchmark harness with deterministic exact-money price parser (no OCR engine bundled)
 - Chromium / Firefox / WebKit quality coverage
@@ -115,7 +116,9 @@ The active roadmap is intentionally narrow and local-first.
 3. **Physical barcode benchmark — issue #73**
    - collect representative phone evidence from the isolated benchmark;
    - collect a same-device quantitative manual-entry baseline;
-   - compare end-to-end human decision time, failures, corrections, fallback, preference and cognitive effort.
+   - validate the two unchanged JSON exports in the local paired analyzer;
+   - compare end-to-end human decision time, failures, corrections, fallback, preference and cognitive effort;
+   - keep PROMOTE / REMEDIATE / DEFER as a human evidence decision rather than an automated score.
 
 4. **Visual product recognizer evidence — issue #88**
    - keep the provider-neutral camera/evidence harness isolated from shopping state;

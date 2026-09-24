@@ -11,6 +11,18 @@ Use this template for issue #73 after collecting:
 
 This template is not evidence by itself.
 
+## Local paired analyzer
+
+Use the guarded facilitator route:
+
+> `/shopping-budget-companion/barcode-paired-analyzer/`
+
+The analyzer imports exactly one structured QA timing export plus one barcode benchmark export in page memory. It runtime-validates both payloads, rejects tampered derived summaries, checks matching `buildRevision`, user agent, viewport and device label, verifies minimum evidence, derives comparable manual P90 values from the retained valid fixture samples, and computes descriptive barcode-vs-manual deltas/ratios.
+
+The analyzer deliberately does **not** output PROMOTE / REMEDIATE / DEFER. That remains the human decision documented in this template after reviewing timing, failure/correction/fallback cost, preference, effort and target-device concerns.
+
+Its downloadable aggregate contains no raw timing samples, barcode samples, raw barcode values, prices, device labels or source filenames.
+
 ## Evidence files
 
 Record the retained files without editing their JSON bodies.
@@ -84,7 +96,7 @@ Do not manufacture failure cases merely to improve coverage.
 | --- | ---: | ---: | --- |
 | Median end-to-end interaction |  |  |  |
 | P75 |  |  |  |
-| P90 | n/a if not available |  |  |
+| P90 | derive from retained valid fixture samples / paired analyzer |  |  |
 | Slowest / tail evidence |  |  |  |
 | Recognition failure | n/a |  |  |
 | Correction/rejection | manual typo/correction notes |  |  |
