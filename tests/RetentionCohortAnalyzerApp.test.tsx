@@ -153,6 +153,49 @@ describe("RetentionCohortAnalyzerApp", () => {
     expect(secondTripMetric?.textContent).toContain("100.0%");
   });
 
+  it("rejects a mixed-revision import instead of choosing a build implicitly", async () => {
+    const user = userEvent.setup();
+    const first = report(
+      [
+        at("trip_started", 1, "2026-09-01T08:00:00.000Z", {
+          source: "new",
+        }),
+      ],
+      "2026-09-02T08:00:00.000Z",
+    );
+    const second = {
+      ...report(
+        [
+          at("trip_started", 1, "2026-09-02T08:00:00.000Z", {
+            source: "new",
+          }),
+        ],
+        "2026-09-03T08:00:00.000Z",
+        "2026-09-02T08:00:00.000Z",
+      ),
+      buildRevision:
+        "0123456789abcdef0123456789abcdef01234567",
+    };
+
+    render(<App />);
+
+    await user.upload(
+      screen.getByLabelText("Select JSON exports"),
+      [
+        file("P001.json", first),
+        file("P002-other-build.json", second),
+      ],
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "0 participants" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Revision mismatch 2")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "revision mismatch 2",
+    );
+  });
+
   it("rejects invalid evidence without adding it to the cohort", async () => {
     const user = userEvent.setup();
 
@@ -266,6 +309,13 @@ describe("RetentionCohortAnalyzerApp", () => {
 
       expect(exported).toContain(
         '"kind": "retention-cohort-summary"',
+      );
+      expect(exported).toContain('"schemaVersion": 2');
+      expect(exported).toContain(
+        '"sourceBuildRevision": "local-dev"',
+      );
+      expect(exported).toContain(
+        '"analyzerBuildRevision": "local-dev"',
       );
       expect(exported).toContain('"sourceReportCount": 1');
       expect(exported).toContain(
