@@ -424,6 +424,10 @@ function Readiness({
 
       <div className={styles.readinessGrid}>
         <ReadinessItem
+          label="Full Git SHA"
+          ready={summary.compatibility.fullGitBuildRevision}
+        />
+        <ReadinessItem
           label="Same build"
           ready={summary.compatibility.sameBuildRevision}
         />
