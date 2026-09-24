@@ -327,6 +327,99 @@ const uniqueTripCount = (
       .map((event) => event.tripOrdinal),
   ).size;
 
+type TripStartedEvent = Extract<
+  RetentionBetaEvent,
+  { readonly type: "trip_started" }
+>;
+
+const earliestTripStart = (
+  started: readonly TripStartedEvent[],
+  tripOrdinal: number,
+): TripStartedEvent | undefined =>
+  started
+    .filter((event) => event.tripOrdinal === tripOrdinal)
+    .reduce<TripStartedEvent | undefined>(
+      (earliest, candidate) =>
+        earliest === undefined ||
+        Date.parse(candidate.at) < Date.parse(earliest.at)
+          ? candidate
+          : earliest,
+      undefined,
+    );
+
+const hasSequentialStartsThrough = (
+  started: readonly TripStartedEvent[],
+  targetOrdinal: number,
+): boolean => {
+  let previousStartedAt = -Infinity;
+
+  for (let ordinal = 1; ordinal <= targetOrdinal; ordinal += 1) {
+    const current = earliestTripStart(started, ordinal);
+
+    if (current === undefined) {
+      return false;
+    }
+
+    const currentStartedAt = Date.parse(current.at);
+
+    if (currentStartedAt < previousStartedAt) {
+      return false;
+    }
+
+    previousStartedAt = currentStartedAt;
+  }
+
+  return true;
+};
+
+const contiguousStartedTripCount = (
+  started: readonly TripStartedEvent[],
+): number => {
+  const highestObservedOrdinal = started.reduce(
+    (highest, event) => Math.max(highest, event.tripOrdinal),
+    0,
+  );
+
+  let count = 0;
+
+  for (
+    let ordinal = 1;
+    ordinal <= highestObservedOrdinal;
+    ordinal += 1
+  ) {
+    if (!hasSequentialStartsThrough(started, ordinal)) {
+      break;
+    }
+
+    count = ordinal;
+  }
+
+  return count;
+};
+
+const completedStartedTripCount = (
+  events: readonly RetentionBetaEvent[],
+  started: readonly TripStartedEvent[],
+): number => {
+  const completedOrdinals = new Set<number>();
+
+  for (const start of started) {
+    const startedAt = Date.parse(start.at);
+    const completed = events.some(
+      (event) =>
+        event.type === "trip_finished" &&
+        event.tripOrdinal === start.tripOrdinal &&
+        Date.parse(event.at) >= startedAt,
+    );
+
+    if (completed) {
+      completedOrdinals.add(start.tripOrdinal);
+    }
+  }
+
+  return completedOrdinals.size;
+};
+
 export const nextRetentionTripOrdinal = (
   session: RetentionBetaSession,
 ): number => {
@@ -365,36 +458,33 @@ export const summarizeRetentionBeta = (
   session: RetentionBetaSession,
 ): RetentionBetaSummary => {
   const started = session.events.filter(
-    (event): event is Extract<
-      RetentionBetaEvent,
-      { readonly type: "trip_started" }
-    > => event.type === "trip_started",
+    (event): event is TripStartedEvent =>
+      event.type === "trip_started",
   );
   const manualDurations = session.events.flatMap((event) =>
     event.type === "manual_entry_completed" ? [event.durationMs] : [],
   );
-  const firstTripStart = started.find((event) => event.tripOrdinal === 1);
-  const secondTripStart = started.find((event) => event.tripOrdinal === 2);
+  const tripsStarted = contiguousStartedTripCount(started);
+  const secondTripStarted = hasSequentialStartsThrough(started, 2);
+  const thirdTripStarted = hasSequentialStartsThrough(started, 3);
+  const firstTripStart = earliestTripStart(started, 1);
+  const secondTripStart = earliestTripStart(started, 2);
   const daysToSecondTrip =
-    firstTripStart === undefined || secondTripStart === undefined
+    !secondTripStarted ||
+    firstTripStart === undefined ||
+    secondTripStart === undefined
       ? null
-      : Math.max(
-          0,
-          (Date.parse(secondTripStart.at) - Date.parse(firstTripStart.at)) /
-            86_400_000,
-        );
+      : (Date.parse(secondTripStart.at) - Date.parse(firstTripStart.at)) /
+        86_400_000;
 
   return {
-    tripsStarted: uniqueTripCount(
+    tripsStarted,
+    tripsFinished: completedStartedTripCount(
       session.events,
-      (event) => event.type === "trip_started",
+      started,
     ),
-    tripsFinished: uniqueTripCount(
-      session.events,
-      (event) => event.type === "trip_finished",
-    ),
-    secondTripStarted: started.some((event) => event.tripOrdinal >= 2),
-    thirdTripStarted: started.some((event) => event.tripOrdinal >= 3),
+    secondTripStarted,
+    thirdTripStarted,
     secondTripWithin7Days:
       daysToSecondTrip !== null && daysToSecondTrip <= 7,
     secondTripWithin14Days:
@@ -402,8 +492,12 @@ export const summarizeRetentionBeta = (
     secondTripWithin30Days:
       daysToSecondTrip !== null && daysToSecondTrip <= 30,
     daysToSecondTrip,
-    repeatTripStarts: started.filter((event) => event.source === "repeat")
-      .length,
+    repeatTripStarts: started.filter(
+      (event) =>
+        event.source === "repeat" &&
+        event.tripOrdinal >= 2 &&
+        hasSequentialStartsThrough(started, event.tripOrdinal),
+    ).length,
     tripRestores: session.events.filter(
       (event) => event.type === "trip_restored",
     ).length,
