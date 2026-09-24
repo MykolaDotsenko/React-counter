@@ -289,4 +289,30 @@ describe("retention beta cohort analysis", () => {
     expect(summary.manualEntryAbandonmentRate).toBe(0.5);
     expect(summary.medianManualEntryMs).toBe(2_400);
   });
+
+  it("does not inflate cohort retention from a skipped trip ordinal", () => {
+    const malformedJourney = report(
+      [
+        at("trip_started", 1, "2026-09-01T08:00:00.000Z", {
+          source: "new",
+        }),
+        at("trip_started", 3, "2026-09-03T08:00:00.000Z", {
+          source: "repeat",
+        }),
+      ],
+      "2026-10-05T08:00:00.000Z",
+    );
+
+    const summary = summarizeRetentionBetaCohort([
+      malformedJourney,
+    ]);
+
+    expect(summary.activatedParticipants).toBe(1);
+    expect(summary.secondTripParticipants).toBe(0);
+    expect(summary.thirdTripParticipants).toBe(0);
+    expect(summary.secondTripRate).toBe(0);
+    expect(summary.thirdTripRate).toBe(0);
+    expect(summary.repeatTripStarts).toBe(0);
+  });
+
 });
