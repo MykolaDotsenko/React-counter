@@ -8,6 +8,7 @@ import {
   createBarcodeBenchmarkSession,
   loadBarcodeBenchmarkSession,
   persistBarcodeBenchmarkSession,
+  sameBarcodeBenchmarkEnvironment,
   summarizeBarcodeBenchmark,
   updateBarcodeBenchmarkDeviceLabel,
   updateBarcodeBenchmarkSubjective,
@@ -43,6 +44,13 @@ export function App() {
         : summarizeBarcodeBenchmark(session),
     [session],
   );
+  const environmentChanged =
+    session !== null &&
+    environment !== null &&
+    !sameBarcodeBenchmarkEnvironment(
+      session.environment,
+      environment,
+    );
 
   const updateSession = (
     updater: (
@@ -232,6 +240,7 @@ export function App() {
           <input
             value={session.deviceLabel}
             maxLength={160}
+            disabled={environmentChanged}
             placeholder="e.g. Pixel 8 · Chrome"
             onChange={(event) => {
               updateSession((current) =>
@@ -245,13 +254,28 @@ export function App() {
         </label>
       </section>
 
-      <BarcodeBenchmarkCamera
-        key={session.createdAt}
-        environment={environment}
-        onFailure={recordFailure}
-        onSample={recordSample}
-        onStatus={setStatus}
-      />
+      {environmentChanged ? (
+        <section className={styles.card} aria-labelledby="environment-change-title">
+          <p className={styles.eyebrow}>Evidence integrity</p>
+          <h2 id="environment-change-title">
+            Benchmark environment changed
+          </h2>
+          <p className={styles.note}>
+            The retained session was captured with a different device,
+            browser, viewport, or native detector capability. Copy the
+            retained evidence if needed, then start a fresh benchmark
+            session before recording more scans.
+          </p>
+        </section>
+      ) : (
+        <BarcodeBenchmarkCamera
+          key={session.createdAt}
+          environment={environment}
+          onFailure={recordFailure}
+          onSample={recordSample}
+          onStatus={setStatus}
+        />
+      )}
 
       <section className={styles.card} aria-labelledby="results-title">
         <div className={styles.sectionHeading}>
@@ -301,6 +325,7 @@ export function App() {
             <span>Preference after repeated use</span>
             <select
               value={session.preference ?? ""}
+              disabled={environmentChanged}
               onChange={(event) => {
                 const value = event.currentTarget.value;
                 const preference: BarcodeBenchmarkPreference | null =
@@ -330,6 +355,7 @@ export function App() {
             <span>Cognitive effort after repeated use</span>
             <select
               value={session.effort ?? ""}
+              disabled={environmentChanged}
               onChange={(event) => {
                 const parsed = Number(event.currentTarget.value);
                 const effort: BarcodeBenchmarkEffort | null =
