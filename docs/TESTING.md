@@ -73,6 +73,17 @@ Coverage does **not** replace browser, accessibility, persistence-failure, real-
 
 Pull requests also run a least-privilege Dependency Review workflow. It fails when a changed runtime, development or unknown-scope dependency introduces a high/critical known vulnerability, while showing patched-version guidance when GitHub Advisory data provides it. The action is pinned to an immutable commit SHA and does not receive pull-request write permission.
 
+### Release SBOM evidence
+
+The release pipeline uses the native npm CLI to generate two CycloneDX SBOMs directly from the committed lockfile:
+
+- `sbom/runtime.cdx.json` omits development-only packages and describes the browser runtime dependency graph;
+- `sbom/build.cdx.json` includes the full build/test toolchain dependency graph.
+
+Generation fails closed if `npm sbom` fails or emits malformed JSON. A repository validator then checks the CycloneDX/root-component contract, dependency graph presence, required runtime packages, exclusion of known dev-only packages from the runtime SBOM, and inclusion of representative build tooling in the build SBOM.
+
+Both validated documents are copied into the same immutable `pages-site` artifact that receives artifact-integrity and browser validation and is promoted unchanged by the deploy job. They are supply-chain inventory derived from `package-lock.json`; they are **not** by themselves cryptographic proof that a particular artifact came from a particular commit. Artifact provenance/attestation owns that separate guarantee.
+
 CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer and the isolated barcode benchmark. Production browser tests run against the exact public build artifact; QA-, beta-, cohort- and barcode-benchmark-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed.
 
 ## Test layers
