@@ -1,0 +1,162 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it } from "vitest";
+
+import { App } from "../src/qa/RetentionCohortAnalyzerApp";
+import {
+  appendRetentionBetaEvent,
+  buildRetentionBetaExport,
+  createRetentionBetaSession,
+  type RetentionBetaEvent,
+} from "../src/qa/retention-beta";
+
+const at = (
+  type: RetentionBetaEvent["type"],
+  tripOrdinal: number,
+  timestamp: string,
+  extra: Record<string, unknown> = {},
+): RetentionBetaEvent =>
+  ({
+    type,
+    tripOrdinal,
+    at: timestamp,
+    ...extra,
+  }) as RetentionBetaEvent;
+
+const report = (
+  events: readonly RetentionBetaEvent[],
+  generatedAt: string,
+  createdAt = "2026-09-01T08:00:00.000Z",
+) => {
+  let session = createRetentionBetaSession(createdAt);
+
+  for (const event of events) {
+    session = appendRetentionBetaEvent(session, event);
+  }
+
+  return buildRetentionBetaExport(session, generatedAt);
+};
+
+const file = (
+  name: string,
+  value: unknown,
+): File =>
+  new File([JSON.stringify(value)], name, {
+    type: "application/json",
+  });
+
+describe("RetentionCohortAnalyzerApp", () => {
+  it("validates exports and computes maturity-aware cohort metrics locally", async () => {
+    const user = userEvent.setup();
+
+    const returned = report(
+      [
+        at("trip_started", 1, "2026-09-01T08:00:00.000Z", {
+          source: "new",
+        }),
+        at("trip_started", 2, "2026-09-03T08:00:00.000Z", {
+          source: "repeat",
+        }),
+      ],
+      "2026-09-03T09:00:00.000Z",
+    );
+    const matureNonReturner = report(
+      [
+        at("trip_started", 1, "2026-09-02T08:00:00.000Z", {
+          source: "new",
+        }),
+      ],
+      "2026-09-12T08:00:00.000Z",
+      "2026-09-02T08:00:00.000Z",
+    );
+
+    render(<App />);
+
+    await user.upload(
+      screen.getByLabelText("Select JSON exports"),
+      [
+        file("P001.json", returned),
+        file("P002.json", matureNonReturner),
+      ],
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "2 participants" }),
+    ).toBeTruthy();
+
+    const secondTripMetric = screen
+      .getByText("Second-trip rate")
+      .closest("article");
+    expect(secondTripMetric?.textContent).toContain("50.0%");
+
+    const sevenDayMetric = screen
+      .getByText("7-day retention")
+      .closest("article");
+    expect(sevenDayMetric?.textContent).toContain("50.0%");
+    expect(sevenDayMetric?.textContent).toContain("2 eligible");
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "Imported 2",
+    );
+  });
+
+  it("replaces an older export from the same retained session", async () => {
+    const user = userEvent.setup();
+    const first = report(
+      [
+        at("trip_started", 1, "2026-09-01T08:00:00.000Z", {
+          source: "new",
+        }),
+      ],
+      "2026-09-02T08:00:00.000Z",
+    );
+    const later = report(
+      [
+        at("trip_started", 1, "2026-09-01T08:00:00.000Z", {
+          source: "new",
+        }),
+        at("trip_started", 2, "2026-09-04T08:00:00.000Z", {
+          source: "repeat",
+        }),
+      ],
+      "2026-09-04T09:00:00.000Z",
+    );
+
+    render(<App />);
+    const input = screen.getByLabelText("Select JSON exports");
+
+    await user.upload(input, file("P001-old.json", first));
+    await user.upload(input, file("P001-new.json", later));
+
+    expect(
+      screen.getByRole("heading", { name: "1 participant" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "replaced 1",
+    );
+
+    const secondTripMetric = screen
+      .getByText("Second-trip rate")
+      .closest("article");
+    expect(secondTripMetric?.textContent).toContain("100.0%");
+  });
+
+  it("rejects invalid evidence without adding it to the cohort", async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.upload(
+      screen.getByLabelText("Select JSON exports"),
+      file("invalid.json", { schemaVersion: 999 }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "0 participants" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Invalid 1")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "invalid 1",
+    );
+  });
+});
