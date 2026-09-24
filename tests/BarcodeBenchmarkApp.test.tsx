@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { App } from "../src/qa/BarcodeBenchmarkApp";
-import { BARCODE_BENCHMARK_STORAGE_KEY } from "../src/qa/barcode-benchmark";
+import {
+  BARCODE_BENCHMARK_STORAGE_KEY,
+  createBarcodeBenchmarkSession,
+  persistBarcodeBenchmarkSession,
+} from "../src/qa/barcode-benchmark";
 
 describe("BarcodeBenchmarkApp", () => {
   afterEach(() => {
@@ -56,4 +60,50 @@ describe("BarcodeBenchmarkApp", () => {
       }),
     ).toBeTruthy();
   });
+
+  it("freezes retained evidence when the benchmark environment changes", async () => {
+    const retained = createBarcodeBenchmarkSession(
+      {
+        userAgent: "Different benchmark browser",
+        viewportWidth: 390,
+        viewportHeight: 844,
+        detectorSupported: false,
+        cameraSupported: false,
+        supportedFormats: [],
+      },
+      "2026-09-24T07:00:00.000Z",
+    );
+
+    persistBarcodeBenchmarkSession(localStorage, retained);
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Benchmark environment changed",
+      }),
+    ).toBeTruthy();
+
+    expect(
+      screen.queryByRole("button", { name: "Start camera" }),
+    ).toBeNull();
+
+    expect(
+      screen.getByRole("button", {
+        name: "Copy privacy-safe benchmark JSON",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "Start fresh benchmark session",
+      }),
+    ).toBeTruthy();
+
+    expect(
+      (screen.getByRole("textbox", {
+        name: "Device / browser label",
+      }) as HTMLInputElement).disabled,
+    ).toBe(true);
+  });
+
 });
