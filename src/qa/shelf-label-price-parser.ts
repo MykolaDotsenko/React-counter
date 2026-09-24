@@ -101,6 +101,14 @@ const baseScore = (candidate: RawCandidate): number => {
   return candidate.explicitEuro ? 100 : 85;
 };
 
+const hasImplicitPriceContext = (
+  text: string,
+  candidate: RawCandidate,
+): boolean =>
+  /\b(?:hinta|price|tarjous|ale|jäsen|plussa|k-plussa|s-etukortti|member|club|norm\.?|normaali(?:hinta)?|regular)\b/i.test(
+    surroundingWindow(text, candidate.start, candidate.end).around,
+  );
+
 const contextualScore = (
   candidate: RawCandidate,
   context: ShelfPriceCandidateContext,
@@ -218,6 +226,13 @@ export const parseShelfPriceCandidates = (
   }[] = [];
 
   for (const rawCandidate of collectRawCandidates(text)) {
+    if (
+      !rawCandidate.explicitEuro &&
+      !hasImplicitPriceContext(text, rawCandidate)
+    ) {
+      continue;
+    }
+
     const parsed = parseEurDraft({
       raw: rawCandidate.rawMoney,
       mode: "decimal",
