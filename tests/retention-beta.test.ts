@@ -144,6 +144,31 @@ describe("retention beta evidence", () => {
     expect(
       malformedStore.values.get(RETENTION_BETA_STORAGE_KEY),
     ).toBe("{broken");
+
+    const structurallyInvalidStore = storage();
+    const structurallyInvalid = JSON.stringify({
+      version: 1,
+      variant: "repeat-acceleration",
+      createdAt: START,
+      events: [],
+      participantId: "must-not-enter-schema",
+    });
+    structurallyInvalidStore.setItem(
+      RETENTION_BETA_STORAGE_KEY,
+      structurallyInvalid,
+    );
+
+    expect(
+      loadRetentionBetaSessionResult(
+        structurallyInvalidStore,
+        START,
+      ).status,
+    ).toBe("invalid-retained");
+    expect(
+      structurallyInvalidStore.values.get(
+        RETENTION_BETA_STORAGE_KEY,
+      ),
+    ).toBe(structurallyInvalid);
   });
 
   it("falls back safely when retained evidence is malformed", () => {
