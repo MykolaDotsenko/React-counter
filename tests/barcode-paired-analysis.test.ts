@@ -86,10 +86,13 @@ const completeManualExport = () => {
     });
   }
 
-  return buildQaTimingExport(
-    session,
-    "2026-09-24T10:10:00.000Z",
-  );
+  return {
+    ...buildQaTimingExport(
+      session,
+      "2026-09-24T10:10:00.000Z",
+    ),
+    buildRevision: "a".repeat(40),
+  };
 };
 
 const completeBarcodeExport = () => {
@@ -118,10 +121,13 @@ const completeBarcodeExport = () => {
     });
   }
 
-  return buildBarcodeBenchmarkExport(
-    session,
-    "2026-09-24T10:30:00.000Z",
-  );
+  return {
+    ...buildBarcodeBenchmarkExport(
+      session,
+      "2026-09-24T10:30:00.000Z",
+    ),
+    buildRevision: "a".repeat(40),
+  };
 };
 
 describe("barcode paired analysis", () => {
@@ -151,7 +157,7 @@ describe("barcode paired analysis", () => {
     const manual = completeManualExport();
     const barcode = {
       ...completeBarcodeExport(),
-      buildRevision: "a".repeat(40),
+      buildRevision: "b".repeat(40),
     };
 
     const summary = analyzeBarcodePairedEvidence(manual, barcode);
