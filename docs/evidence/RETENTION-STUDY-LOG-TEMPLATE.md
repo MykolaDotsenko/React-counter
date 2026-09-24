@@ -22,6 +22,42 @@ Keep participant uniqueness, observation timing and qualitative notes outside th
 - downloaded beta JSON must remain unchanged;
 - a facilitator may rename the local file with the external study code, but must not edit the JSON body.
 
+## Standard participant instruction
+
+Use the same neutral framing for each participant before the first real trip:
+
+> This app is intended to help track a shopping-trip budget while you shop. Please use it naturally during a real shopping trip. There is no correct way to use it, and we are evaluating the product rather than you. Use or ignore features as you normally would. If you choose to use it again on a later real trip, do so only because it is useful to you — not because the study expects you to return.
+
+Do not tell participants that the primary metric is second-trip retention before the observation window closes. Do not frame Recent Items, Price Memory or any other feature as something they are expected to use.
+
+## Facilitator neutrality protocol
+
+During the study:
+
+- do not coach participants toward a particular workflow, feature or outcome;
+- do not prompt a participant to reuse the app merely to create a second-trip event;
+- do not remind a participant to use Recent Items or Price Memory during a trip;
+- answer genuine operational questions briefly and neutrally, without recommending a feature;
+- record any material facilitator intervention in the private notes so the affected session is interpretable;
+- intervene immediately for safety or a blocking technical problem; study purity never outranks participant safety;
+- if compensation is used, keep it independent of return behaviour, feature usage and whether the product result is positive;
+- do not silently reset evidence after a failure; preserve/export what is valid, record the exclusion reason if needed, then follow the documented reset path.
+
+Follow-up contact may ask for the latest evidence export or whether the app was actually used again. It must not instruct the participant to create another shopping trip for the sake of the study.
+
+## Missing follow-up and attrition
+
+Treat missing evidence conservatively:
+
+- a participant's latest valid export is observed only through its `generatedAt` timestamp;
+- if the latest export is still inside a 7/14/30-day window, that participant remains right-censored for that window even if later follow-up is missing;
+- no response to a follow-up message is not evidence of non-retention;
+- a participant who cannot provide a later export must not be manually upgraded to a failure beyond the last valid observation time;
+- preserve invalid/excluded-session reasons separately from product outcomes;
+- do not replace a missing participant with a new study code and then describe the final set as if there were no attrition.
+
+Report recruitment count, analyzable participant count and window-specific eligible denominators separately. For a convenience sample, describe it as such rather than generalizing the result to all shoppers.
+
 ## Cohort identity log
 
 Copy this table into a private facilitator document.
