@@ -130,7 +130,7 @@ describe("visual CLIP recognizer experiment", () => {
     ]);
     const loader: VisualClipClassifierLoader = vi.fn(async () => ({
       classifier,
-      device: "wasm",
+      device: "wasm" as const,
     }));
     const catalog = parseVisualClipCatalog({
       schemaVersion: 1,
@@ -182,7 +182,7 @@ describe("visual CLIP recognizer experiment", () => {
     );
     const loader: VisualClipClassifierLoader = vi.fn(async () => ({
       classifier,
-      device: "wasm",
+      device: "wasm" as const,
     }));
     const catalog = parseVisualClipCatalog({
       schemaVersion: 1,
@@ -217,7 +217,7 @@ describe("visual CLIP recognizer experiment", () => {
     });
     const loader: VisualClipClassifierLoader = vi.fn(async () => ({
       classifier: vi.fn(async () => []),
-      device: "wasm",
+      device: "wasm" as const,
     }));
 
     await createVisualClipRecognizer(catalog!, loader);
