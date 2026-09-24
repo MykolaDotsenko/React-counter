@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BARCODE_BENCHMARK_FAILURE_LIMIT,
+  BARCODE_BENCHMARK_SAMPLE_LIMIT,
   BARCODE_BENCHMARK_STORAGE_KEY,
   appendBarcodeBenchmarkFailure,
   appendBarcodeBenchmarkSample,
@@ -258,6 +260,77 @@ describe("barcode benchmark evidence", () => {
     );
 
     expect(session.samples[0]?.durationMs).toBe(120_000);
+  });
+
+
+  it("fails closed at evidence limits instead of dropping earlier records", () => {
+    let samplesSession = createBarcodeBenchmarkSession(
+      environment,
+      CREATED,
+    );
+
+    for (
+      let index = 0;
+      index < BARCODE_BENCHMARK_SAMPLE_LIMIT;
+      index += 1
+    ) {
+      samplesSession = appendBarcodeBenchmarkSample(
+        samplesSession,
+        sample(
+          `sample-${index}`,
+          "confirmed",
+          2_000,
+          "ean_13",
+        ),
+      );
+    }
+
+    expect(samplesSession.samples).toHaveLength(
+      BARCODE_BENCHMARK_SAMPLE_LIMIT,
+    );
+    expect(samplesSession.samples[0]?.id).toBe("sample-0");
+
+    expect(() =>
+      appendBarcodeBenchmarkSample(
+        samplesSession,
+        sample(
+          "overflow",
+          "confirmed",
+          2_000,
+          "ean_13",
+        ),
+      ),
+    ).toThrow("sample limit reached");
+
+    let failuresSession = createBarcodeBenchmarkSession(
+      environment,
+      CREATED,
+    );
+
+    for (
+      let index = 0;
+      index < BARCODE_BENCHMARK_FAILURE_LIMIT;
+      index += 1
+    ) {
+      failuresSession = appendBarcodeBenchmarkFailure(
+        failuresSession,
+        {
+          type: "camera-error",
+          at: "2026-09-24T08:02:00.000Z",
+        },
+      );
+    }
+
+    expect(failuresSession.failures).toHaveLength(
+      BARCODE_BENCHMARK_FAILURE_LIMIT,
+    );
+
+    expect(() =>
+      appendBarcodeBenchmarkFailure(failuresSession, {
+        type: "camera-error",
+        at: "2026-09-24T08:02:00.000Z",
+      }),
+    ).toThrow("failure limit reached");
   });
 
 });
