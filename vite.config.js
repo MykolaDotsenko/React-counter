@@ -10,10 +10,13 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig(() => {
   const cohortAnalysisEnabled =
     process.env.VITE_SHOPPING_COHORT_ANALYSIS === "1";
+  const barcodeBenchmarkEnabled =
+    process.env.VITE_SHOPPING_BARCODE_BENCHMARK === "1";
   const evidenceEnabled =
     process.env.VITE_SHOPPING_QA_TIMING === "1" ||
     process.env.VITE_SHOPPING_BETA_EVIDENCE === "1" ||
-    cohortAnalysisEnabled;
+    cohortAnalysisEnabled ||
+    barcodeBenchmarkEnabled;
 
   return {
     plugins: [
@@ -63,6 +66,7 @@ export default defineConfig(() => {
             /\/qa(?:\/|$)/,
             /\/beta(?:\/|$)/,
             /\/cohort(?:\/|$)/,
+            /\/barcode-benchmark(?:\/|$)/,
           ],
           globPatterns: [
             "**/*.{js,css,html,svg,png,webmanifest}",
@@ -74,9 +78,11 @@ export default defineConfig(() => {
       alias: {
         "#app-entry": path.resolve(
           rootDir,
-          cohortAnalysisEnabled
-            ? "src/qa/RetentionCohortAnalyzerApp.tsx"
-            : "src/App.tsx",
+          barcodeBenchmarkEnabled
+            ? "src/qa/BarcodeBenchmarkApp.tsx"
+            : cohortAnalysisEnabled
+              ? "src/qa/RetentionCohortAnalyzerApp.tsx"
+              : "src/App.tsx",
         ),
         "#shopping-evidence": path.resolve(
           rootDir,
