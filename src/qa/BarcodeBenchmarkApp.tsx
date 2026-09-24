@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { BarcodeBenchmarkCamera } from "./BarcodeBenchmarkCamera";
 import {
+  BARCODE_BENCHMARK_SAMPLE_LIMIT,
   appendBarcodeBenchmarkFailure,
   appendBarcodeBenchmarkSample,
   buildBarcodeBenchmarkExport,
@@ -28,6 +29,9 @@ const percent = (value: number | null): string =>
 const seconds = (value: number | null): string =>
   value === null ? "—" : `${(value / 1_000).toFixed(2)} s`;
 
+const evidenceFileName = (createdAt: string): string =>
+  `barcode-benchmark-${createdAt.replace(/[-:.]/g, "")}.json`;
+
 export function App() {
   const [environment, setEnvironment] =
     useState<BarcodeBenchmarkEnvironment | null>(null);
@@ -52,6 +56,9 @@ export function App() {
       session.environment,
       environment,
     );
+  const sampleLimitReached =
+    session !== null &&
+    session.samples.length >= BARCODE_BENCHMARK_SAMPLE_LIMIT;
 
   const updateSession = (
     updater: (
@@ -120,10 +127,12 @@ export function App() {
     type: BarcodeBenchmarkFailureType,
   ): void => {
     updateSession((current) =>
-      appendBarcodeBenchmarkFailure(current, {
-        type,
-        at: new Date().toISOString(),
-      }),
+      current.failures.some((failure) => failure.type === type)
+        ? current
+        : appendBarcodeBenchmarkFailure(current, {
+            type,
+            at: new Date().toISOString(),
+          }),
     );
   };
 
@@ -155,20 +164,41 @@ export function App() {
     setStatus("Fresh barcode benchmark session started.");
   };
 
-  const copyEvidence = async (): Promise<void> => {
+  const buildEvidencePayload = (): {
+    readonly json: string;
+    readonly fileName: string;
+  } | null => {
     if (session === null) {
+      return null;
+    }
+
+    try {
+      const evidence = buildBarcodeBenchmarkExport(
+        session,
+        new Date().toISOString(),
+      );
+
+      return {
+        json: JSON.stringify(evidence, null, 2),
+        fileName: evidenceFileName(session.createdAt),
+      };
+    } catch {
+      setStatus(
+        "Benchmark export unavailable — check this device date and time, then try again.",
+      );
+      return null;
+    }
+  };
+
+  const copyEvidence = async (): Promise<void> => {
+    const payload = buildEvidencePayload();
+
+    if (payload === null) {
       return;
     }
 
-    const evidence = buildBarcodeBenchmarkExport(
-      session,
-      new Date().toISOString(),
-    );
-
     try {
-      await navigator.clipboard.writeText(
-        JSON.stringify(evidence, null, 2),
-      );
+      await navigator.clipboard.writeText(payload.json);
       setStatus(
         "Benchmark evidence copied. Raw barcode values are not included.",
       );
@@ -176,6 +206,43 @@ export function App() {
       setStatus(
         "Copy failed. Evidence remains stored only on this device.",
       );
+    }
+  };
+
+  const downloadEvidence = (): void => {
+    const payload = buildEvidencePayload();
+
+    if (payload === null) {
+      return;
+    }
+
+    let objectUrl: string | null = null;
+
+    try {
+      const blob = new Blob([payload.json], {
+        type: "application/json",
+      });
+      objectUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = payload.fileName;
+      link.hidden = true;
+      document.body.append(link);
+      link.click();
+      link.remove();
+
+      setStatus(
+        `Benchmark evidence downloaded as ${payload.fileName}`,
+      );
+    } catch {
+      setStatus(
+        "Download failed. Evidence remains stored only on this device; copy it instead.",
+      );
+    } finally {
+      if (objectUrl !== null) {
+        URL.revokeObjectURL(objectUrl);
+      }
     }
   };
 
@@ -267,6 +334,16 @@ export function App() {
             browser, viewport, or native detector capability. Copy the
             retained evidence if needed, then start a fresh benchmark
             session before recording more scans.
+          </p>
+        </section>
+      ) : sampleLimitReached ? (
+        <section className={styles.card} aria-labelledby="sample-limit-title">
+          <p className={styles.eyebrow}>Evidence integrity</p>
+          <h2 id="sample-limit-title">Benchmark sample limit reached</h2>
+          <p className={styles.note}>
+            This session has {BARCODE_BENCHMARK_SAMPLE_LIMIT} timed attempts.
+            Export it unchanged, then start a fresh session instead of
+            silently dropping earlier evidence.
           </p>
         </section>
       ) : (
@@ -386,6 +463,13 @@ export function App() {
         </div>
 
         <div className={styles.actions}>
+          <button
+            type="button"
+            onClick={downloadEvidence}
+            disabled={attemptActive}
+          >
+            Download benchmark JSON
+          </button>
           <button
             type="button"
             onClick={() => void copyEvidence()}
