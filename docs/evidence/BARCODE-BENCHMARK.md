@@ -58,6 +58,8 @@ The timer stops only on a terminal human-visible outcome:
 - manual fallback;
 - detector error.
 
+The 8-second timeout is owned by the benchmark wall clock rather than detector responsiveness: an unresolved or slow `detect()` call cannot extend the timeout indefinitely. Async detector results arriving after fallback/stop/timeout are ignored.
+
 This deliberately measures **scan → human decision**, not detector-only latency.
 
 Derived evidence includes:
@@ -124,7 +126,11 @@ Where practical, benchmark at least:
 
 Do not manufacture rejections merely to improve coverage. Record natural failures honestly.
 
-If device, browser, viewport, or reported detector capability changes, the retained session is frozen. Copy it if needed and start a fresh benchmark session before recording more attempts. This prevents mixed-environment latency from looking like one comparable sample set.
+If a restored session was captured with a different device, browser, viewport, or reported detector capability, it is frozen. During a live session, keep orientation/viewport fixed; the harness refuses to start a new timed scan when the viewport no longer matches the retained environment. Export/reset before continuing under a new environment.
+
+This prevents mixed-environment latency from looking like one comparable sample set.
+
+A session has a hard limit of 200 timed attempts. At the limit, scanning is stopped and the existing evidence must be exported/reset. Earlier samples are never silently dropped from the distribution.
 
 ## Paired manual baseline
 
@@ -155,13 +161,19 @@ Technical novelty is not a positive product result.
 
 ## Export
 
-Use:
+Preferred:
+
+> Download benchmark JSON
+
+Fallback:
 
 > Copy privacy-safe benchmark JSON
 
-The export is versioned and recomputes its derived summary from validated local evidence.
+Both paths use the same versioned privacy-safe evidence payload. The default filename contains only the session timestamp and no participant identity.
 
-Tampered derived summaries or malformed session data must fail parsing.
+Export failure stays inside the benchmark UI. If the device clock predates retained evidence, correct the device date/time and retry rather than editing timestamps manually.
+
+The export recomputes its derived summary from validated local evidence. Tampered derived summaries or malformed session data must fail parsing.
 
 ## Exit rule
 
