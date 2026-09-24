@@ -15,6 +15,7 @@ import {
 import {
   EVIDENCE_BUILD_REVISION,
   isEvidenceBuildRevision,
+  isImmutableEvidenceBuildRevision,
 } from "./evidence-build";
 
 export interface PairedTimingStats {
@@ -258,11 +259,10 @@ export const analyzeBarcodePairedEvidence = (
     representativeDurations(manual, QA_TARGET_PRICE_1250),
   );
 
-  const fullGitSha = /^[0-9a-f]{40}$/;
   const compatibility: BarcodePairedCompatibility = Object.freeze({
     fullGitBuildRevision:
-      fullGitSha.test(manual.buildRevision) &&
-      fullGitSha.test(barcode.buildRevision),
+      isImmutableEvidenceBuildRevision(manual.buildRevision) &&
+      isImmutableEvidenceBuildRevision(barcode.buildRevision),
     sameBuildRevision: manual.buildRevision === barcode.buildRevision,
     sameUserAgent:
       manual.session.environment.userAgent ===
