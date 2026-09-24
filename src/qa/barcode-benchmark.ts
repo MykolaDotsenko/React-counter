@@ -8,14 +8,14 @@ export type BarcodeBenchmarkOutcome =
   | "confirmed"
   | "rejected"
   | "timeout"
-  | "manual-fallback";
+  | "manual-fallback"
+  | "detector-error";
 
 export type BarcodeBenchmarkFailureType =
   | "detector-unsupported"
   | "camera-unsupported"
   | "permission-denied"
-  | "camera-error"
-  | "detector-error";
+  | "camera-error";
 
 export type BarcodeBenchmarkPreference =
   | "scanner"
@@ -213,8 +213,7 @@ const isFailureType = (
   value === "detector-unsupported" ||
   value === "camera-unsupported" ||
   value === "permission-denied" ||
-  value === "camera-error" ||
-  value === "detector-error";
+  value === "camera-error";
 
 const isFailure = (
   value: unknown,
@@ -449,6 +448,9 @@ export const summarizeBarcodeBenchmark = (
   const manualFallbacks = session.samples.filter(
     (sample) => sample.outcome === "manual-fallback",
   ).length;
+  const detectorErrors = session.samples.filter(
+    (sample) => sample.outcome === "detector-error",
+  ).length;
   const attempts = session.samples.length;
   const detectedDecisions = confirmed + rejected;
 
@@ -465,7 +467,7 @@ export const summarizeBarcodeBenchmark = (
     p75ConfirmedMs: percentile(confirmedDurations, 0.75),
     p90ConfirmedMs: percentile(confirmedDurations, 0.9),
     recognitionFailureRate: rate(
-      timeouts + manualFallbacks,
+      timeouts + manualFallbacks + detectorErrors,
       attempts,
     ),
     correctionRate: rate(rejected, detectedDecisions),
@@ -474,7 +476,7 @@ export const summarizeBarcodeBenchmark = (
     cameraUnsupported: failureCount("camera-unsupported"),
     permissionDenied: failureCount("permission-denied"),
     cameraErrors: failureCount("camera-error"),
-    detectorErrors: failureCount("detector-error"),
+    detectorErrors,
     preference: session.preference,
     effort: session.effort,
   });
