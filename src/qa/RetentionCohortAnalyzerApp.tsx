@@ -14,7 +14,6 @@ import {
 import {
   summarizeRetentionBetaCohort,
   summarizeRetentionBetaCohortReadiness,
-  type RetentionBetaCohortSummary,
   type RetentionWindowReadiness,
 } from "./retention-beta-cohort";
 import styles from "./RetentionCohortAnalyzerApp.module.css";
