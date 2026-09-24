@@ -2,6 +2,9 @@ import { readFile } from "node:fs/promises";
 
 import { expect, test } from "@playwright/test";
 
+const expectedEvidenceBuildRevision =
+  process.env.EVIDENCE_BUILD_REVISION;
+
 const ACTIVE_TRIP_KEY = "budget-cart:active-trip";
 const HISTORY_KEY = "budget-cart:history";
 const PRICE_MEMORY_KEY = "budget-cart:price-memory";
@@ -1187,8 +1190,10 @@ test("@beta downloads a privacy-safe retention export locally", async ({
     await readFile(downloadPath, "utf8"),
   );
 
+  expect(expectedEvidenceBuildRevision).toMatch(/^[0-9a-f]{40}$/);
   expect(report).toMatchObject({
-    schemaVersion: 1,
+    schemaVersion: 2,
+    buildRevision: expectedEvidenceBuildRevision,
     privacy: {
       networkTransmission: false,
       containsMoney: false,
