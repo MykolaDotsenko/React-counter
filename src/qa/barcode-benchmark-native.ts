@@ -57,7 +57,7 @@ export const captureBarcodeBenchmarkEnvironment =
             .filter((format) => format.trim().length > 0)
             .slice(0, 32),
         ),
-      ],
+      ].sort(),
     };
   };
 
