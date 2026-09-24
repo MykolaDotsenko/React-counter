@@ -44,6 +44,7 @@
 .privacy,
 .note,
 .status,
+.warning,
 .resetHint {
   margin: 0;
 }
@@ -63,7 +64,8 @@
 
 .privacy,
 .note,
-.status {
+.status,
+.warning {
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -74,6 +76,15 @@
 
 .note {
   color: #5d655f;
+}
+
+.warning {
+  padding: 10px 12px;
+  border: 1px solid #b67a38;
+  border-radius: 12px;
+  background: #fff4df;
+  color: #5b3c1d;
+  font-weight: 750;
 }
 
 .metrics {
