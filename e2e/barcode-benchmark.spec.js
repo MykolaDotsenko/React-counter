@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { expect, test } from "@playwright/test";
 
 test("@barcode-benchmark loads the isolated native scanner benchmark", async ({
@@ -46,4 +48,35 @@ test("@barcode-benchmark loads the isolated native scanner benchmark", async ({
 
   expect(evidence).toContain("detector-unsupported");
   expect(evidence).not.toContain("rawValue");
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", {
+      name: "Download benchmark JSON",
+    }).click(),
+  ]);
+
+  expect(download.suggestedFilename()).toMatch(
+    /^barcode-benchmark-\d{8}T\d{9}Z\.json$/,
+  );
+
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+
+  const exported = JSON.parse(
+    await readFile(downloadPath, "utf8"),
+  );
+
+  expect(exported).toMatchObject({
+    schemaVersion: 1,
+    kind: "barcode-benchmark-evidence",
+    privacy: {
+      networkTransmission: false,
+      containsRawBarcodes: false,
+      containsPrices: false,
+      containsItemNames: false,
+      containsDeviceMetadata: true,
+    },
+  });
+  expect(JSON.stringify(exported)).not.toContain("rawValue");
 });
