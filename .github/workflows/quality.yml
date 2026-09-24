@@ -38,7 +38,7 @@ jobs:
 
       - name: Build public release artifact
         run: |
-          rm -rf dist dist-qa dist-beta site
+          rm -rf dist dist-qa dist-beta dist-cohort site
           npm run build -- --base=/shopping-budget-companion/
           npm run build:check
 
@@ -56,12 +56,20 @@ jobs:
           npm run build -- --base=/shopping-budget-companion/beta/ --outDir=dist-beta
           npm run beta:prepare-index
 
+      - name: Build local retention cohort analyzer
+        env:
+          VITE_SHOPPING_COHORT_ANALYSIS: "1"
+        run: |
+          npm run build -- --base=/shopping-budget-companion/cohort/ --outDir=dist-cohort
+          npm run cohort:prepare-index
+
       - name: Stage immutable site artifact
         run: |
-          mkdir -p site/qa site/beta
+          mkdir -p site/qa site/beta site/cohort
           cp -R dist/. site/
           cp -R dist-qa/. site/qa/
           cp -R dist-beta/. site/beta/
+          cp -R dist-cohort/. site/cohort/
           touch site/.nojekyll
           test ! -e site/node_modules
           test ! -e site/package.json
@@ -102,6 +110,9 @@ jobs:
           test ! -e /tmp/pages-site/qa/sw.js
           test ! -e /tmp/pages-site/beta/manifest.webmanifest
           test ! -e /tmp/pages-site/beta/sw.js
+          test ! -e /tmp/pages-site/cohort/manifest.webmanifest
+          test ! -e /tmp/pages-site/cohort/sw.js
+          test -f /tmp/pages-site/cohort/index.html
           test ! -e /tmp/pages-site/node_modules
           test ! -e /tmp/pages-site/package.json
           test ! -e /tmp/pages-site/package-lock.json
@@ -110,6 +121,7 @@ jobs:
           test ! -e /tmp/pages-site/dist
           test ! -e /tmp/pages-site/dist-qa
           test ! -e /tmp/pages-site/dist-beta
+          test ! -e /tmp/pages-site/dist-cohort
 
   browser:
     needs: quality
@@ -148,7 +160,7 @@ jobs:
       - name: Run production browser and accessibility tests
         env:
           PLAYWRIGHT_STAGED_SITE: "1"
-        run: npm run test:e2e -- --project=${{ matrix.browser }} --grep-invert @beta
+        run: npm run test:e2e -- --project=${{ matrix.browser }} --grep-invert "@beta|@cohort"
 
       - name: Upload browser failure evidence
         if: failure()
@@ -207,9 +219,55 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  cohort-browser:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download exact release artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: pages-site
+          path: .playwright-site-root/shopping-budget-companion
+
+      - name: Expose cohort analyzer index at test origin
+        run: cp .playwright-site-root/shopping-budget-companion/cohort/index.html .playwright-site-root/index.html
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run local cohort analyzer browser tests
+        env:
+          PLAYWRIGHT_STAGED_SITE: "1"
+        run: npm run test:e2e -- --project=chromium --grep @cohort
+
+      - name: Upload cohort browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-cohort-${{ github.run_attempt }}
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [artifact-integrity, browser, beta-browser]
+    needs: [artifact-integrity, browser, beta-browser, cohort-browser]
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:

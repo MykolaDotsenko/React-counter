@@ -18,6 +18,18 @@ Use:
 
 Do not treat the default/public shell as evidence of a passed retention gate.
 
+## Guarded cohort analyzer
+
+Use:
+
+> `/shopping-budget-companion/cohort/`
+
+This facilitator-only route imports retention JSON files in browser memory, validates them with the current runtime contract and computes the cohort summary locally. It has no backend, no telemetry, no service worker and no shopping-state access.
+
+A newer export with the same retained-session key replaces an older export from that session. This prevents accidental double-counting of repeated exports from one device session, but it is **not** participant identity deduplication. Keep the external study log authoritative for participant uniqueness.
+
+The copied aggregate summary excludes raw participant events and filenames.
+
 ## Cohort
 
 Target:
@@ -64,6 +76,7 @@ Do not add participant names, email addresses, store names, shopping lists, pric
 5. Reuse the beta on later real trips when that matches normal shopping behaviour.
 6. After the agreed observation window, open **Beta evidence** and copy the privacy-safe export.
 7. Save the export as a separate JSON file outside the app.
+8. On the facilitator device, import the retained exports into `/cohort/` and review invalid/duplicate/replacement counts before interpreting metrics.
 
 A facilitator may assign an external study code such as `P001` to the filename. That external code must not be injected into the app's evidence JSON.
 

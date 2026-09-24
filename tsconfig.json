@@ -24,6 +24,9 @@
     "paths": {
       "#shopping-evidence": [
         "./src/qa/use-shopping-evidence.tsx"
+      ],
+      "#app-entry": [
+        "./src/App.tsx"
       ]
     },
     "types": [

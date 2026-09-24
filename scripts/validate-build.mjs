@@ -54,6 +54,8 @@ const forbiddenMarkers = [
   "Local beta evidence",
   "Empirical Timing QA",
   "budget-cart:qa:retention-v1",
+  "Retention cohort analyzer",
+  "retention-cohort-summary",
 ];
 
 const files = await readdir(assets);
