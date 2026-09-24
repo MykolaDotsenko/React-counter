@@ -81,14 +81,12 @@ afterEach(() => {
 
 describe("BarcodeBenchmarkCamera", () => {
   it("ignores a stale detector result after manual fallback finalized the attempt", async () => {
-    let resolveDetection:
-      | ((
-          results: readonly {
-            readonly rawValue: string;
-            readonly format?: string;
-          }[],
-        ) => void)
-      | null = null;
+    let resolveDetection!: (
+      results: readonly {
+        readonly rawValue: string;
+        readonly format?: string;
+      }[],
+    ) => void;
 
     const camera = installCamera(
       () =>
@@ -120,7 +118,7 @@ describe("BarcodeBenchmarkCamera", () => {
     );
 
     await waitFor(() => {
-      expect(resolveDetection).not.toBeNull();
+      expect(resolveDetection).toBeTypeOf("function");
       expect(onAttemptActiveChange).toHaveBeenCalledWith(true);
     });
 
@@ -135,14 +133,8 @@ describe("BarcodeBenchmarkCamera", () => {
     });
     expect(onAttemptActiveChange).toHaveBeenCalledWith(false);
 
-    const resolve = resolveDetection;
-
-    if (resolve === null) {
-      throw new Error("Expected a pending detector request");
-    }
-
     await act(async () => {
-      resolve([
+      resolveDetection([
         {
           rawValue: "6412345678901",
           format: "ean_13",
