@@ -30,7 +30,7 @@ Changes must preserve:
 - no unsafe HTML injection;
 - least-privilege GitHub Actions permissions;
 - dependency lockfile integrity;
-- each tested release artifact carries validated CycloneDX runtime and build/toolchain SBOMs generated from the lockfile with the native npm CLI;
+- each tested release artifact carries a validated CycloneDX supply-chain SBOM generated from the committed lockfile with the native npm CLI;
 - pull-request dependency changes must pass the pinned Dependency Review gate for high/critical vulnerabilities across runtime, development and unknown scopes;
 - no secrets committed to the repository;
 - manual/local-first functionality without mandatory third-party providers.
