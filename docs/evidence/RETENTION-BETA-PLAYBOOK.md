@@ -28,7 +28,7 @@ This facilitator-only route imports retention JSON files in browser memory, vali
 
 A newer export with the same retained-session key replaces an older export from that session. This prevents accidental double-counting of repeated exports from one device session, but it is **not** participant identity deduplication. Keep the external study log authoritative for participant uniqueness.
 
-The copied aggregate summary excludes raw participant events and filenames.
+The copied or downloaded aggregate summary excludes raw participant events and filenames. Prefer **Download aggregate summary** when preserving a cohort result; clipboard copy remains a fallback.
 
 ## Cohort
 
@@ -78,6 +78,7 @@ Do not add participant names, email addresses, store names, shopping lists, pric
 7. If local download is unavailable, use **Copy privacy-safe evidence** as the fallback and save the copied JSON outside the app.
 8. Keep the downloaded/copied export as a separate JSON file. The default filename contains only the beta session timestamp, not participant identity.
 9. On the facilitator device, import the retained exports into `/cohort/` and review invalid/duplicate/replacement counts before interpreting metrics.
+10. Save the cohort result with **Download aggregate summary**. Use **Copy aggregate summary** only when a local download is unavailable.
 
 A facilitator may rename the exported file with an external study code such as `P001`. That external code must remain outside the app payload and must not be injected into the evidence JSON.
 
