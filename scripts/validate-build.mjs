@@ -75,6 +75,8 @@ const forbiddenMarkers = [
   "zero-shot-image-classification",
   "Shelf-label OCR benchmark",
   "budget-cart:qa:shelf-label-ocr-benchmark-v1",
+  "Tesseract.js shelf-label OCR benchmark",
+  "tesseractjs:7.0.0:lstm:fin+swe+eng:4.0.0_best_int",
   "Barcode paired evidence analyzer",
   "barcode-paired-analysis",
 ];
