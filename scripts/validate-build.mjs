@@ -72,6 +72,8 @@ const forbiddenMarkers = [
   "budget-cart:qa:visual-product-benchmark-v1",
   "Shelf-label OCR benchmark",
   "budget-cart:qa:shelf-label-ocr-benchmark-v1",
+  "Barcode paired evidence analyzer",
+  "barcode-paired-analysis",
 ];
 
 const files = await readdir(assets);
