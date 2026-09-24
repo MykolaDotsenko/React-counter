@@ -75,14 +75,13 @@ Pull requests also run a least-privilege Dependency Review workflow. It fails wh
 
 ### Release SBOM evidence
 
-The release pipeline uses the native npm CLI to generate two CycloneDX SBOMs directly from the committed lockfile:
+The release pipeline uses the native npm CLI to generate `sbom/release.cdx.json`, a CycloneDX inventory of the complete npm dependency graph described by the committed lockfile. It intentionally includes both browser-facing dependencies and the build/test toolchain because this product is shipped as a static bundle: npm package boundaries do not remain directly observable as separate runtime packages after Vite bundles the application.
 
-- `sbom/runtime.cdx.json` omits development-only packages and describes the browser runtime dependency graph;
-- `sbom/build.cdx.json` includes the full build/test toolchain dependency graph.
+Generation fails closed if `npm sbom --package-lock-only` fails or emits malformed JSON. A repository validator then cross-checks the SBOM against `package.json` and `package-lock.json`: root identity, every lockfile package path, every direct dependency, unique component references and the complete dependency graph must remain internally consistent.
 
-Generation fails closed if `npm sbom` fails or emits malformed JSON. A repository validator then checks the CycloneDX/root-component contract, dependency graph presence, required runtime packages, exclusion of known dev-only packages from the runtime SBOM, and inclusion of representative build tooling in the build SBOM.
+The validated document is copied into the same immutable `pages-site` artifact that receives artifact-integrity and browser validation and is promoted unchanged by the deploy job. It is a supply-chain inventory derived from `package-lock.json`; it is **not** by itself cryptographic proof that a particular artifact came from a particular commit. Artifact provenance/attestation owns that separate guarantee.
 
-Both validated documents are copied into the same immutable `pages-site` artifact that receives artifact-integrity and browser validation and is promoted unchanged by the deploy job. They are supply-chain inventory derived from `package-lock.json`; they are **not** by themselves cryptographic proof that a particular artifact came from a particular commit. Artifact provenance/attestation owns that separate guarantee.
+A measured npm 11.19.0 check showed that `npm sbom --omit=dev` produced an empty component graph for this repository, so the pipeline deliberately does not publish that misleading output as a “runtime SBOM”.
 
 CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer and the isolated barcode benchmark. Production browser tests run against the exact public build artifact; QA-, beta-, cohort- and barcode-benchmark-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed.
 
