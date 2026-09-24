@@ -36,6 +36,7 @@ export interface PairedTimingComparison {
 }
 
 export interface BarcodePairedCompatibility {
+  readonly fullGitBuildRevision: boolean;
   readonly sameBuildRevision: boolean;
   readonly sameUserAgent: boolean;
   readonly sameViewport: boolean;
@@ -226,6 +227,7 @@ export const analyzeBarcodePairedEvidence = (
       readiness: "invalid",
       sourceBuildRevision: null,
       compatibility: Object.freeze({
+        fullGitBuildRevision: false,
         sameBuildRevision: false,
         sameUserAgent: false,
         sameViewport: false,
@@ -253,7 +255,11 @@ export const analyzeBarcodePairedEvidence = (
     representativeDurations(manual, QA_TARGET_PRICE_1250),
   );
 
+  const fullGitSha = /^[0-9a-f]{40}$/;
   const compatibility: BarcodePairedCompatibility = Object.freeze({
+    fullGitBuildRevision:
+      fullGitSha.test(manual.buildRevision) &&
+      fullGitSha.test(barcode.buildRevision),
     sameBuildRevision: manual.buildRevision === barcode.buildRevision,
     sameUserAgent:
       manual.session.environment.userAgent ===
@@ -282,6 +288,7 @@ export const analyzeBarcodePairedEvidence = (
   });
 
   const hardCompatibility =
+    compatibility.fullGitBuildRevision &&
     compatibility.sameBuildRevision &&
     compatibility.sameUserAgent &&
     compatibility.sameViewport &&
@@ -297,6 +304,9 @@ export const analyzeBarcodePairedEvidence = (
 
   const issues: string[] = [];
 
+  if (!compatibility.fullGitBuildRevision) {
+    issues.push("Field comparison requires full 40-character Git SHA build revisions.");
+  }
   if (!compatibility.sameBuildRevision) {
     issues.push("Manual and barcode exports use different buildRevision values.");
   }
