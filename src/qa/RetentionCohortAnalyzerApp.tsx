@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   parseRetentionBetaExport,
@@ -37,6 +37,7 @@ const sessionKey = (report: RetentionBetaExport): string =>
 
 export function App() {
   const [reports, setReports] = useState<readonly ImportedReport[]>([]);
+  const reportsRef = useRef<readonly ImportedReport[]>([]);
   const [lastImport, setLastImport] = useState<ImportResult>(
     emptyImportResult,
   );
@@ -92,51 +93,54 @@ export function App() {
       }
     }
 
-    setReports((current) => {
-      const bySession = new Map(
-        current.map((entry) => [sessionKey(entry.report), entry]),
-      );
-      let accepted = 0;
-      let replaced = 0;
-      let duplicateOrStale = 0;
+    const bySession = new Map(
+      reportsRef.current.map((entry) => [
+        sessionKey(entry.report),
+        entry,
+      ]),
+    );
+    let accepted = 0;
+    let replaced = 0;
+    let duplicateOrStale = 0;
 
-      for (const entry of parsed) {
-        const key = sessionKey(entry.report);
-        const existing = bySession.get(key);
+    for (const entry of parsed) {
+      const key = sessionKey(entry.report);
+      const existing = bySession.get(key);
 
-        if (existing === undefined) {
-          bySession.set(key, entry);
-          accepted += 1;
-          continue;
-        }
-
-        if (
-          Date.parse(entry.report.generatedAt) >
-          Date.parse(existing.report.generatedAt)
-        ) {
-          bySession.set(key, entry);
-          replaced += 1;
-        } else {
-          duplicateOrStale += 1;
-        }
+      if (existing === undefined) {
+        bySession.set(key, entry);
+        accepted += 1;
+        continue;
       }
 
-      setLastImport({
-        accepted,
-        replaced,
-        duplicateOrStale,
-        invalid,
-      });
-      setStatus(
-        `Imported ${accepted}; replaced ${replaced}; ignored duplicate/stale ${duplicateOrStale}; invalid ${invalid}.`,
-      );
+      if (
+        Date.parse(entry.report.generatedAt) >
+        Date.parse(existing.report.generatedAt)
+      ) {
+        bySession.set(key, entry);
+        replaced += 1;
+      } else {
+        duplicateOrStale += 1;
+      }
+    }
 
-      return [...bySession.values()].sort(
-        (left, right) =>
-          Date.parse(left.report.session.createdAt) -
-          Date.parse(right.report.session.createdAt),
-      );
+    const nextReports = [...bySession.values()].sort(
+      (left, right) =>
+        Date.parse(left.report.session.createdAt) -
+        Date.parse(right.report.session.createdAt),
+    );
+
+    reportsRef.current = nextReports;
+    setReports(nextReports);
+    setLastImport({
+      accepted,
+      replaced,
+      duplicateOrStale,
+      invalid,
     });
+    setStatus(
+      `Imported ${accepted}; replaced ${replaced}; ignored duplicate/stale ${duplicateOrStale}; invalid ${invalid}.`,
+    );
   };
 
   const copySummary = async (): Promise<void> => {
@@ -164,6 +168,7 @@ export function App() {
   };
 
   const reset = (): void => {
+    reportsRef.current = [];
     setReports([]);
     setLastImport(emptyImportResult());
     setStatus("Cohort analysis cleared from page memory.");
