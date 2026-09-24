@@ -32,6 +32,6 @@ test("@cohort loads the isolated local-only retention analyzer", async ({
     buffer: Buffer.from('{"schemaVersion":999}'),
   });
 
-  await expect(page.getByText("Invalid 1")).toBeVisible();
+  await expect(page.getByText("Invalid 1", { exact: true })).toBeVisible();
   await expect(page.getByRole("status")).toContainText("invalid 1");
 });
