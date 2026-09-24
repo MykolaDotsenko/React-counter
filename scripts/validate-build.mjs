@@ -79,6 +79,8 @@ const forbiddenMarkers = [
   "tesseractjs:7.0.0:lstm:fin+swe+eng:4.0.0_best_int",
   "Barcode paired evidence analyzer",
   "barcode-paired-analysis",
+  "OCR paired evidence analyzer",
+  "ocr-paired-analysis",
 ];
 
 const files = await readdir(assets);
