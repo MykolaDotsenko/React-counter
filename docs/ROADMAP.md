@@ -6,7 +6,7 @@ This file describes **current validation gates and future sequencing**.
 
 It is not a chronological implementation diary. The detailed phase-by-phase plan through repeat-trip engineering is preserved in [archive/ROADMAP-THROUGH-PHASE-8.md](./archive/ROADMAP-THROUGH-PHASE-8.md).
 
-## Current status — 2026-09-23
+## Current status — 2026-09-24
 
 The core Shopping Budget Companion engineering path is implemented:
 
@@ -108,7 +108,7 @@ The public product now ships a Vite/Workbox-generated installable application sh
 
 Automated browser coverage verifies active-trip restore, offline completion/history persistence and a second offline history restore.
 
-Human one-hand/timing and real-shopper retention gates remain independent and still open.
+The physical-phone interaction gate is accepted for the current validation cycle by owner/user attestation; the real-shopper retention gate remains open.
 ### B. Barcode identification
 
 **Status: gated / not implemented.**
