@@ -45,6 +45,69 @@ export interface RetentionBetaCohortSummary {
   readonly currentPriceOverrides: number;
 }
 
+
+
+export const RETENTION_BETA_MIN_INTERPRETABLE_COHORT = 20;
+export const RETENTION_BETA_TARGET_COHORT_MAX = 50;
+
+export interface RetentionWindowReadiness {
+  readonly eligibleParticipants: number;
+  readonly minimumRequired: number;
+  readonly ready: boolean;
+}
+
+export interface RetentionBetaCohortReadiness {
+  readonly participantCount: number;
+  readonly minimumParticipants: number;
+  readonly targetMaximumParticipants: number;
+  readonly participantStatus:
+    | "collecting"
+    | "target-range"
+    | "above-target";
+  readonly sevenDay: RetentionWindowReadiness;
+  readonly fourteenDay: RetentionWindowReadiness;
+  readonly thirtyDay: RetentionWindowReadiness;
+}
+
+const windowReadiness = (
+  eligibleParticipants: number,
+): RetentionWindowReadiness =>
+  Object.freeze({
+    eligibleParticipants,
+    minimumRequired: RETENTION_BETA_MIN_INTERPRETABLE_COHORT,
+    ready:
+      eligibleParticipants >= RETENTION_BETA_MIN_INTERPRETABLE_COHORT,
+  });
+
+export const summarizeRetentionBetaCohortReadiness = (
+  summary: RetentionBetaCohortSummary,
+): RetentionBetaCohortReadiness => {
+  const participantStatus =
+    summary.participantCount <
+    RETENTION_BETA_MIN_INTERPRETABLE_COHORT
+      ? "collecting"
+      : summary.participantCount <=
+          RETENTION_BETA_TARGET_COHORT_MAX
+        ? "target-range"
+        : "above-target";
+
+  return Object.freeze({
+    participantCount: summary.participantCount,
+    minimumParticipants: RETENTION_BETA_MIN_INTERPRETABLE_COHORT,
+    targetMaximumParticipants: RETENTION_BETA_TARGET_COHORT_MAX,
+    participantStatus,
+    sevenDay: windowReadiness(
+      summary.secondTripWithin7DaysEligibleParticipants,
+    ),
+    fourteenDay: windowReadiness(
+      summary.secondTripWithin14DaysEligibleParticipants,
+    ),
+    thirtyDay: windowReadiness(
+      summary.secondTripWithin30DaysEligibleParticipants,
+    ),
+  });
+};
+
 interface ParticipantSnapshot {
   readonly report: RetentionBetaExport;
   readonly summary: ReturnType<typeof summarizeRetentionBeta>;
