@@ -1,0 +1,250 @@
+.page {
+  width: min(100% - 32px, 980px);
+  margin: 0 auto;
+  padding: 40px 0 64px;
+  color: #1f2925;
+}
+
+.hero,
+.importCard,
+.summary,
+.integrity {
+  border: 1px solid #d9d8d1;
+  border-radius: 24px;
+  background: #fffefa;
+  box-shadow: 0 14px 40px rgb(39 48 43 / 0.08);
+}
+
+.hero {
+  padding: clamp(24px, 5vw, 48px);
+  background:
+    radial-gradient(circle at top right, rgb(74 118 99 / 0.13), transparent 42%),
+    #fffefa;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #4d685d;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.summary h2,
+.importCard h2,
+.integrity h2 {
+  margin: 0;
+  letter-spacing: -0.035em;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  line-height: 0.98;
+}
+
+.lead {
+  max-width: 680px;
+  margin: 20px 0 0;
+  color: #54615c;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.importCard,
+.summary,
+.integrity {
+  margin-top: 18px;
+  padding: clamp(20px, 4vw, 32px);
+}
+
+.importCard {
+  display: grid;
+  gap: 18px;
+}
+
+.importCard p,
+.integrity li {
+  color: #5d6863;
+  line-height: 1.55;
+}
+
+.filePicker {
+  display: inline-grid;
+  justify-self: start;
+  cursor: pointer;
+}
+
+.filePicker span,
+.actions button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  padding: 0 18px;
+  font-weight: 850;
+}
+
+.filePicker span {
+  background: #2f6652;
+  color: #ffffff;
+}
+
+.filePicker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.filePicker:focus-within span {
+  outline: 3px solid #245fca;
+  outline-offset: 3px;
+}
+
+.importStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #607069;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.importStats span {
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #f0f2ee;
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.target {
+  color: #52635c;
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.metric {
+  min-height: 122px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  border-radius: 18px;
+  padding: 16px;
+  background: #f4f3ed;
+}
+
+.metric span {
+  color: #5a665f;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.metric strong {
+  font-size: 1.65rem;
+  letter-spacing: -0.04em;
+}
+
+.metric small {
+  color: #65716b;
+  font-size: 0.75rem;
+}
+
+.integrity ul {
+  margin: 16px 0 0;
+  padding-left: 20px;
+}
+
+.integrity li + li {
+  margin-top: 8px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.actions button {
+  border: 1px solid #2f6652;
+  background: #2f6652;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.actions .secondary {
+  border-color: #c9cec9;
+  background: #fffefa;
+  color: #26322d;
+}
+
+.actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.actions button:focus-visible {
+  outline: 3px solid #245fca;
+  outline-offset: 3px;
+}
+
+.status {
+  margin: 14px 0 0;
+  color: #4e5f58;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+@media (max-width: 620px) {
+  .page {
+    width: min(100% - 20px, 980px);
+    padding-top: 16px;
+  }
+
+  .hero,
+  .importCard,
+  .summary,
+  .integrity {
+    border-radius: 18px;
+  }
+
+  .summaryHeader {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 380px) {
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page * {
+    scroll-behavior: auto;
+  }
+}
