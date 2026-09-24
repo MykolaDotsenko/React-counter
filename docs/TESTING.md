@@ -291,6 +291,24 @@ Tests must prove:
 
 Real-store retention evidence remains a human/product-validation gate.
 
+### Barcode interaction benchmark
+
+Automation may verify benchmark evidence integrity and route isolation. It may not claim scanner value without representative physical-device data.
+
+Tests must prove:
+
+- the benchmark is a standalone guarded build with no shopping-state access or PWA/service worker;
+- public production JavaScript contains no benchmark markers/storage key;
+- raw barcode values never enter persisted/exported evidence;
+- confirmed/rejected/timeout/manual-fallback/detector-error outcomes remain distinct;
+- confirmed latency reports median/P75/P90 deterministically;
+- capability/permission/camera failures remain distinguishable from timed attempts;
+- duplicate/malformed/tampered evidence is rejected;
+- stopping an active scan records a fallback rather than silently dropping the attempt;
+- production barcode promotion still requires representative mobile evidence plus a paired quantitative manual baseline.
+
+The current benchmark intentionally tests native `BarcodeDetector` only. Unsupported target devices are evidence, not a reason to silently add a fallback dependency.
+
 ## Performance
 
 Protect:
@@ -298,7 +316,7 @@ Protect:
 - fast initial product load;
 - immediate local add/edit/undo response;
 - stable bundle trend;
-- no QA/beta/cohort evidence markers in the public JavaScript bundle;
+- no QA/beta/cohort/barcode-benchmark evidence markers in the public JavaScript bundle;
 - public JS/CSS remain within the enforced bundle budgets;
 - optional future capability isolation.
 
