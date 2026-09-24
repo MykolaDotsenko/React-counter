@@ -35,16 +35,53 @@ const evidenceFileName = (createdAt: string): string =>
   createdAt.replace(/[-:.]/g, "") +
   ".json";
 
-export function App() {
-  const [environment, setEnvironment] =
-    useState<VisualProductBenchmarkEnvironment | null>(null);
-  const [session, setSession] =
-    useState<VisualProductBenchmarkSession | null>(null);
-  const [retainedEvidenceCorrupt, setRetainedEvidenceCorrupt] =
-    useState(false);
-  const [status, setStatus] = useState(
-    "Preparing visual-recognition benchmark environment…",
+interface VisualProductBenchmarkBootstrap {
+  readonly environment: VisualProductBenchmarkEnvironment;
+  readonly session: VisualProductBenchmarkSession | null;
+  readonly retainedEvidenceCorrupt: boolean;
+  readonly status: string;
+}
+
+const createBootstrap = (): VisualProductBenchmarkBootstrap => {
+  const environment = captureVisualProductBenchmarkEnvironment();
+  const loaded = loadVisualProductBenchmarkSession(
+    localStorage,
+    environment,
+    new Date().toISOString(),
   );
+
+  if (loaded.status === "corrupt") {
+    return {
+      environment,
+      session: null,
+      retainedEvidenceCorrupt: true,
+      status:
+        "Retained visual benchmark evidence is malformed and has been left unchanged. Reset explicitly before collecting new evidence.",
+    };
+  }
+
+  return {
+    environment,
+    session: loaded.session,
+    retainedEvidenceCorrupt: false,
+    status: environment.recognizerAvailable
+      ? "Visual product benchmark harness is ready."
+      : "Benchmark harness is ready, but no visual recognizer adapter is configured.",
+  };
+};
+
+export function App() {
+  const [bootstrap] = useState(createBootstrap);
+  const [environment, setEnvironment] = useState(
+    bootstrap.environment,
+  );
+  const [session, setSession] =
+    useState<VisualProductBenchmarkSession | null>(
+      bootstrap.session,
+    );
+  const [retainedEvidenceCorrupt, setRetainedEvidenceCorrupt] =
+    useState(bootstrap.retainedEvidenceCorrupt);
+  const [status, setStatus] = useState(bootstrap.status);
   const [attemptActive, setAttemptActive] = useState(false);
 
   const summary = useMemo(
@@ -57,7 +94,6 @@ export function App() {
 
   const environmentChanged =
     session !== null &&
-    environment !== null &&
     !sameVisualProductBenchmarkEnvironment(
       session.environment,
       environment,
@@ -82,30 +118,17 @@ export function App() {
       document.head.append(robots);
     }
 
-    const captured = captureVisualProductBenchmarkEnvironment();
-    setEnvironment(captured);
-
-    const loaded = loadVisualProductBenchmarkSession(
-      localStorage,
-      captured,
-      new Date().toISOString(),
-    );
-
-    if (loaded.status === "corrupt") {
-      setRetainedEvidenceCorrupt(true);
-      setStatus(
-        "Retained visual benchmark evidence is malformed and has been left unchanged. Reset explicitly before collecting new evidence.",
-      );
-      return;
+    if (bootstrap.session !== null && !bootstrap.retainedEvidenceCorrupt) {
+      try {
+        persistVisualProductBenchmarkSession(
+          localStorage,
+          bootstrap.session,
+        );
+      } catch {
+        // Evidence persistence is best-effort and must not break the harness.
+      }
     }
-
-    setSession(loaded.session);
-    setStatus(
-      captured.recognizerAvailable
-        ? "Visual product benchmark harness is ready."
-        : "Benchmark harness is ready, but no visual recognizer adapter is configured.",
-    );
-  }, []);
+  }, [bootstrap]);
 
   const updateSession = (
     updater: (
@@ -254,14 +277,6 @@ export function App() {
       }
     }
   };
-
-  if (environment === null) {
-    return (
-      <main className={styles.page}>
-        <p role="status">{status}</p>
-      </main>
-    );
-  }
 
   if (retainedEvidenceCorrupt) {
     return (
