@@ -73,7 +73,7 @@ Coverage does **not** replace browser, accessibility, persistence-failure, real-
 
 Pull requests also run a least-privilege Dependency Review workflow. It fails when a changed runtime, development or unknown-scope dependency introduces a high/critical known vulnerability, while showing patched-version guidance when GitHub Advisory data provides it. The action is pinned to an immutable commit SHA and does not receive pull-request write permission.
 
-CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer and the isolated barcode benchmark. Production browser tests run against the exact public build artifact; QA-, beta-, cohort- and barcode-benchmark-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed, the same tested revision has produced a validated production CycloneDX SBOM, and the exact uploaded `pages-site` artifact digest has both signed build-provenance and SBOM attestations. The scanner is commit-pinned, its Syft version is pinned, JavaScript devDependencies are omitted and Syft's GitHub Actions catalogers are explicitly disabled so workflow metadata nested inside installed packages cannot contaminate the product inventory. The SBOM is retained as CI evidence with a SHA-256 digest while remaining outside the public Pages site.
+CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer, the isolated barcode benchmark and the isolated visual-product-recognition benchmark harness. Production browser tests run against the exact public build artifact; QA-, beta-, cohort-, barcode-benchmark- and visual-benchmark-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed, the same tested revision has produced a validated production CycloneDX SBOM, and the exact uploaded `pages-site` artifact digest has both signed build-provenance and SBOM attestations. The scanner is commit-pinned, its Syft version is pinned, JavaScript devDependencies are omitted and Syft's GitHub Actions catalogers are explicitly disabled so workflow metadata nested inside installed packages cannot contaminate the product inventory. The SBOM is retained as CI evidence with a SHA-256 digest while remaining outside the public Pages site.
 
 ## Test layers
 
@@ -359,6 +359,27 @@ Tests must prove:
 
 The current benchmark intentionally tests native `BarcodeDetector` only. Unsupported target devices are evidence, not a reason to silently add a fallback dependency.
 
+### Visual product recognition benchmark
+
+Automation may verify harness isolation, candidate-decision state, privacy and evidence integrity. It may not claim retail recognition quality without a concrete recognizer/model and representative physical-device data.
+
+Tests must prove:
+
+- the harness is a standalone guarded build with no ShoppingTrip/cart access and no PWA/service worker;
+- the public production JavaScript contains no visual benchmark markers/storage key;
+- raw image bytes and candidate labels never enter retained/exported evidence;
+- the adapter declares a stable identity and `local-only` or `remote-image` data boundary;
+- capture → recognition → human rank confirmation is timed as one interaction;
+- top-1 and rank 2–3 confirmations remain distinguishable;
+- rejected/no-result/timeout/manual-fallback/recognizer-error/capture-error outcomes remain distinguishable;
+- a timeout/fallback/teardown invalidates late recognizer results;
+- camera tracks are released on stop/unmount/failure;
+- malformed retained evidence is preserved until explicit reset;
+- viewport/recognizer/data-boundary changes freeze retained evidence instead of mixing environments;
+- export carries the exact guarded-build `buildRevision`;
+- local download uses a non-identifying session timestamp filename;
+- a concrete model/provider remains an evidence-gated follow-up tracked by issue #88.
+
 ## Performance
 
 ### Public bundle budget
@@ -385,7 +406,7 @@ Protect:
 - fast initial product load;
 - immediate local add/edit/undo response;
 - stable bundle trend;
-- no QA/beta/cohort/barcode-benchmark evidence markers in the public JavaScript bundle;
+- no QA/beta/cohort/barcode-benchmark/visual-benchmark evidence markers in the public JavaScript bundle;
 - public JS/CSS remain within the enforced bundle budgets;
 - optional future capability isolation.
 

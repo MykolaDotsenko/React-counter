@@ -68,6 +68,8 @@ const forbiddenMarkers = [
   "retention-cohort-summary",
   "Barcode interaction benchmark",
   "budget-cart:qa:barcode-benchmark-v1",
+  "Visual product recognition benchmark",
+  "budget-cart:qa:visual-product-benchmark-v1",
 ];
 
 const files = await readdir(assets);

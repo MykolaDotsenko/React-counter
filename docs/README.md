@@ -133,6 +133,7 @@ Evidence documents define how claims become validated:
 - [evidence/RETENTION-STUDY-LOG-TEMPLATE.md](./evidence/RETENTION-STUDY-LOG-TEMPLATE.md)
 - [evidence/BARCODE-BENCHMARK.md](./evidence/BARCODE-BENCHMARK.md)
 - [evidence/BARCODE-PAIRED-DECISION-TEMPLATE.md](./evidence/BARCODE-PAIRED-DECISION-TEMPLATE.md)
+- [evidence/VISUAL-PRODUCT-BENCHMARK.md](./evidence/VISUAL-PRODUCT-BENCHMARK.md)
 - [evidence/PHASE-4-DESIGN-VALIDATION.md](./evidence/PHASE-4-DESIGN-VALIDATION.md)
 - [evidence/BRAND-IMPLEMENTATION-AUDIT.md](./evidence/BRAND-IMPLEMENTATION-AUDIT.md)
 

@@ -27,6 +27,7 @@ The core Shopping Budget Companion engineering path is implemented:
 - privacy-safe timing QA and retention-beta evidence tooling
 - local-only retention cohort analyzer
 - guarded native barcode interaction benchmark harness (not a production scanner)
+- guarded provider-neutral visual product recognition benchmark harness (no model/provider bundled)
 - Chromium / Firefox / WebKit quality coverage
 
 The representative physical-phone interaction gate was accepted by explicit repository-owner/user attestation on 2026-09-24. The check was reported as responsibly completed with no blocking usability problem.
@@ -115,6 +116,13 @@ The active roadmap is intentionally narrow and local-first.
    - collect a same-device quantitative manual-entry baseline;
    - compare end-to-end human decision time, failures, corrections, fallback, preference and cognitive effort.
 
+4. **Visual product recognizer evidence — issue #88**
+   - keep the provider-neutral camera/evidence harness isolated from shopping state;
+   - select one explicit experimental recognizer/model adapter rather than a generic demo;
+   - declare whether image bytes remain local or cross a remote boundary;
+   - benchmark representative retail products and same-brand/similar-package confusions;
+   - compare ranked accuracy, end-to-end human decision time, corrections and fallback against manual interaction.
+
 These gates are not replaceable by automated fixtures or green CI.
 
 ### B. Production barcode — only after positive physical evidence
@@ -135,7 +143,29 @@ If issue #73 demonstrates meaningful net interaction benefit, implement producti
 
 Barcode identifies **product identity only**. It never supplies authoritative current shelf price. Manual current-price entry remains complete and always available.
 
-### C. Shelf-label OCR — benchmark before production
+### C. Visual product recognition — concrete adapter evidence before production
+
+**Harness status: IMPLEMENTED. Recognizer/model evidence: PLANNED / GATED. Production recognition: PLANNED / GATED.**
+
+The guarded benchmark owns camera capture, timeout/cancellation, ranked candidate review, privacy-safe evidence and adapter boundaries. It deliberately ships no concrete recognition model.
+
+Use issue #88 to evaluate one explicit adapter/model on representative retail products before production work.
+
+Production visual recognition, if approved, must preserve:
+
+1. provider-neutral `VisualProductRecognizer` application boundary;
+2. explicit model/provider identity;
+3. explicit `local-only` or `remote-image` data boundary;
+4. transient image handling with no image persistence in shopping/evidence storage;
+5. ranked candidates rather than silent auto-selection;
+6. explicit human confirmation before product identity reaches shopping state;
+7. manual fallback at every failure/low-confidence point;
+8. lazy loading so recognizer code/model does not enter the critical initial bundle;
+9. barcode and visual identity fusion without making either source authoritative shelf price.
+
+Category-only recognition is not sufficient when the intended interaction needs SKU-level identity.
+
+### D. Shelf-label OCR — benchmark before production
 
 OCR remains **GATED / NOT IMPLEMENTED**.
 
@@ -156,7 +186,7 @@ Only a positive result may authorize production OCR. Production OCR must preserv
 - slow/failing OCR returns cleanly to manual entry;
 - OCR code remains lazy and outside the critical initial bundle.
 
-### D. Evidence-selected advanced pricing
+### E. Evidence-selected advanced pricing
 
 Advanced pricing is not a package to implement wholesale. Add one mechanic at a time only after repeated real-user need.
 
@@ -178,13 +208,13 @@ Every accepted mechanic requires:
 - focused UX;
 - browser/accessibility regression coverage.
 
-### E. Completed-trip reopen — optional
+### F. Completed-trip reopen — optional
 
 Do not add reopen semantics unless real-user evidence shows recurring need.
 
 If approved, reopening must derive a **new active trip** from immutable completed history. A completed history record must never be mutated back into an active transaction.
 
-### F. Launch / recruiter-grade proof
+### G. Launch / recruiter-grade proof
 
 Build the final case study from verified evidence:
 
