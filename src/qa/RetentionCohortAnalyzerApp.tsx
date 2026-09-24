@@ -529,7 +529,7 @@ export function App() {
           type="button"
           className={styles.secondary}
           onClick={reset}
-          disabled={reports.length === 0 || !fieldAggregateReady}
+          disabled={reports.length === 0}
         >
           Clear analysis
         </button>
