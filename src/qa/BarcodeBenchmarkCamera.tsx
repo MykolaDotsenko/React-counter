@@ -233,6 +233,19 @@ export function BarcodeBenchmarkCamera({
       return;
     }
 
+    const viewportWidth = Math.max(1, Math.round(window.innerWidth));
+    const viewportHeight = Math.max(1, Math.round(window.innerHeight));
+
+    if (
+      viewportWidth !== environment.viewportWidth ||
+      viewportHeight !== environment.viewportHeight
+    ) {
+      onStatus(
+        "Viewport changed since this benchmark session started. Restore the original viewport or start a fresh benchmark session before recording more scans.",
+      );
+      return;
+    }
+
     const generation = loopGenerationRef.current + 1;
     loopGenerationRef.current = generation;
     const attempt: ActiveAttempt = {
