@@ -285,7 +285,7 @@ Tests must prove:
 - second-/third-trip metrics require contiguous chronological trip starts rather than ordinal gaps;
 - orphan or pre-start finish events do not inflate completed-trip counts;
 - partial interaction evidence remains available for friction analysis without being promoted to retention/completion evidence;
-- the local cohort analyzer rejects invalid/tampered exports before aggregation;
+- the local cohort analyzer rejects invalid/tampered exports and implausibly future-dated observation timestamps before aggregation;
 - a newer export from the same retained evidence session replaces an older one rather than double-counting it;
 - analyzer state remains page-memory only and aggregate copy output excludes raw participant events and filenames.
 
