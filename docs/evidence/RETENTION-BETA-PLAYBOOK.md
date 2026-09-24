@@ -95,6 +95,7 @@ Before an export enters cohort analysis:
 - incomplete evidence may remain useful, but must not be silently upgraded to completed-trip evidence
 - a session at the hard event capacity is preserved for audit but is excluded from primary cohort interpretation rather than silently dropping early events
 - if the beta panel reports **memory-only**, export before reload/close and record the storage problem in facilitator notes; do not assume the newest evidence survived a reload
+- if the beta panel reports retained evidence that **failed validation**, recording/export is frozen and the existing raw value is preserved; record the participant/session exclusion before using the explicit reset action to start a new session
 - second- and third-trip retention require a contiguous observed start sequence (1 → 2 → 3) with non-decreasing start timestamps
 - a `trip_finished` event counts as completion only when the same trip ordinal has an observed start at or before that finish timestamp
 
