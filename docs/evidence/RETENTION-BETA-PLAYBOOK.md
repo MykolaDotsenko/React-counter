@@ -74,11 +74,12 @@ Do not add participant names, email addresses, store names, shopping lists, pric
 3. Use the app naturally; do not force a specific feature merely to create events.
 4. Leave the retained beta evidence on the device after the first trip.
 5. Reuse the beta on later real trips when that matches normal shopping behaviour.
-6. After the agreed observation window, open **Beta evidence** and copy the privacy-safe export.
-7. Save the export as a separate JSON file outside the app.
-8. On the facilitator device, import the retained exports into `/cohort/` and review invalid/duplicate/replacement counts before interpreting metrics.
+6. After the agreed observation window, open **Beta evidence** and choose **Download JSON evidence**.
+7. If local download is unavailable, use **Copy privacy-safe evidence** as the fallback and save the copied JSON outside the app.
+8. Keep the downloaded/copied export as a separate JSON file. The default filename contains only the beta session timestamp, not participant identity.
+9. On the facilitator device, import the retained exports into `/cohort/` and review invalid/duplicate/replacement counts before interpreting metrics.
 
-A facilitator may assign an external study code such as `P001` to the filename. That external code must not be injected into the app's evidence JSON.
+A facilitator may rename the exported file with an external study code such as `P001`. That external code must remain outside the app payload and must not be injected into the evidence JSON.
 
 ## Evidence quality rules
 
