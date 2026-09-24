@@ -49,7 +49,7 @@ npm run test:e2e
 
 `npm run check` covers lint, typecheck, unit/component tests and production build.
 
-CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer and the isolated barcode benchmark. Production browser tests run against the exact public build artifact; beta-, cohort- and barcode-benchmark-specific browser tests run separately against their guarded artifacts. Deployment may promote the artifact only after all browser gates succeed.
+CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer and the isolated barcode benchmark. Production browser tests run against the exact public build artifact; QA-, beta-, cohort- and barcode-benchmark-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed.
 
 ## Test layers
 
@@ -263,7 +263,10 @@ Timing-evidence tests must also prove:
 - an excluded timing sample stays in evidence;
 - each exclusion references a real sample ID and requires a bounded non-empty reason;
 - documented external interruptions are omitted from timing KPIs without deleting the sample;
-- malformed/unknown exclusion references and tampered derived gate summaries are rejected.
+- malformed/unknown exclusion references and tampered derived gate summaries are rejected;
+- timing export schema carries a validated `buildRevision`;
+- local timing JSON download uses a non-identifying timestamp filename;
+- the guarded QA browser gate verifies the downloaded export revision equals the exact tested Git SHA.
 
 ### Retention beta
 
@@ -285,6 +288,7 @@ Tests must prove:
 - export `generatedAt` cannot predate retained session evidence;
 - export UI handles invalid device-clock chronology without crashing the beta panel;
 - local JSON download uses a non-identifying session-timestamp filename and preserves the same privacy-safe export contract as clipboard copy;
+- retention export schema carries a validated `buildRevision`;
 - 7/14/30-day retention uses maturity-aware denominators so right-censored participants are not counted as failures;
 - each window-specific cohort summary exposes its eligible participant count;
 - the cohort analyzer keeps recruitment readiness (20–50 real shoppers) separate from 7/14/30-day interpretation readiness;
@@ -294,6 +298,8 @@ Tests must prove:
 - orphan or pre-start finish events do not inflate completed-trip counts;
 - partial interaction evidence remains available for friction analysis without being promoted to retention/completion evidence;
 - the local cohort analyzer rejects invalid/tampered exports and implausibly future-dated observation timestamps before aggregation;
+- one in-memory cohort accepts exactly one source `buildRevision`; mixed source revisions are rejected rather than implicitly combined;
+- aggregate output records both the source evidence revision and the analyzer build revision;
 - a newer export from the same retained evidence session replaces an older one rather than double-counting it;
 - analyzer state remains page-memory only and aggregate copy/download output excludes raw participant events and filenames;
 - local aggregate download uses a non-identifying timestamp filename and the exact same aggregate payload contract as clipboard copy.
@@ -323,6 +329,7 @@ Tests must prove:
 - stopping an active scan records a fallback rather than silently dropping the attempt;
 - evidence copy/download/reset is unavailable while a timed attempt is still in flight;
 - local benchmark download uses a non-identifying timestamp filename and contains no raw barcode value;
+- barcode export schema carries a validated `buildRevision`, and guarded-browser E2E verifies it matches the exact tested Git SHA;
 - export/clock failure remains inside the evidence UI instead of crashing the benchmark;
 - production barcode promotion still requires representative mobile evidence plus a paired quantitative manual baseline.
 
