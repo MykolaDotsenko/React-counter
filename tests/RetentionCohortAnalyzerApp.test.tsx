@@ -191,7 +191,11 @@ describe("RetentionCohortAnalyzerApp", () => {
 
   it("downloads an aggregate report without raw participant events or filenames", async () => {
     const user = userEvent.setup();
-    const createObjectURL = vi.fn(() => "blob:cohort-summary");
+    const createdBlobs: Blob[] = [];
+    const createObjectURL = vi.fn((blob: Blob) => {
+      createdBlobs.push(blob);
+      return "blob:cohort-summary";
+    });
     const revokeObjectURL = vi.fn();
     let downloadedFileName = "";
 
@@ -240,7 +244,12 @@ describe("RetentionCohortAnalyzerApp", () => {
         "blob:cohort-summary",
       );
 
-      const blob = createObjectURL.mock.calls[0]?.[0] as Blob;
+      const blob = createdBlobs[0];
+
+      if (blob === undefined) {
+        throw new Error("Expected aggregate download blob");
+      }
+
       const exported = await blob.text();
 
       expect(exported).toContain(
