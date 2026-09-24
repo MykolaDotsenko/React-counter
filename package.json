@@ -23,7 +23,8 @@
     "visual:prepare-index": "node scripts/prepare-visual-index.mjs",
     "ocr:prepare-index": "node scripts/prepare-ocr-index.mjs",
     "barcode-paired:prepare-index": "node scripts/prepare-barcode-paired-index.mjs",
-    "ocr-tesseract:prepare-index": "node scripts/prepare-ocr-tesseract-index.mjs"
+    "ocr-tesseract:prepare-index": "node scripts/prepare-ocr-tesseract-index.mjs",
+    "ocr-paired:prepare-index": "node scripts/prepare-ocr-paired-index.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "4.3.0",
