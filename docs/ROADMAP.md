@@ -25,6 +25,7 @@ The core Shopping Budget Companion engineering path is implemented:
 - local-data controls
 - installable offline PWA shell
 - privacy-safe timing QA and retention-beta evidence tooling
+- local-only retention cohort analyzer
 - Chromium / Firefox / WebKit quality coverage
 
 The representative physical-phone interaction gate was accepted by explicit repository-owner/user attestation on 2026-09-24. The check was reported as responsibly completed with no blocking usability problem.
@@ -103,7 +104,7 @@ The public product now ships a Vite/Workbox-generated installable application sh
 - prompt-based service-worker updates;
 - no forced reload during an active shopping lifecycle;
 - canonical trip/history/Price Memory state remains in localStorage rather than Cache Storage;
-- guarded `/qa/` and `/beta/` evidence builds remain outside PWA registration.
+- guarded `/qa/`, `/beta/` and `/cohort/` evidence builds remain outside PWA registration.
 
 Automated browser coverage verifies active-trip restore, offline completion/history persistence and a second offline history restore.
 
