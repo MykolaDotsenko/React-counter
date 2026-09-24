@@ -56,6 +56,8 @@ const forbiddenMarkers = [
   "budget-cart:qa:retention-v1",
   "Retention cohort analyzer",
   "retention-cohort-summary",
+  "Barcode interaction benchmark",
+  "budget-cart:qa:barcode-benchmark-v1",
 ];
 
 const files = await readdir(assets);
@@ -94,7 +96,7 @@ for (const file of jsFiles) {
   for (const marker of forbiddenMarkers) {
     if (content.includes(marker)) {
       throw new Error(
-        `Public bundle leaked guarded QA/beta code marker "${marker}" in ${file}.`,
+        `Public bundle leaked guarded evidence code marker "${marker}" in ${file}.`,
       );
     }
   }
