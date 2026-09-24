@@ -1,10 +1,6 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { BarcodeBenchmarkCamera } from "./BarcodeBenchmarkCamera";
 import {
   appendBarcodeBenchmarkFailure,
   appendBarcodeBenchmarkSample,
@@ -17,82 +13,13 @@ import {
   updateBarcodeBenchmarkSubjective,
   type BarcodeBenchmarkEffort,
   type BarcodeBenchmarkEnvironment,
-  type BarcodeBenchmarkOutcome,
+  type BarcodeBenchmarkFailureType,
   type BarcodeBenchmarkPreference,
+  type BarcodeBenchmarkSample,
   type BarcodeBenchmarkSession,
 } from "./barcode-benchmark";
+import { captureBarcodeBenchmarkEnvironment } from "./barcode-benchmark-native";
 import styles from "./BarcodeBenchmarkApp.module.css";
-
-const SCAN_TIMEOUT_MS = 8_000;
-const DETECTION_INTERVAL_MS = 120;
-const PREFERRED_FORMATS = [
-  "ean_13",
-  "ean_8",
-  "upc_a",
-  "upc_e",
-] as const;
-
-interface DetectedBarcode {
-  readonly rawValue: string;
-  readonly format?: string;
-}
-
-interface NativeBarcodeDetector {
-  detect(source: CanvasImageSource): Promise<readonly DetectedBarcode[]>;
-}
-
-interface NativeBarcodeDetectorConstructor {
-  new (options?: { readonly formats?: readonly string[] }): NativeBarcodeDetector;
-  getSupportedFormats?: () => Promise<readonly string[]>;
-}
-
-interface ActiveAttempt {
-  readonly id: string;
-  readonly startedAt: string;
-  readonly startedPerf: number;
-}
-
-interface PendingCandidate {
-  readonly rawValue: string;
-  readonly format: string;
-}
-
-const barcodeDetectorConstructor = (): NativeBarcodeDetectorConstructor | null =>
-  (
-    globalThis as typeof globalThis & {
-      BarcodeDetector?: NativeBarcodeDetectorConstructor;
-    }
-  ).BarcodeDetector ?? null;
-
-const captureEnvironment =
-  async (): Promise<BarcodeBenchmarkEnvironment> => {
-    const detector = barcodeDetectorConstructor();
-    let supportedFormats: readonly string[] = [];
-
-    if (detector?.getSupportedFormats !== undefined) {
-      try {
-        supportedFormats = await detector.getSupportedFormats();
-      } catch {
-        supportedFormats = [];
-      }
-    }
-
-    return {
-      userAgent: navigator.userAgent.slice(0, 512),
-      viewportWidth: Math.max(1, Math.round(window.innerWidth)),
-      viewportHeight: Math.max(1, Math.round(window.innerHeight)),
-      detectorSupported: detector !== null,
-      cameraSupported:
-        navigator.mediaDevices?.getUserMedia !== undefined,
-      supportedFormats: [
-        ...new Set(
-          supportedFormats
-            .filter((format) => format.trim().length > 0)
-            .slice(0, 32),
-        ),
-      ],
-    };
-  };
 
 const percent = (value: number | null): string =>
   value === null ? "—" : `${(value * 100).toFixed(1)}%`;
@@ -100,28 +27,14 @@ const percent = (value: number | null): string =>
 const seconds = (value: number | null): string =>
   value === null ? "—" : `${(value / 1_000).toFixed(2)} s`;
 
-const failureMessage = (error: unknown): "permission-denied" | "camera-error" =>
-  error instanceof DOMException &&
-  (error.name === "NotAllowedError" ||
-    error.name === "SecurityError")
-    ? "permission-denied"
-    : "camera-error";
-
 export function App() {
   const [environment, setEnvironment] =
     useState<BarcodeBenchmarkEnvironment | null>(null);
   const [session, setSession] =
     useState<BarcodeBenchmarkSession | null>(null);
-  const [cameraReady, setCameraReady] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const [pendingCandidate, setPendingCandidate] =
-    useState<PendingCandidate | null>(null);
-  const [status, setStatus] = useState("Preparing benchmark environment…");
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const detectorRef = useRef<NativeBarcodeDetector | null>(null);
-  const activeAttemptRef = useRef<ActiveAttempt | null>(null);
-  const loopGenerationRef = useRef(0);
+  const [status, setStatus] = useState(
+    "Preparing benchmark environment…",
+  );
 
   const summary = useMemo(
     () =>
@@ -132,7 +45,9 @@ export function App() {
   );
 
   const updateSession = (
-    updater: (current: BarcodeBenchmarkSession) => BarcodeBenchmarkSession,
+    updater: (
+      current: BarcodeBenchmarkSession,
+    ) => BarcodeBenchmarkSession,
   ): void => {
     setSession((current) => {
       if (current === null) {
@@ -151,29 +66,6 @@ export function App() {
     });
   };
 
-  const stopDetectionLoop = (): void => {
-    loopGenerationRef.current += 1;
-    setScanning(false);
-  };
-
-  const stopCamera = (): void => {
-    stopDetectionLoop();
-    activeAttemptRef.current = null;
-    setPendingCandidate(null);
-
-    for (const track of streamRef.current?.getTracks() ?? []) {
-      track.stop();
-    }
-
-    streamRef.current = null;
-    detectorRef.current = null;
-    setCameraReady(false);
-
-    if (videoRef.current !== null) {
-      videoRef.current.srcObject = null;
-    }
-  };
-
   useEffect(() => {
     document.title =
       "Shopping Budget Companion — Barcode Benchmark";
@@ -190,18 +82,17 @@ export function App() {
 
     let cancelled = false;
 
-    void captureEnvironment().then((captured) => {
+    void captureBarcodeBenchmarkEnvironment().then((captured) => {
       if (cancelled) {
         return;
       }
 
       setEnvironment(captured);
 
-      const now = new Date().toISOString();
       const restored = loadBarcodeBenchmarkSession(
         localStorage,
         captured,
-        now,
+        new Date().toISOString(),
       );
       setSession(restored);
       setStatus(
@@ -213,20 +104,11 @@ export function App() {
 
     return () => {
       cancelled = true;
-      loopGenerationRef.current += 1;
-
-      for (const track of streamRef.current?.getTracks() ?? []) {
-        track.stop();
-      }
     };
   }, []);
 
   const recordFailure = (
-    type:
-      | "detector-unsupported"
-      | "camera-unsupported"
-      | "permission-denied"
-      | "camera-error",
+    type: BarcodeBenchmarkFailureType,
   ): void => {
     updateSession((current) =>
       appendBarcodeBenchmarkFailure(current, {
@@ -236,184 +118,16 @@ export function App() {
     );
   };
 
-  const openCamera = async (): Promise<void> => {
-    const detectorConstructor = barcodeDetectorConstructor();
-
-    if (detectorConstructor === null) {
-      recordFailure("detector-unsupported");
-      setStatus(
-        "Native BarcodeDetector is unavailable. Record this device as unsupported and keep manual entry as the baseline.",
-      );
-      return;
-    }
-
-    if (navigator.mediaDevices?.getUserMedia === undefined) {
-      recordFailure("camera-unsupported");
-      setStatus("Camera capture is unavailable in this browser.");
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: "environment" },
-        },
-      });
-      const video = videoRef.current;
-
-      if (video === null) {
-        for (const track of stream.getTracks()) {
-          track.stop();
-        }
-        setStatus("Camera surface is unavailable.");
-        return;
-      }
-
-      const supported = environment?.supportedFormats ?? [];
-      const preferred = PREFERRED_FORMATS.filter((format) =>
-        supported.includes(format),
-      );
-
-      detectorRef.current = new detectorConstructor(
-        preferred.length > 0
-          ? { formats: preferred }
-          : undefined,
-      );
-      streamRef.current = stream;
-      video.srcObject = stream;
-      await video.play();
-      setCameraReady(true);
-      setStatus(
-        preferred.length > 0
-          ? `Camera ready · testing ${preferred.join(", ")}.`
-          : "Camera ready · using detector default formats.",
-      );
-    } catch (error) {
-      const type = failureMessage(error);
-      recordFailure(type);
-      setStatus(
-        type === "permission-denied"
-          ? "Camera permission was denied. Manual fallback remains available."
-          : "Camera could not be started on this device.",
-      );
-    }
-  };
-
-  const finalizeAttempt = (
-    outcome: BarcodeBenchmarkOutcome,
-    detectedFormat: string | null,
+  const recordSample = (
+    sample: BarcodeBenchmarkSample,
   ): void => {
-    const attempt = activeAttemptRef.current;
-
-    if (attempt === null) {
-      return;
-    }
-
-    const completedAt = new Date().toISOString();
-    const durationMs = Math.max(
-      0,
-      performance.now() - attempt.startedPerf,
-    );
-
-    stopDetectionLoop();
-    activeAttemptRef.current = null;
-    setPendingCandidate(null);
-
     updateSession((current) =>
-      appendBarcodeBenchmarkSample(current, {
-        id: attempt.id,
-        startedAt: attempt.startedAt,
-        completedAt,
-        durationMs,
-        outcome,
-        detectedFormat,
-      }),
+      appendBarcodeBenchmarkSample(current, sample),
     );
-  };
-
-  const startTimedScan = (): void => {
-    const detector = detectorRef.current;
-    const video = videoRef.current;
-
-    if (!cameraReady || detector === null || video === null) {
-      setStatus("Open the camera before starting a timed scan.");
-      return;
-    }
-
-    if (activeAttemptRef.current !== null) {
-      return;
-    }
-
-    const generation = loopGenerationRef.current + 1;
-    loopGenerationRef.current = generation;
-    const attempt: ActiveAttempt = {
-      id:
-        globalThis.crypto?.randomUUID?.() ??
-        `scan-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      startedAt: new Date().toISOString(),
-      startedPerf: performance.now(),
-    };
-    activeAttemptRef.current = attempt;
-    setPendingCandidate(null);
-    setScanning(true);
-    setStatus("Scanning… keep the barcode steady in the camera view.");
-
-    const detect = async (): Promise<void> => {
-      if (
-        loopGenerationRef.current !== generation ||
-        activeAttemptRef.current?.id !== attempt.id
-      ) {
-        return;
-      }
-
-      if (performance.now() - attempt.startedPerf >= SCAN_TIMEOUT_MS) {
-        finalizeAttempt("timeout", null);
-        setStatus(
-          "No barcode was detected within 8 seconds. Try again or use manual fallback.",
-        );
-        return;
-      }
-
-      try {
-        const results = await detector.detect(video);
-        const candidate = results.find(
-          (result) => result.rawValue.trim().length > 0,
-        );
-
-        if (candidate !== undefined) {
-          stopDetectionLoop();
-          setPendingCandidate({
-            rawValue: candidate.rawValue,
-            format:
-              candidate.format?.trim().length
-                ? candidate.format
-                : "unknown",
-          });
-          setStatus(
-            "Candidate detected. Confirm it, reject it, or fall back to manual entry.",
-          );
-          return;
-        }
-      } catch {
-        finalizeAttempt("detector-error", null);
-        setStatus(
-          "Detector error. The attempt was recorded as a recognition failure; manual fallback remains available.",
-        );
-        return;
-      }
-
-      window.setTimeout(() => {
-        void detect();
-      }, DETECTION_INTERVAL_MS);
-    };
-
-    void detect();
   };
 
   const resetSession = async (): Promise<void> => {
-    stopCamera();
-    const captured = await captureEnvironment();
+    const captured = await captureBarcodeBenchmarkEnvironment();
     const fresh = createBarcodeBenchmarkSession(
       captured,
       new Date().toISOString(),
@@ -482,14 +196,20 @@ export function App() {
             <h2 id="device-title">Benchmark setup</h2>
           </div>
           <span className={styles.badge}>
-            {environment.detectorSupported ? "Detector available" : "Detector unavailable"}
+            {environment.detectorSupported
+              ? "Detector available"
+              : "Detector unavailable"}
           </span>
         </div>
 
         <dl className={styles.capabilities}>
           <div>
             <dt>Camera API</dt>
-            <dd>{environment.cameraSupported ? "Available" : "Unavailable"}</dd>
+            <dd>
+              {environment.cameraSupported
+                ? "Available"
+                : "Unavailable"}
+            </dd>
           </div>
           <div>
             <dt>Viewport</dt>
@@ -525,129 +245,13 @@ export function App() {
         </label>
       </section>
 
-      <section className={styles.card} aria-labelledby="scan-title">
-        <div className={styles.sectionHeading}>
-          <div>
-            <p className={styles.eyebrow}>Timed interaction</p>
-            <h2 id="scan-title">Scan → human decision</h2>
-          </div>
-          <span className={styles.badge}>
-            8 s timeout · raw code not exported
-          </span>
-        </div>
-
-        <div className={styles.cameraFrame}>
-          <video
-            ref={videoRef}
-            muted
-            playsInline
-            aria-label="Barcode camera preview"
-          />
-          {!cameraReady ? (
-            <div className={styles.cameraPlaceholder}>
-              Camera opens only after you choose Start camera.
-            </div>
-          ) : null}
-        </div>
-
-        <div className={styles.actions}>
-          <button
-            type="button"
-            onClick={() => void openCamera()}
-            disabled={cameraReady}
-          >
-            {cameraReady ? "Camera ready" : "Start camera"}
-          </button>
-          <button
-            type="button"
-            onClick={startTimedScan}
-            disabled={!cameraReady || scanning || pendingCandidate !== null}
-          >
-            {scanning ? "Scanning…" : "Start timed scan"}
-          </button>
-          <button
-            type="button"
-            className={styles.secondary}
-            onClick={() => {
-              if (activeAttemptRef.current !== null) {
-                finalizeAttempt(
-                  "manual-fallback",
-                  pendingCandidate?.format ?? null,
-                );
-                setStatus("Manual fallback recorded.");
-                return;
-              }
-
-              setStatus(
-                "Manual entry remains the baseline; start a timed scan to record fallback cost.",
-              );
-            }}
-          >
-            Manual fallback
-          </button>
-          <button
-            type="button"
-            className={styles.secondary}
-            onClick={() => {
-              if (activeAttemptRef.current !== null) {
-                finalizeAttempt(
-                  "manual-fallback",
-                  pendingCandidate?.format ?? null,
-                );
-              }
-
-              stopCamera();
-              setStatus("Camera stopped.");
-            }}
-            disabled={!cameraReady}
-          >
-            Stop camera
-          </button>
-        </div>
-
-        {pendingCandidate !== null ? (
-          <div className={styles.candidate} aria-live="polite">
-            <p>Detected candidate</p>
-            <code>{pendingCandidate.rawValue}</code>
-            <small>{pendingCandidate.format}</small>
-            <div className={styles.actions}>
-              <button
-                type="button"
-                onClick={() => {
-                  finalizeAttempt(
-                    "confirmed",
-                    pendingCandidate.format,
-                  );
-                  setStatus("Confirmed scan recorded.");
-                }}
-              >
-                Confirm candidate
-              </button>
-              <button
-                type="button"
-                className={styles.secondary}
-                onClick={() => {
-                  finalizeAttempt(
-                    "rejected",
-                    pendingCandidate.format,
-                  );
-                  setStatus(
-                    "Rejected candidate recorded. Start another scan to retry.",
-                  );
-                }}
-              >
-                Reject / retry
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        <p className={styles.note}>
-          The timer starts when you press Start timed scan and stops only when
-          you confirm, reject, time out, or choose manual fallback. That makes
-          the metric interaction-level rather than detector-only latency.
-        </p>
-      </section>
+      <BarcodeBenchmarkCamera
+        key={session.createdAt}
+        environment={environment}
+        onFailure={recordFailure}
+        onSample={recordSample}
+        onStatus={setStatus}
+      />
 
       <section className={styles.card} aria-labelledby="results-title">
         <div className={styles.sectionHeading}>
