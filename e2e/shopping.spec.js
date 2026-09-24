@@ -1203,6 +1203,52 @@ test("@beta downloads a privacy-safe retention export locally", async ({
   expect(report.session.events).toEqual([]);
 });
 
+test("@beta freezes invalid retained evidence without overwriting it", async ({
+  page,
+}) => {
+  const malformed = "{broken";
+
+  await page.addInitScript(
+    ({ key, raw }) => {
+      localStorage.setItem(key, raw);
+    },
+    { key: RETENTION_BETA_KEY, raw: malformed },
+  );
+
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Beta evidence" }).click();
+
+  await expect(page.getByRole("alert")).toContainText(
+    "Retained beta evidence failed validation",
+  );
+
+  await expect(
+    page.getByRole("button", { name: "Download JSON evidence" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Copy privacy-safe evidence" }),
+  ).toBeDisabled();
+
+  await page.getByRole("button", { name: "Beta evidence" }).click();
+  await startQuickBudget(page);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  await expect(
+    page.getByText("€4.79 of €50.00", { exact: true }),
+  ).toBeVisible();
+
+  const retained = await page.evaluate(
+    (key) => localStorage.getItem(key),
+    RETENTION_BETA_KEY,
+  );
+
+  expect(retained).toBe(malformed);
+});
+
 test("@beta keeps shopping usable when retention evidence storage fails", async ({
   page,
 }) => {
