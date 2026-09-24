@@ -20,7 +20,8 @@
     "cohort:prepare-index": "node scripts/prepare-cohort-index.mjs",
     "barcode:prepare-index": "node scripts/prepare-barcode-index.mjs",
     "test:coverage": "vitest run --coverage",
-    "visual:prepare-index": "node scripts/prepare-visual-index.mjs"
+    "visual:prepare-index": "node scripts/prepare-visual-index.mjs",
+    "ocr:prepare-index": "node scripts/prepare-ocr-index.mjs"
   },
   "dependencies": {
     "react": "19.3.0",
