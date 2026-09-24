@@ -166,6 +166,30 @@ const isEvent = (value: unknown): value is RetentionBetaEvent => {
   }
 };
 
+const eventsDoNotPredateSession = (
+  createdAt: string,
+  events: readonly RetentionBetaEvent[],
+): boolean => {
+  const createdAtMs = Date.parse(createdAt);
+
+  return events.every(
+    (event) => Date.parse(event.at) >= createdAtMs,
+  );
+};
+
+const observationEndCoversSession = (
+  session: RetentionBetaSession,
+  generatedAt: string,
+): boolean => {
+  const generatedAtMs = Date.parse(generatedAt);
+  const latestEvidenceMs = Math.max(
+    Date.parse(session.createdAt),
+    ...session.events.map((event) => Date.parse(event.at)),
+  );
+
+  return generatedAtMs >= latestEvidenceMs;
+};
+
 const isSession = (value: unknown): value is RetentionBetaSession => {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -181,7 +205,11 @@ const isSession = (value: unknown): value is RetentionBetaSession => {
     isIsoTimestamp(candidate.createdAt) &&
     Array.isArray(candidate.events) &&
     candidate.events.length <= RETENTION_BETA_EVENT_LIMIT &&
-    candidate.events.every(isEvent)
+    candidate.events.every(isEvent) &&
+    eventsDoNotPredateSession(
+      candidate.createdAt,
+      candidate.events,
+    )
   );
 };
 
@@ -416,6 +444,12 @@ export const buildRetentionBetaExport = (
     throw new RangeError("Retention beta export requires canonical ISO time");
   }
 
+  if (!observationEndCoversSession(session, generatedAt)) {
+    throw new RangeError(
+      "Retention beta export time cannot predate session evidence",
+    );
+  }
+
   return Object.freeze({
     schemaVersion: 1,
     generatedAt,
@@ -451,6 +485,10 @@ export const parseRetentionBetaExport = (
     !isIsoTimestamp(record.generatedAt) ||
     !isSession(record.session)
   ) {
+    return null;
+  }
+
+  if (!observationEndCoversSession(record.session, record.generatedAt)) {
     return null;
   }
 
