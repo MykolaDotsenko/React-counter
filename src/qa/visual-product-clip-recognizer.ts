@@ -82,9 +82,11 @@ export const parseVisualClipCatalog = (
     return null;
   }
 
-  const labels = record.labels.map((label) =>
-    normalizeLabel(label as string),
-  );
+  const labels = record.labels
+    .map((label) => normalizeLabel(label as string))
+    .sort((left, right) =>
+      left.localeCompare(right, "en", { sensitivity: "base" }),
+    );
   const normalizedKeys = labels.map((label) => label.toLowerCase());
 
   if (new Set(normalizedKeys).size !== labels.length) {
