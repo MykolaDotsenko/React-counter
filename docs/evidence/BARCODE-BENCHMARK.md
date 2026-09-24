@@ -134,6 +134,8 @@ A session has a hard limit of 200 timed attempts. At the limit, scanning is stop
 
 ## Paired manual baseline
 
+Use [BARCODE-PAIRED-DECISION-TEMPLATE.md](./BARCODE-PAIRED-DECISION-TEMPLATE.md) to keep the same-device comparison and go/no-go decision auditable.
+
 A scanner is useful only if it improves on the manual interaction it is intended to accelerate.
 
 For any decision to promote barcode work beyond benchmark status, collect a paired quantitative manual baseline on the same representative device/context using the existing timing QA path.

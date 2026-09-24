@@ -185,6 +185,8 @@ Remembered-item participant reach uses activated participants as the denominator
 
 The local recorder cannot answer why a participant abandoned or returned.
 
+Use [RETENTION-STUDY-LOG-TEMPLATE.md](./RETENTION-STUDY-LOG-TEMPLATE.md) as the private facilitator-log structure. Do not commit completed participant logs to the public repository.
+
 After a real trip, capture short facilitator notes outside the evidence JSON:
 
 - Did the user understand remaining budget immediately?
@@ -199,7 +201,7 @@ Keep qualitative notes separate from privacy-safe app evidence.
 
 ## Decision discipline
 
-Use the provisional retention bands defined in `ROADMAP.md` and `docs/research/PRODUCT-SUCCESS-STRATEGY.md`.
+Use the provisional retention bands only from `docs/research/PRODUCT-SUCCESS-STRATEGY.md`. They are internal heuristics, not industry benchmarks, and real cohort evidence overrides them.
 
 Do not start Phase 9 merely because the engineering backlog is ready.
 
