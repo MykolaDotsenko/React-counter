@@ -445,4 +445,59 @@ describe("retention beta evidence", () => {
     expect(raw).not.toContain("itemName");
     expect(raw).not.toContain("storeId");
   });
+
+  it("rejects retained evidence whose events predate the beta session", () => {
+    const store = storage();
+    store.setItem(
+      RETENTION_BETA_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        variant: "repeat-acceleration",
+        createdAt: LATER,
+        events: [
+          {
+            type: "trip_started",
+            at: START,
+            tripOrdinal: 1,
+            source: "new",
+          },
+        ],
+      }),
+    );
+
+    const restored = loadRetentionBetaSession(store, LATER);
+
+    expect(restored.events).toEqual([]);
+    expect(restored.createdAt).toBe(LATER);
+  });
+
+  it("rejects exports whose observation end predates retained evidence", () => {
+    let session = createRetentionBetaSession(START);
+    session = appendRetentionBetaEvent(
+      session,
+      event({
+        type: "trip_started",
+        tripOrdinal: 1,
+        source: "new",
+        at: LATER,
+      }),
+    );
+
+    expect(() =>
+      buildRetentionBetaExport(session, START),
+    ).toThrow("cannot predate session evidence");
+
+    const valid = buildRetentionBetaExport(
+      session,
+      "2026-09-22T08:10:00.000Z",
+    );
+
+    expect(
+      parseRetentionBetaExport({
+        ...valid,
+        generatedAt: START,
+      }),
+    ).toBeNull();
+  });
+
 });
