@@ -43,6 +43,7 @@ Returning shoppers can reuse a previous spending plan, Recent Items, and local P
 - **Loss-safe completion:** history and active-trip cleanup are reconciliation-aware.
 - **Independent Price Memory:** advisory remembered prices cannot corrupt active-cart/history durability.
 - **Proportional state architecture:** a plain TypeScript `ShoppingAppController` + `useSyncExternalStore`; no Redux/Zustand/XState/router/backend required.
+- **Account-free by design:** no authentication, cloud sync or backend shopping-state dependency; the core trip stays fully usable offline.
 - **Evidence separation:** QA timing and retention instrumentation never become product state.
 - **Installable offline shell:** Workbox precaches only application assets; shopping state remains localStorage-owned and updates are user-controlled.
 
@@ -139,17 +140,20 @@ CI additionally validates the exact release artifact before it can be deployed:
 
 ### Evidence still pending
 
-- ⏳ representative real-device one-hand timing
-- ⏳ bright-store / software-keyboard physical validation
+- ✅ representative physical-phone usability accepted for the current validation cycle by owner attestation
+- ⏳ exact quantitative manual-entry timing baseline remains unclaimed because machine-verifiable timing JSON was not retained
 - ⏳ 20–50 real-shopper retention beta
-- ⏳ measured second-trip and third-trip behavior
+- ⏳ maturity-aware second-/third-trip evidence
+- ⏳ representative physical barcode benchmark + paired quantitative manual baseline
 
-Barcode and OCR breadth remain evidence-gated.
+Production barcode and OCR remain evidence-gated.
 
 Public guarded evidence builds (validation surfaces, not private/security boundaries):
 
 - **Timing QA:** https://mykoladotsenko.github.io/shopping-budget-companion/qa/
 - **Retention beta:** https://mykoladotsenko.github.io/shopping-budget-companion/beta/
+- **Retention cohort analyzer:** https://mykoladotsenko.github.io/shopping-budget-companion/cohort/
+- **Barcode benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/barcode-benchmark/
 
 ---
 
