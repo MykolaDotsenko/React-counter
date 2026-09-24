@@ -53,15 +53,6 @@ For discounts, weighted goods or tax mechanics:
 - test boundary values and multiplication/division semantics;
 - ensure UI projection and persisted canonical values agree.
 
-## Cross-device/backend features
-
-If sync/auth/backend ever becomes approved:
-
-- define ownership/conflict semantics before implementation;
-- test offline/local edits against synchronization;
-- never allow stale remote state to silently overwrite newer committed local shopping state;
-- add explicit privacy/security tests for transmitted shopping data.
-
 ## Future capability accessibility
 
 These requirements become current only when the corresponding capability ships.
@@ -86,14 +77,6 @@ Candidate review must expose:
 - ambiguity clearly;
 - manual entry/edit;
 - no auto-commit from visual recognition alone.
-
-### Cloud / multi-device
-
-Any future conflict/recovery UI must state:
-
-- which version is current/local/remote;
-- what will be overwritten;
-- a safe user-controlled resolution path.
 
 ## Future state-machine rule
 
