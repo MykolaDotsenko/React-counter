@@ -7,6 +7,16 @@ const expectedBuildRevision = process.env.EVIDENCE_BUILD_REVISION;
 test("@visual-benchmark loads the isolated visual recognition harness", async ({
   page,
 }) => {
+  const modelRequests = [];
+  page.on("request", (request) => {
+    if (
+      request.url().includes("huggingface.co") ||
+      request.url().includes("hf.co")
+    ) {
+      modelRequests.push(request.url());
+    }
+  });
+
   await page.goto("/");
 
   await expect(
@@ -36,8 +46,19 @@ test("@visual-benchmark loads the isolated visual recognition harness", async ({
     page.getByText("Recognizer not configured"),
   ).toBeVisible();
   await expect(
-    page.getByText(/no recognizer is bundled deliberately/i),
+    page.getByRole("heading", {
+      name: "Local CLIP closed-set recognizer",
+    }),
   ).toBeVisible();
+  await expect(
+    page.getByLabel("Candidate product catalog JSON"),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Load local CLIP recognizer",
+    }),
+  ).toBeDisabled();
+  expect(modelRequests).toEqual([]);
 
   const evidence = await page.evaluate(() =>
     localStorage.getItem(
