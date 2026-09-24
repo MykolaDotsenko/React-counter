@@ -39,6 +39,7 @@ export type VisualClipClassifier = (
 export type VisualClipClassifierLoader = () => Promise<{
   readonly classifier: VisualClipClassifier;
   readonly device: VisualClipDevice;
+  readonly dispose?: () => Promise<void> | void;
 }>;
 
 const exactKeys = (
@@ -214,8 +215,11 @@ export const loadDefaultVisualClipClassifier: VisualClipClassifierLoader =
 
     const load = async (
       device: VisualClipDevice,
-    ): Promise<VisualClipClassifier> => {
-      const classifier = await pipeline(
+    ): Promise<{
+      readonly classifier: VisualClipClassifier;
+      readonly dispose: () => Promise<void>;
+    }> => {
+      const loaded = await pipeline(
         "zero-shot-image-classification",
         VISUAL_CLIP_MODEL_ID,
         {
@@ -224,13 +228,24 @@ export const loadDefaultVisualClipClassifier: VisualClipClassifierLoader =
         },
       );
 
-      return classifier as unknown as VisualClipClassifier;
+      const classifier = loaded as unknown as VisualClipClassifier;
+      const disposable = loaded as unknown as {
+        dispose?: () => Promise<void> | void;
+      };
+
+      return {
+        classifier,
+        dispose: async () => {
+          await disposable.dispose?.();
+        },
+      };
     };
 
     if (hasWebGpu()) {
       try {
+        const resource = await load("webgpu");
         return {
-          classifier: await load("webgpu"),
+          ...resource,
           device: "webgpu",
         };
       } catch {
@@ -239,8 +254,10 @@ export const loadDefaultVisualClipClassifier: VisualClipClassifierLoader =
       }
     }
 
+    const resource = await load("wasm");
+
     return {
-      classifier: await load("wasm"),
+      ...resource,
       device: "wasm",
     };
   };
@@ -251,7 +268,8 @@ export const createVisualClipRecognizer = async (
     loadDefaultVisualClipClassifier,
 ): Promise<VisualProductRecognizer> => {
   const fingerprint = await visualClipCatalogFingerprint(catalog);
-  const { classifier, device } = await loadClassifier();
+  const { classifier, device, dispose } = await loadClassifier();
+  let disposed = false;
   const id = [
     "hf-clip32",
     "tjs-" + VISUAL_CLIP_TRANSFORMERS_VERSION,
@@ -268,6 +286,10 @@ export const createVisualClipRecognizer = async (
       image: Blob,
       signal: AbortSignal,
     ): Promise<readonly VisualProductCandidate[]> => {
+      if (disposed) {
+        throw new Error("Visual CLIP recognizer is disposed");
+      }
+
       const result = await withAbort(
         classifier(image, catalog.labels, {
           hypothesis_template: HYPOTHESIS_TEMPLATE,
@@ -280,6 +302,14 @@ export const createVisualClipRecognizer = async (
       }
 
       return normalizeVisualClipCandidates(result, catalog);
+    },
+    dispose: async (): Promise<void> => {
+      if (disposed) {
+        return;
+      }
+
+      disposed = true;
+      await dispose?.();
     },
   });
 };
