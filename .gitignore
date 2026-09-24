@@ -15,6 +15,7 @@ dist-qa/
 dist-beta/
 site/
 coverage/
+.build-evidence/
 playwright-report/
 test-results/
 .playwright-site-root/
