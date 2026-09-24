@@ -31,6 +31,7 @@ Changes must preserve:
 - least-privilege GitHub Actions permissions;
 - dependency lockfile integrity;
 - each quality run emits a SHA-scoped production CycloneDX SBOM plus SHA-256 digest using a commit-pinned SBOM action and pinned Syft version;
+- `main` deployments require GitHub artifact attestations for the exact tested site checksums, including both build provenance and the matching CycloneDX SBOM predicate; attestation permissions exist only in the post-validation `main` job;
 - pull-request dependency changes must pass the pinned Dependency Review gate for high/critical vulnerabilities across runtime, development and unknown scopes;
 - no secrets committed to the repository;
 - manual/local-first functionality without mandatory third-party providers.
