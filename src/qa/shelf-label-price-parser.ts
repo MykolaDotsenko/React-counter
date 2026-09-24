@@ -49,11 +49,11 @@ const surroundingWindow = (
   readonly around: string;
   readonly after: string;
 } => ({
-  before: text.slice(Math.max(0, start - 32), start).toLocaleLowerCase(),
+  before: text.slice(Math.max(0, start - 32), start).toLowerCase(),
   around: text
     .slice(Math.max(0, start - 32), Math.min(text.length, end + 32))
-    .toLocaleLowerCase(),
-  after: text.slice(end, Math.min(text.length, end + 24)).toLocaleLowerCase(),
+    .toLowerCase(),
+  after: text.slice(end, Math.min(text.length, end + 24)).toLowerCase(),
 });
 
 const classifyContext = (
