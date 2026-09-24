@@ -15,10 +15,31 @@ export interface VisualProductRecognizer {
     image: Blob,
     signal: AbortSignal,
   ): Promise<readonly VisualProductCandidate[]>;
+  dispose?(): Promise<void> | void;
 }
 
 type VisualRecognizerGlobal = typeof globalThis & {
   __SBC_VISUAL_PRODUCT_RECOGNIZER__?: VisualProductRecognizer;
+};
+
+const disposeRecognizer = (
+  recognizer: VisualProductRecognizer | undefined,
+): void => {
+  if (recognizer?.dispose === undefined) {
+    return;
+  }
+
+  try {
+    const result = recognizer.dispose();
+
+    if (result instanceof Promise) {
+      void result.catch(() => {
+        // Cleanup failure must not break the evidence harness.
+      });
+    }
+  } catch {
+    // Cleanup failure must not break the evidence harness.
+  }
 };
 
 export const installVisualProductRecognizer = (
@@ -35,16 +56,24 @@ export const installVisualProductRecognizer = (
     throw new RangeError("Invalid visual product recognizer");
   }
 
-  (
-    globalThis as VisualRecognizerGlobal
-  ).__SBC_VISUAL_PRODUCT_RECOGNIZER__ = recognizer;
+  const target = globalThis as VisualRecognizerGlobal;
+  const previous = target.__SBC_VISUAL_PRODUCT_RECOGNIZER__;
+
+  if (previous !== recognizer) {
+    target.__SBC_VISUAL_PRODUCT_RECOGNIZER__ = recognizer;
+    disposeRecognizer(previous);
+  }
 };
 
 export const clearVisualProductRecognizer = (): void => {
+  const target = globalThis as VisualRecognizerGlobal;
+  const previous = target.__SBC_VISUAL_PRODUCT_RECOGNIZER__;
+
   Reflect.deleteProperty(
-    globalThis as VisualRecognizerGlobal,
+    target,
     "__SBC_VISUAL_PRODUCT_RECOGNIZER__",
   );
+  disposeRecognizer(previous);
 };
 
 const isCandidate = (
