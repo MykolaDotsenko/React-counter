@@ -173,6 +173,8 @@ Recommended cohort:
 
 Use the guarded local cohort analyzer after collecting exports. Invalid/tampered files must be rejected before aggregation; repeated exports from the same retained session must not be counted twice; one in-memory cohort must contain exactly one source `buildRevision`. Mixed deploy revisions are rejected rather than silently combined.
 
+The analyzer may inspect `local-dev` evidence during development, but a downloadable/copyable **field aggregate** is allowed only when both the source cohort and analyzer build carry immutable 40-character lowercase Git SHAs. Field aggregate schema v3 includes the exact source/analyzer revisions, privacy flags, the cohort summary and the maturity-aware readiness snapshot. It contains no raw participant events, source filenames or participant identifiers.
+
 Where practical:
 
 - Cohort A — manual-first
