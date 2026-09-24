@@ -402,7 +402,15 @@ Tests must prove:
 - viewport/recognizer/data-boundary changes freeze retained evidence instead of mixing environments;
 - export carries the exact guarded-build `buildRevision`;
 - local download uses a non-identifying session timestamp filename;
-- a concrete model/provider remains an evidence-gated follow-up tracked by issue #88.
+- the concrete CLIP experiment is loaded only after explicit facilitator action, never automatically on route load;
+- candidate-catalog parsing rejects unknown fields, duplicates, unbounded label counts and malformed labels;
+- catalog hashing is order-stable and enters the recognizer identity without persisting labels;
+- the adapter pins both Transformers.js and the exact model revision;
+- WebGPU initialization may fall back to WASM without changing the local-only image boundary;
+- candidate output is restricted to the facilitator-provided closed set and is runtime-validated before the benchmark UI sees it;
+- AbortSignal cancellation wins over late model completion;
+- public production JavaScript contains no Transformers.js, CLIP model ID or zero-shot pipeline marker;
+- physical retail quality remains evidence-gated by issue #88 even when automated adapter tests are green.
 
 ### Shelf-label OCR benchmark
 
