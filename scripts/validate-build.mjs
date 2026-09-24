@@ -201,8 +201,7 @@ for (const file of jsFiles) {
 }
 
 console.log(
-  [
-    "Public build validated:",
+  `Public build validated: ${[
     `initial JS ${initialJsBytes} bytes / ${initialJsGzipBytes} gzip`,
     `total JS ${totalJsBytes} bytes / ${totalJsGzipBytes} gzip`,
     `largest JS chunk ${largestJsChunkBytes} bytes`,
@@ -211,5 +210,5 @@ console.log(
     `total CSS ${totalCssBytes} bytes / ${totalCssGzipBytes} gzip`,
     "installable offline shell present",
     "no guarded evidence markers",
-  ].join("; "),
+  ].join("; ")}.`,
 );
