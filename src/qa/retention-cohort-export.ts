@@ -360,6 +360,7 @@ export const buildRetentionCohortAggregateExport = (
   if (
     !isRetentionCohortSummary(summary) ||
     !isCount(sourceReportCount) ||
+    sourceReportCount === 0 ||
     sourceReportCount !== summary.participantCount ||
     !isImmutableEvidenceBuildRevision(sourceBuildRevision) ||
     !isImmutableEvidenceBuildRevision(analyzerBuildRevision) ||
