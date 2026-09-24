@@ -40,27 +40,21 @@ A generic category classifier is not evidence of SKU-level product recognition.
 
 ## Shelf-label OCR
 
-When OCR work is approved, benchmark before locking a provider.
+The provider-neutral OCR benchmark harness and deterministic price-candidate parser are implemented. A concrete OCR engine/model remains gated by issue #90.
 
-Use static fixtures before camera E2E:
+Before production OCR:
 
-- one obvious price;
-- multiple prices;
-- superscript cents;
-- unit price + product price;
-- discount + regular price;
-- no valid price;
-- malformed provider result.
+- test one named OCR adapter/engine on static fixtures before physical camera evidence;
+- include comma/dot decimals, split cents, unit price + product price, loyalty/regular prices, multi-buy, percentage discount and no-valid-price cases;
+- verify the parser always routes accepted money through the existing exact-money contract;
+- verify bare OCR digits do not gain an invented decimal separator;
+- measure top-1/top-3 correct-candidate rate and capture → human-decision latency;
+- verify timeout, cancellation, late-result suppression and manual fallback;
+- verify raw OCR text, images and parsed prices never enter retained benchmark evidence;
+- document any remote-image boundary explicitly;
+- require human confirmation before any price can become canonical shopping money.
 
-Measure:
-
-- candidate accuracy;
-- latency;
-- permission/camera friction;
-- correction cost;
-- end-to-end time versus manual entry.
-
-A visually impressive scan flow that saves no interaction should not ship.
+A visually impressive scan flow that saves no interaction or reduces trust should not ship.
 
 ## Advanced price mechanics
 
