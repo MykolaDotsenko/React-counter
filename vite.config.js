@@ -14,12 +14,15 @@ export default defineConfig(() => {
     process.env.VITE_SHOPPING_BARCODE_BENCHMARK === "1";
   const visualBenchmarkEnabled =
     process.env.VITE_SHOPPING_VISUAL_BENCHMARK === "1";
+  const ocrBenchmarkEnabled =
+    process.env.VITE_SHOPPING_OCR_BENCHMARK === "1";
   const evidenceEnabled =
     process.env.VITE_SHOPPING_QA_TIMING === "1" ||
     process.env.VITE_SHOPPING_BETA_EVIDENCE === "1" ||
     cohortAnalysisEnabled ||
     barcodeBenchmarkEnabled ||
-    visualBenchmarkEnabled;
+    visualBenchmarkEnabled ||
+    ocrBenchmarkEnabled;
 
   return {
     plugins: [
@@ -71,6 +74,7 @@ export default defineConfig(() => {
             /\/cohort(?:\/|$)/,
             /\/barcode-benchmark(?:\/|$)/,
             /\/visual-recognition-benchmark(?:\/|$)/,
+            /\/shelf-label-ocr-benchmark(?:\/|$)/,
           ],
           globPatterns: [
             "**/*.{js,css,html,svg,png,webmanifest}",
@@ -86,9 +90,11 @@ export default defineConfig(() => {
             ? "src/qa/BarcodeBenchmarkApp.tsx"
             : visualBenchmarkEnabled
               ? "src/qa/VisualProductBenchmarkApp.tsx"
-              : cohortAnalysisEnabled
-                ? "src/qa/RetentionCohortAnalyzerApp.tsx"
-                : "src/App.tsx",
+              : ocrBenchmarkEnabled
+                ? "src/qa/ShelfLabelOcrBenchmarkApp.tsx"
+                : cohortAnalysisEnabled
+                  ? "src/qa/RetentionCohortAnalyzerApp.tsx"
+                  : "src/App.tsx",
         ),
         "#shopping-evidence": path.resolve(
           rootDir,
