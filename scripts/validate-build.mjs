@@ -68,6 +68,9 @@ const forbiddenMarkers = [
   "retention-cohort-summary",
   "Barcode interaction benchmark",
   "budget-cart:qa:barcode-benchmark-v1",
+  "Visual product recognition benchmark",
+  "budget-cart:qa:visual-recognition-benchmark-v1",
+  "Xenova/mobileclip_s0",
 ];
 
 const files = await readdir(assets);
