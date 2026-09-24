@@ -28,6 +28,7 @@ The core Shopping Budget Companion engineering path is implemented:
 - local-only retention cohort analyzer
 - guarded native barcode interaction benchmark harness (not a production scanner)
 - guarded provider-neutral visual product recognition benchmark harness (no model/provider bundled)
+- guarded provider-neutral shelf-label OCR benchmark harness with deterministic exact-money price parser (no OCR engine bundled)
 - Chromium / Firefox / WebKit quality coverage
 
 The representative physical-phone interaction gate was accepted by explicit repository-owner/user attestation on 2026-09-24. The check was reported as responsibly completed with no blocking usability problem.
@@ -123,6 +124,13 @@ The active roadmap is intentionally narrow and local-first.
    - benchmark representative retail products and same-brand/similar-package confusions;
    - compare ranked accuracy, end-to-end human decision time, corrections and fallback against manual interaction.
 
+5. **Shelf-label OCR engine evidence — issue #90**
+   - keep OCR text/images transient and outside retained evidence;
+   - select one explicit OCR engine/model adapter;
+   - declare whether image bytes remain local or cross a remote boundary;
+   - test representative shelf-label fixtures and physical-device conditions;
+   - compare ranked exact-money candidate accuracy and end-to-end decision time against manual entry.
+
 These gates are not replaceable by automated fixtures or green CI.
 
 ### B. Production barcode — only after positive physical evidence
@@ -165,26 +173,34 @@ Production visual recognition, if approved, must preserve:
 
 Category-only recognition is not sufficient when the intended interaction needs SKU-level identity.
 
-### D. Shelf-label OCR — benchmark before production
+### D. Shelf-label OCR — concrete engine evidence before production
 
-OCR remains **GATED / NOT IMPLEMENTED**.
+**Harness status: IMPLEMENTED. OCR engine/model evidence: PLANNED / GATED. Production OCR: PLANNED / GATED.**
 
-First build an isolated benchmark:
+The guarded OCR benchmark now owns:
 
-1. controlled shelf-label fixture corpus;
-2. accuracy/latency/correction metrics;
-3. worker-based experimental OCR adapter;
-4. deterministic shelf-price candidate parser;
-5. benchmark candidate-selection UI;
-6. real-device quality gate.
+1. isolated camera capture and lifecycle safety;
+2. provider-neutral `ShelfLabelOcrEngine` boundary;
+3. explicit `local-only` / `remote-image` data-boundary declaration;
+4. bounded OCR output validation;
+5. deterministic exact-money shelf-price candidate parsing;
+6. ranked candidate-selection UI;
+7. privacy-safe timing/rank evidence without raw text, image or price persistence;
+8. an isolated browser/release gate.
 
-Only a positive result may authorize production OCR. Production OCR must preserve:
+The parser deliberately reuses the existing `parseEurDraft` money contract. It does not invent decimals in bare OCR digits, does not treat percentages as money, and keeps unit-price/multi-buy/regular-price context distinguishable for ranking and human review.
 
-- OCR output is a candidate, never canonical money;
+Use issue #90 to evaluate one named OCR engine/model on representative static fixtures and physical shelf-label conditions.
+
+Only positive evidence may authorize production OCR. Production OCR must preserve:
+
+- OCR output is untrusted transient text;
+- parsed prices are candidates, never canonical money;
 - ambiguous candidates require explicit user choice;
 - user confirmation precedes a ShoppingTrip mutation;
-- slow/failing OCR returns cleanly to manual entry;
-- OCR code remains lazy and outside the critical initial bundle.
+- slow/failing OCR returns cleanly to complete manual entry;
+- image/OCR network boundaries remain explicit;
+- OCR/model code remains lazy and outside the critical initial bundle.
 
 ### E. Evidence-selected advanced pricing
 
