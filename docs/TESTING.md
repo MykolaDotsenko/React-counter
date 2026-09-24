@@ -35,7 +35,8 @@ A code change is complete only when relevant checks pass:
 - production build;
 - affected Playwright flows;
 - accessibility expectations;
-- owning documentation when behaviour/contracts changed.
+- owning documentation when behaviour/contracts changed;
+- dependency changes pass the pull-request Dependency Review gate.
 
 Critical money, persistence or recovery behaviour may not rely on “manual QA later”.
 
@@ -48,6 +49,8 @@ npm run test:e2e
 ```
 
 `npm run check` covers lint, typecheck, unit/component tests and production build.
+
+Pull requests also run a least-privilege Dependency Review workflow. It fails when a changed runtime, development or unknown-scope dependency introduces a high/critical known vulnerability, while showing patched-version guidance when GitHub Advisory data provides it. The action is pinned to an immutable commit SHA and does not receive pull-request write permission.
 
 CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer and the isolated barcode benchmark. Production browser tests run against the exact public build artifact; QA-, beta-, cohort- and barcode-benchmark-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed.
 

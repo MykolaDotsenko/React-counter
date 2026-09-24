@@ -30,5 +30,6 @@ Changes must preserve:
 - no unsafe HTML injection;
 - least-privilege GitHub Actions permissions;
 - dependency lockfile integrity;
+- pull-request dependency changes must pass the pinned Dependency Review gate for high/critical vulnerabilities across runtime, development and unknown scopes;
 - no secrets committed to the repository;
 - manual/local-first functionality without mandatory third-party providers.
