@@ -59,11 +59,11 @@ export interface BarcodePairedAnalysisSummary {
   readonly readiness: BarcodePairedReadiness;
   readonly sourceBuildRevision: string | null;
   readonly compatibility: BarcodePairedCompatibility;
-  readonly manual479: PairedTimingStats;
-  readonly manual1250: PairedTimingStats;
+  readonly manualLowFixture: PairedTimingStats;
+  readonly manualHighFixture: PairedTimingStats;
   readonly barcode: BarcodeBenchmarkSummary | null;
-  readonly versus479: PairedTimingComparison;
-  readonly versus1250: PairedTimingComparison;
+  readonly versusLowFixture: PairedTimingComparison;
+  readonly versusHighFixture: PairedTimingComparison;
   readonly issues: readonly string[];
 }
 
@@ -239,19 +239,19 @@ export const analyzeBarcodePairedEvidence = (
         barcodePreferenceRecorded: false,
         barcodeEffortRecorded: false,
       }),
-      manual479: emptyTiming(),
-      manual1250: emptyTiming(),
+      manualLowFixture: emptyTiming(),
+      manualHighFixture: emptyTiming(),
       barcode: null,
-      versus479: emptyComparison(),
-      versus1250: emptyComparison(),
+      versusLowFixture: emptyComparison(),
+      versusHighFixture: emptyComparison(),
       issues: Object.freeze(issues),
     });
   }
 
-  const manual479 = summarizeDurations(
+  const manualLowFixture = summarizeDurations(
     representativeDurations(manual, QA_TARGET_PRICE_479),
   );
-  const manual1250 = summarizeDurations(
+  const manualHighFixture = summarizeDurations(
     representativeDurations(manual, QA_TARGET_PRICE_1250),
   );
 
@@ -277,8 +277,8 @@ export const analyzeBarcodePairedEvidence = (
       manual.session.inputMethodLabel.trim().length > 0,
     manualPhysicalContextComplete: manualPhysicalContextComplete(manual),
     manualFixtureEvidenceComplete:
-      manual479.count >= QA_TARGET_SAMPLE_COUNT &&
-      manual1250.count >= QA_TARGET_SAMPLE_COUNT,
+      manualLowFixture.count >= QA_TARGET_SAMPLE_COUNT &&
+      manualHighFixture.count >= QA_TARGET_SAMPLE_COUNT,
     barcodeConfirmedEvidenceComplete:
       barcode.summary.confirmed >= 10,
     barcodePreferenceRecorded:
@@ -358,11 +358,11 @@ export const analyzeBarcodePairedEvidence = (
       ? manual.buildRevision
       : null,
     compatibility,
-    manual479,
-    manual1250,
+    manualLowFixture,
+    manualHighFixture,
     barcode: barcode.summary,
-    versus479: compareTiming(barcodeTiming, manual479),
-    versus1250: compareTiming(barcodeTiming, manual1250),
+    versusLowFixture: compareTiming(barcodeTiming, manualLowFixture),
+    versusHighFixture: compareTiming(barcodeTiming, manualHighFixture),
     issues: Object.freeze(issues),
   });
 };
