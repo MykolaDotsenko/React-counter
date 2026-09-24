@@ -361,6 +361,24 @@ The current benchmark intentionally tests native `BarcodeDetector` only. Unsuppo
 
 ## Performance
 
+### Public bundle budget
+
+The production build has separate total and initial-load budgets. The current deployed baseline measured from commit `21bb512d88ec7566beb4a5b57337d76b8868130b` is approximately:
+
+- initial application JavaScript: 421,535 raw bytes / 120,252 gzip bytes;
+- non-initial Workbox JavaScript: 5,653 raw bytes;
+- initial CSS: 64,308 raw bytes / 10,038 gzip bytes.
+
+CI currently enforces:
+
+- total public JavaScript: <= 430,000 raw / 126,000 gzip bytes;
+- initial JavaScript referenced by the public HTML: <= 425,000 raw / 123,000 gzip bytes;
+- any single JavaScript chunk: <= 425,000 raw bytes;
+- total public CSS: <= 80,000 raw / 12,000 gzip bytes;
+- initial CSS referenced by the public HTML: <= 70,000 raw / 11,000 gzip bytes.
+
+The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a future evidence-selected camera capability can be code-split without silently joining the startup path. Increasing the total budget for a justified lazy capability must be an explicit reviewed contract change; the initial-load budget should remain stable unless separate product/performance evidence justifies changing it.
+
 Protect:
 
 - fast initial product load;
