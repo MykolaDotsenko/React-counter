@@ -745,14 +745,13 @@ Keep the core product broadly useful without payment:
 - basic Price Memory
 - offline/local-first core
 
-Potential paid extensions later may include:
+Potential paid extensions later, if retention and user need justify them, should stay local-first where possible:
 
-- high-volume scanning
-- deeper price history
-- recurring templates
-- export/backup
-- household sync
-- store comparisons
+- high-volume scanning after a positive scanner gate
+- deeper local price history
+- recurring local templates
+- richer local export/reporting
+- evidence-backed advanced pricing mechanics
 
 Monetization must amplify retained value, not block the behaviour needed to create retention.
 
