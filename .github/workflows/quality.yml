@@ -98,6 +98,42 @@ jobs:
           include-hidden-files: true
           retention-days: 3
 
+  sbom:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout exact source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Download pinned Syft
+        id: syft
+        uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          syft-version: v1.52.0
+
+      - name: Generate CycloneDX SBOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          SBOM_FILE="shopping-budget-companion-${GITHUB_SHA}.cdx.json"
+          "${{ steps.syft.outputs.cmd }}" dir:. -o "cyclonedx-json=${SBOM_FILE}"
+          jq -e '.bomFormat == "CycloneDX"' "${SBOM_FILE}" >/dev/null
+          jq -e '.specVersion | type == "string"' "${SBOM_FILE}" >/dev/null
+          jq -e '.components | type == "array" and length > 0' "${SBOM_FILE}" >/dev/null
+          sha256sum "${SBOM_FILE}" > "${SBOM_FILE}.sha256"
+
+      - name: Upload SBOM evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom-${{ github.sha }}
+          path: |
+            shopping-budget-companion-${{ github.sha }}.cdx.json
+            shopping-budget-companion-${{ github.sha }}.cdx.json.sha256
+          if-no-files-found: error
+          retention-days: 30
+
   artifact-integrity:
     needs: quality
     runs-on: ubuntu-latest
@@ -139,6 +175,7 @@ jobs:
           test ! -e /tmp/pages-site/dist-beta
           test ! -e /tmp/pages-site/dist-cohort
           test ! -e /tmp/pages-site/dist-barcode
+          test -z "$(find /tmp/pages-site -maxdepth 1 -type f -name 'shopping-budget-companion-*.cdx.json*' -print -quit)"
 
   browser:
     needs: quality
@@ -380,7 +417,7 @@ jobs:
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [artifact-integrity, browser, qa-browser, beta-browser, cohort-browser, barcode-benchmark-browser]
+    needs: [artifact-integrity, sbom, browser, qa-browser, beta-browser, cohort-browser, barcode-benchmark-browser]
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
