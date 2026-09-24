@@ -138,7 +138,7 @@ Use [BARCODE-PAIRED-DECISION-TEMPLATE.md](./BARCODE-PAIRED-DECISION-TEMPLATE.md)
 
 A scanner is useful only if it improves on the manual interaction it is intended to accelerate.
 
-For any decision to promote barcode work beyond benchmark status, collect a paired quantitative manual baseline on the same representative device/context using the existing timing QA path.
+For any decision to promote barcode work beyond benchmark status, collect a paired quantitative manual baseline on the same representative device/context using the existing timing QA path. Barcode and manual exports used in one comparison must come from the same `buildRevision`; otherwise keep them as separate evidence sets and repeat the paired comparison.
 
 The 2026-09-24 B6 physical-usability attestation did not preserve exact median/P75/max timing JSON, so it cannot serve as a quantitative comparator for this benchmark.
 
@@ -171,7 +171,7 @@ Fallback:
 
 > Copy privacy-safe benchmark JSON
 
-Both paths use the same versioned privacy-safe evidence payload. The default filename contains only the session timestamp and no participant identity.
+Both paths use the same versioned privacy-safe evidence payload. The export includes the exact guarded-build `buildRevision`; live CI builds stamp it with the full Git commit SHA. The default filename contains only the session timestamp and no participant identity.
 
 Export failure stays inside the benchmark UI. If the device clock predates retained evidence, correct the device date/time and retry rather than editing timestamps manually.
 
