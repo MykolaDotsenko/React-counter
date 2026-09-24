@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           SBOM_FILE="shopping-budget-companion-${GITHUB_SHA}.cdx.json"
 
-          "${{ steps.syft.outputs.cmd }}" dir:.             --exclude './.github/**'             --source-name shopping-budget-companion             --source-version 2.0.0             -o "cyclonedx-json=${SBOM_FILE}"
+          "${{ steps.syft.outputs.cmd }}" dir:.             --select-catalogers '-github-actions-usage-cataloger,-github-action-workflow-usage-cataloger'             --source-name shopping-budget-companion             --source-version 2.0.0             -o "cyclonedx-json=${SBOM_FILE}"
 
           sha256sum "${SBOM_FILE}" > "${SBOM_FILE}.sha256"
 
