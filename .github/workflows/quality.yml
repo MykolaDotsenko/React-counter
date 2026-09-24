@@ -104,24 +104,38 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Checkout exact source revision
+      - name: Checkout exact tested revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Download pinned Syft
-        id: syft
-        uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+      - name: Set up repository Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          syft-version: v1.52.0
+          node-version-file: .node-version
+          cache: npm
 
-      - name: Generate CycloneDX SBOM
+      - name: Install production dependency graph
+        run: npm ci --omit=dev --ignore-scripts
+
+      - name: Generate and validate production CycloneDX SBOM
         shell: bash
         run: |
           set -euo pipefail
           SBOM_FILE="shopping-budget-companion-${GITHUB_SHA}.cdx.json"
-          "${{ steps.syft.outputs.cmd }}" dir:. -o "cyclonedx-json=${SBOM_FILE}"
+
+          npm sbom --sbom-format=cyclonedx --omit=dev > "${SBOM_FILE}"
+
           jq -e '.bomFormat == "CycloneDX"' "${SBOM_FILE}" >/dev/null
           jq -e '.specVersion | type == "string"' "${SBOM_FILE}" >/dev/null
+          jq -e '.metadata.component.name == "shopping-budget-companion"' "${SBOM_FILE}" >/dev/null
+          jq -e '.metadata.component.version == "2.0.0"' "${SBOM_FILE}" >/dev/null
           jq -e '.components | type == "array" and length > 0' "${SBOM_FILE}" >/dev/null
+
+          while IFS= read -r dependency; do
+            jq -e --arg dependency "${dependency}"               'any(.components[]; .name == $dependency)'               "${SBOM_FILE}" >/dev/null
+          done < <(jq -r '.dependencies | keys[]' package.json)
+
+          jq -e 'all(.components[]; .name != "vitest" and .name != "@vitest/coverage-v8")'             "${SBOM_FILE}" >/dev/null
+
           sha256sum "${SBOM_FILE}" > "${SBOM_FILE}.sha256"
 
       - name: Upload SBOM evidence
