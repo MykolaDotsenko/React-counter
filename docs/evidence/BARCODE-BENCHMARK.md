@@ -67,7 +67,7 @@ Derived evidence includes:
 - median confirmed duration;
 - P75 confirmed duration;
 - P90 confirmed duration;
-- recognition-failure rate;
+- recognition-failure rate (timeouts + detector errors; manual fallback is reported separately);
 - correction/rejection rate;
 - manual-fallback rate;
 - permission-denied count;
@@ -123,6 +123,8 @@ Where practical, benchmark at least:
 - permission denial/recovery on a separate fresh permission state if safely practical.
 
 Do not manufacture rejections merely to improve coverage. Record natural failures honestly.
+
+If device, browser, viewport, or reported detector capability changes, the retained session is frozen. Copy it if needed and start a fresh benchmark session before recording more attempts. This prevents mixed-environment latency from looking like one comparable sample set.
 
 ## Paired manual baseline
 
