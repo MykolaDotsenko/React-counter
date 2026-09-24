@@ -365,9 +365,10 @@ The current benchmark intentionally tests native `BarcodeDetector` only. Unsuppo
 
 The production build has separate total and initial-load budgets. The current deployed baseline measured from commit `21bb512d88ec7566beb4a5b57337d76b8868130b` is approximately:
 
-- initial application JavaScript: 421,535 raw bytes / 120,252 gzip bytes;
+- initial application JavaScript: 421,535 raw bytes / 120,581 gzip bytes;
+- total public JavaScript: 427,188 raw bytes / 122,780 gzip bytes;
 - non-initial Workbox JavaScript: 5,653 raw bytes;
-- initial CSS: 64,308 raw bytes / 10,038 gzip bytes.
+- initial/total CSS: 64,308 raw bytes / 10,141 gzip bytes.
 
 CI currently enforces:
 
