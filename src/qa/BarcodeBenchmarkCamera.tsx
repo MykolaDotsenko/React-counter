@@ -32,6 +32,7 @@ export interface BarcodeBenchmarkCameraProps {
   readonly onFailure: (type: BarcodeBenchmarkFailureType) => void;
   readonly onSample: (sample: BarcodeBenchmarkSample) => void;
   readonly onStatus: (message: string) => void;
+  readonly onAttemptActiveChange: (active: boolean) => void;
 }
 
 const cameraFailureType = (
@@ -52,6 +53,7 @@ export function BarcodeBenchmarkCamera({
   onFailure,
   onSample,
   onStatus,
+  onAttemptActiveChange,
 }: BarcodeBenchmarkCameraProps) {
   const [cameraReady, setCameraReady] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -93,6 +95,7 @@ export function BarcodeBenchmarkCamera({
     stopDetectionLoop();
     activeAttemptRef.current = null;
     setPendingCandidate(null);
+    onAttemptActiveChange(false);
     onSample(sample);
   };
 
@@ -210,6 +213,7 @@ export function BarcodeBenchmarkCamera({
     activeAttemptRef.current = attempt;
     setPendingCandidate(null);
     setScanning(true);
+    onAttemptActiveChange(true);
     onStatus("Scanning… keep the barcode steady in the camera view.");
 
     const detect = async (): Promise<void> => {
