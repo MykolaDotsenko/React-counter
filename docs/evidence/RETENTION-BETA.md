@@ -100,7 +100,7 @@ Storage:
 
 The record is versioned and runtime-validated.
 
-Malformed evidence falls back to a fresh evidence session and must never affect shopping state.
+Malformed retained evidence never affects shopping state, but it also must not be silently replaced. The recorder enters an **invalid-retained** frozen state, preserves the raw retained value untouched, blocks new evidence/export, and requires an explicit reset before a fresh participant session can begin.
 
 The event history is bounded.
 
