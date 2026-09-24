@@ -630,6 +630,41 @@ export const loadShelfLabelOcrSession = (
   }
 };
 
+const observationEndCoversSession = (
+  session: ShelfLabelOcrSession,
+  generatedAt: string,
+): boolean => {
+  const latest = Math.max(
+    Date.parse(session.createdAt),
+    ...session.samples.map((sample) => Date.parse(sample.completedAt)),
+    ...session.failures.map((failure) => Date.parse(failure.at)),
+  );
+
+  return Date.parse(generatedAt) >= latest;
+};
+
+const sameShelfLabelOcrSummary = (
+  value: unknown,
+  expected: ShelfLabelOcrSummary,
+): boolean => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(expected);
+
+  return (
+    exactKeys(record, keys) &&
+    keys.every((key) =>
+      Object.is(
+        record[key],
+        expected[key as keyof ShelfLabelOcrSummary],
+      ),
+    )
+  );
+};
+
 export const buildShelfLabelOcrExport = (
   session: ShelfLabelOcrSession,
   generatedAt: string,
@@ -640,7 +675,7 @@ export const buildShelfLabelOcrExport = (
 
   if (
     !isCanonicalIsoTimestamp(generatedAt) ||
-    Date.parse(generatedAt) < Date.parse(session.createdAt)
+    !observationEndCoversSession(session, generatedAt)
   ) {
     throw new RangeError("Shelf-label OCR export time is invalid");
   }
@@ -665,5 +700,85 @@ export const buildShelfLabelOcrExport = (
     }),
     session,
     summary: summarizeShelfLabelOcr(session),
+  });
+};
+
+export const parseShelfLabelOcrExport = (
+  value: unknown,
+): ShelfLabelOcrExport | null => {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if (
+    !exactKeys(record, [
+      "schemaVersion",
+      "kind",
+      "buildRevision",
+      "generatedAt",
+      "privacy",
+      "session",
+      "summary",
+    ]) ||
+    record.schemaVersion !== 1 ||
+    record.kind !== "shelf-label-ocr-benchmark-evidence" ||
+    !isEvidenceBuildRevision(record.buildRevision) ||
+    !isCanonicalIsoTimestamp(record.generatedAt) ||
+    !isShelfLabelOcrSession(record.session) ||
+    !observationEndCoversSession(record.session, record.generatedAt)
+  ) {
+    return null;
+  }
+
+  if (typeof record.privacy !== "object" || record.privacy === null) {
+    return null;
+  }
+
+  const privacy = record.privacy as Record<string, unknown>;
+  const expectedNetworkTransmission =
+    record.session.environment.dataBoundary === "remote-image";
+
+  if (
+    !exactKeys(privacy, [
+      "networkTransmission",
+      "containsRawImages",
+      "containsRawOcrText",
+      "containsPrices",
+      "containsItemNames",
+      "containsDeviceMetadata",
+    ]) ||
+    privacy.networkTransmission !== expectedNetworkTransmission ||
+    privacy.containsRawImages !== false ||
+    privacy.containsRawOcrText !== false ||
+    privacy.containsPrices !== false ||
+    privacy.containsItemNames !== false ||
+    privacy.containsDeviceMetadata !== true
+  ) {
+    return null;
+  }
+
+  const summary = summarizeShelfLabelOcr(record.session);
+
+  if (!sameShelfLabelOcrSummary(record.summary, summary)) {
+    return null;
+  }
+
+  return Object.freeze({
+    schemaVersion: 1,
+    kind: "shelf-label-ocr-benchmark-evidence",
+    buildRevision: record.buildRevision,
+    generatedAt: record.generatedAt,
+    privacy: Object.freeze({
+      networkTransmission: expectedNetworkTransmission,
+      containsRawImages: false,
+      containsRawOcrText: false,
+      containsPrices: false,
+      containsItemNames: false,
+      containsDeviceMetadata: true,
+    }),
+    session: record.session,
+    summary,
   });
 };
