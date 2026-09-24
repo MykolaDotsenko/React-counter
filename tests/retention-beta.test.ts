@@ -13,6 +13,7 @@ import {
   parseRetentionBetaExport,
   summarizeRetentionBeta,
   type RetentionBetaEvent,
+  type RetentionBetaSession,
 } from "../src/qa/retention-beta";
 
 const START = "2026-09-22T08:00:00.000Z";
@@ -40,6 +41,27 @@ const storage = () => {
       values.set(key, value);
     },
   };
+};
+
+const atCapacitySession = (): RetentionBetaSession => {
+  const base = createRetentionBetaSession(START);
+
+  return Object.freeze({
+    ...base,
+    events: Object.freeze(
+      Array.from(
+        { length: RETENTION_BETA_EVENT_LIMIT },
+        (_, index) =>
+          event({
+            type: "manual_entry_abandoned",
+            tripOrdinal: 1,
+            at: new Date(
+              Date.parse(LATER) + index,
+            ).toISOString(),
+          }),
+      ),
+    ),
+  });
 };
 
 describe("retention beta evidence", () => {
@@ -138,21 +160,7 @@ describe("retention beta evidence", () => {
   });
 
   it("fails closed at the event limit without dropping earlier evidence", () => {
-    let session = createRetentionBetaSession(START);
-
-    for (let index = 0; index < RETENTION_BETA_EVENT_LIMIT; index += 1) {
-      session = appendRetentionBetaEvent(
-        session,
-        event({
-          type: "manual_entry_abandoned",
-          tripOrdinal: 1,
-          at: new Date(
-            Date.parse(LATER) + index,
-          ).toISOString(),
-        }),
-      );
-    }
-
+    const session = atCapacitySession();
     const first = session.events[0];
     const last = session.events.at(-1);
 
@@ -172,23 +180,8 @@ describe("retention beta evidence", () => {
   });
 
   it("rejects at-capacity exports from cohort ingestion", () => {
-    let session = createRetentionBetaSession(START);
-
-    for (let index = 0; index < RETENTION_BETA_EVENT_LIMIT; index += 1) {
-      session = appendRetentionBetaEvent(
-        session,
-        event({
-          type: "manual_entry_abandoned",
-          tripOrdinal: 1,
-          at: new Date(
-            Date.parse(LATER) + index,
-          ).toISOString(),
-        }),
-      );
-    }
-
     const report = buildRetentionBetaExport(
-      session,
+      atCapacitySession(),
       "2026-09-22T09:30:00.000Z",
     );
 
