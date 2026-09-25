@@ -93,7 +93,7 @@
   --surface-page: #070912;
   --surface-panel: #101625;
   --surface-soft: #161e31;
-  --text-primary: #f7f9ff;
+  --text-primary: #fff;
   --text-secondary: #b2bdd1;
   --text-secondary-strong: #d0d7e5;
   --border-subtle: #2f3c59;
@@ -103,7 +103,7 @@
   --status-danger: #ff9cb5;
   --focus-ring: #bdcaff;
   --progress-track: #202a40;
-  --page-canvas: linear-gradient(135deg,#132840,#100b1e 42%,#070912 78%);
-  --primary-action-shadow: 0 12px 30px #8de8ff24;
+  --page-canvas: linear-gradient(135deg,#132840,#100b1e,#070912);
+  --primary-action-shadow: 0 0 24px #8de8ff24;
 }
 
