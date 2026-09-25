@@ -99,7 +99,7 @@
 }
 
 .option[data-mode="aurora"] .swatch {
-  background: linear-gradient(135deg, #7de8ff, #9d8cff 54%, #ff8ad8);
+  background: linear-gradient(135deg, #8de8ff, #9d8cff 54%, #ff8ad8);
 }
 
 .option:focus-visible {

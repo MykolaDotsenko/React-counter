@@ -165,6 +165,66 @@ test("keeps explicit Dark appearance durable and independent from shopping state
   });
 });
 
+test("keeps explicit Aurora appearance durable and independent from shopping state", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Aurora", exact: true }).click();
+
+  const initialAppearance = await page.evaluate((appearanceKey) => {
+    const style = getComputedStyle(document.documentElement);
+
+    return {
+      mode: document.documentElement.dataset.appearance,
+      theme: document.documentElement.dataset.theme,
+      persisted: localStorage.getItem(appearanceKey),
+      page: style.getPropertyValue("--shopping-page").trim(),
+      panel: style.getPropertyValue("--shopping-panel").trim(),
+      raised: style.getPropertyValue("--shopping-raised").trim(),
+      accent: style.getPropertyValue("--shopping-accent").trim(),
+      themeColor: document
+        .querySelector('meta[name="theme-color"]')
+        ?.getAttribute("content"),
+    };
+  }, APPEARANCE_KEY);
+
+  expect(initialAppearance).toEqual({
+    mode: "aurora",
+    theme: "aurora",
+    persisted: "aurora",
+    page: "#070912",
+    panel: "#101625",
+    raised: "#161e31",
+    accent: "#8de8ff",
+    themeColor: "#070912",
+  });
+
+  await startQuickBudget(page);
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  await page.reload();
+
+  await expect(
+    page.getByRole("heading", { name: "Know what’s left" }),
+  ).toBeVisible();
+  await expect(page.getByText("€45.21", { exact: true }).first()).toBeVisible();
+
+  const afterReload = await page.evaluate((appearanceKey) => ({
+    mode: document.documentElement.dataset.appearance,
+    theme: document.documentElement.dataset.theme,
+    persisted: localStorage.getItem(appearanceKey),
+  }), APPEARANCE_KEY);
+
+  expect(afterReload).toEqual({
+    mode: "aurora",
+    theme: "aurora",
+    persisted: "aurora",
+  });
+});
+
 test("System appearance follows OS colour scheme without mutating the saved preference", async ({
   page,
 }) => {
