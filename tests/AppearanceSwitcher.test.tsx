@@ -18,26 +18,15 @@ describe("AppearanceSwitcher", () => {
     expect(screen.getByRole("button", { name: "Aurora" })).not.toBeNull();
   });
 
-  it("exposes deployed camera tools without replacing the shopping flow", async () => {
+  it("links to the static scanner and camera hub without replacing the shopping flow", () => {
     render(<AppearanceSwitcher />);
 
-    const barcode = await screen.findByRole("link", { name: "Barcode scanner" });
-    const visual = await screen.findByRole("link", { name: "Visual camera" });
-    const ocr = await screen.findByRole("link", { name: "Shelf-price OCR" });
+    const hub = screen.getByRole("link", { name: "Scanner & camera tools" });
 
-    expect(barcode.getAttribute("href")?.endsWith("/barcode-benchmark/")).toBe(true);
     expect(
-      visual.getAttribute("href")?.endsWith("/visual-recognition-benchmark/"),
+      hub.getAttribute("href")?.endsWith("/camera-tools/index.html"),
     ).toBe(true);
-    expect(
-      ocr
-        .getAttribute("href")
-        ?.endsWith("/shelf-label-ocr-tesseract-benchmark/"),
-    ).toBe(true);
-
-    expect(barcode.getAttribute("target")).toBe("_blank");
-    expect(visual.getAttribute("target")).toBe("_blank");
-    expect(ocr.getAttribute("target")).toBe("_blank");
+    expect(hub.getAttribute("target")).toBe("_blank");
   });
 
   it("switches immediately and persists the preference without touching shopping state", async () => {
