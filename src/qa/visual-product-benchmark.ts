@@ -83,6 +83,9 @@ export interface VisualProductBenchmarkSummary {
   readonly manualFallbacks: number;
   readonly recognizerErrors: number;
   readonly captureErrors: number;
+  readonly medianDecisionMs: number | null;
+  readonly p75DecisionMs: number | null;
+  readonly p90DecisionMs: number | null;
   readonly medianConfirmedMs: number | null;
   readonly p75ConfirmedMs: number | null;
   readonly p90ConfirmedMs: number | null;
@@ -100,7 +103,7 @@ export interface VisualProductBenchmarkSummary {
 }
 
 export interface VisualProductBenchmarkExport {
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
   readonly kind: "visual-product-benchmark-evidence";
   readonly buildRevision: string;
   readonly generatedAt: string;
@@ -551,6 +554,14 @@ export const summarizeVisualProductBenchmark = (
   const manualFallbacks = count("manual-fallback");
   const recognizerErrors = count("recognizer-error");
   const captureErrors = count("capture-error");
+  const decisionDurations = session.samples
+    .filter(
+      (sample) =>
+        sample.outcome === "top1-confirmed" ||
+        sample.outcome === "top3-confirmed" ||
+        sample.outcome === "rejected",
+    )
+    .map((sample) => sample.durationMs);
   const confirmedDurations = session.samples
     .filter(
       (sample) =>
@@ -575,6 +586,9 @@ export const summarizeVisualProductBenchmark = (
     manualFallbacks,
     recognizerErrors,
     captureErrors,
+    medianDecisionMs: percentile(decisionDurations, 0.5),
+    p75DecisionMs: percentile(decisionDurations, 0.75),
+    p90DecisionMs: percentile(decisionDurations, 0.9),
     medianConfirmedMs: percentile(confirmedDurations, 0.5),
     p75ConfirmedMs: percentile(confirmedDurations, 0.75),
     p90ConfirmedMs: percentile(confirmedDurations, 0.9),
@@ -655,6 +669,41 @@ export const loadVisualProductBenchmarkSession = (
   }
 };
 
+const observationEndCoversVisualSession = (
+  session: VisualProductBenchmarkSession,
+  generatedAt: string,
+): boolean => {
+  const latest = Math.max(
+    Date.parse(session.createdAt),
+    ...session.samples.map((sample) => Date.parse(sample.completedAt)),
+    ...session.failures.map((failure) => Date.parse(failure.at)),
+  );
+
+  return Date.parse(generatedAt) >= latest;
+};
+
+const sameVisualProductBenchmarkSummary = (
+  value: unknown,
+  expected: VisualProductBenchmarkSummary,
+): boolean => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(expected);
+
+  return (
+    exactKeys(record, keys) &&
+    keys.every((key) =>
+      Object.is(
+        record[key],
+        expected[key as keyof VisualProductBenchmarkSummary],
+      ),
+    )
+  );
+};
+
 export const buildVisualProductBenchmarkExport = (
   session: VisualProductBenchmarkSession,
   generatedAt: string,
@@ -665,7 +714,7 @@ export const buildVisualProductBenchmarkExport = (
 
   if (
     !isCanonicalIsoTimestamp(generatedAt) ||
-    Date.parse(generatedAt) < Date.parse(session.createdAt)
+    !observationEndCoversVisualSession(session, generatedAt)
   ) {
     throw new RangeError(
       "Visual product benchmark export time is invalid",
@@ -677,7 +726,7 @@ export const buildVisualProductBenchmarkExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "visual-product-benchmark-evidence",
     buildRevision: EVIDENCE_BUILD_REVISION,
     generatedAt,
@@ -694,3 +743,87 @@ export const buildVisualProductBenchmarkExport = (
     summary: summarizeVisualProductBenchmark(session),
   });
 };
+
+export const parseVisualProductBenchmarkExport = (
+  value: unknown,
+): VisualProductBenchmarkExport | null => {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if (
+    !exactKeys(record, [
+      "schemaVersion",
+      "kind",
+      "buildRevision",
+      "generatedAt",
+      "privacy",
+      "session",
+      "summary",
+    ]) ||
+    record.schemaVersion !== 2 ||
+    record.kind !== "visual-product-benchmark-evidence" ||
+    !isEvidenceBuildRevision(record.buildRevision) ||
+    !isCanonicalIsoTimestamp(record.generatedAt) ||
+    !isVisualProductBenchmarkSession(record.session) ||
+    !observationEndCoversVisualSession(
+      record.session,
+      record.generatedAt,
+    )
+  ) {
+    return null;
+  }
+
+  if (typeof record.privacy !== "object" || record.privacy === null) {
+    return null;
+  }
+
+  const privacy = record.privacy as Record<string, unknown>;
+  const expectedNetworkTransmission =
+    record.session.environment.dataBoundary === "remote-image";
+
+  if (
+    !exactKeys(privacy, [
+      "networkTransmission",
+      "containsRawImages",
+      "containsCandidateLabels",
+      "containsPrices",
+      "containsItemNames",
+      "containsDeviceMetadata",
+    ]) ||
+    privacy.networkTransmission !== expectedNetworkTransmission ||
+    privacy.containsRawImages !== false ||
+    privacy.containsCandidateLabels !== false ||
+    privacy.containsPrices !== false ||
+    privacy.containsItemNames !== false ||
+    privacy.containsDeviceMetadata !== true
+  ) {
+    return null;
+  }
+
+  const summary = summarizeVisualProductBenchmark(record.session);
+
+  if (!sameVisualProductBenchmarkSummary(record.summary, summary)) {
+    return null;
+  }
+
+  return Object.freeze({
+    schemaVersion: 2,
+    kind: "visual-product-benchmark-evidence",
+    buildRevision: record.buildRevision,
+    generatedAt: record.generatedAt,
+    privacy: Object.freeze({
+      networkTransmission: expectedNetworkTransmission,
+      containsRawImages: false,
+      containsCandidateLabels: false,
+      containsPrices: false,
+      containsItemNames: false,
+      containsDeviceMetadata: true,
+    }),
+    session: record.session,
+    summary,
+  });
+};
+
