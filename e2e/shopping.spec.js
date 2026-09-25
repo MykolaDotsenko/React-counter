@@ -274,6 +274,40 @@ test("System appearance follows OS colour scheme without mutating the saved pref
   });
 });
 
+test("reduced motion removes decorative shopping transitions without changing the flow", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  const remainingAmount = page
+    .getByLabel("Current spending status")
+    .locator("p")
+    .first();
+
+  expect(
+    await remainingAmount.evaluate(
+      (element) => element.getAnimations().length,
+    ),
+  ).toBe(0);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  const updatedRemaining = page
+    .getByLabel("Current spending status")
+    .getByText("€45.21", { exact: true });
+
+  await expect(updatedRemaining).toBeVisible();
+  expect(
+    await updatedRemaining.evaluate(
+      (element) => element.getAnimations().length,
+    ),
+  ).toBe(0);
+});
+
 test("starts a EUR 50 trip and restores it exactly after reload", async ({
   page,
 }) => {

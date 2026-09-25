@@ -319,8 +319,12 @@ Rules:
 
 - financial mutations happen before decorative animation;
 - common actions stay fast;
+- frequent press/settle feedback should stay in the 120–180 ms range;
+- remaining-value changes may use a brief settle transition only after the new canonical state renders;
+- new or restored cart rows may use a short orientation transition; removal must never wait for an exit animation;
+- completion may use one short settled reveal, never a celebratory sequence;
 - no important information exists only in motion;
-- reduced motion preserves all meaning and controls;
+- reduced motion preserves all meaning and controls and removes decorative animation;
 - transitions should help orientation, not demonstrate animation skill.
 
 ## Navigation and disclosure

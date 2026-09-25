@@ -73,6 +73,12 @@ const sourceLabel = (item: CartItem): string => {
 const clampPercentage = (value: number): number =>
   Math.min(100, Math.max(0, value));
 
+const settleRemaining = (element: HTMLParagraphElement | null): void => {
+  if (!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+    element?.animate?.({ opacity: [0.8, 1] }, { duration: 160 });
+  }
+};
+
 const formatSignedAmount = (
   value: number,
   locale: string,
@@ -104,7 +110,6 @@ export function ActiveTripScreen({
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
   const trip = state.activeTrip;
-
   if (state.lifecycle !== "active" || trip === null) {
     return null;
   }
@@ -192,7 +197,11 @@ export function ActiveTripScreen({
                 : "within"
           }
         >
-          <p className={styles.heroAmount}>
+          <p
+            key={heroAmount}
+            ref={settleRemaining}
+            className={styles.heroAmount}
+          >
             {formatSignedAmount(heroAmount, locale)}
           </p>
           <p className={styles.heroLabel}>{heroLabel}</p>
