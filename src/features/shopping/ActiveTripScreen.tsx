@@ -107,10 +107,7 @@ export function ActiveTripScreen({
   const heroMotionRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    if (
-      trip !== null &&
-      !window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
-    ) {
+    if (!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
       heroMotionRef.current?.animate?.(
         [{ opacity: 0.8 }, { opacity: 1 }],
         { duration: 160 },
