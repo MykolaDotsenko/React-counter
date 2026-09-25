@@ -144,9 +144,8 @@
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--shopping-raised);
+  background: var(--panel-soft);
   color: var(--text);
-  box-shadow: var(--shopping-control-shadow);
   font: 0.75rem/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
