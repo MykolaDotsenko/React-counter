@@ -154,7 +154,6 @@
   border: 1px solid var(--shopping-border);
   border-radius: 14px;
   background: var(--shopping-raised);
-  box-shadow: var(--shopping-control-shadow);
 }
 
 .inputShell > span {
@@ -224,7 +223,6 @@
   border: 1px solid var(--shopping-border);
   background: var(--shopping-raised);
   color: var(--shopping-text);
-  box-shadow: var(--shopping-control-shadow);
 }
 
 .doneButton {
