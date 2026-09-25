@@ -84,7 +84,7 @@ export function CompletedSummaryScreen({
   const shellMotionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    settleMotion(shellMotionRef.current, 180);
+    settleMotion(shellMotionRef.current);
   }, []);
   const [checkoutRaw, setCheckoutRaw] = useState(() =>
     trip.actualCheckoutMinor === undefined
