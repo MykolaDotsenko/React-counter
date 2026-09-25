@@ -2,7 +2,9 @@ import type {
   ActiveTripBootstrapResult,
   ActiveTripPersistencePort,
   ActiveTripSaveResult,
+  CompletedHistoryReadResult,
   CompletionSaveResult,
+  HistorySetAsideResult,
   PersistenceProblem,
 } from "../../application/shopping-app-controller";
 import type {
@@ -14,6 +16,9 @@ import {
   bootstrapShoppingPersistence,
   clearActiveTrip,
   completeTripPersistence,
+  restoreHistory,
+  setAsideDamagedHistory,
+  setAsideUnreadableActiveTrip,
   updateCompletedTripPersistence,
   writeActiveTrip,
   writeHistory,
@@ -31,17 +36,17 @@ const toPersistenceProblem = (
     : { schemaVersion: issue.schemaVersion }),
 });
 
-const requiresRecovery = (
-  issue: PersistenceIssue,
-  activeTrip: ActiveTrip | null,
-): boolean =>
-  activeTrip === null && issue.code !== "legacy-retirement-failed";
 
 export const createActiveTripPersistencePort = (
   storage: StorageLike | null | undefined,
 ): ActiveTripPersistencePort => ({
   bootstrap(): ActiveTripBootstrapResult {
     const result = bootstrapShoppingPersistence(storage);
+
+    const historyFields =
+      result.historyIssue === undefined
+        ? {}
+        : { historyIssue: toPersistenceProblem(result.historyIssue) };
 
     if (result.health === "healthy") {
       return {
@@ -50,6 +55,7 @@ export const createActiveTripPersistencePort = (
         completedTrips: result.completedTrips,
         completionCleanupPending:
           result.completionCleanupPending,
+        ...historyFields,
       };
     }
 
@@ -60,14 +66,50 @@ export const createActiveTripPersistencePort = (
       completionCleanupPending:
         result.completionCleanupPending,
       issue: toPersistenceProblem(result.issue),
-      recoveryRequired: requiresRecovery(
-        result.issue,
-        result.activeTrip,
-      ),
+      // Only an unreadable active-trip record blocks the shopping flow.
+      // History, cleanup and legacy-key problems degrade instead.
+      recoveryRequired: result.activeTripUnreadable,
       ...(result.recoveryRaw === undefined
         ? {}
         : { recoveryRaw: result.recoveryRaw }),
+      ...historyFields,
     };
+  },
+
+  readCompletedHistory(): CompletedHistoryReadResult {
+    const result = restoreHistory(storage);
+
+    if (result.health === "healthy") {
+      return { ok: true, completedTrips: result.trips };
+    }
+
+    return {
+      ok: false,
+      completedTrips: result.trips,
+      issue: toPersistenceProblem(result.issue),
+    };
+  },
+
+  setAsideDamagedHistory(setAsideAt: IsoTimestamp): HistorySetAsideResult {
+    const result = setAsideDamagedHistory(storage, setAsideAt);
+
+    if (result.health === "healthy") {
+      return { ok: true, completedTrips: result.trips };
+    }
+
+    return { ok: false, issue: toPersistenceProblem(result.issue) };
+  },
+
+  setAsideUnreadableActiveTrip(
+    setAsideAt: IsoTimestamp,
+  ): ActiveTripSaveResult {
+    const result = setAsideUnreadableActiveTrip(storage, setAsideAt);
+
+    if (result.health === "healthy") {
+      return { ok: true };
+    }
+
+    return { ok: false, issue: toPersistenceProblem(result.issue) };
   },
 
   save(

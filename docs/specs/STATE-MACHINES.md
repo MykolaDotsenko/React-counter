@@ -48,6 +48,7 @@ Transitions:
 - SET_BUDGET / SET_BUFFER → ACTIVE;
 - FINISH_TRIP(success) → COMPLETED_SUMMARY;
 - FINISH_TRIP(history-write failure) → ACTIVE + persistence DEGRADED;
+- FINISH_TRIP(stored history unreadable) → ACTIVE + history integrity DEGRADED; nothing is written and the active trip stays durable;
 - active-state write failure → ACTIVE + persistence DEGRADED.
 
 ### COMPLETED_SUMMARY
@@ -69,12 +70,15 @@ Reopening the same completed trip is **PLANNED / GATED** and is not a current tr
 
 Meaning:
 
-Persisted active data cannot safely become a valid ShoppingTrip.
+Persisted active data cannot safely become a valid ShoppingTrip: the active record is unreadable, or browser storage cannot be read at all.
+
+Only the active record enters RECOVERY. Damaged history, a failed stale-copy cleanup and failed legacy-key retirement degrade instead.
 
 Allowed behaviour:
 
-- explicit recovery/reset actions supported by the product;
-- retry where failure is capability-related;
+- RETRY_READ → re-run bootstrap;
+- SET_ASIDE_ACTIVE (unreadable record with raw material only) → back up the exact raw record, remove it, re-run bootstrap;
+- CONTINUE_WITHOUT_SAVING → IDLE with persistence DEGRADED(`session-only`): every write is refused for the rest of the session, so unreadable stored data is never overwritten; reloading returns to RECOVERY;
 - preserve raw recovery material where the persistence contract requires it.
 
 RECOVERY never invents prices/budgets from malformed data.
@@ -108,6 +112,27 @@ Requirements:
 - retry/recovery remains explicit.
 
 Do not create a generic blocking ERROR lifecycle for ordinary storage failure.
+
+## History integrity
+
+History integrity is orthogonal to lifecycle and to write health.
+
+```text
+READABLE
+  └─ stored history unreadable (bootstrap, finish attempt) → DAMAGED
+
+DAMAGED
+  ├─ SET_ASIDE_HISTORY (backup, keep readable trips) → READABLE
+  ├─ RETRY_HISTORY_READ succeeds (read failures only) → READABLE
+  └─ otherwise ──────────────────────────────────────→ DAMAGED
+```
+
+While DAMAGED:
+
+- starting, tracking and correcting trips work;
+- readable completed trips stay visible and can seed Shop again;
+- finishing, deleting a trip and clearing history are refused, because each would overwrite the unreadable record;
+- a successful active-trip write never hides the history warning.
 
 ## Add-price interaction
 

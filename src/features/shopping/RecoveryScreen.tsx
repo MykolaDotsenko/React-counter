@@ -47,6 +47,14 @@ const recoveryCopy = (
   }
 };
 
+const canSetAside = (issue: PersistenceProblem): boolean =>
+  [
+    "malformed-json",
+    "invalid-envelope",
+    "invalid-data",
+    "unsupported-version",
+  ].includes(issue.code);
+
 export function RecoveryScreen({ controller }: RecoveryScreenProps) {
   const state = useShoppingAppState(controller);
   const [retryMessage, setRetryMessage] = useState("");
@@ -55,8 +63,10 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
     return null;
   }
 
-  const copy = recoveryCopy(state.recovery.issue);
+  const issue = state.recovery.issue;
+  const copy = recoveryCopy(issue);
   const raw = state.recovery.raw;
+  const setAsideAvailable = canSetAside(issue) && raw !== undefined;
 
   const retry = (): void => {
     setRetryMessage("");
@@ -67,6 +77,22 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
         "The saved trip still cannot be restored safely. Nothing was overwritten.",
       );
     }
+  };
+
+  const setAside = (): void => {
+    setRetryMessage("");
+    const result = controller.setAsideUnreadableActiveTrip();
+
+    if (!result.ok) {
+      setRetryMessage(
+        "The saved trip could not be set aside safely, so it was left unchanged.",
+      );
+    }
+  };
+
+  const continueWithoutSaving = (): void => {
+    setRetryMessage("");
+    controller.continueWithoutSaving();
   };
 
   return (
@@ -100,6 +126,42 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
             {retryMessage}
           </p>
         ) : null}
+
+        <details className={styles.details}>
+          <summary>Other ways to continue</summary>
+          <p>
+            Keep shopping without saving: your totals work in this tab, but
+            nothing is saved on this device and closing or reloading the
+            tab loses the new trip. The saved record stays untouched.
+          </p>
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.retryButton}
+              onClick={continueWithoutSaving}
+            >
+              Continue without saving
+            </button>
+          </div>
+          {setAsideAvailable ? (
+            <>
+              <p>
+                Set the unreadable trip aside: the app keeps an exact backup
+                copy of it on this device, stops using it, and lets you start
+                a new saved trip. The backup is not shown in the app.
+              </p>
+              <div className={styles.actions}>
+                <button
+                  type="button"
+                  className={styles.retryButton}
+                  onClick={setAside}
+                >
+                  Set aside and start fresh
+                </button>
+              </div>
+            </>
+          ) : null}
+        </details>
 
         {raw !== undefined ? (
           <details className={styles.details}>

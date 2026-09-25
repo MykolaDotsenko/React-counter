@@ -105,6 +105,22 @@ History restore validates:
 
 A valid subset may be retained only where the schema/persistence contract explicitly supports partial recovery.
 
+Unreadable history never blocks the shopping flow and never enters RECOVERY. It is reported as its own history-integrity state, separate from write health, so a later successful active-trip write cannot hide it. Readable trips stay visible; finishing, deletion and clearing are refused until the shopper sets the damaged record aside, because each of them would overwrite it.
+
+## Setting unreadable data aside
+
+An unreadable record leaves its canonical key only through an explicit, clearly described user action:
+
+1. copy the exact raw string to a new `budget-cart:set-aside:*` backup key;
+2. read the backup back and compare it byte for byte;
+3. only then rewrite history with the readable trips (or remove the unreadable active record).
+
+If any step fails, the canonical record is left unchanged. A readable record is never set aside. The key format is defined in [STORAGE-SCHEMA](../specs/STORAGE-SCHEMA.md).
+
+## Continuing without saving
+
+When the active record cannot be read, or storage is unavailable, the shopper may explicitly continue without saving. The session then refuses every write, keeps an honest `session-only` degraded state and never touches stored data; reloading returns to recovery.
+
 ## Completion transaction
 
 Completion has the highest durability sensitivity.
@@ -203,6 +219,8 @@ An older app encountering a newer schema must:
 - surface recovery/degraded semantics;
 - wait for an explicit migration/compatibility rule.
 
+The shopper may still continue without saving, or set the newer record aside; setting aside preserves the exact raw value in a backup key rather than overwriting it.
+
 ## Malformed data
 
 Do not “repair” money or lifecycle facts by guessing.
@@ -227,7 +245,7 @@ Clear independently through explicit user action.
 
 ### Active trip
 
-Any future reset/discard action must clearly communicate data loss before destructive removal.
+Setting an unreadable active record aside is not destructive: the raw record is kept as a backup. Any future discard action for a readable trip must clearly communicate data loss before destructive removal.
 
 ## Privacy
 

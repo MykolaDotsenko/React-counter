@@ -44,6 +44,7 @@ export const initialState = (): ShoppingAppState =>
     completedTrips: EMPTY_COMPLETED_TRIPS,
     completionCleanupPending: false,
     persistence: HEALTHY_PERSISTENCE,
+    historyIntegrity: HEALTHY_PERSISTENCE,
     priceMemories: EMPTY_PRICE_MEMORIES,
     priceMemoryPersistence: HEALTHY_PERSISTENCE,
     undo: null,
@@ -137,3 +138,27 @@ export const requireActiveTrip = (
 
   return { ok: true, trip: state.activeTrip };
 };
+
+/**
+ * Codes for a stored record that exists but cannot be interpreted. Such a
+ * record may be set aside, with a byte-for-byte backup, only by an explicit
+ * user action.
+ */
+const UNREADABLE_ACTIVE_RECORD_CODES: ReadonlySet<string> = new Set([
+  "malformed-json",
+  "invalid-envelope",
+  "invalid-data",
+  "unsupported-version",
+]);
+
+const UNREADABLE_HISTORY_RECORD_CODES: ReadonlySet<string> = new Set([
+  ...UNREADABLE_ACTIVE_RECORD_CODES,
+  "invalid-history-entry",
+  "history-conflict",
+]);
+
+export const canSetAsideActiveTrip = (issue: PersistenceProblem): boolean =>
+  UNREADABLE_ACTIVE_RECORD_CODES.has(issue.code);
+
+export const canSetAsideHistory = (issue: PersistenceProblem): boolean =>
+  UNREADABLE_HISTORY_RECORD_CODES.has(issue.code);

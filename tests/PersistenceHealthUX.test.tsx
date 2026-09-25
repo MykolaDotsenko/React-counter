@@ -130,6 +130,15 @@ const createPersistence = (
     clearCompletedActive() {
       return { ok: true };
     },
+    readCompletedHistory() {
+      return { ok: true, completedTrips: [] };
+    },
+    setAsideDamagedHistory() {
+      return { ok: true, completedTrips: [] };
+    },
+    setAsideUnreadableActiveTrip() {
+      return { ok: true };
+    },
   };
 };
 

@@ -157,6 +157,32 @@ Malformed/invalid raw active-trip data must not be silently replaced during boot
 
 History may preserve valid entries while reporting invalid-entry degradation only where the contract explicitly allows that partial result.
 
+## Set-aside backups
+
+An unreadable record (malformed JSON, invalid envelope/data, unsupported version, invalid or conflicting history entries) leaves its canonical key only through an explicit user action. Before the canonical key is replaced or removed, the exact raw string is copied to a new backup key and read back:
+
+```text
+budget-cart:set-aside:<source>:<setAsideAt>[:<n>]
+```
+
+- `<source>` is `active-trip` or `history`;
+- `<setAsideAt>` is the canonical ISO timestamp of the action;
+- `:<n>` is appended when a backup with the same timestamp already exists, so an earlier backup is never overwritten.
+
+Backup value:
+
+```json
+{
+  "schemaVersion": 1,
+  "setAsideAt": "2026-09-22T10:00:00.000Z",
+  "sourceKey": "budget-cart:history",
+  "reason": "invalid-history-entry",
+  "raw": "<exact original string>"
+}
+```
+
+If the backup cannot be written and read back, nothing else changes. A readable record is never set aside. Setting history aside rewrites it with exactly the readable trips the app already showed (none when the record could not be parsed). Backups are not read by the product; they remain on the device until site data is cleared.
+
 ## Write semantics
 
 ### Active trip

@@ -18,6 +18,7 @@ import {
 } from "../features/shopping/BudgetSettingsSurface";
 import { CompletedSummaryScreen } from "../features/shopping/CompletedSummaryScreen";
 import { FinishTripSurface } from "../features/shopping/FinishTripSurface";
+import { HistoryIntegrityNotice } from "../features/shopping/HistoryIntegrityNotice";
 import { HistoryScreen } from "../features/shopping/HistoryScreen";
 import {
   ItemEditSurface,
@@ -299,14 +300,31 @@ export function ShoppingAppShell({
           onConfirm={() => {
             const result = controller.completeTrip();
 
-            if (!result.ok) {
-              return false;
+            if (result.ok) {
+              evidence.recordTripFinished();
+              setOverlay({ kind: "none" });
+              return true;
             }
 
-            evidence.recordTripFinished();
-            setOverlay({ kind: "none" });
-            return true;
+            if (
+              result.error.kind === "application" &&
+              result.error.code === "history-unreadable"
+            ) {
+              return "history-unreadable";
+            }
+
+            return result.state.persistence.status === "degraded" &&
+              result.state.persistence.issue.code === "session-only"
+              ? "session-only"
+              : "not-saved";
           }}
+          {...(state.historyIntegrity.status === "degraded"
+            ? {
+                historyNotice: (
+                  <HistoryIntegrityNotice controller={controller} />
+                ),
+              }
+            : {})}
         />
         {qaPanel}
       </>

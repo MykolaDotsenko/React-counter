@@ -26,11 +26,15 @@ import {
   upsertCompletedTrip,
 } from "./shopping-app-support";
 
+export interface CompletionPorts {
+  persistence: ShoppingPersistencePort;
+  priceMemory: PriceMemoryPersistencePort;
+}
+
 interface CompletionUseCaseDependencies {
   readonly getState: () => ShoppingAppState;
   readonly publish: (nextState: ShoppingAppState) => ShoppingAppState;
-  readonly persistence: ShoppingPersistencePort;
-  readonly priceMemoryPersistence: PriceMemoryPersistencePort;
+  readonly ports: Readonly<CompletionPorts>;
   readonly clock: Clock;
 }
 
@@ -45,8 +49,7 @@ export interface CompletionUseCases {
 export const createCompletionUseCases = ({
   getState,
   publish,
-  persistence,
-  priceMemoryPersistence,
+  ports,
   clock,
 }: CompletionUseCaseDependencies): CompletionUseCases => {
   const completeTrip = (): AppCommandResult => {
@@ -76,10 +79,29 @@ export const createCompletionUseCases = ({
     }
 
     const completedTrip = tripResult.value;
-    const persistenceResult = persistence.complete(
+    const persistenceResult = ports.persistence.complete(
       completedTrip,
       completedAt,
     );
+
+    if (
+      !persistenceResult.ok &&
+      persistenceResult.stage === "history-read"
+    ) {
+      // The stored history cannot be read safely, so nothing was written and
+      // the active trip is still durable. Report the history, not the trip.
+      const nextState = publish({
+        ...state,
+        historyIntegrity: degradedPersistence(
+          persistenceResult.issue,
+          state.historyIntegrity.status === "degraded"
+            ? state.historyIntegrity.since
+            : completedAt,
+        ),
+      });
+
+      return failure(nextState, applicationError("history-unreadable"));
+    }
 
     if (
       !persistenceResult.ok &&
@@ -113,6 +135,7 @@ export const createCompletionUseCases = ({
       completedSummary: completedTrip,
       completedTrips,
       completionCleanupPending: cleanupPending,
+      historyIntegrity: HEALTHY_PERSISTENCE,
       persistence: persistenceResult.ok
         ? HEALTHY_PERSISTENCE
         : degradedPersistence(
@@ -139,7 +162,7 @@ export const createCompletionUseCases = ({
 
       if (canAttemptMemoryWrite) {
         const memorySavedAt = clock.now();
-        const memorySave = priceMemoryPersistence.save(
+        const memorySave = ports.priceMemory.save(
           mergedMemories,
           memorySavedAt,
         );
@@ -204,7 +227,7 @@ export const createCompletionUseCases = ({
     }
 
     const now = clock.now();
-    const saveResult = persistence.saveCompleted(
+    const saveResult = ports.persistence.saveCompleted(
       tripResult.value,
       now,
     );

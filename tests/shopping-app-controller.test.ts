@@ -17,7 +17,9 @@ import {
   type ActiveTripPersistencePort,
   type ActiveTripSaveResult,
   type Clock,
+  type CompletedHistoryReadResult,
   type CompletionSaveResult,
+  type HistorySetAsideResult,
   type IdGenerator,
   type PersistenceProblem,
 } from "../src/application/shopping-app-controller";
@@ -117,7 +119,13 @@ interface PersistenceFake extends ActiveTripPersistencePort {
     savedAt: IsoTimestamp;
   }[];
   readonly clearCompletedActiveCalls: number;
+  readonly historySetAsideCalls: readonly IsoTimestamp[];
+  readonly activeSetAsideCalls: readonly IsoTimestamp[];
+  readonly historyReadCalls: number;
   setBootstrapResult(result: BootstrapInput): void;
+  queueHistoryReadResult(result: CompletedHistoryReadResult): void;
+  queueHistorySetAsideResult(result: HistorySetAsideResult): void;
+  queueActiveSetAsideResult(result: ActiveTripSaveResult): void;
   queueSaveResult(result: ActiveTripSaveResult): void;
   queueCompleteResult(result: CompletionSaveResult): void;
   queueCompletedSaveResult(result: ActiveTripSaveResult): void;
@@ -155,8 +163,54 @@ const createPersistence = (
   const completedSaveResults: ActiveTripSaveResult[] = [];
   const historyReplaceResults: ActiveTripSaveResult[] = [];
   const clearResults: ActiveTripSaveResult[] = [];
+  const historyReadResults: CompletedHistoryReadResult[] = [];
+  const historySetAsideResults: HistorySetAsideResult[] = [];
+  const activeSetAsideResults: ActiveTripSaveResult[] = [];
+  const historySetAsideCalls: IsoTimestamp[] = [];
+  const activeSetAsideCalls: IsoTimestamp[] = [];
+  let historyReadCalls = 0;
 
   return {
+    get historySetAsideCalls() {
+      return historySetAsideCalls;
+    },
+    get activeSetAsideCalls() {
+      return activeSetAsideCalls;
+    },
+    get historyReadCalls() {
+      return historyReadCalls;
+    },
+    queueHistoryReadResult(result) {
+      historyReadResults.push(result);
+    },
+    queueHistorySetAsideResult(result) {
+      historySetAsideResults.push(result);
+    },
+    queueActiveSetAsideResult(result) {
+      activeSetAsideResults.push(result);
+    },
+    readCompletedHistory() {
+      historyReadCalls += 1;
+      return (
+        historyReadResults.shift() ?? {
+          ok: true,
+          completedTrips: bootstrapResult.completedTrips,
+        }
+      );
+    },
+    setAsideDamagedHistory(setAsideAt) {
+      historySetAsideCalls.push(setAsideAt);
+      return (
+        historySetAsideResults.shift() ?? {
+          ok: true,
+          completedTrips: bootstrapResult.completedTrips,
+        }
+      );
+    },
+    setAsideUnreadableActiveTrip(setAsideAt) {
+      activeSetAsideCalls.push(setAsideAt);
+      return activeSetAsideResults.shift() ?? { ok: true };
+    },
     get bootstrapCalls() {
       return bootstrapCalls;
     },
@@ -281,6 +335,7 @@ describe("ShoppingAppController snapshot contract", () => {
       completedTrips: [],
       completionCleanupPending: false,
       persistence: { status: "healthy" },
+      historyIntegrity: { status: "healthy" },
       priceMemories: [],
       priceMemoryPersistence: { status: "healthy" },
       undo: null,

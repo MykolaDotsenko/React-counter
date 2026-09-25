@@ -19,6 +19,7 @@ import {
   type MoneyInputErrorCode,
 } from "../../domain/money";
 import type { CompletedTrip } from "../../domain/shopping-trip";
+import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./StartTripScreen.module.css";
 
@@ -268,6 +269,7 @@ export function StartTripScreen({
             context="idle"
           />
         ) : null}
+        <HistoryIntegrityNotice controller={controller} />
 
         {recentTrip !== null ? (
           <button

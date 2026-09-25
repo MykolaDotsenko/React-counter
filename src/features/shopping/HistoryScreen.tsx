@@ -11,6 +11,7 @@ import {
   type HistoryDataConfirmation,
 } from "./HistoryDataControls";
 import { HistoryTripCard } from "./HistoryTripCard";
+import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./HistoryScreen.module.css";
 
@@ -46,6 +47,7 @@ export function HistoryScreen({
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
   const canChangeHistory =
     state.persistence.status === "healthy" &&
+    state.historyIntegrity.status === "healthy" &&
     !state.completionCleanupPending;
 
   useEffect(() => {
@@ -192,6 +194,7 @@ export function HistoryScreen({
           health={state.persistence}
           context="idle"
         />
+        <HistoryIntegrityNotice controller={controller} />
 
         {statusMessage ? (
           <p className={styles.status} role="status" aria-live="polite">

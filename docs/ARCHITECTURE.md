@@ -135,6 +135,7 @@ The controller owns the in-memory application snapshot:
 - active trip
 - completed summary/history
 - durability health
+- completed-history integrity (independent of write health)
 - completion-cleanup state
 - Price Memory snapshot/health
 - Undo snapshot
@@ -221,6 +222,8 @@ A failed history write must never delete the active trip.
 Malformed, invalid-business-value, conflicting or unsupported-future persisted data is not silently coerced.
 
 Recovery surfaces preserve raw material where the contract allows it.
+
+Only an unreadable active record blocks the shopping flow. Every unreadable state keeps an explicit exit that never destroys data: continue without saving (writes refused for the session) or set the record aside (exact raw backup first). See D-051.
 
 ### Price Memory
 

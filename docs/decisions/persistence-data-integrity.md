@@ -293,3 +293,40 @@ Retaining the old UI therefore adds noise without adding meaningful release safe
 Only if a genuinely separate product shell becomes a validated product requirement. A demo or migration convenience is not sufficient reason to reintroduce one.
 
 ---
+
+## D-051 — Damaged local data always leaves the shopper a safe exit
+
+Date: 2026-09-25
+
+Status: accepted
+
+### Decision
+
+Only an unreadable active-trip record (or unreadable storage) enters RECOVERY. Damaged completed history is a separate history-integrity state that never blocks starting, tracking or correcting a trip.
+
+Every unreadable state has an explicit exit that never destroys data:
+
+- **Continue without saving** — the session refuses every write, so unreadable stored data is never overwritten;
+- **Set aside** — the exact raw record is copied to a new `budget-cart:set-aside:*` backup key and read back before the canonical key is replaced (history) or removed (active record);
+- **Try again** — for read failures that may be transient.
+
+Operations that would overwrite unreadable history (finishing, deleting a trip, clearing history) are refused until the shopper sets it aside.
+
+### Rationale
+
+Before this decision any history problem with no active trip forced RECOVERY, whose only action was "try reading again". One damaged or newer-version history entry therefore locked the shopper out permanently; with an active trip, finishing failed forever and the warning disappeared after the next successful save. The only escape was clearing site data, which destroyed the valid trips, Price Memory and the unreadable record itself.
+
+Every GitHub Pages surface of this repository (public app, guarded routes, immutable `/study/<baseline>/` copies) shares one origin. With strict schemas, the first schema change on `main` would have produced exactly this state in older study copies.
+
+Backing the raw record up before replacing it keeps D-008 (visible failure) and the "never silently discard" rule intact while restoring the core promise that manual shopping always works.
+
+### Consequence
+
+- `ShoppingAppState.historyIntegrity` is separate from `persistence`;
+- completion reports a `history-read` stage and the application error `history-unreadable`;
+- session-only mode is an explicit application state, not a silent fallback;
+- backups are local, are not read by the product and remain until site data is cleared.
+
+### Revisit when
+
+A real schema migration ships: it should read set-aside backups it understands, and may make a backup's recovery visible in the product.

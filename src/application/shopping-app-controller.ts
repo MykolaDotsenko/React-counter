@@ -11,11 +11,21 @@ import {
   type TripId,
 } from "../domain/shopping-trip";
 import { EMPTY_PRICE_MEMORY_PERSISTENCE_PORT } from "./price-memory-port";
-import { createCompletionUseCases } from "./shopping-app-completion";
+import {
+  SESSION_ONLY_ISSUE,
+  SESSION_ONLY_PERSISTENCE_PORT,
+  SESSION_ONLY_PRICE_MEMORY_PORT,
+} from "./session-only-persistence";
+import {
+  createCompletionUseCases,
+  type CompletionPorts,
+} from "./shopping-app-completion";
 import {
   EMPTY_PRICE_MEMORIES,
   HEALTHY_PERSISTENCE,
   applicationError,
+  canSetAsideActiveTrip,
+  canSetAsideHistory,
   degradedPersistence,
   failure,
   freezeState,
@@ -50,8 +60,10 @@ export type {
   AppLifecycle,
   ApplicationError,
   Clock,
+  CompletedHistoryReadResult,
   CompletionSaveResult,
   Durability,
+  HistorySetAsideResult,
   IdGenerator,
   PersistenceHealth,
   PersistenceProblem,
@@ -74,6 +86,12 @@ export const createShoppingAppController = ({
 }: ShoppingAppControllerDependencies): ShoppingAppController => {
   let state = initialState();
   const listeners = new Set<() => void>();
+  // Mutable only through continueWithoutSaving(), which swaps every write path
+  // to refusing session-only ports in one step.
+  const ports: CompletionPorts = {
+    persistence,
+    priceMemory: priceMemoryPersistence,
+  };
 
   const publish = (nextState: ShoppingAppState): ShoppingAppState => {
     state = freezeState(nextState);
@@ -105,8 +123,7 @@ export const createShoppingAppController = ({
   } = createCompletionUseCases({
     getState: () => state,
     publish,
-    persistence,
-    priceMemoryPersistence,
+    ports,
     clock,
   });
 
@@ -118,16 +135,27 @@ export const createShoppingAppController = ({
       return state;
     }
 
-    const result = persistence.bootstrap();
-    const memoryResult = priceMemoryPersistence.bootstrap();
+    const result = ports.persistence.bootstrap();
+    const memoryResult = ports.priceMemory.bootstrap();
     const bootstrapIssueTime =
-      !result.ok || !memoryResult.ok ? clock.now() : null;
+      !result.ok ||
+      !memoryResult.ok ||
+      result.historyIssue !== undefined
+        ? clock.now()
+        : null;
     const memoryHealth = memoryResult.ok
       ? HEALTHY_PERSISTENCE
       : degradedPersistence(
           memoryResult.issue,
           bootstrapIssueTime ?? clock.now(),
         );
+    const historyIntegrity =
+      result.historyIssue === undefined
+        ? HEALTHY_PERSISTENCE
+        : degradedPersistence(
+            result.historyIssue,
+            bootstrapIssueTime ?? clock.now(),
+          );
 
     if (result.ok) {
       return publish({
@@ -137,6 +165,7 @@ export const createShoppingAppController = ({
         completedTrips: result.completedTrips,
         completionCleanupPending: result.completionCleanupPending,
         persistence: HEALTHY_PERSISTENCE,
+        historyIntegrity,
         priceMemories: memoryResult.records,
         priceMemoryPersistence: memoryHealth,
         undo: null,
@@ -155,6 +184,7 @@ export const createShoppingAppController = ({
         completedTrips: result.completedTrips,
         completionCleanupPending: result.completionCleanupPending,
         persistence: persistenceHealth,
+        historyIntegrity,
         priceMemories: memoryResult.records,
         priceMemoryPersistence: memoryHealth,
         undo: null,
@@ -172,6 +202,7 @@ export const createShoppingAppController = ({
       completedTrips: result.completedTrips,
       completionCleanupPending: result.completionCleanupPending,
       persistence: persistenceHealth,
+      historyIntegrity,
       priceMemories: memoryResult.records,
       priceMemoryPersistence: memoryHealth,
       undo: null,
@@ -196,7 +227,7 @@ export const createShoppingAppController = ({
       return failure(state, tripResult.error);
     }
 
-    const saveResult = persistence.save(tripResult.value, now);
+    const saveResult = ports.persistence.save(tripResult.value, now);
     const nextState = publish({
       lifecycle: "active",
       activeTrip: tripResult.value,
@@ -206,6 +237,7 @@ export const createShoppingAppController = ({
       persistence: saveResult.ok
         ? HEALTHY_PERSISTENCE
         : degradedPersistence(saveResult.issue, now),
+      historyIntegrity: state.historyIntegrity,
       priceMemories: state.priceMemories,
       priceMemoryPersistence: state.priceMemoryPersistence,
       undo: null,
@@ -464,6 +496,7 @@ export const createShoppingAppController = ({
 
     if (
       state.persistence.status === "degraded" ||
+      state.historyIntegrity.status === "degraded" ||
       state.completionCleanupPending
     ) {
       return failure(
@@ -473,7 +506,7 @@ export const createShoppingAppController = ({
     }
 
     const now = clock.now();
-    const saveResult = persistence.replaceCompletedHistory(
+    const saveResult = ports.persistence.replaceCompletedHistory(
       nextTrips,
       now,
     );
@@ -549,7 +582,7 @@ export const createShoppingAppController = ({
     }
 
     const now = clock.now();
-    const saveResult = priceMemoryPersistence.save([], now);
+    const saveResult = ports.priceMemory.save([], now);
 
     if (!saveResult.ok) {
       return failure(
@@ -588,7 +621,7 @@ export const createShoppingAppController = ({
     const now = clock.now();
 
     if (state.activeTrip !== null) {
-      const saveResult = persistence.save(state.activeTrip, now);
+      const saveResult = ports.persistence.save(state.activeTrip, now);
       const nextState = publish({
         ...state,
         persistence: saveResult.ok
@@ -604,7 +637,7 @@ export const createShoppingAppController = ({
     }
 
     if (state.completedSummary !== null) {
-      const historySave = persistence.saveCompleted(
+      const historySave = ports.persistence.saveCompleted(
         state.completedSummary,
         now,
       );
@@ -622,7 +655,7 @@ export const createShoppingAppController = ({
       }
 
       if (state.completionCleanupPending) {
-        const cleanup = persistence.clearCompletedActive();
+        const cleanup = ports.persistence.clearCompletedActive();
 
         if (!cleanup.ok) {
           const nextState = publish({
@@ -648,7 +681,7 @@ export const createShoppingAppController = ({
     }
 
     if (state.completionCleanupPending) {
-      const cleanup = persistence.clearCompletedActive();
+      const cleanup = ports.persistence.clearCompletedActive();
       const nextState = publish({
         ...state,
         persistence: cleanup.ok
@@ -665,6 +698,117 @@ export const createShoppingAppController = ({
     }
 
     return failure(state, applicationError("no-active-trip"));
+  };
+
+  const historyRepairBlock = (): AppCommandResult | null => {
+    const blocked = lifecycleBlock(state);
+
+    if (blocked !== null) {
+      return failure(state, blocked);
+    }
+
+    if (state.lifecycle === "completed-summary") {
+      return failure(state, applicationError("completed-summary-open"));
+    }
+
+    return null;
+  };
+
+  const retryHistoryRead = (): AppCommandResult => {
+    const blocked = historyRepairBlock();
+
+    if (blocked !== null) {
+      return blocked;
+    }
+
+    if (state.historyIntegrity.status === "healthy") {
+      return success(state, false, "unchanged");
+    }
+
+    const since = state.historyIntegrity.since;
+    const result = ports.persistence.readCompletedHistory();
+    const nextState = publish({
+      ...state,
+      completedTrips: Object.freeze([...result.completedTrips]),
+      historyIntegrity: result.ok
+        ? HEALTHY_PERSISTENCE
+        : degradedPersistence(result.issue, since),
+    });
+
+    return success(nextState, true, "unchanged");
+  };
+
+  const setAsideDamagedHistory = (): AppCommandResult => {
+    const blocked = historyRepairBlock();
+
+    if (blocked !== null) {
+      return blocked;
+    }
+
+    if (
+      state.historyIntegrity.status === "healthy" ||
+      !canSetAsideHistory(state.historyIntegrity.issue)
+    ) {
+      return failure(state, applicationError("nothing-to-set-aside"));
+    }
+
+    const result = ports.persistence.setAsideDamagedHistory(clock.now());
+
+    if (!result.ok) {
+      return failure(state, applicationError("set-aside-failed"));
+    }
+
+    const nextState = publish({
+      ...state,
+      completedTrips: Object.freeze([...result.completedTrips]),
+      historyIntegrity: HEALTHY_PERSISTENCE,
+    });
+
+    return success(nextState, true, "persisted");
+  };
+
+  const setAsideUnreadableActiveTrip = (): AppCommandResult => {
+    if (state.lifecycle !== "recovery" || state.recovery === null) {
+      return failure(state, applicationError("recovery-not-open"));
+    }
+
+    if (!canSetAsideActiveTrip(state.recovery.issue)) {
+      return failure(state, applicationError("nothing-to-set-aside"));
+    }
+
+    const result = ports.persistence.setAsideUnreadableActiveTrip(
+      clock.now(),
+    );
+
+    if (!result.ok) {
+      return failure(state, applicationError("set-aside-failed"));
+    }
+
+    const nextState = bootstrap();
+
+    return success(nextState, true, "persisted");
+  };
+
+  const continueWithoutSaving = (): AppCommandResult => {
+    if (state.lifecycle !== "recovery" || state.recovery === null) {
+      return failure(state, applicationError("recovery-not-open"));
+    }
+
+    ports.persistence = SESSION_ONLY_PERSISTENCE_PORT;
+    ports.priceMemory = SESSION_ONLY_PRICE_MEMORY_PORT;
+
+    const nextState = publish({
+      ...state,
+      lifecycle: "idle",
+      activeTrip: null,
+      completedSummary: null,
+      completionCleanupPending: false,
+      persistence: degradedPersistence(SESSION_ONLY_ISSUE, clock.now()),
+      undo: null,
+      recovery: null,
+    });
+
+    return success(nextState, true, "memory-only");
   };
 
   const dispatch = (command: ActiveTripCommand): AppCommandResult => {
@@ -690,7 +834,7 @@ export const createShoppingAppController = ({
     }
 
     const now = clock.now();
-    const saveResult = persistence.save(tripResult.value, now);
+    const saveResult = ports.persistence.save(tripResult.value, now);
     const nextState = publish({
       ...state,
       lifecycle: "active",
@@ -722,7 +866,7 @@ export const createShoppingAppController = ({
 
     const previousTrip = state.undo.previousTrip;
     const now = clock.now();
-    const saveResult = persistence.save(previousTrip, now);
+    const saveResult = ports.persistence.save(previousTrip, now);
     const nextState = publish({
       ...state,
       lifecycle: "active",
@@ -760,6 +904,10 @@ export const createShoppingAppController = ({
     clearCompletedHistory,
     clearPriceMemory,
     retryPersistence,
+    retryHistoryRead,
+    setAsideDamagedHistory,
+    setAsideUnreadableActiveTrip,
+    continueWithoutSaving,
     dispatch,
   });
 };

@@ -22,6 +22,11 @@ export interface PersistenceProblem {
 
 export interface ShoppingPersistencePort {
   bootstrap(): ActiveTripBootstrapResult;
+  readCompletedHistory(): CompletedHistoryReadResult;
+  setAsideDamagedHistory(setAsideAt: IsoTimestamp): HistorySetAsideResult;
+  setAsideUnreadableActiveTrip(
+    setAsideAt: IsoTimestamp,
+  ): ActiveTripSaveResult;
   save(
     trip: ActiveTrip,
     savedAt: IsoTimestamp,
@@ -49,6 +54,7 @@ export type ActiveTripBootstrapResult =
       readonly activeTrip: ActiveTrip | null;
       readonly completedTrips: readonly CompletedTrip[];
       readonly completionCleanupPending: boolean;
+      readonly historyIssue?: PersistenceProblem;
     }
   | {
       readonly ok: false;
@@ -58,6 +64,28 @@ export type ActiveTripBootstrapResult =
       readonly issue: PersistenceProblem;
       readonly recoveryRequired: boolean;
       readonly recoveryRaw?: string;
+      readonly historyIssue?: PersistenceProblem;
+    };
+
+export type CompletedHistoryReadResult =
+  | {
+      readonly ok: true;
+      readonly completedTrips: readonly CompletedTrip[];
+    }
+  | {
+      readonly ok: false;
+      readonly completedTrips: readonly CompletedTrip[];
+      readonly issue: PersistenceProblem;
+    };
+
+export type HistorySetAsideResult =
+  | {
+      readonly ok: true;
+      readonly completedTrips: readonly CompletedTrip[];
+    }
+  | {
+      readonly ok: false;
+      readonly issue: PersistenceProblem;
     };
 
 export type ActiveTripSaveResult =
@@ -71,7 +99,7 @@ export type CompletionSaveResult =
   | { readonly ok: true }
   | {
       readonly ok: false;
-      readonly stage: "history-write" | "active-clear";
+      readonly stage: "history-read" | "history-write" | "active-clear";
       readonly issue: PersistenceProblem;
       readonly historyPersisted: boolean;
     };
@@ -117,6 +145,8 @@ export interface ShoppingAppState {
   readonly completedTrips: readonly CompletedTrip[];
   readonly completionCleanupPending: boolean;
   readonly persistence: PersistenceHealth;
+  /** Whether the stored completed history could be read safely. */
+  readonly historyIntegrity: PersistenceHealth;
   readonly priceMemories: readonly PriceMemoryRecord[];
   readonly priceMemoryPersistence: PersistenceHealth;
   readonly undo: UndoState | null;
@@ -171,7 +201,11 @@ export type ApplicationError =
         | "repeat-source-unavailable"
         | "history-write-unavailable"
         | "price-memory-write-unavailable"
-        | "price-memory-not-found";
+        | "price-memory-not-found"
+        | "history-unreadable"
+        | "nothing-to-set-aside"
+        | "set-aside-failed"
+        | "recovery-not-open";
     }
   | DomainError;
 
@@ -217,6 +251,10 @@ export interface ShoppingAppController {
   readonly clearCompletedHistory: () => AppCommandResult;
   readonly clearPriceMemory: () => AppCommandResult;
   readonly retryPersistence: () => AppCommandResult;
+  readonly retryHistoryRead: () => AppCommandResult;
+  readonly setAsideDamagedHistory: () => AppCommandResult;
+  readonly setAsideUnreadableActiveTrip: () => AppCommandResult;
+  readonly continueWithoutSaving: () => AppCommandResult;
   readonly dispatch: (command: ActiveTripCommand) => AppCommandResult;
 }
 

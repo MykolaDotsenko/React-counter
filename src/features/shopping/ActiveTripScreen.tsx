@@ -13,6 +13,7 @@ import {
   safeRemaining,
   type CartItem,
 } from "../../domain/shopping-trip";
+import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import { RecentItemsSection } from "./RecentItemsSection";
 import styles from "./ActiveTripScreen.module.css";
@@ -216,6 +217,7 @@ export function ActiveTripScreen({
           controller={controller}
           health={state.persistence}
         />
+        <HistoryIntegrityNotice controller={controller} />
 
         <section className={styles.summary} aria-label="Budget summary">
           <div className={styles.summaryRow}>
