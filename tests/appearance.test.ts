@@ -53,6 +53,11 @@ describe("appearance preference", () => {
     expect(readAppearancePreference(storage)).toBe("aurora");
   });
 
+  it("uses the calibrated dark browser chrome color", () => {
+    expect(appearanceThemeColor("dark", false)).toBe("#0f1210");
+    expect(appearanceThemeColor("system", true)).toBe("#0f1210");
+  });
+
   it("updates document appearance and browser theme color together", () => {
     document.head.innerHTML =
       '<meta name="theme-color" content="#ffffff" />';
