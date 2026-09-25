@@ -11,6 +11,7 @@ import {
   itemCount,
   mostRecentCompletedTrip,
   type ItemId,
+  type TripId,
 } from "../domain/shopping-trip";
 import { ActiveTripScreen } from "../features/shopping/ActiveTripScreen";
 import {
@@ -42,8 +43,7 @@ export interface ShoppingAppShellProps {
   readonly controller: ShoppingAppController;
 }
 
-type OverlayState =
-  | { readonly kind: "none" }
+type TripOverlay =
   | {
       readonly kind: "add-price";
       readonly initialLabel?: string;
@@ -51,8 +51,17 @@ type OverlayState =
     }
   | { readonly kind: "budget-settings" }
   | { readonly kind: "edit-item"; readonly itemId: ItemId }
-  | { readonly kind: "finish-trip" }
-  | { readonly kind: "history" };
+  | { readonly kind: "finish-trip" };
+
+// A trip overlay belongs to the trip it was opened for. If that trip stops
+// being the active one by any route (reconciled, finished, set aside), the
+// overlay must not reopen over whichever trip comes next.
+type OverlayState =
+  | { readonly kind: "none" }
+  | { readonly kind: "history" }
+  | (TripOverlay & { readonly tripId: TripId });
+
+const NO_OVERLAY: OverlayState = { kind: "none" };
 
 export function ShoppingAppShell({
   controller,
@@ -68,7 +77,17 @@ export function ShoppingAppShell({
     returnFocusToAdjustBudget,
     returnFocusToEditItem,
   } = useShoppingShellFocus();
-  const [overlay, setOverlay] = useState<OverlayState>({ kind: "none" });
+  const [openedOverlay, setOverlay] = useState<OverlayState>(NO_OVERLAY);
+  const overlay: OverlayState =
+    "tripId" in openedOverlay &&
+    openedOverlay.tripId !== state.activeTrip?.id
+      ? NO_OVERLAY
+      : openedOverlay;
+  const openTripOverlay = (next: TripOverlay): void => {
+    if (state.activeTrip !== null) {
+      setOverlay({ ...next, tripId: state.activeTrip.id });
+    }
+  };
   const [lastAddedMessage, setLastAddedMessage] = useState("");
   const recentCompletedTrip = mostRecentCompletedTrip(
     state.completedTrips,
@@ -88,9 +107,10 @@ export function ShoppingAppShell({
         controller={controller}
         onTripStarted={() => {
           evidence.recordTripStarted("repeat");
+          setOverlay(NO_OVERLAY);
         }}
         onBack={() => {
-          setOverlay({ kind: "none" });
+          setOverlay(NO_OVERLAY);
         }}
         locale={SHOPPING_LOCALE}
       />
@@ -159,11 +179,11 @@ export function ShoppingAppShell({
             trip={state.completedSummary}
             locale={SHOPPING_LOCALE}
             onDone={() => {
-              setOverlay({ kind: "none" });
+              setOverlay(NO_OVERLAY);
             }}
             onShopAgain={() => {
               evidence.recordTripStarted("repeat");
-              setOverlay({ kind: "none" });
+              setOverlay(NO_OVERLAY);
               setLastAddedMessage(
                 "New trip started with your previous budget.",
               );
@@ -191,7 +211,7 @@ export function ShoppingAppShell({
             evidence.abandonManualEntry();
 
             const sourceMemoryId = overlay.sourceMemoryId;
-            setOverlay({ kind: "none" });
+            setOverlay(NO_OVERLAY);
             returnFocusToPriceTrigger(sourceMemoryId);
           }}
           onValidatedItem={(intent: ValidatedItemIntent) => {
@@ -225,7 +245,7 @@ export function ShoppingAppShell({
             );
 
             const sourceMemoryId = overlay.sourceMemoryId;
-            setOverlay({ kind: "none" });
+            setOverlay(NO_OVERLAY);
             returnFocusToPriceTrigger(sourceMemoryId);
             return true;
           }}
@@ -245,7 +265,7 @@ export function ShoppingAppShell({
           trip={state.activeTrip}
           locale={SHOPPING_LOCALE}
           onCancel={() => {
-            setOverlay({ kind: "none" });
+            setOverlay(NO_OVERLAY);
             returnFocusToAdjustBudget();
           }}
           onSave={(intent: SpendingPlanIntent) => {
@@ -264,7 +284,7 @@ export function ShoppingAppShell({
               );
             }
 
-            setOverlay({ kind: "none" });
+            setOverlay(NO_OVERLAY);
             returnFocusToAdjustBudget();
             return true;
           }}
@@ -284,7 +304,7 @@ export function ShoppingAppShell({
           trip={state.activeTrip}
           locale={SHOPPING_LOCALE}
           onCancel={() => {
-            setOverlay({ kind: "none" });
+            setOverlay(NO_OVERLAY);
             returnFocusToFinishTrip();
           }}
           onConfirm={() => {
@@ -292,7 +312,7 @@ export function ShoppingAppShell({
 
             if (result.ok) {
               evidence.recordTripFinished();
-              setOverlay({ kind: "none" });
+              setOverlay(NO_OVERLAY);
               return true;
             }
 
@@ -323,7 +343,7 @@ export function ShoppingAppShell({
             locale={SHOPPING_LOCALE}
             onCancel={() => {
               const itemId = item.id;
-              setOverlay({ kind: "none" });
+              setOverlay(NO_OVERLAY);
               returnFocusToEditItem(itemId);
             }}
             onRemove={() => {
@@ -343,7 +363,7 @@ export function ShoppingAppShell({
                   SHOPPING_LOCALE,
                 )}`,
               );
-              setOverlay({ kind: "none" });
+              setOverlay(NO_OVERLAY);
               returnFocusToAddPrice();
               return true;
             }}
@@ -371,7 +391,7 @@ export function ShoppingAppShell({
                   SHOPPING_LOCALE,
                 )}`,
               );
-              setOverlay({ kind: "none" });
+              setOverlay(NO_OVERLAY);
 
               returnFocusToEditItem(item.id);
 
@@ -413,22 +433,22 @@ export function ShoppingAppShell({
         onAddPrice={() => {
           setLastAddedMessage("");
           evidence.startOrdinaryManualEntry();
-          setOverlay({ kind: "add-price" });
+          openTripOverlay({ kind: "add-price" });
         }}
         onAdjustBudget={() => {
           evidence.resetQaTiming();
           setLastAddedMessage("");
-          setOverlay({ kind: "budget-settings" });
+          openTripOverlay({ kind: "budget-settings" });
         }}
         onFinishTrip={() => {
           evidence.resetQaTiming();
           setLastAddedMessage("");
-          setOverlay({ kind: "finish-trip" });
+          openTripOverlay({ kind: "finish-trip" });
         }}
         onEditItem={(item) => {
           evidence.resetQaTiming();
           setLastAddedMessage("");
-          setOverlay({ kind: "edit-item", itemId: item.id });
+          openTripOverlay({ kind: "edit-item", itemId: item.id });
         }}
         onUseRemembered={(record: PriceMemoryRecord) => {
           evidence.resetQaTiming();
@@ -464,7 +484,7 @@ export function ShoppingAppShell({
           setLastAddedMessage("");
           evidence.startCurrentPriceOverride();
 
-          setOverlay({
+          openTripOverlay({
             kind: "add-price",
             initialLabel: record.label,
             sourceMemoryId: record.id,

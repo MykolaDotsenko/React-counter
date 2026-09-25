@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -21,6 +21,7 @@ import { PersistenceHealthNotice } from "../src/features/shopping/PersistenceHea
 import { RecoveryScreen } from "../src/features/shopping/RecoveryScreen";
 import {
   SET_ASIDE_STORAGE_KEY_PREFIX,
+  encodeActiveTripSnapshot,
   encodeHistorySnapshot,
   type StorageLike,
 } from "../src/infrastructure/storage/shopping-storage";
@@ -469,6 +470,74 @@ describe("PersistenceHealthNotice session-only copy", () => {
 
     expect(screen.getByText("Not saving on this device")).not.toBeNull();
     expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+  });
+});
+
+describe("trip overlays belong to their trip", () => {
+  it("never reopens a finish surface over the next trip once its trip is gone", async () => {
+    const user = userEvent.setup();
+    const open = must(
+      createActiveTrip({ id: "trip-open", budgetMinor: money(3_000), startedAt: START }),
+    );
+    const completed = must(
+      reduceTrip(open, { type: "complete-trip", completedAt: time(START) }),
+    );
+
+    if (completed.status !== "completed") {
+      throw new Error("Expected completed trip");
+    }
+
+    const history = encodeHistorySnapshot([completed], START);
+    const active = encodeActiveTripSnapshot(open, START);
+
+    if (!history.ok || !active.ok) {
+      throw new Error("Expected encodable records");
+    }
+
+    const values = new Map([
+      [ACTIVE_TRIP_STORAGE_KEY, active.raw],
+      [HISTORY_STORAGE_KEY, history.raw],
+    ]);
+    const control = { failHistoryRead: true };
+    const storage: StorageLike = {
+      getItem(key) {
+        if (key === HISTORY_STORAGE_KEY && control.failHistoryRead) {
+          throw new Error("read failed");
+        }
+
+        return values.get(key) ?? null;
+      },
+      setItem: (key, value) => {
+        values.set(key, value);
+      },
+      removeItem: (key) => {
+        values.delete(key);
+      },
+    };
+    const controller = boot(storage);
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    await user.click(screen.getByRole("button", { name: /Finish trip/ }));
+    const finish = screen.getByRole("main", { name: "Ready to finish this trip?" });
+
+    control.failHistoryRead = false;
+    await user.click(within(finish).getByRole("button", { name: "Retry" }));
+
+    // The open copy was the recorded trip, so it is reconciled away.
+    expect(controller.getSnapshot().lifecycle).toBe("idle");
+    expect(
+      screen.getByRole("heading", { name: "How much can you spend today?" }),
+    ).not.toBeNull();
+
+    act(() => {
+      controller.startTrip({ budgetMinor: money(2_000) });
+    });
+
+    expect(
+      screen.queryByRole("main", { name: "Ready to finish this trip?" }),
+    ).toBeNull();
+    expect(screen.getByRole("button", { name: /Finish trip/ })).not.toBeNull();
   });
 });
 

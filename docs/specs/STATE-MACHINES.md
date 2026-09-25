@@ -273,14 +273,16 @@ Prefer one discriminated UI state, conceptually:
 ```ts
 type OverlayState =
   | { kind: "none" }
-  | { kind: "add-price" }
-  | { kind: "edit-item"; itemId: ItemId }
-  | { kind: "budget-settings" }
-  | { kind: "finish-trip" }
   | { kind: "history" }
+  | ({ tripId: TripId } & (
+      | { kind: "add-price" }
+      | { kind: "edit-item"; itemId: ItemId }
+      | { kind: "budget-settings" }
+      | { kind: "finish-trip" }
+    ))
 ```
 
-Overlay state is UI state, not ShoppingTrip lifecycle.
+Overlay state is UI state, not ShoppingTrip lifecycle. A trip overlay belongs to the trip it was opened for: when that trip stops being the active one by any route (finished, reconciled, set aside), the overlay is treated as closed and never reopens over the next trip.
 
 ## Startup reconciliation
 
@@ -289,7 +291,7 @@ Startup:
 1. restore active-trip state;
 2. restore history;
 3. validate envelopes/data/domain invariants;
-4. detect stale active copy of an already completed trip;
+4. detect a stale active copy: the same shopping as an already completed trip;
 5. reconcile safely;
 6. derive application lifecycle;
 7. render.
