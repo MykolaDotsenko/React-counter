@@ -600,16 +600,6 @@ describe("trip contents", () => {
       edit({ priceSource: { kind: "shelf-scan" } }),
       edit({ priceConfidence: { kind: "estimated" } }),
       expectActive(
-        unwrap(
-          reduceTrip(open, {
-            type: "update-item",
-            itemId: id("milk"),
-            patch: { quantity: 2 },
-            now: time(LATER),
-          }),
-        ),
-      ),
-      expectActive(
         unwrap(reduceTrip(open, { type: "remove-item", itemId: id("milk") })),
       ),
       addItem(open, createItem({ id: "bread", price: 250 })),
@@ -629,6 +619,29 @@ describe("trip contents", () => {
       expect(sameTripContents(open, variant)).toBe(false);
       expect(sameTripContents(variant, open)).toBe(false);
     }
+  });
+
+  it("treats an edit that was reverted as the same shopping", () => {
+    const open = shopped();
+    const reedit = (trip: ActiveTrip, quantity: number, now: string) =>
+      expectActive(
+        unwrap(
+          reduceTrip(trip, {
+            type: "update-item",
+            itemId: id("milk"),
+            patch: {
+              quantity,
+              priceConfidence: { kind: "confirmed", confirmedAt: time(now) },
+            },
+            now: time(now),
+          }),
+        ),
+      );
+    const reverted = reedit(reedit(open, 3, LATER), 2, FINISH);
+
+    expect(reverted.items[0]?.updatedAt).toBe(FINISH);
+    expect(sameTripContents(open, reverted)).toBe(true);
+    expect(sameTripContents(open, reedit(open, 3, LATER))).toBe(false);
   });
 
   it("ignores an optional field that is present but undefined", () => {

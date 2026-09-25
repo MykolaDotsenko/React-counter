@@ -117,7 +117,7 @@ Requirements:
 - trip ids are unique;
 - conflicting duplicate ids degrade rather than silently replace;
 - invalid entries do not become domain objects;
-- completion append is idempotent for the same shopping (trip identity, plan and cart lines; completion time and checkout total aside), and the recorded entry is kept;
+- completion append is idempotent for the same shopping (trip identity, plan and cart lines; completion time, checkout total and line edit times aside), and the recorded entry is kept;
 - completion append of different shopping under a recorded id reports a history conflict and writes nothing; the application then records the trip under a new id.
 
 ## Price Memory v1

@@ -24,6 +24,7 @@ import {
   type CompletedTrip,
   type DomainError,
   type IsoTimestamp,
+  type PriceConfidence,
   type ShoppingTrip,
   type SpendingPlanProjection,
   type TripProjection,
@@ -116,15 +117,20 @@ const sameFlatRecord = (left: object, right: object): boolean => {
   );
 };
 
+const withoutEditTime = (confidence: PriceConfidence): object =>
+  confidence.kind === "confirmed" ? { kind: confidence.kind } : confidence;
+
 const sameCartItem = (left: CartItem, right: CartItem): boolean =>
   left.id === right.id &&
   left.unitPriceMinor === right.unitPriceMinor &&
   left.quantity === right.quantity &&
   left.label === right.label &&
   left.createdAt === right.createdAt &&
-  left.updatedAt === right.updatedAt &&
   sameFlatRecord(left.priceSource, right.priceSource) &&
-  sameFlatRecord(left.priceConfidence, right.priceConfidence);
+  sameFlatRecord(
+    withoutEditTime(left.priceConfidence),
+    withoutEditTime(right.priceConfidence),
+  );
 
 export const sameTripContents = (
   left: ShoppingTrip,
