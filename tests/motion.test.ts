@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { settleMotion } from "../src/app/motion";
+import { settleMotion } from "../src/features/shopping/shopping-motion";
 
 const originalMatchMedia = window.matchMedia;
 
