@@ -112,7 +112,6 @@
   line-height: 0.95;
   letter-spacing: -0.065em;
   overflow-wrap: anywhere;
-  animation: valueSettle 180ms ease-out;
 }
 
 .heroLabel {
@@ -254,7 +253,6 @@
   font-size: 0.86rem;
   font-weight: 800;
   line-height: 1.4;
-  animation: contentSettle 160ms ease-out;
 }
 
 .feedback p {
@@ -421,7 +419,6 @@
   min-width: 0;
   padding: 14px 0;
   border-top: 1px solid var(--border);
-  animation: contentSettle 160ms ease-out;
 }
 
 .item:first-child {
@@ -573,10 +570,7 @@
 @media (prefers-reduced-motion: reduce) {
   .heroAmount,
   .feedback,
-  .item {
-    animation: none;
-  }
-
+  .item,
   .capacityFill,
   .addButton,
   .finishButton,
@@ -666,10 +660,17 @@
   }
 }
 
-@keyframes valueSettle {
-  from { opacity: 0.72; transform: translateY(3px); }
+.heroAmount,
+.feedback,
+.item {
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
 }
 
-@keyframes contentSettle {
-  from { opacity: 0.76; transform: translateY(4px); }
+@starting-style {
+  .heroAmount,
+  .feedback,
+  .item {
+    opacity: 0.76;
+    transform: translateY(3px);
+  }
 }
