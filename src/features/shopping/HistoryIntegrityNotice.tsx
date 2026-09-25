@@ -5,6 +5,7 @@ import type {
   PersistenceProblem,
   ShoppingAppController,
 } from "../../application/shopping-app-controller";
+import { isSessionOnly } from "../../application/session-only-persistence";
 import styles from "./PersistenceHealthNotice.module.css";
 
 export interface HistoryIntegrityNoticeProps {
@@ -68,9 +69,7 @@ export function HistoryIntegrityNotice({
     }
   }, [resolved]);
 
-  const sessionOnly =
-    state.persistence.status === "degraded" &&
-    state.persistence.issue.code === "session-only";
+  const sessionOnly = isSessionOnly(state.persistence);
 
   if (state.historyIntegrity.status === "healthy") {
     return resolved ? (

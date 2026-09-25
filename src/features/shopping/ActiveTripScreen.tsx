@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode, Ref } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
+import { needsSaveAttention } from "../../application/session-only-persistence";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
 import { formatEur, signedMinorUnits } from "../../domain/money";
 import type { PriceMemoryRecord } from "../../domain/price-memory";
@@ -340,9 +341,9 @@ export function ActiveTripScreen({
           <RecentItemsSection
             trip={trip}
             records={state.priceMemories}
-            persistenceDegraded={
-              state.priceMemoryPersistence.status === "degraded"
-            }
+            persistenceDegraded={needsSaveAttention(
+              state.priceMemoryPersistence,
+            )}
             onUseRemembered={onUseRemembered}
             onEnterCurrentPrice={onEnterCurrentPrice}
             locale={locale}

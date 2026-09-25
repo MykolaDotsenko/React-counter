@@ -12,6 +12,8 @@ export interface HistoryDataControlsProps {
   readonly priceMemoryCount: number;
   readonly priceMemoryDegraded: boolean;
   readonly canChangeHistory: boolean;
+  /** Nothing is saved this session, so stored records stay as they are. */
+  readonly sessionOnly?: boolean;
   readonly confirmation: HistoryDataConfirmation;
   readonly confirmationCancelRef: RefObject<HTMLButtonElement | null>;
   readonly onRequestClearHistory: () => void;
@@ -26,6 +28,7 @@ export function HistoryDataControls({
   priceMemoryCount,
   priceMemoryDegraded,
   canChangeHistory,
+  sessionOnly = false,
   confirmation,
   confirmationCancelRef,
   onRequestClearHistory,
@@ -48,7 +51,12 @@ export function HistoryDataControls({
         </p>
       </div>
 
-      {!canChangeHistory && tripCount > 0 ? (
+      {sessionOnly && (tripCount > 0 || priceMemoryCount > 0) ? (
+        <p className={styles.controlNote}>
+          This session is not saving, so stored trips and remembered prices
+          stay as they are.
+        </p>
+      ) : !canChangeHistory && tripCount > 0 ? (
         <p className={styles.controlNote}>
           Fix the local-save warning before changing trip history.
         </p>
@@ -152,7 +160,9 @@ export function HistoryDataControls({
           type="button"
           className={styles.dataAction}
           data-clear-price-memory-trigger
-          disabled={priceMemoryCount === 0 && !priceMemoryDegraded}
+          disabled={
+            sessionOnly || (priceMemoryCount === 0 && !priceMemoryDegraded)
+          }
           onClick={onRequestClearPriceMemory}
         >
           <span>

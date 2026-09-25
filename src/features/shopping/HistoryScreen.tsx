@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
+import {
+  isSessionOnly,
+  needsSaveAttention,
+} from "../../application/session-only-persistence";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
 import {
   type CompletedTrip,
@@ -245,10 +249,11 @@ export function HistoryScreen({
         <HistoryDataControls
           tripCount={state.completedTrips.length}
           priceMemoryCount={state.priceMemories.length}
-          priceMemoryDegraded={
-            state.priceMemoryPersistence.status === "degraded"
-          }
+          priceMemoryDegraded={needsSaveAttention(
+            state.priceMemoryPersistence,
+          )}
           canChangeHistory={canChangeHistory}
+          sessionOnly={isSessionOnly(state.persistence)}
           confirmation={dataConfirmation}
           confirmationCancelRef={confirmationCancelRef}
           onRequestClearHistory={() => {

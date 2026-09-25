@@ -6,6 +6,7 @@ import { bootstrapBrowserShoppingAppController } from "../src/app/composition-ro
 import { ShoppingAppShell } from "../src/app/ShoppingAppShell";
 import type { ShoppingAppController } from "../src/application/shopping-app-controller";
 import { mvpMinorUnits, type MinorUnits } from "../src/domain/money";
+import { createPriceMemoryRecord } from "../src/domain/price-memory";
 import {
   createActiveTrip,
   isoTimestamp,
@@ -23,6 +24,8 @@ import {
   encodeHistorySnapshot,
   type StorageLike,
 } from "../src/infrastructure/storage/shopping-storage";
+import { encodePriceMemorySnapshot } from "../src/infrastructure/storage/price-memory-storage";
+import { PRICE_MEMORY_STORAGE_KEY } from "../src/infrastructure/storage/price-memory-storage-schema";
 import {
   ACTIVE_TRIP_STORAGE_KEY,
   HISTORY_STORAGE_KEY,
@@ -361,6 +364,93 @@ describe("session-only mode keeps a single honest notice", () => {
 
     expect(controller.getSnapshot().historyIntegrity.status).toBe("degraded");
     expect(container.innerHTML).toBe("");
+  });
+});
+
+describe("session-only mode never asks to repair what it chose not to save", () => {
+  it("offers no price-memory repair when storage itself is unavailable", async () => {
+    const user = userEvent.setup();
+    const controller = boot(null);
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    await user.click(screen.getByText("Other ways to continue"));
+    await user.click(
+      screen.getByRole("button", { name: "Continue without saving" }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "How much can you spend today?" }),
+    ).not.toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Repair remembered prices" }),
+    ).toBeNull();
+  });
+
+  it("keeps price-memory repair and history changes out of a session-only run", async () => {
+    const user = userEvent.setup();
+    const remembered = must(
+      createPriceMemoryRecord({
+        label: "Bread",
+        unitPriceMinor: money(199),
+        observedAt: START,
+        source: { kind: "manual" },
+      }),
+    );
+    const memory = encodePriceMemorySnapshot([remembered], START);
+    const history = encodeHistorySnapshot([completedTrip("trip-kept")], START);
+
+    if (!memory.ok || !history.ok) {
+      throw new Error("Expected encodable records");
+    }
+
+    const { values, storage } = memoryStorage({
+      [ACTIVE_TRIP_STORAGE_KEY]: "{broken",
+      [HISTORY_STORAGE_KEY]: history.raw,
+      [PRICE_MEMORY_STORAGE_KEY]: memory.raw,
+    });
+    const before = new Map(values);
+    const controller = boot(storage);
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    await user.click(screen.getByText("Other ways to continue"));
+    await user.click(
+      screen.getByRole("button", { name: "Continue without saving" }),
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Repair remembered prices" }),
+    ).toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: "View trip history · 1" }),
+    );
+
+    expect(
+      screen.getByText(/This session is not saving/).textContent,
+    ).toMatch(/stay as they are/);
+    expect(
+      screen.queryByText("Fix the local-save warning before changing trip history."),
+    ).toBeNull();
+    expect(
+      screen
+        .getByRole("button", { name: /Clear remembered prices/ })
+        .hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen
+        .getByRole("button", { name: /Clear trip history/ })
+        .hasAttribute("disabled"),
+    ).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    controller.startTrip({ budgetMinor: money(2_000) });
+
+    expect(await screen.findByText("Bread")).not.toBeNull();
+    expect(screen.queryByText(/not safely saving/)).toBeNull();
+    expect(screen.queryByText(/still saved independently/)).toBeNull();
+    expect(values).toEqual(before);
   });
 });
 

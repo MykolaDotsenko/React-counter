@@ -121,6 +121,8 @@ If any step fails, the canonical record is left unchanged. A readable record is 
 
 When the active record cannot be read, or storage is unavailable, the shopper may explicitly continue without saving. The session then refuses every write, keeps an honest `session-only` degraded state and never touches stored data. Trips still finish into an in-memory summary and the next trip can start, but nothing survives a reload, which returns to recovery.
 
+Session-only is a choice, not a fault: its single notice says nothing is saved, and the product never offers to repair, reset or clear stored records it has promised not to touch (no Price Memory repair, no history deletion or clearing, no "saved independently" reassurance).
+
 ## History rewrites
 
 Every rewrite of completed history (append on completion, checkout update, deleting a trip, clearing history) re-reads the stored record first and refuses to write when it cannot be read. Completion returns the history exactly as written, and deletion is computed from that durable list, never from what the session happened to load.

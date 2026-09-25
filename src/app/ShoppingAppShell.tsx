@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { useShoppingAppState } from "../application/react/use-shopping-app-state";
+import { needsSaveAttention } from "../application/session-only-persistence";
 import type { ShoppingAppController } from "../application/shopping-app-controller";
 import type {
   PriceMemoryId,
@@ -129,9 +130,9 @@ export function ShoppingAppShell({
           onTripStarted={evidence.recordTripStarted}
           completedTripCount={state.completedTrips.length}
           rememberedPriceCount={state.priceMemories.length}
-          priceMemoryNeedsAttention={
-            state.priceMemoryPersistence.status === "degraded"
-          }
+          priceMemoryNeedsAttention={needsSaveAttention(
+            state.priceMemoryPersistence,
+          )}
           recentTrip={recentCompletedTrip}
           persistenceHealth={state.persistence}
           onOpenHistory={() => {
