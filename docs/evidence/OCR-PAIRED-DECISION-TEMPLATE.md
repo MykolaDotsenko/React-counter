@@ -30,7 +30,7 @@ It:
 - requires at least 10 human candidate decisions;
 - requires repeated-use preference and cognitive effort;
 - derives manual P90 from retained valid non-excluded fixture samples;
-- compares median/P75/P90 descriptively;
+- compares median/P75/P90 of all human candidate decisions descriptively;
 - reports OCR accuracy/failure/correction/fallback metrics;
 - never chooses PROMOTE / REMEDIATE / DEFER.
 
@@ -70,7 +70,7 @@ Before comparing:
 - [ ] manual timing uses one documented input method;
 - [ ] manual physical-context checklist is complete;
 - [ ] OCR export came from the intended concrete engine baseline;
-- [ ] OCR timing covers capture → OCR → parse → human decision;
+- [ ] OCR decision timing covers capture → OCR → parse → human decision for confirmed and rejected candidate decisions;
 - [ ] OCR worker/model preparation time is documented separately;
 - [ ] source JSON was not edited;
 - [ ] ground-truth correctness notes are preserved separately from privacy-safe app evidence.
@@ -100,7 +100,7 @@ Retain at minimum:
 - 10+ human candidate decisions (top-1 / rank 2–3 / reject);
 - top-1 correct-candidate rate;
 - top-3 correct-candidate rate;
-- median/P75/P90 capture → human-decision time;
+- median/P75/P90 capture → human-decision time across confirmed + rejected decisions;
 - no-candidate / timeout / OCR / parser / capture failures;
 - correction/rejection rate;
 - manual-fallback rate;
