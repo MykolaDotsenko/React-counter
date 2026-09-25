@@ -298,7 +298,7 @@ test("reduced motion removes decorative shopping transitions without changing th
 
   const updatedRemaining = page
     .getByLabel("Current spending status")
-    .getByText("€45.21");
+    .getByText("€45.21", { exact: true });
 
   await expect(updatedRemaining).toBeVisible();
   expect(
