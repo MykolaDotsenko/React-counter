@@ -423,10 +423,6 @@
   font-size: 1.25rem;
 }
 
-.key:active {
-  transform: translateY(1px);
-}
-
 .key:disabled {
   cursor: not-allowed;
   opacity: 0.42;
@@ -466,14 +462,10 @@
   box-shadow: var(--shopping-primary-action-shadow);
 }
 
-.addButton,
-.addAnywayButton {
-  transition: transform 120ms ease;
-}
-
+.key:active,
 .addButton:active,
 .addAnywayButton:active {
-  transform: scale(0.985);
+  transform: translateY(1px) scale(0.99);
 }
 
 .addButton:disabled {
@@ -665,9 +657,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .key,
-  .addButton,
-  .addAnywayButton {
+  .key {
     transition: none;
   }
 }
