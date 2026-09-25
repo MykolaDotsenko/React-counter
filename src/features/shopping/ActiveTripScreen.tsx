@@ -192,7 +192,10 @@ export function ActiveTripScreen({
                 : "within"
           }
         >
-          <p className={styles.heroAmount}>
+          <p
+            key={`${heroLabel}:${heroAmount}`}
+            className={styles.heroAmount}
+          >
             {formatSignedAmount(heroAmount, locale)}
           </p>
           <p className={styles.heroLabel}>{heroLabel}</p>
