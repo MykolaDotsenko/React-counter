@@ -5,15 +5,8 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  background: #f5f3ee;
-  color: #202520;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    background: #171a18;
-    color: #f3f5f1;
-  }
+  background: var(--shopping-page, #f5f3ee);
+  color: var(--shopping-text, #202520);
 }
 
 * {
@@ -41,7 +34,7 @@ select {
 }
 
 ::selection {
-  background: rgb(49 95 79 / 0.22);
+  background: color-mix(in srgb, var(--shopping-accent, #315f4f) 22%, transparent);
   color: inherit;
 }
 
