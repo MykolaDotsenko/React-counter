@@ -148,7 +148,6 @@
   border: 1px solid var(--shopping-border);
   background: var(--shopping-raised);
   color: var(--shopping-text);
-  box-shadow: var(--shopping-control-shadow);
 }
 
 .dangerButton {
