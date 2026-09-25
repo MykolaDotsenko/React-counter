@@ -358,3 +358,28 @@ The public app, the moving `/qa/` and `/beta/` routes and every immutable `/stud
 ### Revisit when
 
 The evidence protocol needs a participant's existing public-app history inside the study; that would require an explicit, consented import rather than shared keys.
+
+## D-054 — Barcode names are remembered in their own advisory record
+
+Date: 2026-09-25
+
+Status: accepted
+
+### Decision
+
+The name a shopper gives a scanned product is stored in a new `budget-cart:barcode-links` v1 record (GTIN-14 → name), not in the active-trip, history or Price Memory records.
+
+### Rationale
+
+Immutable study copies on the same origin read the existing unscoped v1 records with strict schemas. Adding a barcode field to cart items or Price Memory would make those copies reject the shopper's data. A separate key is invisible to them.
+
+### Consequence
+
+- barcode links are advisory convenience state, like Price Memory: a failed or unreadable record degrades honestly and never affects the cart;
+- an unreadable record is never overwritten; "Clear remembered prices" clears barcode names too and is the explicit reset;
+- links are bounded to the 500 most recent products;
+- remembered prices stay keyed by product name, so a scan shows the price last confirmed under the linked name.
+
+### Revisit when
+
+A real schema migration ships and can carry barcode identity on cart items.

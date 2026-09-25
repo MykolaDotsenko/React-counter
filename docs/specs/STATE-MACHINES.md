@@ -4,7 +4,7 @@
 
 **IMPLEMENTED current behavioural contract.**
 
-This file defines current application/persistence/interaction transitions. Planned scanner/OCR/PWA capability states are kept out of the current contract until they ship.
+This file defines current application/persistence/interaction transitions. Planned OCR capability states are kept out of the current contract until they ship.
 
 ## Principle
 
@@ -329,13 +329,37 @@ Implementation should reject/prevent:
 - remembered/candidate price silently represented as confirmed current price;
 - completed history cleared as a side effect of Price Memory deletion.
 
+## Barcode scan
+
+The scan overlay is ephemeral UI state, keyed to its trip like the other trip overlays.
+
+```text
+STARTING ── camera + detector ready ──→ SCANNING
+STARTING ── start fails ─────────────→ FAILED(reason)
+SCANNING ── same code read twice in 1.5 s → FOUND   (camera stops)
+SCANNING ── 5 detector errors in a row ──→ FAILED(engine-failed)
+SCANNING / STARTING ── page hidden ──────→ PAUSED   (camera stops)
+PAUSED ── Resume ──→ STARTING
+FAILED ── Try again (when it can help) ──→ STARTING
+any ── Type barcode ──→ TYPING ── valid digits ──→ FOUND
+FOUND ── Scan another ──→ STARTING
+any ── Cancel / Escape ──→ overlay closed, focus back on "Scan barcode"
+```
+
+FOUND by product code:
+
+- known trade item → Enter current price (price entry with the name and barcode) or Use the remembered price again;
+- unknown trade item → optional name, optional tap-only online lookup, then price entry with the barcode;
+- store code → price entry without a barcode;
+- coupon → scan another or price entry without a barcode.
+
+Online lookup: IDLE → LOADING → found | not-found | failed(offline, timeout, unavailable, invalid-response). A suggestion only fills the editable name field. Cancelling the overlay aborts a pending lookup.
+
 ## Planned transitions
 
 Not current behaviour:
 
 - reopen/continue the same completed trip;
-- scanner lifecycle;
-- barcode provider lookup lifecycle;
 - shelf-OCR candidate review;
 - PWA update/install lifecycle;
 - cloud/multi-device conflict resolution.

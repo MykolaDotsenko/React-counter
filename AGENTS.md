@@ -65,11 +65,12 @@ Implemented:
 - independent local-data controls;
 - timing QA and retention-beta evidence tooling;
 - installable offline PWA shell with prompt-based updates;
+- optional barcode identification (native detector, lazy self-hosted ZXing WASM fallback, local barcode names, tap-only online name lookup) behind build switches;
 - Chromium / Firefox / WebKit browser and accessibility coverage.
 
 Gated / not implemented:
 
-- production barcode identification;
+- physical evidence for barcode scanning (issue #73, post-release);
 - production shelf-label OCR;
 - representative human one-hand/timing/bright-store validation;
 - real-shopper second-/third-trip retention validation.

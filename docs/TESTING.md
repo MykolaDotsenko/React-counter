@@ -362,9 +362,22 @@ Tests must prove:
 - local benchmark download uses a non-identifying timestamp filename and contains no raw barcode value;
 - barcode export schema carries a validated `buildRevision`, and guarded-browser E2E verifies it matches the exact tested Git SHA;
 - export/clock failure remains inside the evidence UI instead of crashing the benchmark;
-- production barcode promotion still requires representative mobile evidence plus a paired quantitative manual baseline.
+- production barcode was promoted ahead of this evidence (D-053); representative mobile evidence plus a paired quantitative manual baseline now validates it after release.
 
-The current benchmark intentionally tests native `BarcodeDetector` only. Unsupported target devices are evidence, not a reason to silently add a fallback dependency.
+The benchmark intentionally tests native `BarcodeDetector` only; the production scanner's WASM fallback is not part of the benchmark.
+
+### Production barcode scanner
+
+Tests must prove:
+
+- EAN-13/EAN-8/UPC-A/UPC-E parsing, UPC-E expansion, check-digit rejection of every single-digit error (property test), store codes, coupons and display round-trips (`tests/product-code.test.ts`);
+- barcode links: normalisation, newest-wins with clock rollback, the 500-link bound, versioned storage, damaged/newer/conflicting records reported rather than guessed (`tests/barcode-links.test.ts`);
+- the scan stabiliser needs two agreeing reads in its window and ignores misreads;
+- the controller links a barcode only after a named item is added, recalls the name and the last remembered price, never writes over an unreadable record, clears links with remembered prices and keeps them in memory only in session-only mode (`tests/shopping-app-barcode.test.ts`);
+- the camera adapter picks the native detector only when it reads every retail format, falls back to the lazy engine otherwise, maps camera errors, retries without constraints, releases the camera on every failure and exposes the torch only when present (`tests/barcode-scanner-adapter.test.ts`);
+- the Open Food Facts adapter requests only the shown fields, omits credentials and referrer, treats not-found as normal, reports failures without guessing, times out, respects cancellation and never runs while offline or before a tap (`tests/open-food-facts.test.ts`);
+- the scan surface handles every result and failure state, focus, Escape, the light toggle and background pause (`tests/BarcodeScanSurface.test.tsx`), and the shell flow names a product once and recognises it on the next scan (`tests/BarcodeScanFlow.test.tsx`);
+- in Chromium, a fake camera streaming a generated EAN-13 decodes through the self-hosted WASM engine with no request leaving the origin, and the result screen passes axe (`e2e/barcode-scanner.spec.js`). The fake-camera test runs in Chromium only; Firefox and WebKit cover the rest of the product flow.
 
 ### Paired barcode/manual analyzer
 
@@ -481,22 +494,25 @@ Tests must prove:
 
 ### Public bundle budget
 
-The production build has separate total and initial-load budgets. The baseline measured on 2026-09-25, after storage validation moved to the tree-shakeable `zod/mini` API, is approximately:
+The production build has separate total, initial-load and on-demand barcode-engine budgets. The baseline measured on 2026-09-25 with barcode scanning shipped is approximately:
 
-- initial application JavaScript: 369,739 raw bytes / 106,694 gzip bytes;
-- total public JavaScript: 375,392 raw bytes / 108,893 gzip bytes;
-- non-initial Workbox JavaScript: 5,653 raw bytes;
-- initial/total CSS: 68,081 raw bytes / 10,986 gzip bytes.
+- initial application JavaScript: 388,001 raw bytes / 111,979 gzip bytes;
+- total public JavaScript (without the barcode engine): 407,660 raw bytes / 119,018 gzip bytes, including the lazy scan surface, the lazy Open Food Facts adapter and Workbox;
+- barcode engine JavaScript (`zxing-fallback-detector-*`): 43,515 raw bytes / 14,943 gzip bytes;
+- barcode engine WASM: 1,093,289 bytes;
+- initial CSS: 68,081 raw bytes / 10,986 gzip bytes; total CSS with the lazy scan surface: 71,479 raw / 12,247 gzip bytes.
 
-The JavaScript budgets were lowered with that change so the ~55 KB it reclaimed cannot silently return, while keeping roughly 25 KB raw / 8 KB gzip of headroom for justified work. CI currently enforces:
+CI currently enforces:
 
-- total public JavaScript: <= 400,000 raw / 118,000 gzip bytes;
-- initial JavaScript referenced by the public HTML: <= 395,000 raw / 115,000 gzip bytes;
+- total public JavaScript without the barcode engine: <= 420,000 raw / 124,000 gzip bytes;
+- initial JavaScript referenced by the public HTML: <= 395,000 raw / 115,000 gzip bytes, and it must not contain the barcode engine;
 - any single JavaScript chunk: <= 395,000 raw bytes;
-- total public CSS: <= 80,000 raw / 12,000 gzip bytes;
+- exactly one barcode engine chunk: <= 60,000 raw / 20,000 gzip bytes, outside the initial bundle;
+- exactly one barcode engine WASM file: <= 1,200,000 bytes, whose SHA-256 must equal the bundled `zxing-wasm` reader build;
+- total public CSS: <= 80,000 raw / 13,000 gzip bytes;
 - initial CSS referenced by the public HTML: <= 70,000 raw / 11,000 gzip bytes.
 
-The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a future evidence-selected camera capability can be code-split without silently joining the startup path. Increasing the total budget for a justified lazy capability must be an explicit reviewed contract change; the initial-load budget should remain stable unless separate product/performance evidence justifies changing it.
+The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a camera capability can be code-split without silently joining the startup path. The total budgets were raised explicitly for the lazy barcode surface (D-053); the initial-load budgets did not change.
 
 Protect:
 
