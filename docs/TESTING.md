@@ -468,7 +468,8 @@ Tests must prove:
 - manual evidence requires its documented input method, physical context and both 10-sample reference fixtures;
 - OCR evidence requires a concrete engine/data boundary, at least 10 timed attempts and at least 10 human candidate decisions;
 - repeated-use preference and cognitive effort are required before structural readiness;
-- timing comparisons use confirmed OCR capture → human-decision durations versus both manual interaction reference fixtures;
+- paired timing comparisons use all OCR human-decision durations (top-1 confirm, rank 2–3 confirm and reject) versus both manual interaction reference fixtures;
+- confirmed-only OCR median/P75/P90 remain available as diagnostic success-latency metrics but are not the paired interaction comparator;
 - aggregate output is disabled on `local-dev` analyzer builds;
 - aggregate output contains no raw manual/OCR samples, images, raw OCR text, shopping prices, device labels or source filenames;
 - browser E2E validates a full same-build pair through aggregate download on the exact stamped release artifact;
