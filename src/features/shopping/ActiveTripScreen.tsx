@@ -17,6 +17,7 @@ import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import { RecentItemsSection } from "./RecentItemsSection";
 import styles from "./ActiveTripScreen.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface ActiveTripScreenProps {
   readonly controller: ShoppingAppController;
@@ -109,7 +110,7 @@ export function ActiveTripScreen({
   onUseRemembered,
   onEnterCurrentPrice,
   utilityControl,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
   const trip = state.activeTrip;

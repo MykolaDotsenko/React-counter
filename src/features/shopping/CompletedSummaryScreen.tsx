@@ -15,6 +15,7 @@ import {
 } from "../../domain/shopping-trip";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./CompletedSummaryScreen.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface CompletedSummaryScreenProps {
   readonly controller: ShoppingAppController;
@@ -77,7 +78,7 @@ export function CompletedSummaryScreen({
   onDone,
   onShopAgain,
   onViewHistory,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
 }: CompletedSummaryScreenProps) {
   const state = useShoppingAppState(controller);
   const [checkoutRaw, setCheckoutRaw] = useState(() =>

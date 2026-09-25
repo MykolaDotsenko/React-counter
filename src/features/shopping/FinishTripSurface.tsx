@@ -7,6 +7,7 @@ import {
   type ActiveTrip,
 } from "../../domain/shopping-trip";
 import styles from "./FinishTripSurface.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export type FinishTripFailure =
   | "not-saved"
@@ -41,7 +42,7 @@ export function FinishTripSurface({
   trip,
   onCancel,
   onConfirm,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
   historyNotice,
 }: FinishTripSurfaceProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);

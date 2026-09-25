@@ -13,6 +13,7 @@ import {
   type IsoTimestamp,
 } from "../../domain/shopping-trip";
 import styles from "./RecentItemsSection.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface RecentItemsSectionProps {
   readonly trip: ActiveTrip;
@@ -75,7 +76,7 @@ export function RecentItemsSection({
   now,
   onUseRemembered,
   onEnterCurrentPrice,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
   limit = 4,
   persistenceDegraded = false,
 }: RecentItemsSectionProps) {

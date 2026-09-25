@@ -14,6 +14,7 @@ import { HistoryTripCard } from "./HistoryTripCard";
 import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./HistoryScreen.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface HistoryScreenProps {
   readonly controller: ShoppingAppController;
@@ -32,7 +33,7 @@ export function HistoryScreen({
   controller,
   onBack,
   onTripStarted,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
 }: HistoryScreenProps) {
   const state = useShoppingAppState(controller);
   const ordered = [...state.completedTrips].sort(

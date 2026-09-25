@@ -22,6 +22,7 @@ import type { CompletedTrip } from "../../domain/shopping-trip";
 import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./StartTripScreen.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 interface QuickBudget {
   readonly label: string;
@@ -139,7 +140,7 @@ export function StartTripScreen({
   recentTrip = null,
   persistenceHealth,
   onOpenHistory,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
   utilityControl,
 }: StartTripScreenProps) {
   const customRegionId = useId();

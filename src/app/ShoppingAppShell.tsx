@@ -33,6 +33,7 @@ import { StartTripScreen } from "../features/shopping/StartTripScreen";
 import { useShoppingEvidence } from "#shopping-evidence";
 import { addedFeedback, remainingFeedback } from "../features/shopping/shopping-feedback";
 import { AppearanceSwitcher } from "./AppearanceSwitcher";
+import { SHOPPING_LOCALE } from "../features/shopping/shopping-locale";
 import { useShoppingShellFocus } from "./use-shopping-shell-focus";
 import styles from "./ShoppingAppShell.module.css";
 
@@ -80,6 +81,22 @@ export function ShoppingAppShell({
   });
   const qaPanel = evidence.panel;
 
+  const historyScreen = (
+    <>
+      <HistoryScreen
+        controller={controller}
+        onTripStarted={() => {
+          evidence.recordTripStarted("repeat");
+        }}
+        onBack={() => {
+          setOverlay({ kind: "none" });
+        }}
+        locale={SHOPPING_LOCALE}
+      />
+      {qaPanel}
+    </>
+  );
+
   if (state.lifecycle === "booting") {
     return (
       <>
@@ -102,21 +119,7 @@ export function ShoppingAppShell({
 
   if (state.lifecycle === "idle") {
     if (overlay.kind === "history") {
-      return (
-        <>
-          <HistoryScreen
-            controller={controller}
-            onTripStarted={() => {
-              evidence.recordTripStarted("repeat");
-            }}
-            onBack={() => {
-              setOverlay({ kind: "none" });
-            }}
-            locale="en-FI"
-          />
-          {qaPanel}
-        </>
-      );
+      return historyScreen;
     }
 
     return (
@@ -144,21 +147,7 @@ export function ShoppingAppShell({
 
   if (state.lifecycle === "completed-summary") {
     if (overlay.kind === "history") {
-      return (
-        <>
-          <HistoryScreen
-            controller={controller}
-            onTripStarted={() => {
-              evidence.recordTripStarted("repeat");
-            }}
-            onBack={() => {
-              setOverlay({ kind: "none" });
-            }}
-            locale="en-FI"
-          />
-          {qaPanel}
-        </>
-      );
+      return historyScreen;
     }
 
     if (state.completedSummary !== null) {
@@ -167,7 +156,7 @@ export function ShoppingAppShell({
           <CompletedSummaryScreen
             controller={controller}
             trip={state.completedSummary}
-            locale="en-FI"
+            locale={SHOPPING_LOCALE}
             onDone={() => {
               setOverlay({ kind: "none" });
             }}
@@ -196,7 +185,7 @@ export function ShoppingAppShell({
           {...(overlay.initialLabel === undefined
             ? {}
             : { initialLabel: overlay.initialLabel })}
-          locale="en-FI"
+          locale={SHOPPING_LOCALE}
           onCancel={() => {
             evidence.abandonManualEntry();
 
@@ -224,7 +213,7 @@ export function ShoppingAppShell({
             }
 
             setLastAddedMessage(
-              addedFeedback(result.state.activeTrip, addedItem, "en-FI"),
+              addedFeedback(result.state.activeTrip, addedItem, SHOPPING_LOCALE),
             );
 
             evidence.commitManualEntry(
@@ -253,7 +242,7 @@ export function ShoppingAppShell({
       <>
         <BudgetSettingsSurface
           trip={state.activeTrip}
-          locale="en-FI"
+          locale={SHOPPING_LOCALE}
           onCancel={() => {
             setOverlay({ kind: "none" });
             returnFocusToAdjustBudget();
@@ -269,7 +258,7 @@ export function ShoppingAppShell({
               setLastAddedMessage(
                 `Budget updated. ${remainingFeedback(
                   result.state.activeTrip,
-                  "en-FI",
+                  SHOPPING_LOCALE,
                 )}`,
               );
             }
@@ -292,7 +281,7 @@ export function ShoppingAppShell({
       <>
         <FinishTripSurface
           trip={state.activeTrip}
-          locale="en-FI"
+          locale={SHOPPING_LOCALE}
           onCancel={() => {
             setOverlay({ kind: "none" });
             returnFocusToFinishTrip();
@@ -342,7 +331,7 @@ export function ShoppingAppShell({
           <ItemEditSurface
             trip={state.activeTrip}
             item={item}
-            locale="en-FI"
+            locale={SHOPPING_LOCALE}
             onCancel={() => {
               const itemId = item.id;
               setOverlay({ kind: "none" });
@@ -362,7 +351,7 @@ export function ShoppingAppShell({
               setLastAddedMessage(
                 `Item removed. ${remainingFeedback(
                   result.state.activeTrip,
-                  "en-FI",
+                  SHOPPING_LOCALE,
                 )}`,
               );
               setOverlay({ kind: "none" });
@@ -390,7 +379,7 @@ export function ShoppingAppShell({
               setLastAddedMessage(
                 `Item corrected. ${remainingFeedback(
                   result.state.activeTrip,
-                  "en-FI",
+                  SHOPPING_LOCALE,
                 )}`,
               );
               setOverlay({ kind: "none" });
@@ -426,7 +415,7 @@ export function ShoppingAppShell({
             setLastAddedMessage(
               `Last change undone. ${remainingFeedback(
                 result.state.activeTrip,
-                "en-FI",
+                SHOPPING_LOCALE,
               )}`,
             );
             returnFocusToAddPrice();
@@ -473,7 +462,7 @@ export function ShoppingAppShell({
           setLastAddedMessage(
             `${record.label} added from a remembered price. ${remainingFeedback(
               result.state.activeTrip,
-              "en-FI",
+              SHOPPING_LOCALE,
             )}`,
           );
           evidence.recordRememberedItemUsed(
@@ -504,7 +493,7 @@ export function ShoppingAppShell({
             setLastAddedMessage(
               `Item removed. ${remainingFeedback(
                 result.state.activeTrip,
-                "en-FI",
+                SHOPPING_LOCALE,
               )}`,
             );
             returnFocusToAddPrice();

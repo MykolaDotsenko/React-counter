@@ -26,6 +26,7 @@ import {
   increaseQuantity,
 } from "./quantity-draft";
 import styles from "./ItemEditSurface.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface ItemEditIntent {
   readonly unitPriceMinor: MinorUnits;
@@ -98,7 +99,7 @@ export function ItemEditSurface({
   onCancel,
   onSave,
   onRemove,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
 }: ItemEditSurfaceProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<PriceEntryDraft>(() => ({
