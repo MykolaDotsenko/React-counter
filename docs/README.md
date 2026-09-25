@@ -128,6 +128,7 @@ Reference adds rationale or future planning; it does not redefine current implem
 Evidence documents define how claims become validated:
 
 - [evidence/SPRINT-B-QUALITY-GATE.md](./evidence/SPRINT-B-QUALITY-GATE.md)
+- [evidence/IMMUTABLE-STUDY-DEPLOYMENTS.md](./evidence/IMMUTABLE-STUDY-DEPLOYMENTS.md) — immutable versioned Pages surfaces for real-world studies
 - [evidence/RETENTION-BETA.md](./evidence/RETENTION-BETA.md)
 - [evidence/RETENTION-BETA-PLAYBOOK.md](./evidence/RETENTION-BETA-PLAYBOOK.md)
 - [evidence/RETENTION-STUDY-LOG-TEMPLATE.md](./evidence/RETENTION-STUDY-LOG-TEMPLATE.md)
