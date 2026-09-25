@@ -14,6 +14,12 @@ Use:
 
 > `/shopping-budget-companion/barcode-benchmark/`
 
+This is the moving validation route. Physical paired evidence must use the barcode benchmark, timing QA and paired analyzer from one immutable study baseline, for example:
+
+> `/shopping-budget-companion/study/<baseline>/barcode-benchmark/`
+
+See [Immutable Study Deployments](./IMMUTABLE-STUDY-DEPLOYMENTS.md).
+
 Build flag:
 
 > `VITE_SHOPPING_BARCODE_BENCHMARK=1`
