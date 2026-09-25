@@ -169,6 +169,54 @@ describe("OCR paired analysis", () => {
     expect(summary.versusHighFixture.medianDeltaMs).toBeLessThan(0);
   });
 
+  it("includes rejected OCR decisions in paired tail latency", () => {
+    let session = createShelfLabelOcrSession(
+      ocrEnvironment,
+      "2026-09-24T10:20:00.000Z",
+    );
+    session = updateShelfLabelOcrDeviceLabel(
+      session,
+      "Pixel 8 · Chrome",
+    );
+    session = updateShelfLabelOcrSubjective(session, "ocr", 2);
+
+    for (let i = 0; i < 10; i += 1) {
+      const rejected = i >= 8;
+      const durationMs = rejected ? 9_000 : 1_500;
+      const startedAt = Date.parse("2026-09-24T10:20:01.000Z") + i * 12_000;
+
+      session = appendShelfLabelOcrSample(session, {
+        id: `ocr-tail-${i}`,
+        startedAt: new Date(startedAt).toISOString(),
+        completedAt: new Date(startedAt + durationMs).toISOString(),
+        durationMs,
+        outcome: rejected ? "rejected" : "top1-confirmed",
+        candidateCount: 2,
+        selectedRank: rejected ? null : 1,
+        ocrConfidence: 0.9,
+      });
+    }
+
+    const ocr = {
+      ...buildShelfLabelOcrExport(
+        session,
+        "2026-09-24T10:23:00.000Z",
+      ),
+      buildRevision: SHA,
+    };
+
+    const summary = analyzeOcrPairedEvidence(
+      completeManualExport(),
+      ocr,
+    );
+
+    expect(summary.readiness).toBe("ready");
+    expect(summary.ocr?.p90ConfirmedMs).toBe(1_500);
+    expect(summary.ocr?.p90DecisionMs).toBe(9_000);
+    expect(summary.versusLowFixture.p90DeltaMs).toBeGreaterThan(0);
+    expect(summary.versusHighFixture.p90DeltaMs).toBeGreaterThan(0);
+  });
+
   it("rejects mixed build revisions as incompatible", () => {
     const ocr = {
       ...completeOcrExport(),
