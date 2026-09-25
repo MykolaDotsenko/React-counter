@@ -173,6 +173,8 @@ Retain:
 
 Compare against same-device manual price entry.
 
+After collecting the two unchanged JSON exports, validate and compare them with the local [OCR paired decision template](./OCR-PAIRED-DECISION-TEMPLATE.md) and guarded `/ocr-paired-analyzer/` route. The analyzer is descriptive only; it never makes the PROMOTE / REMEDIATE / DEFER decision.
+
 ## Decision
 
 The field experiment ends with one explicit human decision:

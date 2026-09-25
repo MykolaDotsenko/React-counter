@@ -137,6 +137,7 @@ Evidence documents define how claims become validated:
 - [evidence/VISUAL-CLIP-EXPERIMENT.md](./evidence/VISUAL-CLIP-EXPERIMENT.md)
 - [evidence/SHELF-LABEL-OCR-BENCHMARK.md](./evidence/SHELF-LABEL-OCR-BENCHMARK.md)
 - [evidence/TESSERACT-OCR-EXPERIMENT.md](./evidence/TESSERACT-OCR-EXPERIMENT.md)
+- [evidence/OCR-PAIRED-DECISION-TEMPLATE.md](./evidence/OCR-PAIRED-DECISION-TEMPLATE.md)
 - [evidence/PHASE-4-DESIGN-VALIDATION.md](./evidence/PHASE-4-DESIGN-VALIDATION.md)
 - [evidence/BRAND-IMPLEMENTATION-AUDIT.md](./evidence/BRAND-IMPLEMENTATION-AUDIT.md)
 

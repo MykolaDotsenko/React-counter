@@ -98,7 +98,7 @@ jobs:
 
       - name: Build public release artifact
         run: |
-          rm -rf dist dist-qa dist-beta dist-cohort dist-barcode dist-visual dist-ocr dist-ocr-tesseract dist-barcode-paired site
+          rm -rf dist dist-qa dist-beta dist-cohort dist-barcode dist-visual dist-ocr dist-ocr-tesseract dist-barcode-paired dist-ocr-paired site
           npm run build -- --base=/shopping-budget-companion/
           npm run build:check
 
@@ -142,6 +142,14 @@ jobs:
           npm run build -- --base=/shopping-budget-companion/barcode-paired-analyzer/ --outDir=dist-barcode-paired
           npm run barcode-paired:prepare-index
 
+      - name: Build local OCR paired analyzer
+        env:
+          VITE_SHOPPING_OCR_PAIRED_ANALYZER: "1"
+          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
+        run: |
+          npm run build -- --base=/shopping-budget-companion/ocr-paired-analyzer/ --outDir=dist-ocr-paired
+          npm run ocr-paired:prepare-index
+
       - name: Build experimental visual product benchmark
         env:
           VITE_SHOPPING_VISUAL_BENCHMARK: "1"
@@ -168,13 +176,14 @@ jobs:
 
       - name: Stage immutable site artifact
         run: |
-          mkdir -p site/qa site/beta site/cohort site/barcode-benchmark site/barcode-paired-analyzer site/visual-recognition-benchmark site/shelf-label-ocr-benchmark site/shelf-label-ocr-tesseract-benchmark
+          mkdir -p site/qa site/beta site/cohort site/barcode-benchmark site/barcode-paired-analyzer site/ocr-paired-analyzer site/visual-recognition-benchmark site/shelf-label-ocr-benchmark site/shelf-label-ocr-tesseract-benchmark
           cp -R dist/. site/
           cp -R dist-qa/. site/qa/
           cp -R dist-beta/. site/beta/
           cp -R dist-cohort/. site/cohort/
           cp -R dist-barcode/. site/barcode-benchmark/
           cp -R dist-barcode-paired/. site/barcode-paired-analyzer/
+          cp -R dist-ocr-paired/. site/ocr-paired-analyzer/
           cp -R dist-visual/. site/visual-recognition-benchmark/
           cp -R dist-ocr/. site/shelf-label-ocr-benchmark/
           cp -R dist-ocr-tesseract/. site/shelf-label-ocr-tesseract-benchmark/
@@ -287,6 +296,12 @@ jobs:
           test -f /tmp/pages-site/barcode-paired-analyzer/index.html
           test ! -e /tmp/pages-site/barcode-paired-analyzer/manifest.webmanifest
           test ! -e /tmp/pages-site/barcode-paired-analyzer/sw.js
+          test -f /tmp/pages-site/ocr-paired-analyzer/index.html
+          test ! -e /tmp/pages-site/ocr-paired-analyzer/manifest.webmanifest
+          test ! -e /tmp/pages-site/ocr-paired-analyzer/sw.js
+          test -f /tmp/pages-site/ocr-paired-analyzer/index.html
+          test ! -e /tmp/pages-site/ocr-paired-analyzer/manifest.webmanifest
+          test ! -e /tmp/pages-site/ocr-paired-analyzer/sw.js
           test -f /tmp/pages-site/visual-recognition-benchmark/index.html
           test -f /tmp/pages-site/shelf-label-ocr-benchmark/index.html
           test ! -e /tmp/pages-site/node_modules
@@ -300,6 +315,7 @@ jobs:
           test ! -e /tmp/pages-site/dist-cohort
           test ! -e /tmp/pages-site/dist-barcode
           test ! -e /tmp/pages-site/dist-barcode-paired
+          test ! -e /tmp/pages-site/dist-ocr-paired
           test ! -e /tmp/pages-site/dist-visual
           test ! -e /tmp/pages-site/dist-ocr
           test ! -e /tmp/pages-site/dist-ocr-tesseract
@@ -342,7 +358,7 @@ jobs:
       - name: Run production browser and accessibility tests
         env:
           PLAYWRIGHT_STAGED_SITE: "1"
-        run: npm run test:e2e -- --project=${{ matrix.browser }} --grep-invert "@qa|@beta|@cohort|@barcode-benchmark|@barcode-paired|@visual-benchmark|@ocr-benchmark|@ocr-tesseract"
+        run: npm run test:e2e -- --project=${{ matrix.browser }} --grep-invert "@qa|@beta|@cohort|@barcode-benchmark|@barcode-paired|@ocr-paired|@visual-benchmark|@ocr-benchmark|@ocr-tesseract"
 
       - name: Upload browser failure evidence
         if: failure()
@@ -590,6 +606,53 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  ocr-paired-browser:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download exact release artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: pages-site
+          path: .playwright-site-root/shopping-budget-companion
+
+      - name: Expose OCR paired analyzer index at test origin
+        run: cp .playwright-site-root/shopping-budget-companion/ocr-paired-analyzer/index.html .playwright-site-root/index.html
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run OCR paired analyzer browser tests
+        env:
+          PLAYWRIGHT_STAGED_SITE: "1"
+          EVIDENCE_BUILD_REVISION: ${{ github.sha }}
+        run: npm run test:e2e -- --project=chromium --grep @ocr-paired
+
+      - name: Upload OCR paired analyzer browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-ocr-paired-${{ github.run_attempt }}
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
   visual-benchmark-browser:
     needs: quality
     runs-on: ubuntu-latest
@@ -733,7 +796,7 @@ jobs:
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [artifact-integrity, provenance, browser, qa-browser, beta-browser, cohort-browser, barcode-benchmark-browser, barcode-paired-browser, visual-benchmark-browser, ocr-benchmark-browser, ocr-tesseract-browser]
+    needs: [artifact-integrity, provenance, browser, qa-browser, beta-browser, cohort-browser, barcode-benchmark-browser, barcode-paired-browser, ocr-paired-browser, visual-benchmark-browser, ocr-benchmark-browser, ocr-tesseract-browser]
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:

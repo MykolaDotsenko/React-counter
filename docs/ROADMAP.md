@@ -31,6 +31,7 @@ The core Shopping Budget Companion engineering path is implemented:
 - guarded provider-neutral visual product recognition benchmark harness with a pinned local CLIP experimental adapter; physical evidence still pending
 - guarded provider-neutral shelf-label OCR benchmark harness with deterministic exact-money price parser
 - guarded pinned Tesseract.js 7 multilingual OCR experiment for issue #90 (not production OCR)
+- local-only OCR/manual paired evidence analyzer for issue #90
 - Chromium / Firefox / WebKit quality coverage
 
 The representative physical-phone interaction gate was accepted by explicit repository-owner/user attestation on 2026-09-24. The check was reported as responsibly completed with no blocking usability problem.
@@ -133,7 +134,10 @@ The active roadmap is intentionally narrow and local-first.
    - use pinned Tesseract.js 7.0.0 with LSTM `fin+swe+eng` as the first explicit local-only baseline;
    - keep camera image bytes local; worker/core/language assets may download/cache separately;
    - test representative shelf-label fixtures and physical-device conditions;
-   - compare ranked exact-money candidate accuracy and end-to-end decision time against manual entry;
+   - collect at least 10 timed OCR attempts and 10 human candidate decisions before treating the paired dataset as structurally ready;
+   - validate the unchanged OCR/manual JSON exports in the local OCR paired analyzer;
+   - compare ranked exact-money candidate accuracy, failures/corrections/fallback and end-to-end decision time against manual interaction references;
+   - keep PROMOTE / REMEDIATE / DEFER as a human evidence decision rather than an automated score;
    - if Tesseract is too slow/inaccurate, remediate or defer rather than weakening parser/money invariants.
 
 These gates are not replaceable by automated fixtures or green CI.
