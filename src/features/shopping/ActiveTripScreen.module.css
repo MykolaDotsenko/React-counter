@@ -320,10 +320,6 @@
   line-height: 1;
 }
 
-.addButton:hover {
-  box-shadow: var(--shopping-primary-action-shadow-hover);
-}
-
 .addButton:active {
   transform: translateY(1px);
 }
