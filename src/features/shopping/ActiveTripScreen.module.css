@@ -112,6 +112,7 @@
   line-height: 0.95;
   letter-spacing: -0.065em;
   overflow-wrap: anywhere;
+  animation: valueSettle 180ms ease-out;
 }
 
 .heroLabel {
@@ -253,6 +254,7 @@
   font-size: 0.86rem;
   font-weight: 800;
   line-height: 1.4;
+  animation: contentSettle 160ms ease-out;
 }
 
 .feedback p {
@@ -271,6 +273,11 @@
   font: inherit;
   font-weight: 850;
   cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+.undoButton:active {
+  transform: scale(0.97);
 }
 
 .undoButton:focus-visible {
@@ -321,7 +328,7 @@
 }
 
 .addButton:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.985);
 }
 
 .addButton:focus-visible {
@@ -414,6 +421,7 @@
   min-width: 0;
   padding: 14px 0;
   border-top: 1px solid var(--border);
+  animation: contentSettle 160ms ease-out;
 }
 
 .item:first-child {
@@ -563,9 +571,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .heroAmount,
+  .feedback,
+  .item {
+    animation: none;
+  }
+
   .capacityFill,
   .addButton,
-  .finishButton {
+  .finishButton,
+  .undoButton {
     transition: none;
   }
 }
@@ -649,4 +664,12 @@
     forced-color-adjust: auto;
     border: 1px solid ButtonText;
   }
+}
+
+@keyframes valueSettle {
+  from { opacity: 0.72; transform: translateY(3px); }
+}
+
+@keyframes contentSettle {
+  from { opacity: 0.76; transform: translateY(4px); }
 }
