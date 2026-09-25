@@ -134,7 +134,7 @@ export function ShoppingAppShell({
             evidence.resetQaTiming();
             setOverlay({ kind: "history" });
           }}
-          appearanceControl={<AppearanceSwitcher />}
+          utilityControl={<AppearanceSwitcher />}
         />
         {qaPanel}
       </>
