@@ -79,6 +79,8 @@ It then downloads that run's already-tested `pages-site` artifact.
 
 No application rebuild occurs during study publication.
 
+The `pages-site` artifact is currently retained for 3 days, so publish the baseline before that exact Quality run artifact expires. If it has expired, create a new successful main Quality run and use a new baseline/source pair rather than rebuilding an old study revision out of band.
+
 ## Published structure
 
 Example:
