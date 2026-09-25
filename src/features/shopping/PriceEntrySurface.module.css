@@ -654,16 +654,6 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  .screen {
-    color-scheme: dark;
-  }
-
-  .addButton {
-    box-shadow: none;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .key {
     transition: none;
