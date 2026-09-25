@@ -344,6 +344,7 @@ export function ActiveTripScreen({
             persistenceDegraded={needsSaveAttention(
               state.priceMemoryPersistence,
             )}
+            activeTripSaving={state.persistence.status === "healthy"}
             onUseRemembered={onUseRemembered}
             onEnterCurrentPrice={onEnterCurrentPrice}
             locale={locale}

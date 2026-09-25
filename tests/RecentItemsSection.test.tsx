@@ -258,6 +258,26 @@ describe("RecentItemsSection", () => {
     ).not.toBeNull();
   });
 
+  it("does not claim the cart is saved while cart saves are failing too", () => {
+    render(
+      <RecentItemsSection
+        trip={createTrip()}
+        records={[memory()]}
+        now={time(NOW)}
+        persistenceDegraded
+        activeTripSaving={false}
+        onUseRemembered={vi.fn()}
+        onEnterCurrentPrice={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    expect(
+      screen.getByText(/price-memory changes are not safely saving/i),
+    ).not.toBeNull();
+    expect(screen.queryByText(/still saved independently/i)).toBeNull();
+  });
+
   it("keeps only the newest four recent product identities", () => {
     const records = [
       memory({ label: "A", observedAt: "2026-09-17T08:00:00.000Z" }),
