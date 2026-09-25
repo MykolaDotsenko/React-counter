@@ -1,5 +1,4 @@
 .screen {
-  color-scheme: light;
   --page: var(--shopping-page);
   --panel: var(--shopping-panel);
   --soft: var(--shopping-soft);

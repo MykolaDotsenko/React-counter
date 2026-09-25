@@ -3,6 +3,7 @@ import {
   useId,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 
 import type {
@@ -125,6 +126,7 @@ export interface StartTripScreenProps {
   readonly persistenceHealth?: PersistenceHealth;
   readonly onOpenHistory?: () => void;
   readonly locale?: string;
+  readonly appearanceControl?: ReactNode;
 }
 
 export function StartTripScreen({
@@ -137,6 +139,7 @@ export function StartTripScreen({
   persistenceHealth,
   onOpenHistory,
   locale = "en-FI",
+  appearanceControl,
 }: StartTripScreenProps) {
   const customRegionId = useId();
   const reserveInputId = useId();
@@ -433,6 +436,8 @@ export function StartTripScreen({
         <p className={styles.trustNote}>
           No account. Your shopping data stays on this device.
         </p>
+
+        {appearanceControl ?? null}
       </section>
     </main>
   );

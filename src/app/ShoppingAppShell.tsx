@@ -31,8 +31,8 @@ import { RecoveryScreen } from "../features/shopping/RecoveryScreen";
 import { StartTripScreen } from "../features/shopping/StartTripScreen";
 import { useShoppingEvidence } from "#shopping-evidence";
 import { addedFeedback, remainingFeedback } from "../features/shopping/shopping-feedback";
+import { AppearanceSwitcher } from "./AppearanceSwitcher";
 import { useShoppingShellFocus } from "./use-shopping-shell-focus";
-import "./shopping-theme.css";
 import styles from "./ShoppingAppShell.module.css";
 
 export interface ShoppingAppShellProps {
@@ -134,6 +134,7 @@ export function ShoppingAppShell({
             evidence.resetQaTiming();
             setOverlay({ kind: "history" });
           }}
+          appearanceControl={<AppearanceSwitcher />}
         />
         {qaPanel}
       </>

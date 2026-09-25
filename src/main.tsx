@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "#app-entry";
 import { AppErrorBoundary } from "./app/AppErrorBoundary";
+import "./app/shopping-theme.css";
 import "./index.css";
 
 const rootElement = document.getElementById("root");
