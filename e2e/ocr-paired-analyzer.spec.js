@@ -120,7 +120,7 @@ const manualEvidence = (buildRevision) => {
 };
 
 const ocrEvidence = (buildRevision) => ({
-  schemaVersion: 1,
+  schemaVersion: 2,
   kind: "shelf-label-ocr-benchmark-evidence",
   buildRevision,
   generatedAt: "2026-09-24T10:30:00.000Z",
@@ -175,6 +175,9 @@ const ocrEvidence = (buildRevision) => ({
     ocrErrors: 0,
     parserErrors: 0,
     captureErrors: 0,
+    medianDecisionMs: 1_000,
+    p75DecisionMs: 1_000,
+    p90DecisionMs: 1_000,
     medianConfirmedMs: 1_000,
     p75ConfirmedMs: 1_000,
     p90ConfirmedMs: 1_000,
@@ -328,6 +331,9 @@ test("@ocr-paired validates full paired OCR field evidence end to end", async ({
       ocr: {
         attempts: 10,
         top1Confirmed: 10,
+        medianDecisionMs: 1_000,
+        p75DecisionMs: 1_000,
+        p90DecisionMs: 1_000,
         medianConfirmedMs: 1_000,
         p75ConfirmedMs: 1_000,
         p90ConfirmedMs: 1_000,
