@@ -553,14 +553,19 @@ describe("the shopping app never locks the shopper out", () => {
 
     expect(flow.started).toMatchObject({ ok: true, durability: "memory-only" });
     expect(flow.added).toMatchObject({ ok: true, durability: "memory-only" });
-    expect(flow.finished).toMatchObject({
-      ok: false,
-      error: { code: "completion-not-saved" },
-    });
+    expect(flow.finished).toMatchObject({ ok: true, durability: "memory-only" });
     expect(controller.getSnapshot()).toMatchObject({
-      lifecycle: "active",
+      lifecycle: "completed-summary",
       persistence: { issue: { code: "session-only" } },
+      priceMemoryPersistence: { issue: { code: "session-only" } },
     });
+
+    // The session keeps going: the summary can be left and shopping resumes.
+    expect(controller.dismissCompletedSummary().ok).toBe(true);
+    const again = controller.startTripFromCompleted(
+      controller.getSnapshot().completedTrips[0]!.id,
+    );
+    expect(again).toMatchObject({ ok: true, durability: "memory-only" });
   });
 
   it("never writes over an unreadable record after continuing without saving", () => {
@@ -632,5 +637,153 @@ describe("the shopping app never locks the shopper out", () => {
       persistence: { status: "degraded", issue: { code: "remove-failed" } },
     });
     expect(controller.startTrip({ budgetMinor: money(2_000) }).ok).toBe(true);
+  });
+});
+
+describe("independent review regressions", () => {
+  const flakyHistoryStorage = (entries: Record<string, string>) => {
+    const values = new Map(Object.entries(entries));
+    const control = { failHistoryRead: true };
+    const storage: StorageLike = {
+      getItem(key) {
+        if (key === HISTORY_STORAGE_KEY && control.failHistoryRead) {
+          throw new Error("read failed");
+        }
+
+        return values.get(key) ?? null;
+      },
+      setItem(key, value) {
+        values.set(key, value);
+      },
+      removeItem(key) {
+        values.delete(key);
+      },
+    };
+    return { values, storage, control };
+  };
+
+  it("never drops trips it has not loaded after a transient history read failure", () => {
+    const olderTrips = ["old-1", "old-2", "old-3"].map(completedTrip);
+    const { values, storage, control } = flakyHistoryStorage({
+      [HISTORY_STORAGE_KEY]: historyRaw(olderTrips),
+    });
+    const controller = boot(storage);
+
+    expect(controller.getSnapshot().completedTrips).toHaveLength(0);
+
+    control.failHistoryRead = false;
+    const flow = shopAndFinish(controller);
+
+    expect(flow.finished.ok).toBe(true);
+    expect(controller.getSnapshot().completedTrips.map((trip) => trip.id)).toEqual([
+      "old-1",
+      "old-2",
+      "old-3",
+      "trip-new-1",
+    ]);
+
+    controller.dismissCompletedSummary();
+    expect(controller.deleteCompletedTrip("trip-new-1" as never).ok).toBe(true);
+
+    const stored = restoreHistory(storage);
+    expect(stored.trips.map((trip) => trip.id)).toEqual(["old-1", "old-2", "old-3"]);
+    expect(values.has(HISTORY_STORAGE_KEY)).toBe(true);
+  });
+
+  it("refuses to delete over history that became unreadable after it was loaded", () => {
+    const storage = memoryStorage({
+      [HISTORY_STORAGE_KEY]: historyRaw([completedTrip("trip-a"), completedTrip("trip-b")]),
+    });
+    const controller = boot(storage);
+    storage.values.set(HISTORY_STORAGE_KEY, "{corrupted later");
+
+    expect(controller.deleteCompletedTrip("trip-a" as never)).toMatchObject({
+      ok: false,
+      error: { code: "history-write-unavailable" },
+    });
+    expect(storage.values.get(HISTORY_STORAGE_KEY)).toBe("{corrupted later");
+    expect(controller.getSnapshot()).toMatchObject({
+      historyIntegrity: { status: "degraded", issue: { code: "malformed-json" } },
+      completedTrips: [],
+    });
+  });
+
+  it("shows exactly the trips a set-aside keeps when history breaks mid-session", () => {
+    const storage = memoryStorage({
+      [HISTORY_STORAGE_KEY]: historyRaw([completedTrip("trip-a"), completedTrip("trip-b")]),
+    });
+    const controller = boot(storage);
+    controller.startTrip({ budgetMinor: money(1_000) });
+    storage.values.set(HISTORY_STORAGE_KEY, "{corrupted later");
+
+    expect(controller.completeTrip()).toMatchObject({
+      ok: false,
+      error: { code: "history-unreadable" },
+    });
+    expect(controller.getSnapshot().completedTrips).toHaveLength(0);
+
+    const repaired = controller.setAsideDamagedHistory();
+
+    expect(repaired.ok).toBe(true);
+    expect(controller.getSnapshot().completedTrips).toHaveLength(0);
+    expect(backups(storage)[0]?.raw).toBe("{corrupted later");
+    expect(controller.completeTrip().ok).toBe(true);
+  });
+
+  it("can always leave the summary when history breaks after finishing", () => {
+    const storage = memoryStorage({});
+    const controller = boot(storage);
+    const flow = shopAndFinish(controller);
+
+    expect(flow.finished.ok).toBe(true);
+
+    storage.values.set(HISTORY_STORAGE_KEY, "{corrupted later");
+    const checkout = controller.setActualCheckout(money(500));
+
+    expect(checkout).toMatchObject({ ok: true, durability: "memory-only" });
+    expect(controller.getSnapshot()).toMatchObject({
+      persistence: { status: "healthy" },
+      historyIntegrity: { status: "degraded", issue: { code: "malformed-json" } },
+      completedSummary: { actualCheckoutMinor: 500 },
+    });
+    expect(storage.values.get(HISTORY_STORAGE_KEY)).toBe("{corrupted later");
+    expect(controller.dismissCompletedSummary().ok).toBe(true);
+    expect(controller.setAsideDamagedHistory().ok).toBe(true);
+  });
+
+  it("reconciles a stale open copy once history can be read again", () => {
+    const { values, storage, control } = flakyHistoryStorage({
+      [ACTIVE_TRIP_STORAGE_KEY]: activeRaw(),
+      [HISTORY_STORAGE_KEY]: historyRaw([completedTrip("trip-active")]),
+    });
+    const controller = boot(storage);
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "active",
+      historyIntegrity: { status: "degraded", issue: { code: "read-failed" } },
+    });
+
+    control.failHistoryRead = false;
+    controller.retryHistoryRead();
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "idle",
+      activeTrip: null,
+      historyIntegrity: { status: "healthy" },
+      completionCleanupPending: false,
+    });
+    expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
+  });
+
+  it("keeps session-only reads from clearing the loaded history view", () => {
+    const controller = boot(null);
+    controller.continueWithoutSaving();
+    const before = controller.getSnapshot();
+
+    expect(controller.retryHistoryRead()).toMatchObject({
+      ok: true,
+      changed: false,
+    });
+    expect(controller.getSnapshot()).toBe(before);
   });
 });

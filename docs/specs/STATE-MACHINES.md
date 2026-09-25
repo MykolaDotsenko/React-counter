@@ -78,7 +78,7 @@ Allowed behaviour:
 
 - RETRY_READ → re-run bootstrap;
 - SET_ASIDE_ACTIVE (unreadable record with raw material only) → back up the exact raw record, remove it, re-run bootstrap;
-- CONTINUE_WITHOUT_SAVING → IDLE with persistence DEGRADED(`session-only`): every write is refused for the rest of the session, so unreadable stored data is never overwritten; reloading returns to RECOVERY;
+- CONTINUE_WITHOUT_SAVING → IDLE with persistence and Price Memory DEGRADED(`session-only`): every write is refused for the rest of the session, so unreadable stored data is never overwritten. Trips still finish into an in-memory summary, the summary can be dismissed and Shop again works; nothing survives a reload, which returns to RECOVERY;
 - preserve raw recovery material where the persistence contract requires it.
 
 RECOVERY never invents prices/budgets from malformed data.
@@ -132,7 +132,11 @@ While DAMAGED:
 - starting, tracking and correcting trips work;
 - readable completed trips stay visible and can seed Shop again;
 - finishing, deleting a trip and clearing history are refused, because each would overwrite the unreadable record;
-- a successful active-trip write never hides the history warning.
+- a successful active-trip write never hides the history warning;
+- the shown trips are exactly those a set-aside would keep;
+- if history becomes unreadable while a finished-trip summary is open, the summary can still be closed; repair is offered once it is.
+
+Deleting a trip or clearing history always re-reads durable history first and never writes from a stale in-memory list, so trips this session never loaded cannot be dropped. After a successful re-read, an open copy of a trip that history already holds is reconciled exactly as at startup.
 
 ## Add-price interaction
 

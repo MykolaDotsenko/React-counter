@@ -60,12 +60,15 @@ export type RestoreHistoryResult =
 export type CompletionPersistenceResult =
   | {
       readonly ok: true;
+      /** The completed history exactly as it was just written. */
+      readonly trips: readonly CompletedTrip[];
     }
   | {
       readonly ok: false;
       readonly stage: "history-read" | "history-write" | "active-clear";
       readonly issue: PersistenceIssue;
       readonly historyPersisted: boolean;
+      readonly trips?: readonly CompletedTrip[];
     };
 
 export type RestoreActiveTripResult =
@@ -96,6 +99,8 @@ export type PersistenceWriteResult =
   | {
       readonly health: "degraded";
       readonly issue: PersistenceIssue;
+      /** The stored history could not be read, so nothing was written. */
+      readonly historyUnreadable?: true;
     };
 
 export type LegacyRetirementResult =
@@ -386,10 +391,33 @@ export const completeTripPersistence = (
       stage: "active-clear",
       issue: activeClear.issue,
       historyPersisted: true,
+      trips: appended.trips,
     };
   }
 
-  return { ok: true };
+  return { ok: true, trips: appended.trips };
+};
+
+/**
+ * Replaces completed history, but never over a stored record the app cannot
+ * read: that record must be set aside explicitly first.
+ */
+export const replaceReadableHistory = (
+  storage: StorageLike | null | undefined,
+  trips: readonly CompletedTrip[],
+  savedAt: string,
+): PersistenceWriteResult => {
+  const history = restoreHistory(storage);
+
+  if (history.health === "degraded") {
+    return {
+      health: "degraded",
+      issue: history.issue,
+      historyUnreadable: true,
+    };
+  }
+
+  return writeHistory(storage, trips, savedAt);
 };
 
 export const updateCompletedTripPersistence = (
@@ -403,6 +431,7 @@ export const updateCompletedTripPersistence = (
     return {
       health: "degraded",
       issue: history.issue,
+      historyUnreadable: true,
     };
   }
 

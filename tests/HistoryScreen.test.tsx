@@ -81,7 +81,7 @@ const createController = (trips: readonly CompletedTrip[]) => {
       saveCompleted: () => ({ ok: true }),
       replaceCompletedHistory: () => ({ ok: true }),
       clearCompletedActive: () => ({ ok: true }),
-      readCompletedHistory: () => ({ ok: true, completedTrips: [] }),
+      readCompletedHistory: () => ({ ok: true, completedTrips: trips }),
       setAsideDamagedHistory: () => ({ ok: true, completedTrips: [] }),
       setAsideUnreadableActiveTrip: () => ({ ok: true }),
     },

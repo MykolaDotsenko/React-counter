@@ -324,7 +324,8 @@ Backing the raw record up before replacing it keeps D-008 (visible failure) and 
 
 - `ShoppingAppState.historyIntegrity` is separate from `persistence`;
 - completion reports a `history-read` stage and the application error `history-unreadable`;
-- session-only mode is an explicit application state, not a silent fallback;
+- session-only mode is an explicit application state, not a silent fallback; trips finish into an in-memory summary so the shopper can keep shopping;
+- every history rewrite re-reads durable history and never writes from a stale in-memory list;
 - backups are local, are not read by the product and remain until site data is cleared.
 
 ### Revisit when

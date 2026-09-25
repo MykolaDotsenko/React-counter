@@ -19,12 +19,27 @@ import {
   restoreHistory,
   setAsideDamagedHistory,
   setAsideUnreadableActiveTrip,
+  replaceReadableHistory,
   updateCompletedTripPersistence,
   writeActiveTrip,
-  writeHistory,
   type PersistenceIssue,
+  type PersistenceWriteResult,
   type StorageLike,
 } from "./shopping-storage";
+
+const toSaveResult = (
+  result: PersistenceWriteResult,
+): ActiveTripSaveResult => {
+  if (result.health === "healthy") {
+    return { ok: true };
+  }
+
+  return {
+    ok: false,
+    issue: toPersistenceProblem(result.issue),
+    ...(result.historyUnreadable === true ? { stage: "history-read" } : {}),
+  };
+};
 
 const toPersistenceProblem = (
   issue: PersistenceIssue,
@@ -135,7 +150,7 @@ export const createActiveTripPersistencePort = (
     const result = completeTripPersistence(storage, trip, savedAt);
 
     if (result.ok) {
-      return { ok: true };
+      return { ok: true, completedTrips: result.trips };
     }
 
     return {
@@ -143,6 +158,7 @@ export const createActiveTripPersistencePort = (
       stage: result.stage,
       issue: toPersistenceProblem(result.issue),
       historyPersisted: result.historyPersisted,
+      ...(result.trips === undefined ? {} : { completedTrips: result.trips }),
     };
   },
 
@@ -156,30 +172,14 @@ export const createActiveTripPersistencePort = (
       savedAt,
     );
 
-    if (result.health === "healthy") {
-      return { ok: true };
-    }
-
-    return {
-      ok: false,
-      issue: toPersistenceProblem(result.issue),
-    };
+    return toSaveResult(result);
   },
 
   replaceCompletedHistory(
     trips: readonly CompletedTrip[],
     savedAt: IsoTimestamp,
   ): ActiveTripSaveResult {
-    const result = writeHistory(storage, trips, savedAt);
-
-    if (result.health === "healthy") {
-      return { ok: true };
-    }
-
-    return {
-      ok: false,
-      issue: toPersistenceProblem(result.issue),
-    };
+    return toSaveResult(replaceReadableHistory(storage, trips, savedAt));
   },
 
   clearCompletedActive(): ActiveTripSaveResult {

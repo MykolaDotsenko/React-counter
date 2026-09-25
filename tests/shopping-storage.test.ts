@@ -677,7 +677,7 @@ describe("completed trip history persistence", () => {
 
     expect(
       completeTripPersistence(storage, completed, COMPLETE_TIME),
-    ).toEqual({ ok: true });
+    ).toEqual({ ok: true, trips: [completed] });
 
     expect(storage.events).toContain(`set:${HISTORY_STORAGE_KEY}`);
     expect(storage.events).toContain(`remove:${ACTIVE_TRIP_STORAGE_KEY}`);
@@ -753,6 +753,7 @@ describe("completed trip history persistence", () => {
         storageKey: ACTIVE_TRIP_STORAGE_KEY,
       },
       historyPersisted: true,
+      trips: [completed],
     });
     expect(storage.values.get(ACTIVE_TRIP_STORAGE_KEY)).toBe(active.raw);
     expect(storage.values.has(HISTORY_STORAGE_KEY)).toBe(true);

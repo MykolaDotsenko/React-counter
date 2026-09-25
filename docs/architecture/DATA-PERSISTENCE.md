@@ -119,7 +119,11 @@ If any step fails, the canonical record is left unchanged. A readable record is 
 
 ## Continuing without saving
 
-When the active record cannot be read, or storage is unavailable, the shopper may explicitly continue without saving. The session then refuses every write, keeps an honest `session-only` degraded state and never touches stored data; reloading returns to recovery.
+When the active record cannot be read, or storage is unavailable, the shopper may explicitly continue without saving. The session then refuses every write, keeps an honest `session-only` degraded state and never touches stored data. Trips still finish into an in-memory summary and the next trip can start, but nothing survives a reload, which returns to recovery.
+
+## History rewrites
+
+Every rewrite of completed history (append on completion, checkout update, deleting a trip, clearing history) re-reads the stored record first and refuses to write when it cannot be read. Completion returns the history exactly as written, and deletion is computed from that durable list, never from what the session happened to load.
 
 ## Completion transaction
 

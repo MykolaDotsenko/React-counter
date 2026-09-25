@@ -9,6 +9,7 @@ import {
   reduceTrip,
 } from "../domain/shopping-trip";
 import type { PriceMemoryPersistencePort } from "./price-memory-port";
+import { SESSION_ONLY_PERSISTENCE_PORT } from "./session-only-persistence";
 import type {
   AppCommandResult,
   Clock,
@@ -89,9 +90,12 @@ export const createCompletionUseCases = ({
       persistenceResult.stage === "history-read"
     ) {
       // The stored history cannot be read safely, so nothing was written and
-      // the active trip is still durable. Report the history, not the trip.
+      // the active trip is still durable. Report the history, not the trip,
+      // and show exactly the trips a set-aside would keep.
+      const readable = ports.persistence.readCompletedHistory();
       const nextState = publish({
         ...state,
+        completedTrips: Object.freeze([...readable.completedTrips]),
         historyIntegrity: degradedPersistence(
           persistenceResult.issue,
           state.historyIntegrity.status === "degraded"
@@ -103,9 +107,14 @@ export const createCompletionUseCases = ({
       return failure(nextState, applicationError("history-unreadable"));
     }
 
+    // A session-only run finishes in memory: the shopper sees the summary
+    // and can shop again, and nothing claims to be saved.
+    const sessionOnly = ports.persistence === SESSION_ONLY_PERSISTENCE_PORT;
+
     if (
       !persistenceResult.ok &&
-      !persistenceResult.historyPersisted
+      !persistenceResult.historyPersisted &&
+      !sessionOnly
     ) {
       const nextState = publish({
         ...state,
@@ -125,10 +134,10 @@ export const createCompletionUseCases = ({
     const cleanupPending =
       !persistenceResult.ok &&
       persistenceResult.stage === "active-clear";
-    const completedTrips = upsertCompletedTrip(
-      state.completedTrips,
-      completedTrip,
-    );
+    const completedTrips =
+      persistenceResult.completedTrips === undefined
+        ? upsertCompletedTrip(state.completedTrips, completedTrip)
+        : Object.freeze([...persistenceResult.completedTrips]);
     let nextState = publish({
       lifecycle: "completed-summary",
       activeTrip: null,
@@ -185,7 +194,11 @@ export const createCompletionUseCases = ({
       }
     }
 
-    return success(nextState, true, "persisted");
+    return success(
+      nextState,
+      true,
+      sessionOnly ? "memory-only" : "persisted",
+    );
   };
 
   const setActualCheckout = (
@@ -235,6 +248,24 @@ export const createCompletionUseCases = ({
       state.completedTrips,
       tripResult.value,
     );
+    if (!saveResult.ok && saveResult.stage === "history-read") {
+      // History became unreadable after this trip finished; nothing was
+      // written. Keep the value in view and report the history, not the trip.
+      const nextState = publish({
+        ...state,
+        completedSummary: tripResult.value,
+        completedTrips,
+        historyIntegrity: degradedPersistence(
+          saveResult.issue,
+          state.historyIntegrity.status === "degraded"
+            ? state.historyIntegrity.since
+            : now,
+        ),
+      });
+
+      return success(nextState, true, "memory-only");
+    }
+
     const shouldStayDegraded =
       state.completionCleanupPending || !saveResult.ok;
     const issue = !saveResult.ok
@@ -274,8 +305,10 @@ export const createCompletionUseCases = ({
       return failure(state, applicationError("no-completed-summary"));
     }
 
+    const sessionOnly = ports.persistence === SESSION_ONLY_PERSISTENCE_PORT;
+
     if (
-      state.persistence.status === "degraded" ||
+      (state.persistence.status === "degraded" && !sessionOnly) ||
       state.completionCleanupPending
     ) {
       return failure(

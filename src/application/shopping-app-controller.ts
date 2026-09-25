@@ -40,6 +40,7 @@ import type {
   AddManualItemInput,
   AddRememberedItemInput,
   AppCommandResult,
+  PersistenceProblem,
   ShoppingAppController,
   ShoppingAppControllerDependencies,
   ShoppingAppState,
@@ -107,6 +108,9 @@ export const createShoppingAppController = ({
 
   const tripCommandTime = (trip: ActiveTrip): IsoTimestamp =>
     laterTimestamp(clock.now(), latestTripTimestamp(trip));
+
+  const sessionOnly = (): boolean =>
+    ports.persistence === SESSION_ONLY_PERSISTENCE_PORT;
 
   const subscribe = (listener: () => void): (() => void) => {
     listeners.add(listener);
@@ -281,7 +285,7 @@ export const createShoppingAppController = ({
     }
 
     if (
-      state.persistence.status === "degraded" ||
+      (state.persistence.status === "degraded" && !sessionOnly()) ||
       state.completionCleanupPending
     ) {
       return failure(
@@ -481,8 +485,27 @@ export const createShoppingAppController = ({
     }
   };
 
+  const markHistoryUnreadable = (
+    issue: PersistenceProblem,
+    completedTrips: readonly CompletedTrip[],
+  ): ShoppingAppState =>
+    publish({
+      ...state,
+      completedTrips: Object.freeze([...completedTrips]),
+      historyIntegrity: degradedPersistence(
+        issue,
+        state.historyIntegrity.status === "degraded"
+          ? state.historyIntegrity.since
+          : clock.now(),
+      ),
+    });
+
+  /**
+   * Rewrites history from what is durably stored now, never from a possibly
+   * stale in-memory list, so trips this session never loaded are not dropped.
+   */
   const replaceCompletedHistory = (
-    nextTrips: readonly CompletedTrip[],
+    nextFrom: (durable: readonly CompletedTrip[]) => readonly CompletedTrip[],
   ): AppCommandResult => {
     const blocked = lifecycleBlock(state);
 
@@ -497,7 +520,8 @@ export const createShoppingAppController = ({
     if (
       state.persistence.status === "degraded" ||
       state.historyIntegrity.status === "degraded" ||
-      state.completionCleanupPending
+      state.completionCleanupPending ||
+      sessionOnly()
     ) {
       return failure(
         state,
@@ -505,6 +529,16 @@ export const createShoppingAppController = ({
       );
     }
 
+    const durable = ports.persistence.readCompletedHistory();
+
+    if (!durable.ok) {
+      return failure(
+        markHistoryUnreadable(durable.issue, durable.completedTrips),
+        applicationError("history-write-unavailable"),
+      );
+    }
+
+    const nextTrips = nextFrom(durable.completedTrips);
     const now = clock.now();
     const saveResult = ports.persistence.replaceCompletedHistory(
       nextTrips,
@@ -513,7 +547,9 @@ export const createShoppingAppController = ({
 
     if (!saveResult.ok) {
       return failure(
-        state,
+        saveResult.stage === "history-read"
+          ? markHistoryUnreadable(saveResult.issue, durable.completedTrips)
+          : state,
         applicationError("history-write-unavailable"),
       );
     }
@@ -550,8 +586,8 @@ export const createShoppingAppController = ({
       );
     }
 
-    return replaceCompletedHistory(
-      state.completedTrips.filter((trip) => trip.id !== tripId),
+    return replaceCompletedHistory((durable) =>
+      durable.filter((trip) => trip.id !== tripId),
     );
   };
 
@@ -560,7 +596,7 @@ export const createShoppingAppController = ({
       return success(state, false, "unchanged");
     }
 
-    return replaceCompletedHistory([]);
+    return replaceCompletedHistory(() => []);
   };
 
   const clearPriceMemory = (): AppCommandResult => {
@@ -721,21 +757,55 @@ export const createShoppingAppController = ({
       return blocked;
     }
 
-    if (state.historyIntegrity.status === "healthy") {
+    if (state.historyIntegrity.status === "healthy" || sessionOnly()) {
       return success(state, false, "unchanged");
     }
 
     const since = state.historyIntegrity.since;
     const result = ports.persistence.readCompletedHistory();
+
+    if (!result.ok) {
+      const nextState = publish({
+        ...state,
+        completedTrips: Object.freeze([...result.completedTrips]),
+        historyIntegrity: degradedPersistence(result.issue, since),
+      });
+
+      return success(nextState, true, "unchanged");
+    }
+
+    const activeTrip = state.activeTrip;
+    const staleActive =
+      activeTrip !== null &&
+      result.completedTrips.some((trip) => trip.id === activeTrip.id);
+
+    if (!staleActive) {
+      const nextState = publish({
+        ...state,
+        completedTrips: Object.freeze([...result.completedTrips]),
+        historyIntegrity: HEALTHY_PERSISTENCE,
+      });
+
+      return success(nextState, true, "unchanged");
+    }
+
+    // History is the completion authority: an open copy of a trip it already
+    // holds is stale, exactly as startup reconciliation treats it.
+    const cleanup = ports.persistence.clearCompletedActive();
     const nextState = publish({
       ...state,
+      lifecycle: "idle",
+      activeTrip: null,
       completedTrips: Object.freeze([...result.completedTrips]),
-      historyIntegrity: result.ok
-        ? HEALTHY_PERSISTENCE
-        : degradedPersistence(result.issue, since),
+      historyIntegrity: HEALTHY_PERSISTENCE,
+      completionCleanupPending: !cleanup.ok,
+      persistence: cleanup.ok
+        ? state.persistence
+        : degradedPersistence(cleanup.issue, clock.now()),
+      undo: null,
     });
 
-    return success(nextState, true, "unchanged");
+    return success(nextState, true, cleanup.ok ? "persisted" : "memory-only");
   };
 
   const setAsideDamagedHistory = (): AppCommandResult => {
@@ -797,13 +867,15 @@ export const createShoppingAppController = ({
     ports.persistence = SESSION_ONLY_PERSISTENCE_PORT;
     ports.priceMemory = SESSION_ONLY_PRICE_MEMORY_PORT;
 
+    const now = clock.now();
     const nextState = publish({
       ...state,
       lifecycle: "idle",
       activeTrip: null,
       completedSummary: null,
       completionCleanupPending: false,
-      persistence: degradedPersistence(SESSION_ONLY_ISSUE, clock.now()),
+      persistence: degradedPersistence(SESSION_ONLY_ISSUE, now),
+      priceMemoryPersistence: degradedPersistence(SESSION_ONLY_ISSUE, now),
       undo: null,
       recovery: null,
     });

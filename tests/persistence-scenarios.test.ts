@@ -29,7 +29,8 @@ import {
 
 /*
  * Exhaustive scenario matrix: every combination of stored active record,
- * stored history, stored Price Memory and storage failure mode is booted
+ * stored history, stored Price Memory, storage failure mode and mid-session
+ * history corruption is booted
  * through the real composition root and driven with only the actions the UI
  * offers. Each run must end with the shopper able to shop, and must never
  * lose a stored record the app could not read.
@@ -378,10 +379,23 @@ const shopLikeAUser = (
   return { controller, outcome: { finished: finished.ok, actions } };
 };
 
+/** History corrupted by something outside this tab after the app loaded. */
+type MidSession = "none" | "history-corrupted";
+const MID_SESSION: readonly MidSession[] = ["none", "history-corrupted"];
+const MID_SESSION_RAW = "{corrupted while the app was open";
+
 const scenarios = ACTIVE_STATES.flatMap((active) =>
   HISTORY_STATES.flatMap((history) =>
     MEMORY_STATES.flatMap((memory) =>
-      FAILURE_MODES.map((failure) => ({ active, history, memory, failure })),
+      FAILURE_MODES.flatMap((failure) =>
+        MID_SESSION.map((midSession) => ({
+          active,
+          history,
+          memory,
+          failure,
+          midSession,
+        })),
+      ),
     ),
   ),
 );
@@ -392,13 +406,14 @@ describe("persistence scenario matrix", () => {
       ACTIVE_STATES.length *
         HISTORY_STATES.length *
         MEMORY_STATES.length *
-        FAILURE_MODES.length,
+        FAILURE_MODES.length *
+        MID_SESSION.length,
     );
   });
 
   it.each(scenarios)(
-    "active=$active history=$history memory=$memory failure=$failure",
-    ({ active, history, memory, failure }) => {
+    "active=$active history=$history memory=$memory failure=$failure mid=$midSession",
+    ({ active, history, memory, failure, midSession }) => {
       const entries = new Map<string, string>();
       const seed = (key: string, raw: string | null) => {
         if (raw !== null) {
@@ -422,6 +437,14 @@ describe("persistence scenario matrix", () => {
           },
         });
       const booted = boot().getSnapshot();
+      const corrupts =
+        midSession === "history-corrupted" &&
+        failure !== "storage-blocked" &&
+        failure !== "all-writes-fail";
+
+      if (corrupts) {
+        values.set(HISTORY_STORAGE_KEY, MID_SESSION_RAW);
+      }
 
       // 1. Only an unreadable active record (or unusable storage) blocks.
       const expectRecovery =
@@ -468,13 +491,20 @@ describe("persistence scenario matrix", () => {
           context,
         ).toBe(true);
       } else {
-        // Otherwise nothing may claim durability it does not have.
+        // Otherwise nothing may claim durability it does not have: a trip
+        // can only finish in memory, in an explicit session-only run.
         expect(
           final.persistence.status === "degraded" ||
             final.historyIntegrity.status === "degraded",
           context,
         ).toBe(true);
-        expect(outcome.finished, context).toBe(false);
+
+        if (outcome.finished) {
+          expect(final.persistence, context).toMatchObject({
+            status: "degraded",
+            issue: { code: "session-only" },
+          });
+        }
       }
 
       // 5. No record the app could not read is ever lost.
@@ -485,9 +515,14 @@ describe("persistence scenario matrix", () => {
         [ACTIVE_TRIP_STORAGE_KEY, isReadableActive(active) ? null : activeRaw(active)],
         [
           HISTORY_STORAGE_KEY,
-          history === "absent" || history === "valid" ? null : historyRaw(history),
+          // An outside writer replaced the original record mid-session; the
+          // app is accountable for the record it then found.
+          history === "absent" || history === "valid" || corrupts
+            ? null
+            : historyRaw(history),
         ],
         [PRICE_MEMORY_STORAGE_KEY, memory === "malformed" ? memoryRaw(memory) : null],
+        [HISTORY_STORAGE_KEY, corrupts ? MID_SESSION_RAW : null],
       ];
 
       for (const [key, raw] of unreadable) {
@@ -500,7 +535,11 @@ describe("persistence scenario matrix", () => {
       }
 
       // 6. Readable completed trips are never dropped from durable history.
-      if (durable && (history === "valid" || history === "partly-damaged")) {
+      if (
+        durable &&
+        !corrupts &&
+        (history === "valid" || history === "partly-damaged")
+      ) {
         const decoded = decodeHistorySnapshot(values.get(HISTORY_STORAGE_KEY) ?? "");
         expect(
           decoded.ok && decoded.trips.some((trip) => trip.id === "trip-done-a"),

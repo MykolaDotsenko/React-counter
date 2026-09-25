@@ -93,15 +93,22 @@ export type ActiveTripSaveResult =
   | {
       readonly ok: false;
       readonly issue: PersistenceProblem;
+      /** Set when the stored history could not be read, so nothing was written. */
+      readonly stage?: "history-read";
     };
 
 export type CompletionSaveResult =
-  | { readonly ok: true }
+  | {
+      readonly ok: true;
+      /** The durable completed history after the write, when re-read. */
+      readonly completedTrips?: readonly CompletedTrip[];
+    }
   | {
       readonly ok: false;
       readonly stage: "history-read" | "history-write" | "active-clear";
       readonly issue: PersistenceProblem;
       readonly historyPersisted: boolean;
+      readonly completedTrips?: readonly CompletedTrip[];
     };
 
 export interface Clock {
