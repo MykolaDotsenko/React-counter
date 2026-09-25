@@ -3,35 +3,75 @@
 :root[data-appearance="light"] {
   color-scheme: light;
 
-  --surface-page: #f5f3ee;
-  --surface-panel: #fffdf9;
-  --surface-soft: #f0ede6;
-  --text-primary: #202520;
-  --text-secondary: #687068;
-  --text-secondary-strong: #626a62;
-  --border-subtle: #d9d5cc;
-  --accent-primary: #315f4f;
+  --surface-page: #f4f1eb;
+  --surface-panel: #fffefa;
+  --surface-soft: #efede7;
+  --surface-raised: #ffffff;
+  --surface-accent-soft: #edf4f0;
+  --text-primary: #1d241f;
+  --text-secondary: #687169;
+  --text-secondary-strong: #5f675f;
+  --border-subtle: #d9d3c9;
+  --border-strong: #c9c1b6;
+  --accent-primary: #2f604f;
+  --accent-hover: #285344;
+  --accent-pressed: #23493c;
   --accent-contrast: #ffffff;
-  --status-warning: #8a5b20;
-  --status-danger: #8a2d2d;
-  --focus-ring: #245fca;
-  --progress-track: #dedbd3;
-  --primary-action-shadow: 0 12px 26px rgb(49 95 79 / 0.18);
-  --primary-action-shadow-hover: 0 14px 30px rgb(49 95 79 / 0.24);
+  --status-warning: #86591f;
+  --status-danger: #8b3030;
+  --focus-ring: #225fc4;
+  --progress-track: #ddd9d1;
+  --page-canvas:
+    radial-gradient(
+      circle at 50% -10rem,
+      rgb(255 255 255 / 0.98) 0,
+      rgb(255 255 255 / 0.72) 18rem,
+      transparent 34rem
+    ),
+    linear-gradient(180deg, #f7f4ee 0%, #f2eee7 100%);
+  --hero-surface:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.98) 0%,
+      rgb(253 250 244 / 0.98) 100%
+    );
+  --overlay-backdrop: rgb(29 36 31 / 0.26);
+  --panel-shadow:
+    0 1px 2px rgb(31 35 32 / 0.04),
+    0 12px 30px rgb(31 35 32 / 0.055);
+  --elevated-shadow:
+    0 1px 2px rgb(31 35 32 / 0.05),
+    0 22px 56px rgb(31 35 32 / 0.09);
+  --control-shadow:
+    0 1px 1px rgb(31 35 32 / 0.04),
+    0 5px 14px rgb(31 35 32 / 0.05);
+  --primary-action-shadow: 0 12px 26px rgb(47 96 79 / 0.18);
+  --primary-action-shadow-hover: 0 14px 30px rgb(47 96 79 / 0.24);
 
   --shopping-page: var(--surface-page);
   --shopping-panel: var(--surface-panel);
   --shopping-soft: var(--surface-soft);
+  --shopping-raised: var(--surface-raised);
+  --shopping-accent-soft: var(--surface-accent-soft);
   --shopping-text: var(--text-primary);
   --shopping-muted: var(--text-secondary);
   --shopping-muted-strong: var(--text-secondary-strong);
   --shopping-border: var(--border-subtle);
+  --shopping-border-strong: var(--border-strong);
   --shopping-accent: var(--accent-primary);
+  --shopping-accent-hover: var(--accent-hover);
+  --shopping-accent-pressed: var(--accent-pressed);
   --shopping-accent-contrast: var(--accent-contrast);
   --shopping-warning: var(--status-warning);
   --shopping-danger: var(--status-danger);
   --shopping-focus: var(--focus-ring);
   --shopping-track: var(--progress-track);
+  --shopping-page-canvas: var(--page-canvas);
+  --shopping-hero-surface: var(--hero-surface);
+  --shopping-overlay-backdrop: var(--overlay-backdrop);
+  --shopping-panel-shadow: var(--panel-shadow);
+  --shopping-elevated-shadow: var(--elevated-shadow);
+  --shopping-control-shadow: var(--control-shadow);
   --shopping-primary-action-shadow: var(--primary-action-shadow);
   --shopping-primary-action-shadow-hover: var(--primary-action-shadow-hover);
 }
@@ -42,32 +82,54 @@
   --surface-page: #111512;
   --surface-panel: #1c211d;
   --surface-soft: #252b26;
+  --surface-raised: #222823;
+  --surface-accent-soft: #1d2d26;
   --text-primary: #f3f5f1;
   --text-secondary: #b3bbb3;
   --text-secondary-strong: #c8cec8;
   --border-subtle: #3b443d;
+  --border-strong: #4b574e;
   --accent-primary: #8ed2b8;
+  --accent-hover: #9bd9c1;
+  --accent-pressed: #78bda3;
   --accent-contrast: #0d2018;
   --status-warning: #f2c981;
   --status-danger: #ffb8b8;
   --focus-ring: #a6c6ff;
   --progress-track: #323933;
+  --page-canvas: var(--surface-page);
+  --hero-surface: var(--surface-panel);
+  --overlay-backdrop: rgb(0 0 0 / 0.55);
+  --panel-shadow: 0 16px 44px rgb(0 0 0 / 0.18);
+  --elevated-shadow: 0 22px 58px rgb(0 0 0 / 0.28);
+  --control-shadow: none;
   --primary-action-shadow: none;
   --primary-action-shadow-hover: none;
 
   --shopping-page: var(--surface-page);
   --shopping-panel: var(--surface-panel);
   --shopping-soft: var(--surface-soft);
+  --shopping-raised: var(--surface-raised);
+  --shopping-accent-soft: var(--surface-accent-soft);
   --shopping-text: var(--text-primary);
   --shopping-muted: var(--text-secondary);
   --shopping-muted-strong: var(--text-secondary-strong);
   --shopping-border: var(--border-subtle);
+  --shopping-border-strong: var(--border-strong);
   --shopping-accent: var(--accent-primary);
+  --shopping-accent-hover: var(--accent-hover);
+  --shopping-accent-pressed: var(--accent-pressed);
   --shopping-accent-contrast: var(--accent-contrast);
   --shopping-warning: var(--status-warning);
   --shopping-danger: var(--status-danger);
   --shopping-focus: var(--focus-ring);
   --shopping-track: var(--progress-track);
+  --shopping-page-canvas: var(--page-canvas);
+  --shopping-hero-surface: var(--hero-surface);
+  --shopping-overlay-backdrop: var(--overlay-backdrop);
+  --shopping-panel-shadow: var(--panel-shadow);
+  --shopping-elevated-shadow: var(--elevated-shadow);
+  --shopping-control-shadow: var(--control-shadow);
   --shopping-primary-action-shadow: var(--primary-action-shadow);
   --shopping-primary-action-shadow-hover: var(--primary-action-shadow-hover);
 }
@@ -78,32 +140,54 @@
   --surface-page: #080b14;
   --surface-panel: #101522;
   --surface-soft: #171e2d;
+  --surface-raised: #141a29;
+  --surface-accent-soft: #102738;
   --text-primary: #f6f7fb;
   --text-secondary: #b6bfce;
   --text-secondary-strong: #ccd3df;
   --border-subtle: #34405a;
+  --border-strong: #485675;
   --accent-primary: #7de8ff;
+  --accent-hover: #9aeefe;
+  --accent-pressed: #66cadf;
   --accent-contrast: #071017;
   --status-warning: #ffd38a;
   --status-danger: #ff9fba;
   --focus-ring: #b7c8ff;
   --progress-track: #222b3d;
+  --page-canvas: var(--surface-page);
+  --hero-surface: var(--surface-panel);
+  --overlay-backdrop: rgb(2 4 10 / 0.62);
+  --panel-shadow: 0 16px 44px rgb(0 0 0 / 0.24);
+  --elevated-shadow: 0 24px 64px rgb(0 0 0 / 0.34);
+  --control-shadow: none;
   --primary-action-shadow: 0 12px 32px rgb(125 232 255 / 0.12);
   --primary-action-shadow-hover: 0 14px 36px rgb(125 232 255 / 0.18);
 
   --shopping-page: var(--surface-page);
   --shopping-panel: var(--surface-panel);
   --shopping-soft: var(--surface-soft);
+  --shopping-raised: var(--surface-raised);
+  --shopping-accent-soft: var(--surface-accent-soft);
   --shopping-text: var(--text-primary);
   --shopping-muted: var(--text-secondary);
   --shopping-muted-strong: var(--text-secondary-strong);
   --shopping-border: var(--border-subtle);
+  --shopping-border-strong: var(--border-strong);
   --shopping-accent: var(--accent-primary);
+  --shopping-accent-hover: var(--accent-hover);
+  --shopping-accent-pressed: var(--accent-pressed);
   --shopping-accent-contrast: var(--accent-contrast);
   --shopping-warning: var(--status-warning);
   --shopping-danger: var(--status-danger);
   --shopping-focus: var(--focus-ring);
   --shopping-track: var(--progress-track);
+  --shopping-page-canvas: var(--page-canvas);
+  --shopping-hero-surface: var(--hero-surface);
+  --shopping-overlay-backdrop: var(--overlay-backdrop);
+  --shopping-panel-shadow: var(--panel-shadow);
+  --shopping-elevated-shadow: var(--elevated-shadow);
+  --shopping-control-shadow: var(--control-shadow);
   --shopping-primary-action-shadow: var(--primary-action-shadow);
   --shopping-primary-action-shadow-hover: var(--primary-action-shadow-hover);
 }
@@ -115,16 +199,27 @@
     --surface-page: #111512;
     --surface-panel: #1c211d;
     --surface-soft: #252b26;
+    --surface-raised: #222823;
+    --surface-accent-soft: #1d2d26;
     --text-primary: #f3f5f1;
     --text-secondary: #b3bbb3;
     --text-secondary-strong: #c8cec8;
     --border-subtle: #3b443d;
+    --border-strong: #4b574e;
     --accent-primary: #8ed2b8;
+    --accent-hover: #9bd9c1;
+    --accent-pressed: #78bda3;
     --accent-contrast: #0d2018;
     --status-warning: #f2c981;
     --status-danger: #ffb8b8;
     --focus-ring: #a6c6ff;
     --progress-track: #323933;
+    --page-canvas: var(--surface-page);
+    --hero-surface: var(--surface-panel);
+    --overlay-backdrop: rgb(0 0 0 / 0.55);
+    --panel-shadow: 0 16px 44px rgb(0 0 0 / 0.18);
+    --elevated-shadow: 0 22px 58px rgb(0 0 0 / 0.28);
+    --control-shadow: none;
     --primary-action-shadow: none;
     --primary-action-shadow-hover: none;
   }
