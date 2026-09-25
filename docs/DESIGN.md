@@ -170,6 +170,22 @@ Rules:
 - Light remains the visual calibration baseline for bright grocery environments;
 - Aurora may add visual effects only when contrast, reduced-motion behaviour, battery/performance budgets and the remaining-first hierarchy remain intact.
 
+## Dark calibration
+
+Dark is a deliberate low-light shell, not a mechanical inversion of Light.
+
+Requirements:
+
+- use deep graphite/green-black rather than absolute black for the page;
+- preserve clear separation between page, panel, raised control and transient overlay surfaces;
+- keep primary money values neutral and high-contrast rather than tinting them with the accent;
+- use the green accent mainly for actions, positive capacity and focus-supporting emphasis;
+- keep secondary text comfortably above WCAG AA contrast on every surface it appears on;
+- warning, danger and focus colours must remain independently readable;
+- depth should come from restrained surface steps and soft black elevation, not luminous glows;
+- native controls must remain in dark colour-scheme;
+- System-dark must resolve to the same visual contract as explicit Dark.
+
 ## Surface and depth
 
 Prefer simple surfaces and limited elevation.
