@@ -153,7 +153,8 @@ CI additionally validates the exact release artifact before it can be deployed:
 
 Production barcode, visual recognition, and OCR remain evidence-gated.
 
-Public guarded evidence builds (validation surfaces, not private/security boundaries):
+Public guarded evidence builds (validation surfaces, not private/security boundaries) follow the latest deployed `main`. Real multi-day/week field studies use immutable versioned `/study/<baseline>/...` copies of the exact tested artifact instead:
+
 
 - **Timing QA:** https://mykoladotsenko.github.io/shopping-budget-companion/qa/
 - **Retention beta:** https://mykoladotsenko.github.io/shopping-budget-companion/beta/
@@ -162,6 +163,8 @@ Public guarded evidence builds (validation surfaces, not private/security bounda
 - **Barcode paired analyzer:** https://mykoladotsenko.github.io/shopping-budget-companion/barcode-paired-analyzer/
 - **Visual recognition benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/visual-recognition-benchmark/
 - **Shelf-label OCR benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/shelf-label-ocr-benchmark/
+- **Tesseract OCR benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/shelf-label-ocr-tesseract-benchmark/
+- **OCR paired analyzer:** https://mykoladotsenko.github.io/shopping-budget-companion/ocr-paired-analyzer/
 
 ---
 
