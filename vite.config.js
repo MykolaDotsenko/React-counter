@@ -87,6 +87,7 @@ export default defineConfig(() => {
             /\/shelf-label-ocr-tesseract-benchmark(?:\/|$)/,
             /\/barcode-paired-analyzer(?:\/|$)/,
             /\/ocr-paired-analyzer(?:\/|$)/,
+            /\/study(?:\/|$)/,
           ],
           globPatterns: [
             "**/*.{js,css,html,svg,png,webmanifest}",
