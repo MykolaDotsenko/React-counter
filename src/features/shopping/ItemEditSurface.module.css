@@ -5,7 +5,7 @@
     max(16px, env(safe-area-inset-right))
     max(28px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-left));
-  background: var(--shopping-page);
+  background: var(--shopping-page-canvas);
   color: var(--shopping-text);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -18,10 +18,10 @@
   display: grid;
   gap: 18px;
   padding: clamp(18px, 5vw, 26px);
-  border: 1px solid var(--shopping-border);
+  border: 1px solid var(--shopping-border-strong);
   border-radius: 26px;
   background: var(--shopping-panel);
-  box-shadow: 0 18px 48px rgb(31 35 32 / 0.08);
+  box-shadow: var(--shopping-elevated-shadow);
 }
 
 .header {
@@ -61,8 +61,9 @@
   flex: 0 0 auto;
   padding: 0 14px;
   border: 1px solid var(--shopping-border);
-  background: var(--shopping-soft);
+  background: var(--shopping-raised);
   color: var(--shopping-text);
+  box-shadow: var(--shopping-control-shadow);
 }
 
 .trust {
@@ -117,7 +118,8 @@
   padding: 0 16px;
   border: 1px solid var(--shopping-border);
   border-radius: 16px;
-  background: var(--shopping-soft);
+  background: var(--shopping-raised);
+  box-shadow: var(--shopping-control-shadow);
 }
 
 .priceInput > span {
@@ -169,9 +171,10 @@
 
 .stepper button {
   border: 1px solid var(--shopping-border);
-  background: var(--shopping-soft);
+  background: var(--shopping-raised);
   color: var(--shopping-text);
   font-size: 1.35rem;
+  box-shadow: var(--shopping-control-shadow);
 }
 
 .stepper button:disabled {
@@ -191,7 +194,7 @@
   padding: 14px;
   border: 1px solid var(--shopping-border);
   border-radius: 16px;
-  background: var(--shopping-soft);
+  background: color-mix(in srgb, var(--shopping-accent-soft) 42%, var(--shopping-soft));
 }
 
 .projection strong {
@@ -221,6 +224,7 @@
   background: var(--shopping-accent);
   color: var(--shopping-accent-contrast);
   font-size: 1rem;
+  box-shadow: var(--shopping-primary-action-shadow);
 }
 
 .saveButton:disabled {
