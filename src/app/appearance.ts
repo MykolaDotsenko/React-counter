@@ -34,16 +34,29 @@ export const parseAppearanceMode = (
   value: string | null | undefined,
 ): AppearanceMode => (isAppearanceMode(value) ? value : "system");
 
+const browserStorage = (): AppearanceStorage | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+};
+
 export const readAppearancePreference = (
-  storage: AppearanceStorage | null =
-    typeof window === "undefined" ? null : window.localStorage,
+  storage: AppearanceStorage | null | undefined = undefined,
 ): AppearanceMode => {
-  if (storage === null) {
+  const target = storage === undefined ? browserStorage() : storage;
+
+  if (target === null) {
     return "system";
   }
 
   try {
-    return parseAppearanceMode(storage.getItem(APPEARANCE_STORAGE_KEY));
+    return parseAppearanceMode(target.getItem(APPEARANCE_STORAGE_KEY));
   } catch {
     return "system";
   }
@@ -51,15 +64,16 @@ export const readAppearancePreference = (
 
 export const persistAppearancePreference = (
   mode: AppearanceMode,
-  storage: AppearanceStorage | null =
-    typeof window === "undefined" ? null : window.localStorage,
+  storage: AppearanceStorage | null | undefined = undefined,
 ): boolean => {
-  if (storage === null) {
+  const target = storage === undefined ? browserStorage() : storage;
+
+  if (target === null) {
     return false;
   }
 
   try {
-    storage.setItem(APPEARANCE_STORAGE_KEY, mode);
+    target.setItem(APPEARANCE_STORAGE_KEY, mode);
     return true;
   } catch {
     return false;
