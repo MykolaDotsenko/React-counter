@@ -339,7 +339,9 @@ Support System, Light, Dark and Aurora through one component tree and semantic C
 
 Appearance preference is independent convenience state. It must not enter the shopping domain, application controller, persistence schema or evidence payloads.
 
-Apply the saved preference before the first React paint so explicit Dark/Aurora never flash through the Light shell.
+Represent the saved choice on the document as `data-appearance` and the resolved visual shell as `data-theme`. System resolves to Light or Dark before styling, so CSS does not duplicate a second system-specific palette.
+
+Apply both values before the first React paint so explicit Dark/Aurora and System-dark never flash through the Light shell.
 
 Light is the primary bright-store calibration baseline. Dark and Aurora may change colour, surface and depth treatment, but not information hierarchy, interaction semantics or financial authority.
 

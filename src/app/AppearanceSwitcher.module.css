@@ -87,7 +87,7 @@
 }
 
 .option[data-mode="system"] .swatch {
-  background: linear-gradient(135deg, #f4f1eb 0 50%, #111512 50%);
+  background: linear-gradient(135deg, #f4f1eb 0 50%, #0f1210 50%);
 }
 
 .option[data-mode="light"] .swatch {
@@ -95,7 +95,7 @@
 }
 
 .option[data-mode="dark"] .swatch {
-  background: #111512;
+  background: #0f1210;
 }
 
 .option[data-mode="aurora"] .swatch {

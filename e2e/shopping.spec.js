@@ -37,6 +37,7 @@ test("keeps explicit Light appearance durable and independent from shopping stat
 
     return {
       mode: document.documentElement.dataset.appearance,
+      theme: document.documentElement.dataset.theme,
       persisted: localStorage.getItem(appearanceKey),
       page: style.getPropertyValue("--shopping-page").trim(),
       panel: style.getPropertyValue("--shopping-panel").trim(),
@@ -49,6 +50,7 @@ test("keeps explicit Light appearance durable and independent from shopping stat
 
   expect(initialAppearance).toEqual({
     mode: "light",
+    theme: "light",
     persisted: "light",
     page: "#f4f1eb",
     panel: "#fffefa",
@@ -81,12 +83,134 @@ test("keeps explicit Light appearance durable and independent from shopping stat
 
   const afterReload = await page.evaluate((appearanceKey) => ({
     mode: document.documentElement.dataset.appearance,
+    theme: document.documentElement.dataset.theme,
     persisted: localStorage.getItem(appearanceKey),
   }), APPEARANCE_KEY);
 
   expect(afterReload).toEqual({
     mode: "light",
+    theme: "light",
     persisted: "light",
+  });
+});
+
+test("keeps explicit Dark appearance durable and independent from shopping state", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Dark", exact: true }).click();
+
+  const initialAppearance = await page.evaluate((appearanceKey) => {
+    const style = getComputedStyle(document.documentElement);
+
+    return {
+      mode: document.documentElement.dataset.appearance,
+      theme: document.documentElement.dataset.theme,
+      persisted: localStorage.getItem(appearanceKey),
+      page: style.getPropertyValue("--shopping-page").trim(),
+      panel: style.getPropertyValue("--shopping-panel").trim(),
+      raised: style.getPropertyValue("--shopping-raised").trim(),
+      accent: style.getPropertyValue("--shopping-accent").trim(),
+      themeColor: document
+        .querySelector('meta[name="theme-color"]')
+        ?.getAttribute("content"),
+    };
+  }, APPEARANCE_KEY);
+
+  expect(initialAppearance).toEqual({
+    mode: "dark",
+    theme: "dark",
+    persisted: "dark",
+    page: "#0f1210",
+    panel: "#181d19",
+    raised: "#202621",
+    accent: "#8fd4b7",
+    themeColor: "#0f1210",
+  });
+
+  await startQuickBudget(page);
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  const beforeReload = await page.evaluate(
+    ({ activeKey, appearanceKey }) => ({
+      active: localStorage.getItem(activeKey),
+      appearance: localStorage.getItem(appearanceKey),
+    }),
+    { activeKey: ACTIVE_TRIP_KEY, appearanceKey: APPEARANCE_KEY },
+  );
+
+  expect(beforeReload.active).not.toBeNull();
+  expect(beforeReload.appearance).toBe("dark");
+
+  await page.reload();
+
+  await expect(
+    page.getByRole("heading", { name: "Know what’s left" }),
+  ).toBeVisible();
+  await expect(page.getByText("€45.21", { exact: true }).first()).toBeVisible();
+
+  const afterReload = await page.evaluate((appearanceKey) => ({
+    mode: document.documentElement.dataset.appearance,
+    theme: document.documentElement.dataset.theme,
+    persisted: localStorage.getItem(appearanceKey),
+  }), APPEARANCE_KEY);
+
+  expect(afterReload).toEqual({
+    mode: "dark",
+    theme: "dark",
+    persisted: "dark",
+  });
+});
+
+test("System appearance follows OS colour scheme without mutating the saved preference", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/");
+
+  const darkSystem = await page.evaluate((appearanceKey) => ({
+    appearance: document.documentElement.dataset.appearance,
+    theme: document.documentElement.dataset.theme,
+    persisted: localStorage.getItem(appearanceKey),
+    page: getComputedStyle(document.documentElement)
+      .getPropertyValue("--shopping-page")
+      .trim(),
+    themeColor: document
+      .querySelector('meta[name="theme-color"]')
+      ?.getAttribute("content"),
+  }), APPEARANCE_KEY);
+
+  expect(darkSystem).toEqual({
+    appearance: "system",
+    theme: "dark",
+    persisted: null,
+    page: "#0f1210",
+    themeColor: "#0f1210",
+  });
+
+  await page.emulateMedia({ colorScheme: "light" });
+
+  await expect.poll(
+    () => page.evaluate(() => document.documentElement.dataset.theme),
+  ).toBe("light");
+
+  const lightSystem = await page.evaluate((appearanceKey) => ({
+    appearance: document.documentElement.dataset.appearance,
+    theme: document.documentElement.dataset.theme,
+    persisted: localStorage.getItem(appearanceKey),
+    themeColor: document
+      .querySelector('meta[name="theme-color"]')
+      ?.getAttribute("content"),
+  }), APPEARANCE_KEY);
+
+  expect(lightSystem).toEqual({
+    appearance: "system",
+    theme: "light",
+    persisted: null,
+    themeColor: "#f4f1eb",
   });
 });
 

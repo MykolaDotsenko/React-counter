@@ -33,9 +33,12 @@
           matchMedia("(prefers-color-scheme: dark)").matches;
         const resolved =
           mode === "system" ? (prefersDark ? "dark" : "light") : mode;
+
+        document.documentElement.dataset.theme = resolved;
+
         const colors = {
           light: "#f4f1eb",
-          dark: "#111512",
+          dark: "#0f1210",
           aurora: "#080b14",
         };
         const themeMeta = document.querySelector('meta[name="theme-color"]');

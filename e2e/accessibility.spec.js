@@ -18,6 +18,35 @@ test("has no detectable WCAG A/AA violations on the start screen", async ({
   expect(results.violations).toEqual([]);
 });
 
+test("has no detectable WCAG A/AA violations through the explicit Dark core flow", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "axe scan runs once in Chromium");
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Dark", exact: true }).click();
+
+  let results = await scan(page);
+  expect(results.violations).toEqual([]);
+
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Know what’s left" }),
+  ).toBeVisible();
+
+  results = await scan(page);
+  expect(results.violations).toEqual([]);
+
+  await page.getByRole("button", { name: "Add price" }).click();
+  await expect(
+    page.getByRole("heading", { name: "What does this item cost?" }),
+  ).toBeVisible();
+
+  results = await scan(page);
+  expect(results.violations).toEqual([]);
+});
+
 test("has no detectable WCAG A/AA violations with the recent-budget shortcut", async ({
   page,
   browserName,
