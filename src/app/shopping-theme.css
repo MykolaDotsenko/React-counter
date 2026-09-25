@@ -9,7 +9,6 @@
     0 1px 2px rgb(31 35 32 / 0.04),
     0 18px 48px rgb(31 35 32 / 0.07);
   --elevated-shadow: 0 18px 56px rgb(31 35 32 / 0.12);
-  --control-shadow: none;
 
   --shopping-page: var(--surface-page);
   --shopping-panel: var(--surface-panel);
@@ -32,7 +31,6 @@
   --shopping-overlay-backdrop: var(--overlay-backdrop);
   --shopping-panel-shadow: var(--panel-shadow);
   --shopping-elevated-shadow: var(--elevated-shadow);
-  --shopping-control-shadow: var(--control-shadow);
   --shopping-primary-action-shadow: var(--primary-action-shadow);
   --shopping-primary-action-shadow-hover: var(--primary-action-shadow-hover);
 }
@@ -59,19 +57,9 @@
   --focus-ring: #225fc4;
   --progress-track: #ddd9d1;
   --page-canvas:
-    radial-gradient(
-      circle at 50% -10rem,
-      rgb(255 255 255 / 0.98) 0,
-      rgb(255 255 255 / 0.72) 18rem,
-      transparent 34rem
-    ),
-    linear-gradient(180deg, #f7f4ee 0%, #f2eee7 100%);
-  --hero-surface:
-    linear-gradient(
-      180deg,
-      rgb(255 255 255 / 0.98) 0%,
-      rgb(253 250 244 / 0.98) 100%
-    );
+    radial-gradient(circle at 50% -8rem, #fff 0, transparent 32rem),
+    linear-gradient(#f7f4ee, #f2eee7);
+  --hero-surface: linear-gradient(#fff, #fdfaf4);
   --overlay-backdrop: rgb(29 36 31 / 0.26);
   --panel-shadow:
     0 1px 2px rgb(31 35 32 / 0.04),
@@ -79,9 +67,6 @@
   --elevated-shadow:
     0 1px 2px rgb(31 35 32 / 0.05),
     0 22px 56px rgb(31 35 32 / 0.09);
-  --control-shadow:
-    0 1px 1px rgb(31 35 32 / 0.04),
-    0 5px 14px rgb(31 35 32 / 0.05);
   --primary-action-shadow: 0 12px 26px rgb(47 96 79 / 0.18);
   --primary-action-shadow-hover: 0 14px 30px rgb(47 96 79 / 0.24);
 }
