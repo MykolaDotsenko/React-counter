@@ -127,7 +127,8 @@ The active roadmap is intentionally narrow and local-first.
    - select one explicit experimental recognizer/model adapter rather than a generic demo;
    - declare whether image bytes remain local or cross a remote boundary;
    - benchmark representative retail products and same-brand/similar-package confusions;
-   - compare ranked accuracy, end-to-end human decision time, corrections and fallback against manual interaction.
+   - interpret schema-v2 human-decision latency across confirms **and rejects**, not success-only timing;
+   - compare ranked accuracy, end-to-end human decision time, corrections and fallback against an appropriate same-task alternative; do not present price-entry timing as a like-for-like product-identity baseline.
 
 5. **Shelf-label OCR engine evidence — issue #90**
    - keep OCR text/images transient and outside retained evidence;
