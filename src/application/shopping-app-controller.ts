@@ -35,6 +35,7 @@ import {
   recoveryState,
   requireActiveTrip,
   success,
+  withUnreadableHistory,
 } from "./shopping-app-support";
 import type {
   ActiveTripCommand,
@@ -491,16 +492,7 @@ export const createShoppingAppController = ({
     issue: PersistenceProblem,
     completedTrips: readonly CompletedTrip[],
   ): ShoppingAppState =>
-    publish({
-      ...state,
-      completedTrips: Object.freeze([...completedTrips]),
-      historyIntegrity: degradedPersistence(
-        issue,
-        state.historyIntegrity.status === "degraded"
-          ? state.historyIntegrity.since
-          : clock.now(),
-      ),
-    });
+    publish(withUnreadableHistory(state, issue, completedTrips, clock.now()));
 
   /**
    * Rewrites history from what is durably stored now, never from a possibly
@@ -679,6 +671,31 @@ export const createShoppingAppController = ({
         state.completedSummary,
         now,
       );
+
+      if (!historySave.ok && historySave.stage === "history-read") {
+        // History became unreadable after this trip finished, so the summary
+        // cannot be written into it; that is reported as a history problem.
+        // Clearing the stale active copy does not touch history, so it still
+        // runs and the summary can close.
+        const readable = ports.persistence.readCompletedHistory();
+        const cleanup = state.completionCleanupPending
+          ? ports.persistence.clearCompletedActive()
+          : ({ ok: true } as const);
+        const nextState = publish({
+          ...withUnreadableHistory(
+            state,
+            historySave.issue,
+            readable.completedTrips,
+            now,
+          ),
+          persistence: cleanup.ok
+            ? HEALTHY_PERSISTENCE
+            : degradedPersistence(cleanup.issue, since),
+          completionCleanupPending: !cleanup.ok,
+        });
+
+        return success(nextState, true, "memory-only");
+      }
 
       if (!historySave.ok) {
         const nextState = publish({

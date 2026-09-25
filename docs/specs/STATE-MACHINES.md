@@ -119,7 +119,7 @@ History integrity is orthogonal to lifecycle and to write health.
 
 ```text
 READABLE
-  └─ stored history unreadable (bootstrap, finish attempt) → DAMAGED
+  └─ stored history unreadable (bootstrap, finish, checkout total, save retry) → DAMAGED
 
 DAMAGED
   ├─ SET_ASIDE_HISTORY (backup, keep readable trips) → READABLE
@@ -134,9 +134,9 @@ While DAMAGED:
 - finishing, deleting a trip and clearing history are refused, because each would overwrite the unreadable record;
 - a successful active-trip write never hides the history warning;
 - the shown trips are exactly those a set-aside would keep;
-- if history becomes unreadable while a finished-trip summary is open, the summary can still be closed; repair is offered once it is.
+- if history becomes unreadable while a finished-trip summary is open, the summary can still be closed: a save retry reports the history problem and still clears a stale active copy, which does not touch history; repair is offered once the summary is closed.
 
-Deleting a trip or clearing history always re-reads durable history first and never writes from a stale in-memory list, so trips this session never loaded cannot be dropped. After a successful re-read, an open copy of a trip that history already holds is reconciled exactly as at startup.
+Deleting a trip or clearing history always re-reads durable history first and never writes from a stale in-memory list, so trips this session never loaded cannot be dropped. After a successful re-read, an open copy that is the same shopping as a trip history already holds is reconciled exactly as at startup; an open copy edited since keeps its cart.
 
 ## Add-price interaction
 

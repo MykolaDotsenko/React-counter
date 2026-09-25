@@ -27,6 +27,7 @@ import {
   requireActiveTrip,
   success,
   upsertCompletedTrip,
+  withUnreadableHistory,
 } from "./shopping-app-support";
 
 export interface CompletionPorts {
@@ -141,16 +142,14 @@ export const createCompletionUseCases = ({
       // and show exactly the trips a set-aside would keep.
       const readable = ports.persistence.readCompletedHistory();
       const nextState = publish({
-        ...state,
+        ...withUnreadableHistory(
+          state,
+          persistenceResult.issue,
+          readable.completedTrips,
+          completedAt,
+        ),
         activeTrip: openTrip,
         undo,
-        completedTrips: Object.freeze([...readable.completedTrips]),
-        historyIntegrity: degradedPersistence(
-          persistenceResult.issue,
-          state.historyIntegrity.status === "degraded"
-            ? state.historyIntegrity.since
-            : completedAt,
-        ),
       });
 
       return failure(nextState, applicationError("history-unreadable"));
@@ -300,27 +299,29 @@ export const createCompletionUseCases = ({
       tripResult.value,
       now,
     );
-    const completedTrips = upsertCompletedTrip(
-      state.completedTrips,
-      tripResult.value,
-    );
+
     if (!saveResult.ok && saveResult.stage === "history-read") {
       // History became unreadable after this trip finished; nothing was
-      // written. Keep the value in view and report the history, not the trip.
+      // written. Keep the value in view, report the history rather than the
+      // trip, and list exactly the trips a set-aside would keep.
+      const readable = ports.persistence.readCompletedHistory();
       const nextState = publish({
-        ...state,
-        completedSummary: tripResult.value,
-        completedTrips,
-        historyIntegrity: degradedPersistence(
+        ...withUnreadableHistory(
+          state,
           saveResult.issue,
-          state.historyIntegrity.status === "degraded"
-            ? state.historyIntegrity.since
-            : now,
+          readable.completedTrips,
+          now,
         ),
+        completedSummary: tripResult.value,
       });
 
       return success(nextState, true, "memory-only");
     }
+
+    const completedTrips = upsertCompletedTrip(
+      state.completedTrips,
+      tripResult.value,
+    );
 
     const shouldStayDegraded =
       state.completionCleanupPending || !saveResult.ok;

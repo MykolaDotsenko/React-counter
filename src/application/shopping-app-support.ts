@@ -61,6 +61,26 @@ export const degradedPersistence = (
     since,
   });
 
+/**
+ * Durable history turned out to be unreadable: report it as a history problem
+ * (never as the active trip's) and show exactly the trips a set-aside keeps.
+ */
+export const withUnreadableHistory = (
+  state: ShoppingAppState,
+  issue: PersistenceProblem,
+  readableTrips: readonly CompletedTrip[],
+  now: IsoTimestamp,
+): ShoppingAppState => ({
+  ...state,
+  completedTrips: Object.freeze([...readableTrips]),
+  historyIntegrity: degradedPersistence(
+    issue,
+    state.historyIntegrity.status === "degraded"
+      ? state.historyIntegrity.since
+      : now,
+  ),
+});
+
 export const recoveryState = (
   issue: PersistenceProblem,
   raw: string | undefined,
