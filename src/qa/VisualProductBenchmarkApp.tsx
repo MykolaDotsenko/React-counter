@@ -445,12 +445,12 @@ export function App() {
           <Metric label="Top-1 accuracy" value={percent(summary.top1Accuracy)} />
           <Metric label="Top-3 accuracy" value={percent(summary.top3Accuracy)} />
           <Metric
-            label="Median confirmed"
-            value={seconds(summary.medianConfirmedMs)}
+            label="Decision median"
+            value={seconds(summary.medianDecisionMs)}
           />
           <Metric
-            label="P90 confirmed"
-            value={seconds(summary.p90ConfirmedMs)}
+            label="Decision P90"
+            value={seconds(summary.p90DecisionMs)}
           />
           <Metric
             label="Recognition failure"
