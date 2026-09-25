@@ -75,7 +75,7 @@ const clampPercentage = (value: number): number =>
 
 const settleRemaining = (element: HTMLParagraphElement | null): void => {
   if (!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
-    element?.animate?.([{ opacity: 0.8 }, { opacity: 1 }], { duration: 160 });
+    element?.animate?.({ opacity: [0.8, 1] }, { duration: 160 });
   }
 };
 
