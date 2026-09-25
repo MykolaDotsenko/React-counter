@@ -254,12 +254,6 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  .screen {
-    color-scheme: dark;
-  }
-}
-
 @media (forced-colors: active) {
   .sheet,
   .field > input,
