@@ -126,7 +126,7 @@ export interface StartTripScreenProps {
   readonly persistenceHealth?: PersistenceHealth;
   readonly onOpenHistory?: () => void;
   readonly locale?: string;
-  readonly appearanceControl?: ReactNode;
+  readonly utilityControl?: ReactNode;
 }
 
 export function StartTripScreen({
@@ -139,7 +139,7 @@ export function StartTripScreen({
   persistenceHealth,
   onOpenHistory,
   locale = "en-FI",
-  appearanceControl,
+  utilityControl,
 }: StartTripScreenProps) {
   const customRegionId = useId();
   const reserveInputId = useId();
@@ -437,7 +437,7 @@ export function StartTripScreen({
           No account. Your shopping data stays on this device.
         </p>
 
-        {appearanceControl ?? null}
+        {utilityControl ?? null}
       </section>
     </main>
   );

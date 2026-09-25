@@ -1,4 +1,4 @@
-import type { CSSProperties, Ref } from "react";
+import type { CSSProperties, ReactNode, Ref } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
@@ -33,6 +33,7 @@ export interface ActiveTripScreenProps {
     record: PriceMemoryRecord,
   ) => boolean | void;
   readonly onEnterCurrentPrice?: (record: PriceMemoryRecord) => void;
+  readonly utilityControl?: ReactNode;
   readonly locale?: string;
 }
 
@@ -106,6 +107,7 @@ export function ActiveTripScreen({
   onRemoveItem,
   onUseRemembered,
   onEnterCurrentPrice,
+  utilityControl,
   locale = "en-FI",
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
@@ -185,6 +187,8 @@ export function ActiveTripScreen({
               : `${totalQuantity} ${totalQuantity === 1 ? "item" : "items"}`}
           </p>
         </header>
+
+        {utilityControl}
 
         <section
           className={styles.hero}

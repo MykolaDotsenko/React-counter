@@ -1,7 +1,6 @@
 .appearance {
   display: grid;
   gap: 12px;
-  padding-top: 4px;
   border-top: 1px solid var(--shopping-border);
 }
 

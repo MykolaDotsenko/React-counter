@@ -134,7 +134,7 @@ export function ShoppingAppShell({
             evidence.resetQaTiming();
             setOverlay({ kind: "history" });
           }}
-          appearanceControl={<AppearanceSwitcher />}
+          utilityControl={<AppearanceSwitcher />}
         />
         {qaPanel}
       </>
@@ -392,6 +392,7 @@ export function ShoppingAppShell({
     <>
       <ActiveTripScreen
         controller={controller}
+        utilityControl={<AppearanceSwitcher />}
         addPriceButtonRef={addPriceButtonRef}
         finishTripButtonRef={finishTripButtonRef}
         adjustBudgetButtonRef={adjustBudgetButtonRef}
