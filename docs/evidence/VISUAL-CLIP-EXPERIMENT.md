@@ -8,6 +8,18 @@ This document owns the field-study protocol for issue #88 using the merged CLIP 
 
 It does not authorize production visual recognition.
 
+## Study route
+
+The moving validation surface is:
+
+> `/shopping-budget-companion/visual-recognition-benchmark/`
+
+Representative physical retail evidence must use a published immutable study surface instead:
+
+> `/shopping-budget-companion/study/<baseline>/visual-recognition-benchmark/`
+
+Record the baseline slug and exact source SHA with the corpus. See [Immutable Study Deployments](./IMMUTABLE-STUDY-DEPLOYMENTS.md).
+
 ## Pinned implementation
 
 Runtime:

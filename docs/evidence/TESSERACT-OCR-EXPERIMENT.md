@@ -46,6 +46,12 @@ Target route:
 
 > `/shopping-budget-companion/shelf-label-ocr-tesseract-benchmark/`
 
+This is the moving validation route. Representative physical evidence must use the Tesseract benchmark, timing QA and OCR paired analyzer from one immutable study baseline:
+
+> `/shopping-budget-companion/study/<baseline>/shelf-label-ocr-tesseract-benchmark/`
+
+See [Immutable Study Deployments](./IMMUTABLE-STUDY-DEPLOYMENTS.md).
+
 Build flag:
 
 > `VITE_SHOPPING_OCR_TESSERACT_BENCHMARK=1`

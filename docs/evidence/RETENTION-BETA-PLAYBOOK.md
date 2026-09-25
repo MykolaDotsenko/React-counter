@@ -12,17 +12,27 @@ The app records only privacy-safe local event structure. It does not replace obs
 
 ## Guarded beta route
 
-Use:
+The moving validation route is:
 
 > `/shopping-budget-companion/beta/`
 
-Do not treat the default/public shell as evidence of a passed retention gate.
+For a real retention cohort, publish and use one immutable baseline instead:
+
+> `/shopping-budget-companion/study/<baseline>/beta/`
+
+Record the baseline slug and exact source SHA before recruitment starts. Do not switch a live cohort back to the moving route after evidence collection begins.
+
+Do not treat the default/public shell as evidence of a passed retention gate. See [Immutable Study Deployments](./IMMUTABLE-STUDY-DEPLOYMENTS.md).
 
 ## Guarded cohort analyzer
 
-Use:
+The moving validation route is:
 
 > `/shopping-budget-companion/cohort/`
+
+For a frozen cohort, use the analyzer from the same immutable baseline:
+
+> `/shopping-budget-companion/study/<baseline>/cohort/`
 
 This facilitator-only route imports retention JSON files in browser memory, validates them with the current runtime contract and computes the cohort summary locally. It has no backend, no telemetry, no service worker and no shopping-state access.
 
