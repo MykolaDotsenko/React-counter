@@ -1,5 +1,4 @@
 .screen {
-  color-scheme: light;
   --surface-page: var(--shopping-page);
   --surface-panel: var(--shopping-panel);
   --surface-soft: var(--shopping-soft);
@@ -344,12 +343,6 @@
 
   .quickGrid {
     gap: 10px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .screen {
-    color-scheme: dark;
   }
 }
 
