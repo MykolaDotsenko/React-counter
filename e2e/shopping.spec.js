@@ -124,7 +124,7 @@ test("keeps explicit Dark appearance durable and independent from shopping state
     persisted: "dark",
     page: "#0f1210",
     panel: "#181d19",
-    raised: "#242b25",
+    raised: "#202621",
     accent: "#8fd4b7",
     themeColor: "#0f1210",
   });
