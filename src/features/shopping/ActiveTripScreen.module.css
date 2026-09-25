@@ -273,10 +273,6 @@
   cursor: pointer;
 }
 
-.undoButton:active {
-  transform: scale(0.97);
-}
-
 .undoButton:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
@@ -325,7 +321,7 @@
 }
 
 .addButton:active {
-  transform: translateY(1px) scale(0.985);
+  transform: translateY(1px);
 }
 
 .addButton:focus-visible {
