@@ -83,11 +83,13 @@ test("keeps explicit Light appearance durable and independent from shopping stat
 
   const afterReload = await page.evaluate((appearanceKey) => ({
     mode: document.documentElement.dataset.appearance,
+    theme: document.documentElement.dataset.theme,
     persisted: localStorage.getItem(appearanceKey),
   }), APPEARANCE_KEY);
 
   expect(afterReload).toEqual({
     mode: "light",
+    theme: "light",
     persisted: "light",
   });
 });
@@ -104,6 +106,7 @@ test("keeps explicit Dark appearance durable and independent from shopping state
 
     return {
       mode: document.documentElement.dataset.appearance,
+      theme: document.documentElement.dataset.theme,
       persisted: localStorage.getItem(appearanceKey),
       page: style.getPropertyValue("--shopping-page").trim(),
       panel: style.getPropertyValue("--shopping-panel").trim(),
@@ -151,11 +154,13 @@ test("keeps explicit Dark appearance durable and independent from shopping state
 
   const afterReload = await page.evaluate((appearanceKey) => ({
     mode: document.documentElement.dataset.appearance,
+    theme: document.documentElement.dataset.theme,
     persisted: localStorage.getItem(appearanceKey),
   }), APPEARANCE_KEY);
 
   expect(afterReload).toEqual({
     mode: "dark",
+    theme: "dark",
     persisted: "dark",
   });
 });
