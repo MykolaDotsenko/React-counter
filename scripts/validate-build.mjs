@@ -50,11 +50,11 @@ if (!indexHtml.includes('rel="manifest"')) {
   throw new Error("Public build does not link its web app manifest.");
 }
 
-const MAX_PUBLIC_JS_BYTES = 430_000;
-const MAX_INITIAL_JS_BYTES = 425_000;
-const MAX_SINGLE_JS_CHUNK_BYTES = 425_000;
-const MAX_PUBLIC_JS_GZIP_BYTES = 126_000;
-const MAX_INITIAL_JS_GZIP_BYTES = 123_000;
+const MAX_PUBLIC_JS_BYTES = 400_000;
+const MAX_INITIAL_JS_BYTES = 395_000;
+const MAX_SINGLE_JS_CHUNK_BYTES = 395_000;
+const MAX_PUBLIC_JS_GZIP_BYTES = 118_000;
+const MAX_INITIAL_JS_GZIP_BYTES = 115_000;
 const MAX_PUBLIC_CSS_BYTES = 80_000;
 const MAX_INITIAL_CSS_BYTES = 70_000;
 const MAX_PUBLIC_CSS_GZIP_BYTES = 12_000;

@@ -33,10 +33,10 @@ export default defineConfig({
       reportOnFailure: true,
       skipFull: true,
       thresholds: {
-        statements: 80,
-        branches: 65,
-        functions: 90,
-        lines: 80,
+        statements: 84,
+        branches: 74,
+        functions: 96,
+        lines: 84,
         "src/domain/**": {
           statements: 85,
           branches: 75,
@@ -50,10 +50,10 @@ export default defineConfig({
           },
         },
         "src/application/**": {
-          statements: 80,
-          branches: 72,
-          functions: 94,
-          lines: 80,
+          statements: 86,
+          branches: 77,
+          functions: 95,
+          lines: 86,
           perFile: {
             statements: 60,
             branches: 60,
@@ -62,10 +62,10 @@ export default defineConfig({
           },
         },
         "src/infrastructure/storage/**": {
-          statements: 80,
-          branches: 65,
-          functions: 90,
-          lines: 80,
+          statements: 82,
+          branches: 71,
+          functions: 95,
+          lines: 82,
           perFile: {
             statements: 45,
             branches: 45,
