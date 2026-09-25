@@ -62,7 +62,6 @@
   border-radius: 13px;
   background: var(--shopping-raised);
   color: var(--shopping-text);
-  box-shadow: var(--shopping-control-shadow);
   font: inherit;
   font-size: 0.74rem;
   font-weight: 800;
