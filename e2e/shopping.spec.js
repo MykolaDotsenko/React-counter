@@ -90,6 +90,73 @@ test("keeps explicit Light appearance durable and independent from shopping stat
   });
 });
 
+test("keeps explicit Dark appearance durable and independent from shopping state", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Dark", exact: true }).click();
+
+  const initialAppearance = await page.evaluate((appearanceKey) => {
+    const style = getComputedStyle(document.documentElement);
+
+    return {
+      mode: document.documentElement.dataset.appearance,
+      persisted: localStorage.getItem(appearanceKey),
+      page: style.getPropertyValue("--shopping-page").trim(),
+      panel: style.getPropertyValue("--shopping-panel").trim(),
+      raised: style.getPropertyValue("--shopping-raised").trim(),
+      accent: style.getPropertyValue("--shopping-accent").trim(),
+      themeColor: document
+        .querySelector('meta[name="theme-color"]')
+        ?.getAttribute("content"),
+    };
+  }, APPEARANCE_KEY);
+
+  expect(initialAppearance).toEqual({
+    mode: "dark",
+    persisted: "dark",
+    page: "#0f1210",
+    panel: "#181d19",
+    raised: "#222923",
+    accent: "#8fd4b7",
+    themeColor: "#0f1210",
+  });
+
+  await startQuickBudget(page);
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  const beforeReload = await page.evaluate(
+    ({ activeKey, appearanceKey }) => ({
+      active: localStorage.getItem(activeKey),
+      appearance: localStorage.getItem(appearanceKey),
+    }),
+    { activeKey: ACTIVE_TRIP_KEY, appearanceKey: APPEARANCE_KEY },
+  );
+
+  expect(beforeReload.active).not.toBeNull();
+  expect(beforeReload.appearance).toBe("dark");
+
+  await page.reload();
+
+  await expect(
+    page.getByRole("heading", { name: "Know what’s left" }),
+  ).toBeVisible();
+  await expect(page.getByText("€45.21", { exact: true }).first()).toBeVisible();
+
+  const afterReload = await page.evaluate((appearanceKey) => ({
+    mode: document.documentElement.dataset.appearance,
+    persisted: localStorage.getItem(appearanceKey),
+  }), APPEARANCE_KEY);
+
+  expect(afterReload).toEqual({
+    mode: "dark",
+    persisted: "dark",
+  });
+});
+
 test("starts a EUR 50 trip and restores it exactly after reload", async ({
   page,
 }) => {
