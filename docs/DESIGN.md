@@ -170,6 +170,22 @@ Rules:
 - Light remains the visual calibration baseline for bright grocery environments;
 - Aurora may add visual effects only when contrast, reduced-motion behaviour, battery/performance budgets and the remaining-first hierarchy remain intact.
 
+## Aurora calibration
+
+Aurora is an optional expressive shell, not the default production appearance.
+
+Requirements:
+
+- use a deep navy-black canvas with restrained cyan/violet atmospheric gradients;
+- keep the remaining amount and all critical money values neutral, high-contrast and free of decorative effects;
+- reserve luminous cyan for actions, selected state and controlled emphasis rather than tinting the whole interface;
+- create depth through layered surfaces, subtle glass-like contrast and soft bloom rather than particles or heavy WebGL;
+- preserve explicit warning, danger and focus semantics without letting the aurora palette blur state meaning;
+- price entry, button geometry, information architecture and shopping semantics stay identical to Light/Dark;
+- the explicit Aurora choice must not be overridden by operating-system colour scheme;
+- no continuous animation is required for the static Aurora baseline; later motion must respect reduced motion and performance budgets;
+- all Aurora effects must degrade gracefully to ordinary dark surfaces if a browser cannot render an effect.
+
 ## Dark calibration
 
 Dark is a deliberate low-light shell, not a mechanical inversion of Light.
