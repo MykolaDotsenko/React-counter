@@ -271,7 +271,6 @@
   font: inherit;
   font-weight: 850;
   cursor: pointer;
-  transition: transform 120ms ease;
 }
 
 .undoButton:active {
@@ -568,13 +567,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .heroAmount,
-  .feedback,
-  .item,
   .capacityFill,
   .addButton,
-  .finishButton,
-  .undoButton {
+  .finishButton {
     transition: none;
   }
 }
@@ -657,20 +652,5 @@
   .adjustBudgetButton {
     forced-color-adjust: auto;
     border: 1px solid ButtonText;
-  }
-}
-
-.heroAmount,
-.feedback,
-.item {
-  transition: opacity 160ms ease-out, transform 160ms ease-out;
-}
-
-@starting-style {
-  .heroAmount,
-  .feedback,
-  .item {
-    opacity: 0.76;
-    transform: translateY(3px);
   }
 }
