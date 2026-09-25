@@ -465,7 +465,7 @@
 .key:active,
 .addButton:active,
 .addAnywayButton:active {
-  transform: translateY(1px) scale(0.99);
+  transform: translateY(1px);
 }
 
 .addButton:disabled {
