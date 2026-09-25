@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   APPEARANCE_MODES,
@@ -8,12 +8,6 @@ import {
   type AppearanceMode,
 } from "./appearance";
 import styles from "./AppearanceSwitcher.module.css";
-
-const CameraToolsLinks = lazy(() =>
-  import("./CameraToolsLinks").then(({ CameraToolsLinks }) => ({
-    default: CameraToolsLinks,
-  })),
-);
 
 const LABELS: Readonly<Record<AppearanceMode, string>> = Object.freeze({
   system: "System",
@@ -89,9 +83,14 @@ export function AppearanceSwitcher() {
         calculations stay exactly the same.
       </p>
 
-      <Suspense fallback={null}>
-        <CameraToolsLinks />
-      </Suspense>
+      <a
+        className={styles.option}
+        href={`${import.meta.env.BASE_URL}camera-tools/index.html`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Scanner & camera tools
+      </a>
 
       {saveFailed ? (
         <p className={styles.saveWarning} role="status">
