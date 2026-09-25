@@ -423,6 +423,10 @@
   font-size: 1.25rem;
 }
 
+.key:active {
+  transform: translateY(1px);
+}
+
 .key:disabled {
   cursor: not-allowed;
   opacity: 0.42;
@@ -460,10 +464,6 @@
   color: var(--accent-contrast);
   font-size: 1.05rem;
   box-shadow: var(--shopping-primary-action-shadow);
-}
-
-.key:active {
-  transform: translateY(1px);
 }
 
 .addButton:disabled {
