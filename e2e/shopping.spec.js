@@ -37,6 +37,7 @@ test("keeps explicit Light appearance durable and independent from shopping stat
 
     return {
       mode: document.documentElement.dataset.appearance,
+      theme: document.documentElement.dataset.theme,
       persisted: localStorage.getItem(appearanceKey),
       page: style.getPropertyValue("--shopping-page").trim(),
       panel: style.getPropertyValue("--shopping-panel").trim(),
@@ -49,6 +50,7 @@ test("keeps explicit Light appearance durable and independent from shopping stat
 
   expect(initialAppearance).toEqual({
     mode: "light",
+    theme: "light",
     persisted: "light",
     page: "#f4f1eb",
     panel: "#fffefa",
@@ -115,6 +117,7 @@ test("keeps explicit Dark appearance durable and independent from shopping state
 
   expect(initialAppearance).toEqual({
     mode: "dark",
+    theme: "dark",
     persisted: "dark",
     page: "#0f1210",
     panel: "#181d19",
