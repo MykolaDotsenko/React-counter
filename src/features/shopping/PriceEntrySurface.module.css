@@ -474,7 +474,7 @@
 
 .addButton[data-submitted="true"],
 .addAnywayButton[data-submitted="true"] {
-  animation: submitPulse 160ms ease-out;
+  transform: scale(0.975);
 }
 
 .addButton:disabled {
@@ -671,10 +671,6 @@
     transition: none;
   }
 
-  .addButton[data-submitted="true"],
-  .addAnywayButton[data-submitted="true"] {
-    animation: none;
-  }
 }
 
 @media (forced-colors: active) {
@@ -712,8 +708,4 @@
   .addAnywayButton {
     border: 1px solid ButtonText;
   }
-}
-
-@keyframes submitPulse {
-  50% { transform: scale(0.975); }
 }
