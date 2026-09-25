@@ -90,19 +90,30 @@
 :root[data-theme="aurora"] {
   color-scheme: dark;
 
-  --surface-page: #080b14;
-  --surface-panel: #101522;
-  --surface-soft: #171e2d;
-  --text-primary: #f6f7fb;
-  --text-secondary: #b6bfce;
-  --text-secondary-strong: #ccd3df;
-  --border-subtle: #34405a;
-  --accent-primary: #7de8ff;
-  --accent-contrast: #071017;
-  --status-warning: #ffd38a;
-  --status-danger: #ff9fba;
-  --focus-ring: #b7c8ff;
-  --progress-track: #222b3d;
-  --primary-action-shadow: 0 12px 32px rgb(125 232 255 / 0.12);
+  --surface-page: #070912;
+  --surface-panel: #101625;
+  --surface-soft: #161e31;
+  --surface-raised: #19233a;
+  --surface-accent-soft: #10263a;
+  --text-primary: #f7f9ff;
+  --text-secondary: #b2bdd1;
+  --text-secondary-strong: #d0d7e5;
+  --border-subtle: #2f3c59;
+  --border-strong: #465574;
+  --accent-primary: #8de8ff;
+  --accent-contrast: #061017;
+  --status-warning: #ffd18c;
+  --status-danger: #ff9cb5;
+  --focus-ring: #bdcaff;
+  --progress-track: #202a40;
+  --page-canvas:
+    radial-gradient(circle at 12% 0,#16304b 0,transparent 34rem),
+    radial-gradient(circle at 88% 8%,#2a1745 0,transparent 30rem),
+    linear-gradient(#080b14,#070912);
+  --hero-surface: linear-gradient(145deg,#131d31,#0f1423 72%);
+  --overlay-backdrop: #02040ba8;
+  --panel-shadow: 0 18px 48px #0007;
+  --elevated-shadow: 0 24px 64px #0009;
+  --primary-action-shadow: 0 12px 30px #8de8ff24;
 }
 
