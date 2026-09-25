@@ -13,7 +13,6 @@
   --danger: var(--shopping-danger);
   --focus: var(--shopping-focus);
 
-  color-scheme: light;
   min-height: 100dvh;
   padding:
     max(20px, env(safe-area-inset-top))
@@ -310,7 +309,7 @@
   font-size: 1.05rem;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 12px 26px rgb(49 95 79 / 0.18);
+  box-shadow: var(--shopping-primary-action-shadow);
   transition:
     transform 120ms ease,
     box-shadow 120ms ease;
@@ -322,7 +321,7 @@
 }
 
 .addButton:hover {
-  box-shadow: 0 14px 30px rgb(49 95 79 / 0.24);
+  box-shadow: var(--shopping-primary-action-shadow-hover);
 }
 
 .addButton:active {
@@ -560,16 +559,6 @@
 
   .summaryRow strong {
     max-width: 62%;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .screen {
-    color-scheme: dark;
-  }
-
-  .addButton {
-    box-shadow: none;
   }
 }
 
