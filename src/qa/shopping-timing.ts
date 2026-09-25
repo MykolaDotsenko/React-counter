@@ -620,7 +620,7 @@ const isQaTimingSession = (value: unknown): value is QaTimingSession => {
 };
 
 export const loadQaTimingSession = (
-  storage: Storage,
+  storage: Pick<Storage, "getItem">,
   environment: QaTimingEnvironment,
 ): QaTimingSession => {
   const storedCandidates = [
@@ -657,7 +657,7 @@ export const loadQaTimingSession = (
 };
 
 export const persistQaTimingSession = (
-  storage: Storage,
+  storage: Pick<Storage, "setItem" | "removeItem">,
   session: QaTimingSession,
 ): void => {
   storage.setItem(QA_TIMING_STORAGE_KEY, JSON.stringify(session));

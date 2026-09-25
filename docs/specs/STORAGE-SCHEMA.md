@@ -46,7 +46,7 @@ surface:/shopping-budget-companion/beta/|budget-cart:active-trip
 surface:/shopping-budget-companion/study/<baseline>/beta/|budget-cart:qa:retention-v1
 ```
 
-The scope is resolved at runtime from the relocatable base, so a copied immutable study baseline, the moving guarded route and the public app never read, overwrite or clear each other's records. Appearance preference (`shopping-budget:appearance`) stays shared on purpose; it is convenience state. Study baselines published before scoping shipped keep the unscoped keys they were built with.
+The scope is resolved at runtime from the relocatable base, so a copied immutable study baseline, the moving guarded route and the public app never read, overwrite or clear each other's records. The same scope applies to the tab-scoped QA timing evidence in `sessionStorage`. Appearance preference (`shopping-budget:appearance`) stays shared on purpose; it is convenience state. Study baselines published before scoping shipped keep the unscoped keys they were built with.
 
 ## Common envelope
 

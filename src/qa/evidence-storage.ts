@@ -11,3 +11,9 @@ export const evidenceStorage = (): StorageLike => {
   const scope = surfaceStorageScope();
   return scope === null ? localStorage : scopedStorage(localStorage, scope);
 };
+
+/** Tab-scoped QA timing evidence, scoped to the deployed surface as well. */
+export const evidenceSessionStorage = (): StorageLike => {
+  const scope = surfaceStorageScope();
+  return scope === null ? sessionStorage : scopedStorage(sessionStorage, scope);
+};
