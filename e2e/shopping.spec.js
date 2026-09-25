@@ -165,6 +165,55 @@ test("keeps explicit Dark appearance durable and independent from shopping state
   });
 });
 
+test("System appearance follows OS colour scheme without mutating the saved preference", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/");
+
+  const darkSystem = await page.evaluate((appearanceKey) => ({
+    appearance: document.documentElement.dataset.appearance,
+    theme: document.documentElement.dataset.theme,
+    persisted: localStorage.getItem(appearanceKey),
+    page: getComputedStyle(document.documentElement)
+      .getPropertyValue("--shopping-page")
+      .trim(),
+    themeColor: document
+      .querySelector('meta[name="theme-color"]')
+      ?.getAttribute("content"),
+  }), APPEARANCE_KEY);
+
+  expect(darkSystem).toEqual({
+    appearance: "system",
+    theme: "dark",
+    persisted: null,
+    page: "#0f1210",
+    themeColor: "#0f1210",
+  });
+
+  await page.emulateMedia({ colorScheme: "light" });
+
+  await expect.poll(
+    () => page.evaluate(() => document.documentElement.dataset.theme),
+  ).toBe("light");
+
+  const lightSystem = await page.evaluate((appearanceKey) => ({
+    appearance: document.documentElement.dataset.appearance,
+    theme: document.documentElement.dataset.theme,
+    persisted: localStorage.getItem(appearanceKey),
+    themeColor: document
+      .querySelector('meta[name="theme-color"]')
+      ?.getAttribute("content"),
+  }), APPEARANCE_KEY);
+
+  expect(lightSystem).toEqual({
+    appearance: "system",
+    theme: "light",
+    persisted: null,
+    themeColor: "#f4f1eb",
+  });
+});
+
 test("starts a EUR 50 trip and restores it exactly after reload", async ({
   page,
 }) => {
