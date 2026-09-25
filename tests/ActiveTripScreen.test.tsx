@@ -166,6 +166,19 @@ describe("ActiveTripScreen", () => {
     expect(onAddPrice).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the shared appearance and camera utility surface visible during an active trip", () => {
+    render(
+      <ActiveTripScreen
+        controller={createController(createTrip())}
+        onAddPrice={vi.fn()}
+        utilityControl={<div data-testid="shopping-utilities">Utilities</div>}
+        locale="en-IE"
+      />,
+    );
+
+    expect(screen.getByTestId("shopping-utilities")).not.toBeNull();
+  });
+
   it("uses safe remaining as the hero when a safety buffer is active", () => {
     const trip = createTrip({
       buffer: 200,
