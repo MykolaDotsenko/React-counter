@@ -78,16 +78,7 @@ export function AppearanceSwitcher() {
         ))}
       </div>
 
-      <p className={styles.hint}>
-        System follows your device. Aurora changes visuals only; shopping data
-        stays unchanged.
-      </p>
-
-      <a
-        className={styles.option}
-        href="./camera-tools/"
-        target="_blank"
-      >
+      <a className={styles.hint} href="./camera-tools/">
         Scanner & camera
       </a>
 
