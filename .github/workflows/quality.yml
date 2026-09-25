@@ -107,7 +107,7 @@ jobs:
           VITE_SHOPPING_QA_TIMING: "1"
           VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
-          npm run build -- --base=/shopping-budget-companion/qa/ --outDir=dist-qa
+          npm run build -- --base=./ --outDir=dist-qa
           npm run qa:prepare-index
 
       - name: Build guarded retention beta
@@ -115,7 +115,7 @@ jobs:
           VITE_SHOPPING_BETA_EVIDENCE: "1"
           VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
-          npm run build -- --base=/shopping-budget-companion/beta/ --outDir=dist-beta
+          npm run build -- --base=./ --outDir=dist-beta
           npm run beta:prepare-index
 
       - name: Build local retention cohort analyzer
@@ -123,7 +123,7 @@ jobs:
           VITE_SHOPPING_COHORT_ANALYSIS: "1"
           VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
-          npm run build -- --base=/shopping-budget-companion/cohort/ --outDir=dist-cohort
+          npm run build -- --base=./ --outDir=dist-cohort
           npm run cohort:prepare-index
 
       - name: Build experimental barcode benchmark
@@ -131,7 +131,7 @@ jobs:
           VITE_SHOPPING_BARCODE_BENCHMARK: "1"
           VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
-          npm run build -- --base=/shopping-budget-companion/barcode-benchmark/ --outDir=dist-barcode
+          npm run build -- --base=./ --outDir=dist-barcode
           npm run barcode:prepare-index
 
       - name: Build local paired barcode analyzer
@@ -139,7 +139,7 @@ jobs:
           VITE_SHOPPING_BARCODE_PAIRED_ANALYZER: "1"
           VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
-          npm run build -- --base=/shopping-budget-companion/barcode-paired-analyzer/ --outDir=dist-barcode-paired
+          npm run build -- --base=./ --outDir=dist-barcode-paired
           npm run barcode-paired:prepare-index
 
       - name: Build local OCR paired analyzer
@@ -147,7 +147,7 @@ jobs:
           VITE_SHOPPING_OCR_PAIRED_ANALYZER: "1"
           VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
-          npm run build -- --base=/shopping-budget-companion/ocr-paired-analyzer/ --outDir=dist-ocr-paired
+          npm run build -- --base=./ --outDir=dist-ocr-paired
           npm run ocr-paired:prepare-index
 
       - name: Build experimental visual product benchmark
@@ -155,7 +155,7 @@ jobs:
           VITE_SHOPPING_VISUAL_BENCHMARK: "1"
           VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
-          npm run build -- --base=/shopping-budget-companion/visual-recognition-benchmark/ --outDir=dist-visual
+          npm run build -- --base=./ --outDir=dist-visual
           npm run visual:prepare-index
 
       - name: Build experimental shelf-label OCR benchmark
@@ -163,7 +163,7 @@ jobs:
           VITE_SHOPPING_OCR_BENCHMARK: "1"
           VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
-          npm run build -- --base=/shopping-budget-companion/shelf-label-ocr-benchmark/ --outDir=dist-ocr
+          npm run build -- --base=./ --outDir=dist-ocr
           npm run ocr:prepare-index
 
       - name: Build concrete Tesseract shelf-label OCR benchmark
@@ -171,8 +171,31 @@ jobs:
           VITE_SHOPPING_OCR_TESSERACT_BENCHMARK: "1"
           VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
-          npm run build -- --base=/shopping-budget-companion/shelf-label-ocr-tesseract-benchmark/ --outDir=dist-ocr-tesseract
+          npm run build -- --base=./ --outDir=dist-ocr-tesseract
           npm run ocr-tesseract:prepare-index
+
+      - name: Validate guarded builds are relocatable
+        shell: bash
+        run: |
+          set -euo pipefail
+          for dir in \
+            dist-qa \
+            dist-beta \
+            dist-cohort \
+            dist-barcode \
+            dist-barcode-paired \
+            dist-ocr-paired \
+            dist-visual \
+            dist-ocr \
+            dist-ocr-tesseract; do
+            test -f "${dir}/index.html"
+            test ! -e "${dir}/manifest.webmanifest"
+            test ! -e "${dir}/sw.js"
+            if grep -Eq '(src|href)="/shopping-budget-companion/' "${dir}/index.html"; then
+              echo "Guarded build is not relocatable: ${dir}" >&2
+              exit 1
+            fi
+          done
 
       - name: Stage immutable site artifact
         run: |
@@ -309,6 +332,7 @@ jobs:
           test ! -e /tmp/pages-site/package-lock.json
           test ! -e /tmp/pages-site/src
           test ! -e /tmp/pages-site/tests
+          test ! -e /tmp/pages-site/study
           test ! -e /tmp/pages-site/dist
           test ! -e /tmp/pages-site/dist-qa
           test ! -e /tmp/pages-site/dist-beta
@@ -843,14 +867,42 @@ jobs:
           test ! -e /tmp/pages-site/src
           test ! -e /tmp/pages-site/tests
 
-      - name: Publish exact tested artifact to gh-pages
+      - name: Preserve immutable study baselines
+        shell: bash
         run: |
+          set -euo pipefail
+          rm -rf /tmp/preserved-gh-pages
+          mkdir -p /tmp/preserved-gh-pages
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+
+          if git ls-tree -d --name-only origin/gh-pages study | grep -qx study; then
+            git archive origin/gh-pages study | tar -x -C /tmp/preserved-gh-pages
+            git rev-parse origin/gh-pages:study > /tmp/study-tree-before
+          fi
+
+      - name: Publish exact tested artifact to gh-pages
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch --orphan gh-pages-publish
           git rm -rf . || true
           git clean -fdx
           cp -R /tmp/pages-site/. .
+
+          if [ -d /tmp/preserved-gh-pages/study ]; then
+            cp -R /tmp/preserved-gh-pages/study ./study
+          fi
+
           git add -A
+
+          if [ -f /tmp/study-tree-before ]; then
+            root_tree="$(git write-tree)"
+            study_tree_after="$(git rev-parse "${root_tree}:study")"
+            study_tree_before="$(cat /tmp/study-tree-before)"
+            test "${study_tree_after}" = "${study_tree_before}"
+          fi
+
           git commit -m "deploy: tested shopping app ${GITHUB_SHA}"
           git push --force origin HEAD:gh-pages
