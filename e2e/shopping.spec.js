@@ -9,6 +9,7 @@ const ACTIVE_TRIP_KEY = "budget-cart:active-trip";
 const HISTORY_KEY = "budget-cart:history";
 const PRICE_MEMORY_KEY = "budget-cart:price-memory";
 const RETENTION_BETA_KEY = "budget-cart:qa:retention-v1";
+const APPEARANCE_KEY = "shopping-budget:appearance";
 
 const startQuickBudget = async (page, label = "€50") => {
   await page.getByRole("button", { name: label, exact: true }).click();
@@ -23,6 +24,67 @@ const hasHorizontalOverflow = (page) =>
       document.documentElement.scrollWidth >
       document.documentElement.clientWidth,
   );
+
+test("keeps explicit Light appearance durable and independent from shopping state", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Light", exact: true }).click();
+
+  const initialAppearance = await page.evaluate((appearanceKey) => {
+    const style = getComputedStyle(document.documentElement);
+
+    return {
+      mode: document.documentElement.dataset.appearance,
+      persisted: localStorage.getItem(appearanceKey),
+      page: style.getPropertyValue("--shopping-page").trim(),
+      panel: style.getPropertyValue("--shopping-panel").trim(),
+      accent: style.getPropertyValue("--shopping-accent").trim(),
+    };
+  }, APPEARANCE_KEY);
+
+  expect(initialAppearance).toEqual({
+    mode: "light",
+    persisted: "light",
+    page: "#f4f1eb",
+    panel: "#fffefa",
+    accent: "#2f604f",
+  });
+
+  await startQuickBudget(page);
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+
+  const shoppingBeforeReload = await page.evaluate(
+    ({ activeKey, appearanceKey }) => ({
+      active: localStorage.getItem(activeKey),
+      appearance: localStorage.getItem(appearanceKey),
+    }),
+    { activeKey: ACTIVE_TRIP_KEY, appearanceKey: APPEARANCE_KEY },
+  );
+
+  expect(shoppingBeforeReload.active).not.toBeNull();
+  expect(shoppingBeforeReload.appearance).toBe("light");
+
+  await page.reload();
+
+  await expect(
+    page.getByRole("heading", { name: "Know what’s left" }),
+  ).toBeVisible();
+  await expect(page.getByText("€45.21", { exact: true }).first()).toBeVisible();
+
+  const afterReload = await page.evaluate((appearanceKey) => ({
+    mode: document.documentElement.dataset.appearance,
+    persisted: localStorage.getItem(appearanceKey),
+  }), APPEARANCE_KEY);
+
+  expect(afterReload).toEqual({
+    mode: "light",
+    persisted: "light",
+  });
+});
 
 test("starts a EUR 50 trip and restores it exactly after reload", async ({
   page,
