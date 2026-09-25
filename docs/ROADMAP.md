@@ -33,6 +33,7 @@ The core Shopping Budget Companion engineering path is implemented:
 - guarded pinned Tesseract.js 7 multilingual OCR experiment for issue #90 (not production OCR)
 - local-only OCR/manual paired evidence analyzer for issue #90
 - Chromium / Firefox / WebKit quality coverage
+- immutable versioned study deployment contract for evidence surfaces
 
 The representative physical-phone interaction gate was accepted by explicit repository-owner/user attestation on 2026-09-24. The check was reported as responsibly completed with no blocking usability problem.
 
@@ -107,7 +108,9 @@ The active roadmap is intentionally narrow and local-first.
    - require pull requests and current branches;
    - require the full quality/browser/CodeQL matrix;
    - block force pushes and deletion;
-   - automatically remove merged head branches.
+   - automatically remove merged head branches;
+   - protect immutable `study/*` source refs;
+   - publish new real-world studies from immutable `/study/<baseline>/` Pages surfaces rather than moving guarded URLs.
 
 2. **Real-shopper retention — issue #72**
    - recruit 20–50 real shoppers;
