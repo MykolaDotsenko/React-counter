@@ -2,10 +2,8 @@ import { expect, test } from "@playwright/test";
 
 const ACTIVE_TRIP_KEY = "budget-cart:active-trip";
 const HISTORY_KEY = "budget-cart:history";
-const appPath =
-  process.env.PLAYWRIGHT_STAGED_SITE === "1"
-    ? "/shopping-budget-companion/"
-    : "/";
+const stagedSite = process.env.PLAYWRIGHT_STAGED_SITE === "1";
+const appPath = stagedSite ? "/shopping-budget-companion/" : "/";
 
 const waitForInstalledShell = async (page) => {
   await page.evaluate(async () => {
@@ -91,6 +89,24 @@ test("restores active and completed shopping state with the browser offline", as
 
   await page.reload();
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+
+  if (stagedSite) {
+    const studyProbeUrl = new URL(
+      "study/nonexistent-baseline/",
+      page.url(),
+    ).href;
+    const studyProbePage = await context.newPage();
+
+    try {
+      const response = await studyProbePage.goto(studyProbeUrl, {
+        waitUntil: "domcontentloaded",
+      });
+
+      expect(response?.status()).toBe(404);
+    } finally {
+      await studyProbePage.close();
+    }
+  }
 
   await page.getByRole("button", { name: "€50", exact: true }).click();
   await page.getByRole("button", { name: "Add price" }).click();
