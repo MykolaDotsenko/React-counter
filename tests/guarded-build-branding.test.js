@@ -9,7 +9,7 @@ const publicHtml = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="theme-color" content="#f5f3ee" />
+    <meta name="theme-color" content="#f4f1eb" />
     <meta name="application-name" content="Shopping Budget Companion" />
     <meta
       name="description"
@@ -36,7 +36,7 @@ describe("internal shopping build metadata", () => {
       'content="Internal Shopping Budget Companion real-store retention beta with privacy-safe local evidence."',
     );
     expect(branded).toContain(
-      '<meta name="theme-color" content="#f5f3ee" />',
+      '<meta name="theme-color" content="#f4f1eb" />',
     );
     expect(branded).toContain(
       '<meta name="robots" content="noindex,nofollow,noarchive" />',
