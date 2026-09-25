@@ -15,6 +15,8 @@ import {
   isoTimestamp,
   itemCount,
   itemId,
+  latestTripTimestamp,
+  laterTimestamp,
   lineTotal,
   nominalOverage,
   mostRecentCompletedTrip,
@@ -484,6 +486,66 @@ describe("derived shopping values", () => {
 
     expect(trip.items).toHaveLength(2);
     expect(itemCount(trip)).toBe(5);
+  });
+});
+
+describe("trip timestamps", () => {
+  it("reports the latest moment the trip records", () => {
+    let trip = createTrip();
+
+    expect(latestTripTimestamp(trip)).toBe(START);
+
+    trip = addItem(
+      trip,
+      createItem({
+        id: "late",
+        price: 100,
+        createdAt: LATER,
+        updatedAt: "2026-09-21T09:07:00.000Z",
+      }),
+    );
+    trip = addItem(trip, createItem({ id: "early", price: 100 }));
+
+    expect(latestTripTimestamp(trip)).toBe("2026-09-21T09:07:00.000Z");
+
+    const completed = unwrap(
+      reduceTrip(trip, {
+        type: "complete-trip",
+        completedAt: unwrap(isoTimestamp("2026-09-21T09:08:00.000Z")),
+      }),
+    );
+
+    expect(latestTripTimestamp(completed)).toBe("2026-09-21T09:08:00.000Z");
+  });
+
+  it("picks the later of two canonical timestamps", () => {
+    const start = unwrap(isoTimestamp(START));
+    const later = unwrap(isoTimestamp(LATER));
+
+    expect(laterTimestamp(start, later)).toBe(later);
+    expect(laterTimestamp(later, start)).toBe(later);
+    expect(laterTimestamp(start, start)).toBe(start);
+  });
+
+  it("accepts corrections and completion stamped at the latest trip moment", () => {
+    const trip = addItem(
+      createTrip(),
+      createItem({ id: "ahead", price: 100, createdAt: LATER }),
+    );
+    const floor = latestTripTimestamp(trip);
+
+    const corrected = unwrap(
+      reduceTrip(trip, {
+        type: "update-item",
+        itemId: unwrap(itemId("ahead")),
+        patch: { quantity: 2 },
+        now: floor,
+      }),
+    );
+
+    expect(
+      reduceTrip(corrected, { type: "complete-trip", completedAt: floor }).ok,
+    ).toBe(true);
   });
 });
 

@@ -3,7 +3,11 @@ import {
   mergePriceMemories,
   priceMemoryRecordsFromCompletedTrip,
 } from "../domain/price-memory";
-import { reduceTrip } from "../domain/shopping-trip";
+import {
+  laterTimestamp,
+  latestTripTimestamp,
+  reduceTrip,
+} from "../domain/shopping-trip";
 import type { PriceMemoryPersistencePort } from "./price-memory-port";
 import type {
   AppCommandResult,
@@ -54,7 +58,10 @@ export const createCompletionUseCases = ({
       return failure(state, active.error);
     }
 
-    const completedAt = clock.now();
+    const completedAt = laterTimestamp(
+      clock.now(),
+      latestTripTimestamp(active.trip),
+    );
     const tripResult = reduceTrip(active.trip, {
       type: "complete-trip",
       completedAt,

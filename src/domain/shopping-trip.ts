@@ -5,6 +5,7 @@ export {
   createCartItem,
   isoTimestamp,
   itemId,
+  laterTimestamp,
   storeId,
   tripId,
 } from "./shopping-trip-model";
@@ -35,6 +36,7 @@ export {
   cartTotal,
   checkoutDifference,
   itemCount,
+  latestTripTimestamp,
   lineTotal,
   mostRecentCompletedTrip,
   nominalOverage,

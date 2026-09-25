@@ -9,6 +9,7 @@ import {
 import {
   cartTotalResult,
   domainError,
+  laterTimestamp,
   lineTotalResult,
   normalizeLabel,
   ok,
@@ -22,6 +23,7 @@ import {
   type CartItem,
   type CompletedTrip,
   type DomainError,
+  type IsoTimestamp,
   type ShoppingTrip,
   type SpendingPlanProjection,
   type TripProjection,
@@ -86,6 +88,24 @@ export const itemCount = (trip: ShoppingTrip): number => {
   }
 
   return count;
+};
+
+/**
+ * The latest moment the trip already records. Commands on the trip must not be
+ * stamped earlier, even when the device clock has moved backwards.
+ */
+export const latestTripTimestamp = (trip: ShoppingTrip): IsoTimestamp => {
+  let latest =
+    trip.status === "completed"
+      ? laterTimestamp(trip.completedAt, trip.startedAt)
+      : trip.startedAt;
+
+  for (const item of trip.items) {
+    latest = laterTimestamp(item.createdAt, latest);
+    latest = laterTimestamp(item.updatedAt, latest);
+  }
+
+  return latest;
 };
 
 export const mostRecentCompletedTrip = (

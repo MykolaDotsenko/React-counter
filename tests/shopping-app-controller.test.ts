@@ -1679,6 +1679,128 @@ describe("ShoppingAppController trip completion", () => {
   });
 });
 
+describe("ShoppingAppController device clock moving backwards", () => {
+  const AHEAD = "2026-09-21T10:00:00.000Z";
+  const BEHIND = "2026-09-21T09:30:00.000Z";
+
+  const restoredTripWithItemAt = (at: string): ActiveTrip => {
+    const item = unwrap(
+      createCartItem({
+        id: "item-ahead",
+        unitPriceMinor: money(379),
+        quantity: 1,
+        priceSource: { kind: "manual" },
+        priceConfidence: { kind: "confirmed", confirmedAt: time(at) },
+        createdAt: at,
+      }),
+    );
+    const trip = unwrap(
+      reduceTrip(createTrip(5_000, 0), { type: "add-item", item }),
+    );
+
+    if (trip.status !== "active") {
+      throw new Error("Expected active trip");
+    }
+
+    return trip;
+  };
+
+  it("stamps corrections no earlier than the trip's latest recorded moment", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: restoredTripWithItemAt(AHEAD),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(BEHIND),
+      ids,
+    });
+    controller.bootstrap();
+
+    const edited = controller.updateManualItem({
+      itemId: unwrap(parseItemId("item-ahead")),
+      unitPriceMinor: money(399),
+      quantity: 2,
+    });
+
+    expect(edited.ok).toBe(true);
+
+    if (!edited.ok) {
+      throw new Error("Expected correction despite clock rollback");
+    }
+
+    const item = edited.state.activeTrip?.items[0];
+
+    expect(item?.unitPriceMinor).toBe(399);
+    expect(item?.updatedAt).toBe(AHEAD);
+    expect(item?.priceConfidence).toEqual({
+      kind: "confirmed",
+      confirmedAt: AHEAD,
+    });
+    expect(edited.durability).toBe("persisted");
+  });
+
+  it("adds items and finishes the trip without an invalid-timestamp dead end", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: restoredTripWithItemAt(AHEAD),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(BEHIND),
+      ids,
+    });
+    controller.bootstrap();
+
+    const added = controller.addManualItem({
+      unitPriceMinor: money(120),
+      quantity: 1,
+    });
+
+    expect(added.ok).toBe(true);
+
+    if (!added.ok) {
+      throw new Error("Expected add despite clock rollback");
+    }
+
+    expect(added.state.activeTrip?.items.at(-1)?.createdAt).toBe(AHEAD);
+
+    const finished = controller.completeTrip();
+
+    expect(finished.ok).toBe(true);
+
+    if (!finished.ok) {
+      throw new Error("Expected completion despite clock rollback");
+    }
+
+    expect(finished.state.lifecycle).toBe("completed-summary");
+    expect(finished.state.completedSummary?.completedAt).toBe(AHEAD);
+  });
+
+  it("keeps using the device clock when it is ahead of the trip", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: restoredTripWithItemAt(NEXT),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const finished = controller.completeTrip();
+
+    expect(finished.ok).toBe(true);
+
+    if (!finished.ok) {
+      throw new Error("Expected completion");
+    }
+
+    expect(finished.state.completedSummary?.completedAt).toBe(LATER);
+  });
+});
+
 describe("ShoppingAppController retryPersistence", () => {
   it("retries the exact canonical active trip and heals degraded persistence", () => {
     const persistence = createPersistence({

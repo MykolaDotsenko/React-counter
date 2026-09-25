@@ -316,6 +316,11 @@ export const timestampAtOrAfter = (
   floor: IsoTimestamp,
 ): boolean => timestampMs(candidate) >= timestampMs(floor);
 
+export const laterTimestamp = (
+  candidate: IsoTimestamp,
+  floor: IsoTimestamp,
+): IsoTimestamp => (timestampAtOrAfter(candidate, floor) ? candidate : floor);
+
 export const normalizeLabel = (
   label: string | null | undefined,
 ): Result<string | undefined, DomainError> => {

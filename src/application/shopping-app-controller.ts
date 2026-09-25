@@ -1,9 +1,12 @@
 import {
   createActiveTrip,
   createCartItem,
+  latestTripTimestamp,
+  laterTimestamp,
   reduceTrip,
   type ActiveTrip,
   type CompletedTrip,
+  type IsoTimestamp,
   type ItemId,
   type TripId,
 } from "../domain/shopping-trip";
@@ -83,6 +86,9 @@ export const createShoppingAppController = ({
   };
 
   const getSnapshot = (): ShoppingAppState => state;
+
+  const tripCommandTime = (trip: ActiveTrip): IsoTimestamp =>
+    laterTimestamp(clock.now(), latestTripTimestamp(trip));
 
   const subscribe = (listener: () => void): (() => void) => {
     listeners.add(listener);
@@ -278,7 +284,7 @@ export const createShoppingAppController = ({
       return failure(state, active.error);
     }
 
-    const now = clock.now();
+    const now = tripCommandTime(active.trip);
     const itemResult = createCartItem({
       id: ids.itemId(),
       unitPriceMinor: input.unitPriceMinor,
@@ -322,7 +328,7 @@ export const createShoppingAppController = ({
       );
     }
 
-    const now = clock.now();
+    const now = tripCommandTime(active.trip);
     const itemResult = createCartItem({
       id: ids.itemId(),
       unitPriceMinor: memory.unitPriceMinor,
@@ -381,7 +387,7 @@ export const createShoppingAppController = ({
       });
     }
 
-    const now = clock.now();
+    const now = tripCommandTime(active.trip);
     const priceChanged =
       current.unitPriceMinor !== input.unitPriceMinor;
 
