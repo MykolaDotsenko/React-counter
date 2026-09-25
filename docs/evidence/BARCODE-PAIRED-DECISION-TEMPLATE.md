@@ -17,6 +17,12 @@ Use the guarded facilitator route:
 
 > `/shopping-budget-companion/barcode-paired-analyzer/`
 
+For real paired evidence, use the analyzer from the same immutable baseline as the timing QA and barcode benchmark:
+
+> `/shopping-budget-companion/study/<baseline>/barcode-paired-analyzer/`
+
+See [Immutable Study Deployments](./IMMUTABLE-STUDY-DEPLOYMENTS.md).
+
 The analyzer imports exactly one structured QA timing export plus one barcode benchmark export in page memory. It runtime-validates both payloads, rejects tampered derived summaries, checks matching `buildRevision`, user agent, viewport and device label, verifies minimum evidence, derives comparable manual P90 values from the retained valid fixture samples, and computes descriptive barcode-vs-manual deltas/ratios.
 
 The analyzer deliberately does **not** output PROMOTE / REMEDIATE / DEFER. That remains the human decision documented in this template after reviewing timing, failure/correction/fallback cost, preference, effort and target-device concerns.
