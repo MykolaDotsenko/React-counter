@@ -3,8 +3,8 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: var(--shopping-page-canvas, #f5f3ee);
-  color: var(--shopping-text, #202520);
+  background: var(--shopping-page-canvas, #f4f1eb);
+  color: var(--shopping-text, #1d241f);
 }
 
 .card {
@@ -41,7 +41,7 @@
   padding: 0 20px;
   border: 0;
   border-radius: 14px;
-  background: var(--shopping-accent, #315f4f);
+  background: var(--shopping-accent, #2f604f);
   color: var(--shopping-accent-contrast, #fff);
   font: inherit;
   font-weight: 700;
