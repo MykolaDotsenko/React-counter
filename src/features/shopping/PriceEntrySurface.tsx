@@ -487,6 +487,7 @@ export function PriceEntrySurface({
           <button
             type="button"
             className={styles.addButton}
+            data-submitted={submitted || undefined}
             disabled={validPrice === null || submitted}
             aria-describedby={projection === null ? undefined : projectionId}
             onClick={commit}
@@ -572,6 +573,7 @@ export function PriceEntrySurface({
               <button
                 type="button"
                 className={styles.addAnywayButton}
+                data-submitted={submitted || undefined}
                 disabled={submitted}
                 onClick={confirmOverBudget}
               >
