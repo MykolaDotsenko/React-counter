@@ -2,7 +2,6 @@ import { useEffect, useRef, type CSSProperties, type Ref } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
-import { settleMotion } from "./shopping-motion";
 import { formatEur, signedMinorUnits } from "../../domain/money";
 import type { PriceMemoryRecord } from "../../domain/price-memory";
 import {
@@ -108,7 +107,15 @@ export function ActiveTripScreen({
   const heroMotionRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    if (trip !== null) settleMotion(heroMotionRef.current);
+    if (
+      trip !== null &&
+      !window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+    ) {
+      heroMotionRef.current?.animate?.(
+        [{ opacity: 0.8 }, { opacity: 1 }],
+        { duration: 160 },
+      );
+    }
   }, [trip]);
 
   if (state.lifecycle !== "active" || trip === null) {
