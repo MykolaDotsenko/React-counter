@@ -2,7 +2,7 @@ import { useEffect, useRef, type CSSProperties, type Ref } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
-import { settleMotion } from "../../app/motion";
+import { settleMotion } from "./shopping-motion";
 import { formatEur, signedMinorUnits } from "../../domain/money";
 import type { PriceMemoryRecord } from "../../domain/price-memory";
 import {
