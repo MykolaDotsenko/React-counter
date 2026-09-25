@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import {
   APPEARANCE_MODES,
@@ -9,8 +9,11 @@ import {
 } from "./appearance";
 import styles from "./AppearanceSwitcher.module.css";
 
-const cameraToolHref = (route: string): string =>
-  `${import.meta.env.BASE_URL}${route}/`;
+const CameraToolsLinks = lazy(() =>
+  import("./CameraToolsLinks").then(({ CameraToolsLinks }) => ({
+    default: CameraToolsLinks,
+  })),
+);
 
 const LABELS: Readonly<Record<AppearanceMode, string>> = Object.freeze({
   system: "System",
@@ -86,46 +89,9 @@ export function AppearanceSwitcher() {
         calculations stay exactly the same.
       </p>
 
-      <div className={styles.heading}>
-        <div>
-          <p className={styles.eyebrow}>Camera tools</p>
-          <h2>Scan & recognize</h2>
-        </div>
-        <span className={styles.current}>Experimental</span>
-      </div>
-
-      <div className={styles.toolOptions} aria-label="Camera and scanner tools">
-        <a
-          className={styles.option}
-          href={cameraToolHref("barcode-benchmark")}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Barcode scanner
-        </a>
-        <a
-          className={styles.option}
-          href={cameraToolHref("visual-recognition-benchmark")}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Visual camera
-        </a>
-        <a
-          className={styles.option}
-          href={cameraToolHref("shelf-label-ocr-tesseract-benchmark")}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Shelf-price OCR
-        </a>
-      </div>
-
-      <p className={styles.hint}>
-        Camera tools open in a new tab so your active trip stays intact. They do
-        not auto-write a price into the cart; manual confirmation remains the
-        financial authority.
-      </p>
+      <Suspense fallback={null}>
+        <CameraToolsLinks />
+      </Suspense>
 
       {saveFailed ? (
         <p className={styles.saveWarning} role="status">
