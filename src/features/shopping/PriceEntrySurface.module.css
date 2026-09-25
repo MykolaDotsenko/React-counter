@@ -464,17 +464,16 @@
   color: var(--accent-contrast);
   font-size: 1.05rem;
   box-shadow: var(--shopping-primary-action-shadow);
+}
+
+.addButton,
+.addAnywayButton {
   transition: transform 120ms ease;
 }
 
 .addButton:active,
 .addAnywayButton:active {
   transform: scale(0.985);
-}
-
-.addButton[data-submitted="true"],
-.addAnywayButton[data-submitted="true"] {
-  transform: scale(0.975);
 }
 
 .addButton:disabled {
@@ -667,10 +666,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .key,
-  .addButton {
+  .addButton,
+  .addAnywayButton {
     transition: none;
   }
-
 }
 
 @media (forced-colors: active) {
