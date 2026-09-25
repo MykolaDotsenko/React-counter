@@ -288,25 +288,24 @@ test("reduced motion removes decorative shopping transitions without changing th
 
   expect(
     await remainingAmount.evaluate(
-      (element) => getComputedStyle(element).transitionDuration,
+      (element) => element.getAnimations().length,
     ),
-  ).toBe("0s");
+  ).toBe(0);
 
   await page.getByRole("button", { name: "Add price" }).click();
   await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
 
-  const add = page.getByRole("button", { name: "Add · €4.79" });
+  const updatedRemaining = page
+    .getByLabel("Current spending status")
+    .getByText("€45.21");
+
+  await expect(updatedRemaining).toBeVisible();
   expect(
-    await add.evaluate(
-      (element) => getComputedStyle(element).transitionDuration,
+    await updatedRemaining.evaluate(
+      (element) => element.getAnimations().length,
     ),
-  ).toBe("0s");
-
-  await add.click();
-
-  await expect(
-    page.getByLabel("Current spending status").getByText("€45.21"),
-  ).toBeVisible();
+  ).toBe(0);
 });
 
 test("starts a EUR 50 trip and restores it exactly after reload", async ({
