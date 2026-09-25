@@ -1,11 +1,17 @@
-import { z } from "zod";
+// Storage boundaries use the functional `zod/mini` API: it keeps the same
+// validation semantics as classic Zod while staying tree-shakeable, so the
+// public bundle only pays for the validators these schemas actually use.
+import * as z from "zod/mini";
 
 import {
   MAX_MVP_MONEY_MINOR,
   MAX_MVP_QUANTITY,
   MIN_MVP_QUANTITY,
 } from "../../domain/money";
-import { MAX_ITEM_LABEL_CODE_POINTS } from "../../domain/shopping-trip";
+import {
+  CANONICAL_ISO_TIMESTAMP_PATTERN,
+  MAX_ITEM_LABEL_CODE_POINTS,
+} from "../../domain/shopping-trip";
 
 export const ACTIVE_TRIP_STORAGE_KEY = "budget-cart:active-trip";
 export const HISTORY_STORAGE_KEY = "budget-cart:history";
@@ -16,77 +22,64 @@ export const HISTORICAL_NON_SHOPPING_STORAGE_KEYS = [
 export const CURRENT_ACTIVE_TRIP_SCHEMA_VERSION = 1;
 export const CURRENT_HISTORY_SCHEMA_VERSION = 1;
 
-const CANONICAL_ISO_TIMESTAMP =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-
-const canonicalIsoTimestampSchema = z
+export const canonicalIsoTimestampSchema = z
   .string()
-  .regex(CANONICAL_ISO_TIMESTAMP);
+  .check(z.regex(CANONICAL_ISO_TIMESTAMP_PATTERN));
 
-const canonicalIdentifierSchema = z
+export const canonicalIdentifierSchema = z
   .string()
-  .min(1)
-  .refine((value) => value.trim() === value);
+  .check(
+    z.minLength(1),
+    z.refine((value) => value.trim() === value),
+  );
 
-const optionalCanonicalIdentifierSchema = canonicalIdentifierSchema.optional();
+const optionalCanonicalIdentifierSchema = z.optional(
+  canonicalIdentifierSchema,
+);
 
-const canonicalLabelSchema = z
+export const canonicalLabelSchema = z
   .string()
-  .min(1)
-  .refine((value) => value.trim() === value)
-  .refine((value) => [...value].length <= MAX_ITEM_LABEL_CODE_POINTS);
+  .check(
+    z.minLength(1),
+    z.refine((value) => value.trim() === value),
+    z.refine((value) => [...value].length <= MAX_ITEM_LABEL_CODE_POINTS),
+  );
 
-const positiveMvpMoneySchema = z
-  .number()
+export const positiveMvpMoneySchema = z
   .int()
-  .min(1)
-  .max(MAX_MVP_MONEY_MINOR);
+  .check(z.minimum(1), z.maximum(MAX_MVP_MONEY_MINOR));
 
 const nonNegativeMvpMoneySchema = z
-  .number()
   .int()
-  .min(0)
-  .max(MAX_MVP_MONEY_MINOR);
+  .check(z.minimum(0), z.maximum(MAX_MVP_MONEY_MINOR));
 
 const quantitySchema = z
-  .number()
   .int()
-  .min(MIN_MVP_QUANTITY)
-  .max(MAX_MVP_QUANTITY);
+  .check(z.minimum(MIN_MVP_QUANTITY), z.maximum(MAX_MVP_QUANTITY));
 
-const manualPriceSourceSchema = z
-  .object({
-    kind: z.literal("manual"),
-  })
-  .strict();
+const manualPriceSourceSchema = z.strictObject({
+  kind: z.literal("manual"),
+});
 
-const priceMemorySourceSchema = z
-  .object({
-    kind: z.literal("price-memory"),
-    memoryId: canonicalIdentifierSchema,
-  })
-  .strict();
+const priceMemorySourceSchema = z.strictObject({
+  kind: z.literal("price-memory"),
+  memoryId: canonicalIdentifierSchema,
+});
 
-const shelfScanSourceSchema = z
-  .object({
-    kind: z.literal("shelf-scan"),
-    captureId: optionalCanonicalIdentifierSchema,
-  })
-  .strict();
+const shelfScanSourceSchema = z.strictObject({
+  kind: z.literal("shelf-scan"),
+  captureId: optionalCanonicalIdentifierSchema,
+});
 
-const encodedBarcodeSourceSchema = z
-  .object({
-    kind: z.literal("encoded-barcode"),
-    symbology: canonicalIdentifierSchema,
-  })
-  .strict();
+const encodedBarcodeSourceSchema = z.strictObject({
+  kind: z.literal("encoded-barcode"),
+  symbology: canonicalIdentifierSchema,
+});
 
-const retailerFeedSourceSchema = z
-  .object({
-    kind: z.literal("retailer-feed"),
-    provider: canonicalIdentifierSchema,
-  })
-  .strict();
+const retailerFeedSourceSchema = z.strictObject({
+  kind: z.literal("retailer-feed"),
+  provider: canonicalIdentifierSchema,
+});
 
 export const priceSourceV1Schema = z.discriminatedUnion("kind", [
   manualPriceSourceSchema,
@@ -96,27 +89,21 @@ export const priceSourceV1Schema = z.discriminatedUnion("kind", [
   retailerFeedSourceSchema,
 ]);
 
-const confirmedPriceConfidenceSchema = z
-  .object({
-    kind: z.literal("confirmed"),
-    confirmedAt: canonicalIsoTimestampSchema,
-  })
-  .strict();
+const confirmedPriceConfidenceSchema = z.strictObject({
+  kind: z.literal("confirmed"),
+  confirmedAt: canonicalIsoTimestampSchema,
+});
 
-const rememberedPriceConfidenceSchema = z
-  .object({
-    kind: z.literal("remembered"),
-    observedAt: canonicalIsoTimestampSchema,
-    storeId: optionalCanonicalIdentifierSchema,
-  })
-  .strict();
+const rememberedPriceConfidenceSchema = z.strictObject({
+  kind: z.literal("remembered"),
+  observedAt: canonicalIsoTimestampSchema,
+  storeId: optionalCanonicalIdentifierSchema,
+});
 
-const estimatedPriceConfidenceSchema = z
-  .object({
-    kind: z.literal("estimated"),
-    reason: z.enum(["weighted", "unknown", "other"]).optional(),
-  })
-  .strict();
+const estimatedPriceConfidenceSchema = z.strictObject({
+  kind: z.literal("estimated"),
+  reason: z.optional(z.enum(["weighted", "unknown", "other"])),
+});
 
 export const priceConfidenceV1Schema = z.discriminatedUnion("kind", [
   confirmedPriceConfidenceSchema,
@@ -124,74 +111,58 @@ export const priceConfidenceV1Schema = z.discriminatedUnion("kind", [
   estimatedPriceConfidenceSchema,
 ]);
 
-export const cartItemV1Schema = z
-  .object({
-    id: canonicalIdentifierSchema,
-    unitPriceMinor: positiveMvpMoneySchema,
-    quantity: quantitySchema,
-    label: canonicalLabelSchema.optional(),
-    priceSource: priceSourceV1Schema,
-    priceConfidence: priceConfidenceV1Schema,
-    createdAt: canonicalIsoTimestampSchema,
-    updatedAt: canonicalIsoTimestampSchema,
-  })
-  .strict();
+export const cartItemV1Schema = z.strictObject({
+  id: canonicalIdentifierSchema,
+  unitPriceMinor: positiveMvpMoneySchema,
+  quantity: quantitySchema,
+  label: z.optional(canonicalLabelSchema),
+  priceSource: priceSourceV1Schema,
+  priceConfidence: priceConfidenceV1Schema,
+  createdAt: canonicalIsoTimestampSchema,
+  updatedAt: canonicalIsoTimestampSchema,
+});
 
-export const activeTripDataV1Schema = z
-  .object({
-    id: canonicalIdentifierSchema,
-    status: z.literal("active"),
-    currency: z.literal("EUR"),
-    budgetMinor: positiveMvpMoneySchema,
-    safetyBufferMinor: nonNegativeMvpMoneySchema,
-    startedAt: canonicalIsoTimestampSchema,
-    items: z.array(cartItemV1Schema),
-  })
-  .strict();
+export const activeTripDataV1Schema = z.strictObject({
+  id: canonicalIdentifierSchema,
+  status: z.literal("active"),
+  currency: z.literal("EUR"),
+  budgetMinor: positiveMvpMoneySchema,
+  safetyBufferMinor: nonNegativeMvpMoneySchema,
+  startedAt: canonicalIsoTimestampSchema,
+  items: z.array(cartItemV1Schema),
+});
 
+export const completedTripDataV1Schema = z.strictObject({
+  id: canonicalIdentifierSchema,
+  status: z.literal("completed"),
+  currency: z.literal("EUR"),
+  budgetMinor: positiveMvpMoneySchema,
+  safetyBufferMinor: nonNegativeMvpMoneySchema,
+  startedAt: canonicalIsoTimestampSchema,
+  completedAt: canonicalIsoTimestampSchema,
+  actualCheckoutMinor: z.optional(nonNegativeMvpMoneySchema),
+  items: z.array(cartItemV1Schema),
+});
 
-export const completedTripDataV1Schema = z
-  .object({
-    id: canonicalIdentifierSchema,
-    status: z.literal("completed"),
-    currency: z.literal("EUR"),
-    budgetMinor: positiveMvpMoneySchema,
-    safetyBufferMinor: nonNegativeMvpMoneySchema,
-    startedAt: canonicalIsoTimestampSchema,
-    completedAt: canonicalIsoTimestampSchema,
-    actualCheckoutMinor: nonNegativeMvpMoneySchema.optional(),
-    items: z.array(cartItemV1Schema),
-  })
-  .strict();
+export const historyDataEnvelopeV1Schema = z.strictObject({
+  trips: z.array(z.unknown()),
+});
 
-export const historyDataEnvelopeV1Schema = z
-  .object({
-    trips: z.array(z.unknown()),
-  })
-  .strict();
+export const storageEnvelopeHeaderSchema = z.looseObject({
+  schemaVersion: z.int().check(z.minimum(1)),
+});
 
-export const storageEnvelopeHeaderSchema = z
-  .object({
-    schemaVersion: z.number().int().min(1),
-  })
-  .passthrough();
+export const storageEnvelopeV1Schema = z.strictObject({
+  schemaVersion: z.literal(CURRENT_ACTIVE_TRIP_SCHEMA_VERSION),
+  savedAt: canonicalIsoTimestampSchema,
+  data: z.unknown(),
+});
 
-export const storageEnvelopeV1Schema = z
-  .object({
-    schemaVersion: z.literal(CURRENT_ACTIVE_TRIP_SCHEMA_VERSION),
-    savedAt: canonicalIsoTimestampSchema,
-    data: z.unknown(),
-  })
-  .strict();
-
-
-export const historyStorageEnvelopeV1Schema = z
-  .object({
-    schemaVersion: z.literal(CURRENT_HISTORY_SCHEMA_VERSION),
-    savedAt: canonicalIsoTimestampSchema,
-    data: z.unknown(),
-  })
-  .strict();
+export const historyStorageEnvelopeV1Schema = z.strictObject({
+  schemaVersion: z.literal(CURRENT_HISTORY_SCHEMA_VERSION),
+  savedAt: canonicalIsoTimestampSchema,
+  data: z.unknown(),
+});
 
 export type PriceSourceV1 = z.infer<typeof priceSourceV1Schema>;
 export type PriceConfidenceV1 = z.infer<typeof priceConfidenceV1Schema>;

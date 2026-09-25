@@ -1,4 +1,5 @@
 export {
+  CANONICAL_ISO_TIMESTAMP_PATTERN,
   MAX_ITEM_LABEL_CODE_POINTS,
   createActiveTrip,
   createCartItem,

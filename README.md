@@ -77,7 +77,7 @@ See [Architecture](./docs/ARCHITECTURE.md).
 
 ## Tech stack
 
-**Runtime:** React 19.3, TypeScript 6 strict, Vite 8, Zod 4, CSS Modules, native Web APIs, versioned `localStorage`, Workbox-generated PWA shell.
+**Runtime:** React 19.3, TypeScript 6 strict, Vite 8, Zod 4 (`zod/mini`), CSS Modules, native Web APIs, versioned `localStorage`, Workbox-generated PWA shell.
 
 **Quality:** ESLint 10, Vitest 5, React Testing Library, user-event, fast-check, Playwright, axe-core, GitHub Actions.
 

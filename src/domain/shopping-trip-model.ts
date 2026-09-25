@@ -283,7 +283,7 @@ export const itemId = (value: string): Result<ItemId, DomainError> =>
 export const storeId = (value: string): Result<StoreId, DomainError> =>
   normalizeIdentifier<StoreId>(value);
 
-const ISO_TIMESTAMP_PATTERN =
+export const CANONICAL_ISO_TIMESTAMP_PATTERN =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 export const isoTimestamp = (
@@ -291,7 +291,7 @@ export const isoTimestamp = (
 ): Result<IsoTimestamp, DomainError> => {
   const normalized = value.trim();
 
-  if (!ISO_TIMESTAMP_PATTERN.test(normalized)) {
+  if (!CANONICAL_ISO_TIMESTAMP_PATTERN.test(normalized)) {
     return domainError("invalid-timestamp");
   }
 
