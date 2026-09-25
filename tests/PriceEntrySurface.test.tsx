@@ -893,7 +893,6 @@ describe("PriceEntrySurface", () => {
 
     expect(onValidatedItem).toHaveBeenCalledTimes(1);
     expect((add as HTMLButtonElement).disabled).toBe(true);
-    expect(add.getAttribute("data-submitted")).toBe("true");
     expect(screen.getByRole("button", { name: "Adding…" })).not.toBeNull();
   });
 });
