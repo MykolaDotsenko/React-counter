@@ -16,6 +16,8 @@
   --status-danger: #8a2d2d;
   --focus-ring: #245fca;
   --progress-track: #dedbd3;
+  --primary-action-shadow: 0 12px 26px rgb(49 95 79 / 0.18);
+  --primary-action-shadow-hover: 0 14px 30px rgb(49 95 79 / 0.24);
 
   --shopping-page: var(--surface-page);
   --shopping-panel: var(--surface-panel);
@@ -30,6 +32,8 @@
   --shopping-danger: var(--status-danger);
   --shopping-focus: var(--focus-ring);
   --shopping-track: var(--progress-track);
+  --shopping-primary-action-shadow: var(--primary-action-shadow);
+  --shopping-primary-action-shadow-hover: var(--primary-action-shadow-hover);
 }
 
 :root[data-appearance="dark"] {
@@ -48,6 +52,8 @@
   --status-danger: #ffb8b8;
   --focus-ring: #a6c6ff;
   --progress-track: #323933;
+  --primary-action-shadow: none;
+  --primary-action-shadow-hover: none;
 
   --shopping-page: var(--surface-page);
   --shopping-panel: var(--surface-panel);
@@ -62,6 +68,8 @@
   --shopping-danger: var(--status-danger);
   --shopping-focus: var(--focus-ring);
   --shopping-track: var(--progress-track);
+  --shopping-primary-action-shadow: var(--primary-action-shadow);
+  --shopping-primary-action-shadow-hover: var(--primary-action-shadow-hover);
 }
 
 :root[data-appearance="aurora"] {
@@ -80,6 +88,8 @@
   --status-danger: #ff9fba;
   --focus-ring: #b7c8ff;
   --progress-track: #222b3d;
+  --primary-action-shadow: 0 12px 32px rgb(125 232 255 / 0.12);
+  --primary-action-shadow-hover: 0 14px 36px rgb(125 232 255 / 0.18);
 
   --shopping-page: var(--surface-page);
   --shopping-panel: var(--surface-panel);
@@ -94,6 +104,8 @@
   --shopping-danger: var(--status-danger);
   --shopping-focus: var(--focus-ring);
   --shopping-track: var(--progress-track);
+  --shopping-primary-action-shadow: var(--primary-action-shadow);
+  --shopping-primary-action-shadow-hover: var(--primary-action-shadow-hover);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -113,5 +125,7 @@
     --status-danger: #ffb8b8;
     --focus-ring: #a6c6ff;
     --progress-track: #323933;
+    --primary-action-shadow: none;
+    --primary-action-shadow-hover: none;
   }
 }
