@@ -75,6 +75,7 @@ Terminal outcomes are:
 
 - top-1 candidate confirmed;
 - rank 2–3 candidate confirmed;
+- candidate set rejected;
 - all shown candidates rejected;
 - no candidate;
 - 12-second timeout;
