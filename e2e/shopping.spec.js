@@ -1765,7 +1765,7 @@ test("preserves future-version data and explains the compatibility problem", asy
     }),
   ).toBeVisible();
   await expect(
-    page.getByText(/preserved unchanged and will not be overwritten/),
+    page.getByText(/preserved unchanged\. Update the app to use it/),
   ).toBeVisible();
 
   const preserved = await page.evaluate(

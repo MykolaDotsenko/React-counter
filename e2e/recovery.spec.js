@@ -120,9 +120,49 @@ test("sets an unreadable saved trip aside and starts a new saved trip", async ({
   expect(JSON.parse(backup[1]).raw).toBe("{broken");
 });
 
-test("continues without saving when browser storage is blocked", async ({
+test("continues without saving when saved data cannot be read", async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    Storage.prototype.getItem = function getItem() {
+      throw new DOMException("Storage read failed", "UnknownError");
+    };
+  });
+
+  await page.goto("/");
+
+  await expect(
+    page.getByRole("heading", { name: "Saved trip could not be restored safely" }),
+  ).toBeVisible();
+
+  await page.getByText("Other ways to continue").click();
+  await page.getByRole("button", { name: "Continue without saving" }).click();
+  await expect(
+    page.getByRole("heading", { name: "How much can you spend today?" }),
+  ).toBeFocused();
+
+  await page.getByRole("button", { name: "€25", exact: true }).click();
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("2.50");
+  await page.getByRole("button", { name: "Add · €2.50" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Your shopping trip is complete" }),
+  ).toBeVisible();
+  await expect(page.getByText("Not saving on this device")).toBeVisible();
+});
+
+test("continues without saving when browser storage is blocked", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(
+    browserName !== "chromium",
+    "replacing window.localStorage is only portable in Chromium; the read-failure case covers every engine",
+  );
+
   await page.addInitScript(() => {
     Object.defineProperty(window, "localStorage", {
       configurable: true,

@@ -295,25 +295,13 @@ export function ShoppingAppShell({
               return true;
             }
 
-            if (
-              result.error.kind === "application" &&
+            return result.error.kind === "application" &&
               result.error.code === "history-unreadable"
-            ) {
-              return "history-unreadable";
-            }
-
-            return result.state.persistence.status === "degraded" &&
-              result.state.persistence.issue.code === "session-only"
-              ? "session-only"
+              ? "history-unreadable"
               : "not-saved";
           }}
-          {...(state.historyIntegrity.status === "degraded"
-            ? {
-                historyNotice: (
-                  <HistoryIntegrityNotice controller={controller} />
-                ),
-              }
-            : {})}
+          historyNotice={<HistoryIntegrityNotice controller={controller} />}
+          historyNeedsAttention={state.historyIntegrity.status === "degraded"}
         />
         {qaPanel}
       </>

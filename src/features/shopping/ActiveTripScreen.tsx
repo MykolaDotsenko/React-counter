@@ -179,7 +179,7 @@ export function ActiveTripScreen({
         <header className={styles.header}>
           <div>
             <p className={styles.eyebrow}>Shopping trip</p>
-            <h1 id="active-trip-title" className={styles.title}>
+            <h1 id="active-trip-title" className={styles.title} tabIndex={-1}>
               Know what’s left
             </h1>
           </div>

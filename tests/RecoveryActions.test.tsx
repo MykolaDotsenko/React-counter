@@ -146,6 +146,22 @@ describe("RecoveryScreen exits", () => {
       persistence: { issue: { code: "session-only" } },
     });
   });
+
+  it("moves focus to the next screen's heading after leaving recovery", async () => {
+    const user = userEvent.setup();
+    const controller = boot(null);
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    await user.click(screen.getByText("Other ways to continue"));
+    await user.click(
+      screen.getByRole("button", { name: "Continue without saving" }),
+    );
+
+    expect(document.activeElement).toBe(
+      screen.getByRole("heading", { name: "How much can you spend today?" }),
+    );
+  });
 });
 
 describe("HistoryIntegrityNotice", () => {
@@ -175,6 +191,12 @@ describe("HistoryIntegrityNotice", () => {
 
     expect(screen.queryByRole("button", { name: "Set aside now" })).toBeNull();
 
+    // A double tap on the arming control never confirms unread.
+    await user.dblClick(screen.getByRole("button", { name: "Set aside…" }));
+
+    expect(screen.queryByRole("button", { name: "Set aside now" })).toBeNull();
+    expect(values.get(HISTORY_STORAGE_KEY)).toBe(damaged);
+
     await user.click(screen.getByRole("button", { name: "Set aside…" }));
     await user.click(screen.getByRole("button", { name: "Set aside now" }));
 
@@ -183,6 +205,45 @@ describe("HistoryIntegrityNotice", () => {
       screen.queryByText("Some trip history could not be restored"),
     ).toBeNull();
     expect(values.get(HISTORY_STORAGE_KEY)).not.toBe(damaged);
+
+    // The outcome is announced and focus lands on it instead of the body.
+    const resolved = screen.getByRole("status");
+    expect(resolved.textContent).toMatch(/set aside as a backup copy/);
+    expect(document.activeElement).toBe(resolved);
+  });
+
+  it("exposes the confirmation as a disclosure without moving focus", async () => {
+    const user = userEvent.setup();
+    const { storage } = memoryStorage({
+      [HISTORY_STORAGE_KEY]: partlyDamagedHistory(),
+    });
+    const controller = boot(storage);
+
+    render(<HistoryIntegrityNotice controller={controller} />);
+
+    const toggle = screen.getByRole("button", { name: "Set aside…" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.hasAttribute("aria-controls")).toBe(false);
+
+    await user.click(toggle);
+
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(document.getElementById(toggle.getAttribute("aria-controls") ?? "")).not.toBeNull();
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it("waits for the summary to close before offering repair", () => {
+    const { storage, values } = memoryStorage({});
+    const controller = boot(storage);
+    controller.startTrip({ budgetMinor: money(1_000) });
+    controller.completeTrip();
+    values.set(HISTORY_STORAGE_KEY, "{broken later");
+    controller.setActualCheckout(money(900));
+
+    render(<HistoryIntegrityNotice controller={controller} />);
+
+    expect(screen.getByText(/after closing this summary/)).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Set aside…" })).toBeNull();
   });
 
   it("renders nothing while history is readable", () => {
@@ -241,7 +302,6 @@ describe("FinishTripSurface failure copy", () => {
 
   it.each([
     ["history-unreadable", /needs attention before this trip can be added/],
-    ["session-only", /This session isn't saving/],
     ["not-saved", /Trip history could not be saved/],
   ] as const)("explains %s accurately", async (failure, message) => {
     const user = userEvent.setup();
@@ -252,6 +312,7 @@ describe("FinishTripSurface failure copy", () => {
         onCancel={vi.fn()}
         onConfirm={() => failure}
         historyNotice={<p>history notice</p>}
+        historyNeedsAttention
       />,
     );
 
@@ -268,6 +329,7 @@ describe("FinishTripSurface failure copy", () => {
         onCancel={vi.fn()}
         onConfirm={() => "history-unreadable"}
         historyNotice={<p>history notice</p>}
+        historyNeedsAttention
       />,
     );
 
@@ -279,6 +341,8 @@ describe("FinishTripSurface failure copy", () => {
         trip={trip}
         onCancel={vi.fn()}
         onConfirm={() => "history-unreadable"}
+        historyNotice={<p>history notice</p>}
+        historyNeedsAttention={false}
       />,
     );
 

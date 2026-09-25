@@ -9,26 +9,23 @@ import {
 import styles from "./FinishTripSurface.module.css";
 import { SHOPPING_LOCALE } from "./shopping-locale";
 
-export type FinishTripFailure =
-  | "not-saved"
-  | "history-unreadable"
-  | "session-only";
+export type FinishTripFailure = "not-saved" | "history-unreadable";
 
 export interface FinishTripSurfaceProps {
   readonly trip: ActiveTrip;
   readonly onCancel: () => void;
   readonly onConfirm: () => boolean | void | FinishTripFailure;
   readonly locale?: string;
-  /** Rendered while stored history needs attention before finishing. */
+  /** Stored-history notice, rendered inside the surface when present. */
   readonly historyNotice?: ReactNode;
+  /** True while stored history must be resolved before finishing. */
+  readonly historyNeedsAttention?: boolean;
 }
 
 const failureMessage = (failure: FinishTripFailure): string => {
   switch (failure) {
     case "history-unreadable":
-      return "Saved trip history needs attention before this trip can be added to it. Your active trip is still saved.";
-    case "session-only":
-      return "This session isn't saving, so the trip can't be added to history. Your totals stay here until you close this tab.";
+      return "Saved trip history needs attention before this trip can be added to it. The trip is still open here.";
     case "not-saved":
       return "Trip history could not be saved. Your active trip is still intact.";
     default: {
@@ -44,13 +41,14 @@ export function FinishTripSurface({
   onConfirm,
   locale = SHOPPING_LOCALE,
   historyNotice,
+  historyNeedsAttention = false,
 }: FinishTripSurfaceProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
   const [failure, setFailure] = useState<FinishTripFailure | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Once the history notice is resolved, its failure no longer applies.
   const visibleFailure =
-    failure === "history-unreadable" && historyNotice === undefined
+    failure === "history-unreadable" && !historyNeedsAttention
       ? null
       : failure;
 

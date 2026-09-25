@@ -255,7 +255,7 @@ export function StartTripScreen({
       >
         <div className={styles.intro}>
           <p className={styles.eyebrow}>New shopping trip</p>
-          <h1 id="start-trip-title" className={styles.title}>
+          <h1 id="start-trip-title" className={styles.title} tabIndex={-1}>
             How much can you spend today?
           </h1>
           <p className={styles.supporting}>

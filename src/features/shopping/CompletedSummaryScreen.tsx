@@ -13,6 +13,7 @@ import {
   itemCount,
   type CompletedTrip,
 } from "../../domain/shopping-trip";
+import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./CompletedSummaryScreen.module.css";
 import { SHOPPING_LOCALE } from "./shopping-locale";
@@ -191,6 +192,7 @@ export function CompletedSummaryScreen({
           health={state.persistence}
           context="completed"
         />
+        <HistoryIntegrityNotice controller={controller} />
 
         <section className={styles.hero} aria-label="Completed trip summary">
           <span>Tracked cart</span>

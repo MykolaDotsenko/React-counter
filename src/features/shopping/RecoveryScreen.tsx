@@ -22,7 +22,7 @@ const recoveryCopy = (
       return {
         title: "Saved trip needs a newer app version",
         body:
-          "This device contains shopping data written by a newer version. It has been preserved unchanged and will not be overwritten.",
+          "This device contains shopping data written by a newer version. It has been preserved unchanged. Update the app to use it, or choose another way to continue below.",
       };
     case "malformed-json":
     case "invalid-envelope":
@@ -55,6 +55,14 @@ const canSetAside = (issue: PersistenceProblem): boolean =>
     "unsupported-version",
   ].includes(issue.code);
 
+// Recovery unmounts once it is resolved; land focus on the next screen's
+// heading rather than leaving it on <body>.
+const focusNextScreen = (): void => {
+  queueMicrotask(() => {
+    document.querySelector<HTMLElement>("main h1[tabindex]")?.focus();
+  });
+};
+
 export function RecoveryScreen({ controller }: RecoveryScreenProps) {
   const state = useShoppingAppState(controller);
   const [retryMessage, setRetryMessage] = useState("");
@@ -76,7 +84,10 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
       setRetryMessage(
         "The saved trip still cannot be restored safely. Nothing was overwritten.",
       );
+      return;
     }
+
+    focusNextScreen();
   };
 
   const setAside = (): void => {
@@ -87,12 +98,18 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
       setRetryMessage(
         "The saved trip could not be set aside safely, so it was left unchanged.",
       );
+      return;
     }
+
+    focusNextScreen();
   };
 
   const continueWithoutSaving = (): void => {
     setRetryMessage("");
-    controller.continueWithoutSaving();
+
+    if (controller.continueWithoutSaving().ok) {
+      focusNextScreen();
+    }
   };
 
   return (
@@ -116,8 +133,7 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
             Try reading again
           </button>
           <p className={styles.safetyNote}>
-            The app will not replace the saved record unless it can be
-            validated as a supported shopping trip.
+            Trying again only reads the saved record; it never changes it.
           </p>
         </div>
 
@@ -130,9 +146,9 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
         <details className={styles.details}>
           <summary>Other ways to continue</summary>
           <p>
-            Keep shopping without saving: your totals work in this tab, but
-            nothing is saved on this device and closing or reloading the
-            tab loses the new trip. The saved record stays untouched.
+            Keep shopping without saving: totals, finished trips and
+            remembered prices work in this tab only, and closing or reloading
+            it loses them. The saved record stays untouched.
           </p>
           <div className={styles.actions}>
             <button
