@@ -1,5 +1,4 @@
 .loading {
-  color-scheme: light;
   min-height: 100dvh;
   display: grid;
   place-items: center;
@@ -17,8 +16,3 @@
   font-weight: 700;
 }
 
-@media (prefers-color-scheme: dark) {
-  .loading {
-    color-scheme: dark;
-  }
-}
