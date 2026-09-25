@@ -17,6 +17,7 @@
   margin: 0 auto;
   display: grid;
   gap: 20px;
+  animation: summarySettle 180ms ease-out;
 }
 
 .header {
@@ -264,4 +265,12 @@
   .doneButton {
     border: 1px solid ButtonText;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell { animation: none; }
+}
+
+@keyframes summarySettle {
+  from { opacity: 0.8; transform: translateY(4px); }
 }
