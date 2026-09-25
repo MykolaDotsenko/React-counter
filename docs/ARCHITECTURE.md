@@ -8,9 +8,9 @@ The repository no longer contains an alternate prototype product shell. The publ
 
 The guarded `/cohort/` route is intentionally different: it is a facilitator-only local analyzer that imports already-exported retention evidence and never composes or mutates shopping state.
 
-The guarded `/barcode-benchmark/` route is also standalone: it measures experimental native barcode interaction on physical devices and never composes or mutates shopping state.
+The guarded camera routes are also standalone: `/barcode-benchmark/` measures native barcode interaction, `/visual-recognition-benchmark/` exercises the local visual-recognition experiment, and `/shelf-label-ocr-tesseract-benchmark/` exercises the concrete OCR camera flow. The public shopping UI may link to these routes in a separate tab, but they never compose or mutate shopping state.
 
-Physical-phone usability was accepted for the current cycle by owner attestation, exact human timing statistics remain unverified, and the real-shopper retention gate remains open. The installable offline PWA shell is implemented; production barcode and OCR remain future/gated capabilities.
+Physical-phone usability was accepted for the current cycle by owner attestation, exact human timing statistics remain unverified, and the real-shopper retention gate remains open. The installable offline PWA shell is implemented. Camera tools are discoverable from the product, while barcode identity, OCR-derived prices and visual candidates remain evidence-gated and require explicit human confirmation before any future production-state integration.
 
 ## Architectural goal
 
