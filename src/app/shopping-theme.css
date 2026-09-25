@@ -93,7 +93,6 @@
   --surface-page: #070912;
   --surface-panel: #101625;
   --surface-soft: #161e31;
-  --surface-raised: #19233a;
   --text-primary: #f7f9ff;
   --text-secondary: #b2bdd1;
   --text-secondary-strong: #d0d7e5;
@@ -104,10 +103,7 @@
   --status-danger: #ff9cb5;
   --focus-ring: #bdcaff;
   --progress-track: #202a40;
-  --page-canvas:
-    radial-gradient(at 14% 0,#16304b,transparent 34rem),
-    linear-gradient(135deg,#080b14,#120b20);
-  --hero-surface: linear-gradient(145deg,#131d31,#121024);
+  --page-canvas: linear-gradient(135deg,#132840,#100b1e 42%,#070912 78%);
   --elevated-shadow: 0 24px 64px #0009;
   --primary-action-shadow: 0 12px 30px #8de8ff24;
 }
