@@ -249,9 +249,11 @@ export function HistoryScreen({
         <HistoryDataControls
           tripCount={state.completedTrips.length}
           priceMemoryCount={state.priceMemories.length}
-          priceMemoryDegraded={needsSaveAttention(
-            state.priceMemoryPersistence,
-          )}
+          priceMemoryDegraded={
+            needsSaveAttention(state.priceMemoryPersistence) ||
+            needsSaveAttention(state.barcodeLinkPersistence)
+          }
+          barcodeNameCount={state.barcodeLinks.length}
           canChangeHistory={canChangeHistory}
           sessionOnly={isSessionOnly(state.persistence)}
           confirmation={dataConfirmation}

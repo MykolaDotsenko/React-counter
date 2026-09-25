@@ -11,6 +11,7 @@ export interface HistoryDataControlsProps {
   readonly tripCount: number;
   readonly priceMemoryCount: number;
   readonly priceMemoryDegraded: boolean;
+  readonly barcodeNameCount?: number;
   readonly canChangeHistory: boolean;
   readonly sessionOnly?: boolean;
   readonly confirmation: HistoryDataConfirmation;
@@ -26,6 +27,7 @@ export function HistoryDataControls({
   tripCount,
   priceMemoryCount,
   priceMemoryDegraded,
+  barcodeNameCount = 0,
   canChangeHistory,
   sessionOnly = false,
   confirmation,
@@ -132,8 +134,9 @@ export function HistoryDataControls({
           <div>
             <strong>Clear remembered prices?</strong>
             <p>
-              This removes remembered item names and prices used for
-              faster repeat shopping. Completed trip history will stay.
+              This removes remembered item names, prices and barcode names
+              used for faster repeat shopping. Completed trip history will
+              stay.
             </p>
           </div>
           <div className={styles.confirmationActions}>
@@ -160,18 +163,23 @@ export function HistoryDataControls({
           className={styles.dataAction}
           data-clear-price-memory-trigger
           disabled={
-            sessionOnly || (priceMemoryCount === 0 && !priceMemoryDegraded)
+            sessionOnly ||
+            (priceMemoryCount === 0 &&
+              barcodeNameCount === 0 &&
+              !priceMemoryDegraded)
           }
           onClick={onRequestClearPriceMemory}
         >
           <span>
             <strong>Clear remembered prices</strong>
             <small>
-              {priceMemoryCount === 0
-                ? priceMemoryDegraded
-                  ? "Reset the damaged price-memory record"
-                  : "No remembered prices stored"
-                : `${priceMemoryCount} remembered ${priceMemoryCount === 1 ? "item" : "items"}`}
+              {priceMemoryCount > 0
+                ? `${priceMemoryCount} remembered ${priceMemoryCount === 1 ? "item" : "items"}`
+                : barcodeNameCount > 0
+                  ? `${barcodeNameCount} remembered barcode ${barcodeNameCount === 1 ? "name" : "names"}`
+                  : priceMemoryDegraded
+                    ? "Reset the damaged remembered-price record"
+                    : "No remembered prices stored"}
             </small>
           </span>
           <span aria-hidden="true">→</span>

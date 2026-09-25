@@ -25,8 +25,8 @@ const must = <T,>(result: { ok: true; value: T } | { ok: false }): T => {
 const money = (value: number): MinorUnits => must(mvpMinorUnits(value));
 const time = (value: string): IsoTimestamp => must(isoTimestamp(value));
 
-const setup = () => {
-  const values = new Map<string, string>();
+const setup = (initial: Record<string, string> = {}) => {
+  const values = new Map<string, string>(Object.entries(initial));
   const storage: StorageLike = {
     getItem: (key) => values.get(key) ?? null,
     setItem: (key, value) => {
@@ -126,5 +126,53 @@ describe("scanning a product while shopping", () => {
 
     render(<ShoppingAppShell controller={controller} scanner={null} />);
     expect(screen.queryByRole("button", { name: "Scan barcode" })).toBeNull();
+  });
+
+  it("clears remembered barcode names even when no prices are remembered", async () => {
+    const user = userEvent.setup();
+    const { values, controller } = setup();
+    controller.startTrip({ budgetMinor: money(5_000) });
+    controller.addManualItem({
+      unitPriceMinor: money(129),
+      quantity: 1,
+      label: "Milk 1L",
+      barcode: "06414893386303" as never,
+    });
+    controller.removeItem(controller.getSnapshot().activeTrip?.items[0]?.id as never);
+    controller.completeTrip();
+    controller.dismissCompletedSummary();
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    await user.click(screen.getByRole("button", { name: /View trip history/ }));
+    const clear = screen.getByRole("button", { name: /Clear remembered prices/ });
+
+    expect(clear.textContent).toMatch(/1 remembered barcode name/);
+    expect(clear.hasAttribute("disabled")).toBe(false);
+
+    await user.click(clear);
+    await user.click(screen.getByRole("button", { name: "Clear remembered prices" }));
+
+    expect(controller.getSnapshot().barcodeLinks).toEqual([]);
+    expect(values.get(BARCODE_LINK_STORAGE_KEY)).toContain('"links":[]');
+  });
+
+  it("offers a repair for a damaged barcode-name record and resets it on request", async () => {
+    const user = userEvent.setup();
+    const { values, controller } = setup({ [BARCODE_LINK_STORAGE_KEY]: "{broken" });
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    await user.click(screen.getByRole("button", { name: "Repair remembered prices" }));
+    const clear = screen.getByRole("button", { name: /Clear remembered prices/ });
+
+    expect(clear.textContent).toMatch(/Reset the damaged remembered-price record/);
+    expect(values.get(BARCODE_LINK_STORAGE_KEY)).toBe("{broken");
+
+    await user.click(clear);
+    await user.click(screen.getByRole("button", { name: "Clear remembered prices" }));
+
+    expect(controller.getSnapshot().barcodeLinkPersistence).toEqual({ status: "healthy" });
+    expect(values.get(BARCODE_LINK_STORAGE_KEY)).toContain('"links":[]');
   });
 });
