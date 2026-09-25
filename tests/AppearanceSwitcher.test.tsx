@@ -18,12 +18,12 @@ describe("AppearanceSwitcher", () => {
     expect(screen.getByRole("button", { name: "Aurora" })).not.toBeNull();
   });
 
-  it("exposes deployed camera tools without replacing the shopping flow", () => {
+  it("exposes deployed camera tools without replacing the shopping flow", async () => {
     render(<AppearanceSwitcher />);
 
-    const barcode = screen.getByRole("link", { name: "Barcode scanner" });
-    const visual = screen.getByRole("link", { name: "Visual camera" });
-    const ocr = screen.getByRole("link", { name: "Shelf-price OCR" });
+    const barcode = await screen.findByRole("link", { name: "Barcode scanner" });
+    const visual = await screen.findByRole("link", { name: "Visual camera" });
+    const ocr = await screen.findByRole("link", { name: "Shelf-price OCR" });
 
     expect(barcode.getAttribute("href")?.endsWith("/barcode-benchmark/")).toBe(true);
     expect(
