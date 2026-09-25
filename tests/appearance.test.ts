@@ -58,6 +58,10 @@ describe("appearance preference", () => {
     expect(appearanceThemeColor("system", true)).toBe("#0f1210");
   });
 
+  it("uses the calibrated Aurora browser chrome color", () => {
+    expect(appearanceThemeColor("aurora", false)).toBe("#070912");
+  });
+
   it("resolves System to a concrete document theme", () => {
     applyAppearanceToDocument("system", document, true);
 
