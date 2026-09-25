@@ -183,9 +183,8 @@
   width: 100%;
   border: 0;
   outline: 0;
-  background: var(--shopping-raised);
+  background: transparent;
   color: var(--text);
-  box-shadow: var(--shopping-control-shadow);
   font: inherit;
   font-size: clamp(2.15rem, 12vw, 3.5rem);
   font-weight: 820;
