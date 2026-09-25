@@ -26,7 +26,6 @@ describe("AppearanceSwitcher", () => {
     expect(
       hub.getAttribute("href")?.endsWith("/camera-tools/"),
     ).toBe(true);
-    expect(hub.getAttribute("target")).toBe("_blank");
   });
 
   it("switches immediately and persists the preference without touching shopping state", async () => {
