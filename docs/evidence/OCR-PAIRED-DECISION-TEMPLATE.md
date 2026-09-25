@@ -17,6 +17,12 @@ Use the guarded facilitator route:
 
 > `/shopping-budget-companion/ocr-paired-analyzer/`
 
+For real paired evidence, use the analyzer from the same immutable baseline as both source surfaces:
+
+> `/shopping-budget-companion/study/<baseline>/ocr-paired-analyzer/`
+
+See [Immutable Study Deployments](./IMMUTABLE-STUDY-DEPLOYMENTS.md).
+
 The analyzer imports exactly one structured manual-timing export and one shelf-label OCR benchmark export in page memory.
 
 It:
