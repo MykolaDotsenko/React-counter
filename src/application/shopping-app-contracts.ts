@@ -1,8 +1,15 @@
+import type { BarcodeLink } from "../domain/barcode-link";
 import type { MinorUnits } from "../domain/money";
 import type {
   PriceMemoryId,
   PriceMemoryRecord,
 } from "../domain/price-memory";
+import type {
+  BarcodeSymbology,
+  Gtin,
+  ProductCode,
+  ProductCodeError,
+} from "../domain/product-code";
 import type {
   ActiveTrip,
   CompletedTrip,
@@ -12,6 +19,7 @@ import type {
   TripCommand,
   TripId,
 } from "../domain/shopping-trip";
+import type { BarcodeLinkPersistencePort } from "./barcode-ports";
 import type { PriceMemoryPersistencePort } from "./price-memory-port";
 
 export interface PersistenceProblem {
@@ -153,6 +161,8 @@ export interface ShoppingAppState {
   readonly historyIntegrity: PersistenceHealth;
   readonly priceMemories: readonly PriceMemoryRecord[];
   readonly priceMemoryPersistence: PersistenceHealth;
+  readonly barcodeLinks: readonly BarcodeLink[];
+  readonly barcodeLinkPersistence: PersistenceHealth;
   readonly undo: UndoState | null;
   readonly recovery: RecoveryState | null;
 }
@@ -166,12 +176,23 @@ export interface AddManualItemInput {
   readonly unitPriceMinor: MinorUnits;
   readonly quantity: number;
   readonly label?: string;
+  readonly barcode?: Gtin;
 }
 
 export interface AddRememberedItemInput {
   readonly memoryId: PriceMemoryId;
   readonly quantity?: number;
+  readonly barcode?: Gtin;
 }
+
+export type BarcodeIdentification =
+  | { readonly ok: false; readonly error: ProductCodeError }
+  | {
+      readonly ok: true;
+      readonly code: ProductCode;
+      readonly label: string | null;
+      readonly remembered: PriceMemoryRecord | null;
+    };
 
 export interface UpdateSpendingPlanInput {
   readonly budgetMinor: MinorUnits;
@@ -260,6 +281,10 @@ export interface ShoppingAppController {
   readonly setAsideUnreadableActiveTrip: () => AppCommandResult;
   readonly continueWithoutSaving: () => AppCommandResult;
   readonly dispatch: (command: ActiveTripCommand) => AppCommandResult;
+  readonly identifyBarcode: (
+    rawValue: string,
+    symbology: BarcodeSymbology | null,
+  ) => BarcodeIdentification;
 }
 
 export interface ShoppingAppControllerDependencies {
@@ -267,4 +292,5 @@ export interface ShoppingAppControllerDependencies {
   readonly clock: Clock;
   readonly ids: IdGenerator;
   readonly priceMemoryPersistence?: PriceMemoryPersistencePort;
+  readonly barcodeLinkPersistence?: BarcodeLinkPersistencePort;
 }

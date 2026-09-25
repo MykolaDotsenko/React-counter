@@ -1,4 +1,15 @@
 import {
+  createBarcodeLink,
+  findBarcodeLink,
+  rememberedPriceForLabel,
+  upsertBarcodeLink,
+} from "../domain/barcode-link";
+import {
+  parseProductCode,
+  type BarcodeSymbology,
+  type Gtin,
+} from "../domain/product-code";
+import {
   createActiveTrip,
   createCartItem,
   latestTripTimestamp,
@@ -11,8 +22,13 @@ import {
   type ItemId,
   type TripId,
 } from "../domain/shopping-trip";
+import {
+  EMPTY_BARCODE_LINK_PERSISTENCE_PORT,
+  type BarcodeLinkPersistencePort,
+} from "./barcode-ports";
 import { EMPTY_PRICE_MEMORY_PERSISTENCE_PORT } from "./price-memory-port";
 import {
+  SESSION_ONLY_BARCODE_LINK_PORT,
   SESSION_ONLY_ISSUE,
   SESSION_ONLY_PERSISTENCE_PORT,
   SESSION_ONLY_PRICE_MEMORY_PORT,
@@ -22,6 +38,7 @@ import {
   type CompletionPorts,
 } from "./shopping-app-completion";
 import {
+  EMPTY_BARCODE_LINKS,
   EMPTY_PRICE_MEMORIES,
   HEALTHY_PERSISTENCE,
   applicationError,
@@ -43,6 +60,7 @@ import type {
   AddManualItemInput,
   AddRememberedItemInput,
   AppCommandResult,
+  BarcodeIdentification,
   PersistenceProblem,
   ShoppingAppController,
   ShoppingAppControllerDependencies,
@@ -54,6 +72,7 @@ import type {
 } from "./shopping-app-contracts";
 
 export type {
+  BarcodeIdentification,
   ActiveTripBootstrapResult,
   ActiveTripCommand,
   ActiveTripPersistencePort,
@@ -87,12 +106,14 @@ export const createShoppingAppController = ({
   clock,
   ids,
   priceMemoryPersistence = EMPTY_PRICE_MEMORY_PERSISTENCE_PORT,
+  barcodeLinkPersistence = EMPTY_BARCODE_LINK_PERSISTENCE_PORT,
 }: ShoppingAppControllerDependencies): ShoppingAppController => {
   let state = initialState();
   const listeners = new Set<() => void>();
-  const ports: CompletionPorts = {
+  const ports: CompletionPorts & { barcodeLinks: BarcodeLinkPersistencePort } = {
     persistence,
     priceMemory: priceMemoryPersistence,
+    barcodeLinks: barcodeLinkPersistence,
   };
 
   const publish = (nextState: ShoppingAppState): ShoppingAppState => {
@@ -143,9 +164,11 @@ export const createShoppingAppController = ({
 
     const result = ports.persistence.bootstrap();
     const memoryResult = ports.priceMemory.bootstrap();
+    const linkResult = ports.barcodeLinks.bootstrap();
     const bootstrapIssueTime =
       !result.ok ||
       !memoryResult.ok ||
+      !linkResult.ok ||
       result.historyIssue !== undefined
         ? clock.now()
         : null;
@@ -153,6 +176,12 @@ export const createShoppingAppController = ({
       ? HEALTHY_PERSISTENCE
       : degradedPersistence(
           memoryResult.issue,
+          bootstrapIssueTime ?? clock.now(),
+        );
+    const linkHealth = linkResult.ok
+      ? HEALTHY_PERSISTENCE
+      : degradedPersistence(
+          linkResult.issue,
           bootstrapIssueTime ?? clock.now(),
         );
     const historyIntegrity =
@@ -174,6 +203,8 @@ export const createShoppingAppController = ({
         historyIntegrity,
         priceMemories: memoryResult.records,
         priceMemoryPersistence: memoryHealth,
+        barcodeLinks: linkResult.links,
+        barcodeLinkPersistence: linkHealth,
         undo: null,
         recovery: null,
       });
@@ -193,6 +224,8 @@ export const createShoppingAppController = ({
         historyIntegrity,
         priceMemories: memoryResult.records,
         priceMemoryPersistence: memoryHealth,
+        barcodeLinks: linkResult.links,
+        barcodeLinkPersistence: linkHealth,
         undo: null,
         recovery: recoveryState(
           result.issue,
@@ -211,6 +244,8 @@ export const createShoppingAppController = ({
       historyIntegrity,
       priceMemories: memoryResult.records,
       priceMemoryPersistence: memoryHealth,
+      barcodeLinks: linkResult.links,
+      barcodeLinkPersistence: linkHealth,
       undo: null,
       recovery: null,
     });
@@ -246,6 +281,8 @@ export const createShoppingAppController = ({
       historyIntegrity: state.historyIntegrity,
       priceMemories: state.priceMemories,
       priceMemoryPersistence: state.priceMemoryPersistence,
+      barcodeLinks: state.barcodeLinks,
+      barcodeLinkPersistence: state.barcodeLinkPersistence,
       undo: null,
       recovery: null,
     });
@@ -342,10 +379,13 @@ export const createShoppingAppController = ({
       return failure(state, itemResult.error);
     }
 
-    return dispatch({
-      type: "add-item",
-      item: itemResult.value,
-    });
+    return rememberBarcode(
+      dispatch({
+        type: "add-item",
+        item: itemResult.value,
+      }),
+      input.barcode,
+    );
   };
 
   const addRememberedItem = (
@@ -392,10 +432,95 @@ export const createShoppingAppController = ({
       return failure(state, itemResult.error);
     }
 
-    return dispatch({
-      type: "add-item",
-      item: itemResult.value,
+    return rememberBarcode(
+      dispatch({
+        type: "add-item",
+        item: itemResult.value,
+      }),
+      input.barcode,
+    );
+  };
+
+  const rememberBarcode = (
+    result: AppCommandResult,
+    barcode: Gtin | undefined,
+  ): AppCommandResult => {
+    if (barcode === undefined || !result.ok || !result.changed) {
+      return result;
+    }
+
+    const label = result.state.activeTrip?.items.at(-1)?.label;
+
+    if (label === undefined) {
+      return result;
+    }
+
+    const now = clock.now();
+    const current = findBarcodeLink(state.barcodeLinks, barcode);
+    const link = createBarcodeLink({
+      gtin: barcode,
+      label,
+      linkedAt:
+        current === null ? now : laterTimestamp(now, current.linkedAt),
     });
+
+    if (!link.ok) {
+      return result;
+    }
+
+    const barcodeLinks = upsertBarcodeLink(state.barcodeLinks, link.value);
+
+    if (barcodeLinks === state.barcodeLinks) {
+      return result;
+    }
+
+    const canWrite =
+      state.barcodeLinkPersistence.status === "healthy" ||
+      state.barcodeLinkPersistence.issue.code === "write-failed";
+
+    if (!canWrite) {
+      return { ...result, state: publish({ ...state, barcodeLinks }) };
+    }
+
+    const saved = ports.barcodeLinks.save(barcodeLinks, now);
+
+    return {
+      ...result,
+      state: publish({
+        ...state,
+        barcodeLinks,
+        barcodeLinkPersistence: saved.ok
+          ? HEALTHY_PERSISTENCE
+          : degradedPersistence(saved.issue, now),
+      }),
+    };
+  };
+
+  const identifyBarcode = (
+    rawValue: string,
+    symbology: BarcodeSymbology | null,
+  ): BarcodeIdentification => {
+    const parsed = parseProductCode(rawValue, symbology);
+
+    if (!parsed.ok) {
+      return { ok: false, error: parsed.error };
+    }
+
+    if (parsed.value.kind !== "trade-item") {
+      return { ok: true, code: parsed.value, label: null, remembered: null };
+    }
+
+    const link = findBarcodeLink(state.barcodeLinks, parsed.value.gtin);
+
+    return {
+      ok: true,
+      code: parsed.value,
+      label: link?.label ?? null,
+      remembered:
+        link === null
+          ? null
+          : rememberedPriceForLabel(state.priceMemories, link.label),
+    };
   };
 
   const updateSpendingPlan = (
@@ -603,7 +728,9 @@ export const createShoppingAppController = ({
 
     if (
       state.priceMemories.length === 0 &&
-      state.priceMemoryPersistence.status === "healthy"
+      state.priceMemoryPersistence.status === "healthy" &&
+      state.barcodeLinks.length === 0 &&
+      state.barcodeLinkPersistence.status === "healthy"
     ) {
       return success(state, false, "unchanged");
     }
@@ -618,10 +745,15 @@ export const createShoppingAppController = ({
       );
     }
 
+    const linksCleared = ports.barcodeLinks.save([], now);
     const nextState = publish({
       ...state,
       priceMemories: EMPTY_PRICE_MEMORIES,
       priceMemoryPersistence: HEALTHY_PERSISTENCE,
+      barcodeLinks: linksCleared.ok ? EMPTY_BARCODE_LINKS : state.barcodeLinks,
+      barcodeLinkPersistence: linksCleared.ok
+        ? HEALTHY_PERSISTENCE
+        : degradedPersistence(linksCleared.issue, now),
     });
 
     return success(nextState, true, "persisted");
@@ -907,6 +1039,7 @@ export const createShoppingAppController = ({
 
     ports.persistence = SESSION_ONLY_PERSISTENCE_PORT;
     ports.priceMemory = SESSION_ONLY_PRICE_MEMORY_PORT;
+    ports.barcodeLinks = SESSION_ONLY_BARCODE_LINK_PORT;
 
     const now = clock.now();
     const nextState = publish({
@@ -917,6 +1050,7 @@ export const createShoppingAppController = ({
       completionCleanupPending: false,
       persistence: degradedPersistence(SESSION_ONLY_ISSUE, now),
       priceMemoryPersistence: degradedPersistence(SESSION_ONLY_ISSUE, now),
+      barcodeLinkPersistence: degradedPersistence(SESSION_ONLY_ISSUE, now),
       undo: null,
       recovery: null,
     });
@@ -1022,5 +1156,6 @@ export const createShoppingAppController = ({
     setAsideUnreadableActiveTrip,
     continueWithoutSaving,
     dispatch,
+    identifyBarcode,
   });
 };

@@ -9,6 +9,7 @@ import {
   systemClock,
 } from "../infrastructure/runtime/browser-boundaries";
 import { createActiveTripPersistencePort } from "../infrastructure/storage/active-trip-persistence-port";
+import { createBarcodeLinkPersistencePort } from "../infrastructure/storage/barcode-link-storage";
 import { surfaceStorageScope } from "../infrastructure/runtime/deployment-surface";
 import { createPriceMemoryPersistencePort } from "../infrastructure/storage/price-memory-persistence-port";
 import { scopedStorage } from "../infrastructure/storage/scoped-storage";
@@ -52,6 +53,7 @@ export const createBrowserShoppingAppController = (
   return createShoppingAppController({
     persistence: createActiveTripPersistencePort(storage),
     priceMemoryPersistence: createPriceMemoryPersistencePort(storage),
+    barcodeLinkPersistence: createBarcodeLinkPersistencePort(storage),
     clock: dependencies.clock ?? systemClock,
     ids: dependencies.ids ?? cryptoIdGenerator,
   });
