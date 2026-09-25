@@ -313,6 +313,13 @@ export function ShoppingAppShell({
               return true;
             }
 
+            if (result.state.activeTrip !== null) {
+              setOverlay({
+                kind: "finish-trip",
+                tripId: result.state.activeTrip.id,
+              });
+            }
+
             return result.error.kind === "application" &&
               result.error.code === "history-unreadable"
               ? "history-unreadable"

@@ -327,6 +327,7 @@ Backing the raw record up before replacing it keeps D-008 (visible failure) and 
 - session-only mode is an explicit application state, not a silent fallback; trips finish into an in-memory summary so the shopper can keep shopping;
 - every history rewrite re-reads durable history and never writes from a stale in-memory list;
 - an open trip is reconciled away only when it is the same shopping as a recorded completion; one edited while history was unreadable stays open and finishes under a new trip id;
+- a stale copy of a finished trip is never removed while history cannot confirm that trip; setting history aside from the summary records the trip in the new history;
 - backups are local, are not read by the product and remain until site data is cleared.
 
 ### Revisit when

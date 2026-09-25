@@ -35,6 +35,7 @@ import {
   recoveryState,
   requireActiveTrip,
   success,
+  upsertCompletedTrip,
   withUnreadableHistory,
 } from "./shopping-app-support";
 import type {
@@ -295,9 +296,11 @@ export const createShoppingAppController = ({
       );
     }
 
-    const source = state.completedTrips.find(
-      (trip) => trip.id === tripId,
-    );
+    const source =
+      state.completedTrips.find((trip) => trip.id === tripId) ??
+      (state.completedSummary?.id === tripId
+        ? state.completedSummary
+        : undefined);
 
     if (source === undefined) {
       return failure(
@@ -632,8 +635,9 @@ export const createShoppingAppController = ({
     }
 
     if (
-      state.persistence.status === "healthy" &&
-      !state.completionCleanupPending
+      sessionOnly() ||
+      (state.persistence.status === "healthy" &&
+        !state.completionCleanupPending)
     ) {
       return success(state, false, "unchanged");
     }
@@ -661,68 +665,7 @@ export const createShoppingAppController = ({
     }
 
     if (state.completedSummary !== null) {
-      const historySave = ports.persistence.saveCompleted(
-        state.completedSummary,
-        now,
-      );
-
-      if (!historySave.ok && historySave.stage === "history-read") {
-        const readable = ports.persistence.readCompletedHistory();
-        const cleanup = state.completionCleanupPending
-          ? ports.persistence.clearCompletedActive()
-          : ({ ok: true } as const);
-        const nextState = publish({
-          ...withUnreadableHistory(
-            state,
-            historySave.issue,
-            readable.completedTrips,
-            now,
-          ),
-          persistence: cleanup.ok
-            ? HEALTHY_PERSISTENCE
-            : degradedPersistence(cleanup.issue, since),
-          completionCleanupPending: !cleanup.ok,
-        });
-
-        return success(nextState, true, "memory-only");
-      }
-
-      if (!historySave.ok) {
-        const nextState = publish({
-          ...state,
-          persistence: degradedPersistence(
-            historySave.issue,
-            since,
-          ),
-        });
-
-        return success(nextState, true, "memory-only");
-      }
-
-      if (state.completionCleanupPending) {
-        const cleanup = ports.persistence.clearCompletedActive();
-
-        if (!cleanup.ok) {
-          const nextState = publish({
-            ...state,
-            persistence: degradedPersistence(
-              cleanup.issue,
-              since,
-            ),
-            completionCleanupPending: true,
-          });
-
-          return success(nextState, true, "persisted");
-        }
-      }
-
-      const nextState = publish({
-        ...state,
-        persistence: HEALTHY_PERSISTENCE,
-        completionCleanupPending: false,
-      });
-
-      return success(nextState, true, "persisted");
+      return persistCompletedSummary(state.completedSummary, since, now);
     }
 
     if (state.completionCleanupPending) {
@@ -745,18 +688,93 @@ export const createShoppingAppController = ({
     return failure(state, applicationError("no-active-trip"));
   };
 
+  const persistCompletedSummary = (
+    summary: CompletedTrip,
+    since: IsoTimestamp,
+    now: IsoTimestamp,
+  ): AppCommandResult => {
+    const durable = ports.persistence.readCompletedHistory();
+
+    if (!durable.ok) {
+      const nextState = publish(
+        withUnreadableHistory(
+          state,
+          durable.issue,
+          durable.completedTrips,
+          now,
+        ),
+      );
+
+      return success(nextState, true, "memory-only");
+    }
+
+    const recorded = durable.completedTrips.some(
+      (trip) => trip.id === summary.id,
+    );
+
+    if (!recorded) {
+      const completion = ports.persistence.complete(summary, now);
+
+      if (!completion.ok && !completion.historyPersisted) {
+        const nextState = publish({
+          ...state,
+          completedTrips: Object.freeze([...durable.completedTrips]),
+          historyIntegrity: HEALTHY_PERSISTENCE,
+          persistence: degradedPersistence(completion.issue, since),
+        });
+
+        return success(nextState, true, "memory-only");
+      }
+
+      const nextState = publish({
+        ...state,
+        completedTrips:
+          completion.completedTrips === undefined
+            ? upsertCompletedTrip(durable.completedTrips, summary)
+            : Object.freeze([...completion.completedTrips]),
+        historyIntegrity: HEALTHY_PERSISTENCE,
+        persistence: completion.ok
+          ? HEALTHY_PERSISTENCE
+          : degradedPersistence(completion.issue, since),
+        completionCleanupPending: !completion.ok,
+      });
+
+      return success(nextState, true, "persisted");
+    }
+
+    const historySave = ports.persistence.saveCompleted(summary, now);
+
+    if (!historySave.ok) {
+      const nextState = publish({
+        ...state,
+        completedTrips: Object.freeze([...durable.completedTrips]),
+        historyIntegrity: HEALTHY_PERSISTENCE,
+        persistence: degradedPersistence(historySave.issue, since),
+      });
+
+      return success(nextState, true, "memory-only");
+    }
+
+    const cleanup = state.completionCleanupPending
+      ? ports.persistence.clearCompletedActive()
+      : ({ ok: true } as const);
+    const nextState = publish({
+      ...state,
+      completedTrips: upsertCompletedTrip(durable.completedTrips, summary),
+      historyIntegrity: HEALTHY_PERSISTENCE,
+      persistence: cleanup.ok
+        ? HEALTHY_PERSISTENCE
+        : degradedPersistence(cleanup.issue, since),
+      completionCleanupPending: !cleanup.ok,
+    });
+
+    return success(nextState, true, "persisted");
+  };
+
   const historyRepairBlock = (): AppCommandResult | null => {
     const blocked = lifecycleBlock(state);
 
-    if (blocked !== null) {
-      return failure(state, blocked);
-    }
-
-    if (state.lifecycle === "completed-summary") {
-      return failure(state, applicationError("completed-summary-open"));
-    }
-
-    return null;
+    return blocked === null ? null : failure(state, blocked);
   };
 
   const retryHistoryRead = (): AppCommandResult => {
@@ -809,7 +827,7 @@ export const createShoppingAppController = ({
       historyIntegrity: HEALTHY_PERSISTENCE,
       completionCleanupPending: !cleanup.ok,
       persistence: cleanup.ok
-        ? state.persistence
+        ? HEALTHY_PERSISTENCE
         : degradedPersistence(cleanup.issue, clock.now()),
       undo: null,
     });
@@ -831,7 +849,8 @@ export const createShoppingAppController = ({
       return failure(state, applicationError("nothing-to-set-aside"));
     }
 
-    const result = ports.persistence.setAsideDamagedHistory(clock.now());
+    const now = clock.now();
+    const result = ports.persistence.setAsideDamagedHistory(now);
 
     if (!result.ok) {
       return failure(state, applicationError("set-aside-failed"));
@@ -842,6 +861,19 @@ export const createShoppingAppController = ({
       completedTrips: Object.freeze([...result.completedTrips]),
       historyIntegrity: HEALTHY_PERSISTENCE,
     });
+
+    if (
+      nextState.lifecycle === "completed-summary" &&
+      nextState.completedSummary !== null
+    ) {
+      return persistCompletedSummary(
+        nextState.completedSummary,
+        nextState.persistence.status === "degraded"
+          ? nextState.persistence.since
+          : now,
+        now,
+      );
+    }
 
     return success(nextState, true, "persisted");
   };

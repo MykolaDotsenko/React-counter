@@ -69,6 +69,22 @@ export function HistoryIntegrityNotice({
   const [statusMessage, setStatusMessage] = useState("");
   const [resolved, setResolved] = useState<Resolution | null>(null);
   const resolvedRef = useRef<HTMLParagraphElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const episode =
+    state.historyIntegrity.status === "degraded"
+      ? `${state.historyIntegrity.since}:${state.historyIntegrity.issue.code}`
+      : null;
+  const [seenEpisode, setSeenEpisode] = useState(episode);
+
+  if (episode !== seenEpisode) {
+    setSeenEpisode(episode);
+
+    if (episode !== null) {
+      setConfirming(false);
+      setResolved(null);
+      setStatusMessage("");
+    }
+  }
 
   useEffect(() => {
     if (resolved !== null) {
@@ -108,14 +124,18 @@ export function HistoryIntegrityNotice({
   const retryable =
     issue.code === "read-failed" || issue.code === "storage-unavailable";
   const inSummary = state.lifecycle === "completed-summary";
-  const canSetAside = !inSummary && settable;
-  const canRetry = !inSummary && retryable;
+  const confirmingSetAside = confirming && settable;
   const keptCount = state.completedTrips.length;
+  const afterSetAside = inSummary
+    ? " The trip you just finished will then be saved to history again."
+    : state.activeTrip === null
+      ? ""
+      : " Your current trip is not affected.";
   const confirmation = `The unreadable record will be moved to a backup copy on this device and ${
     keptCount === 0
       ? "history will start empty"
       : `${keptCount} readable ${keptCount === 1 ? "trip" : "trips"} will be kept`
-  }.${state.activeTrip === null ? "" : " Your current trip is not affected."} Choose Set aside now to confirm, or Keep as is to leave it unchanged.`;
+  }.${afterSetAside} Choose Set aside now to confirm, or Keep as is to leave it unchanged.`;
 
   const retry = (): void => {
     setStatusMessage("");
@@ -148,6 +168,7 @@ export function HistoryIntegrityNotice({
     setStatusMessage(
       "History could not be set aside safely, so it was left unchanged.",
     );
+    toggleRef.current?.focus();
   };
 
   return (
@@ -163,15 +184,11 @@ export function HistoryIntegrityNotice({
         <strong id="history-integrity-title">{copy.title}</strong>
         <p>
           {copy.body}
-          <span aria-live="polite">{confirming ? ` ${confirmation}` : ""}</span>
+          <span aria-live="polite">
+            {confirmingSetAside ? ` ${confirmation}` : ""}
+          </span>
         </p>
-        {inSummary && settable ? (
-          <p>You can set it aside after closing this summary.</p>
-        ) : null}
-        {inSummary && retryable ? (
-          <p>You can try reading it again after closing this summary.</p>
-        ) : null}
-        {confirming ? (
+        {confirmingSetAside ? (
           <button
             type="button"
             className={styles.retryButton}
@@ -186,8 +203,9 @@ export function HistoryIntegrityNotice({
           </p>
         ) : null}
       </div>
-      {canSetAside ? (
+      {settable ? (
         <button
+          ref={toggleRef}
           type="button"
           className={styles.retryButton}
           onClick={() => {
@@ -198,7 +216,7 @@ export function HistoryIntegrityNotice({
           {confirming ? "Keep as is" : "Set aside…"}
         </button>
       ) : null}
-      {canRetry ? (
+      {retryable ? (
         <button type="button" className={styles.retryButton} onClick={retry}>
           Retry
         </button>

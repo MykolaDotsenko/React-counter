@@ -155,13 +155,14 @@ Then:
 - completion is durable;
 - completed summary/history remain authoritative;
 - cleanup is marked pending/degraded;
-- startup reconciliation attempts to clear the stale active copy.
+- startup reconciliation attempts to clear the stale active copy;
+- if history becomes unreadable before the copy is cleared, the copy is the last readable record of the trip: it is cleared only once readable history holds the same shopping, and setting history aside from the summary saves the trip into the new history first.
 
 Never reverse the write order.
 
 ## Idempotent completion
 
-"Same shopping" means the same trip id, currency, budget, safety buffer, start time and cart lines (every line field, in order). Completion time and the optional checkout total are not part of it.
+"Same shopping" means the same trip id, currency, budget, safety buffer, start time and cart lines (every line field, in order). Completion time, the optional checkout total and when a line was last edited or its price last confirmed are not part of it, so an edit that was reverted is still the same shopping.
 
 If history already contains the trip id with the same shopping:
 
@@ -169,7 +170,7 @@ If history already contains the trip id with the same shopping:
 - the recorded completion stays authoritative: the summary shows it, with its original completion time and any checkout total;
 - do not duplicate the trip.
 
-If history contains the trip id with different shopping, the open trip was edited after an earlier completion of it was recorded (for example while history could not be read). Storage reports a history conflict and never chooses one value; the completion use case then records the open trip under a new trip id, so both the recorded trip and the shopper's current cart are kept. The open trip is saved under the new id before that completion, so a completion interrupted after its history write leaves a copy that startup reconciliation recognises. If that save fails, nothing is recorded and the trip stays open with completion reported as not saved.
+If history contains the trip id with different shopping, the open trip was edited after an earlier completion of it was recorded (for example while history could not be read). Storage reports a history conflict and never chooses one value; the completion use case then records the open trip under a new trip id, so both the recorded trip and the shopper's current cart are kept. The open trip is saved under the new id before that completion, so a completion interrupted after its history write leaves a copy that startup reconciliation recognises. If that save fails, nothing is recorded and the trip stays open with completion reported as not saved. Both records then stay in history as separate trips; the shopper can delete either one.
 
 ## Startup reconciliation
 

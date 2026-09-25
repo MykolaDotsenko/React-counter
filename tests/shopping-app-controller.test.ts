@@ -169,6 +169,15 @@ const createPersistence = (
   const historySetAsideCalls: IsoTimestamp[] = [];
   const activeSetAsideCalls: IsoTimestamp[] = [];
   let historyReadCalls = 0;
+  let durableTrips: readonly CompletedTrip[] | null = null;
+  const durable = (): readonly CompletedTrip[] =>
+    durableTrips ?? bootstrapResult.completedTrips;
+  const record = (trip: CompletedTrip): void => {
+    durableTrips = [
+      ...durable().filter((candidate) => candidate.id !== trip.id),
+      trip,
+    ];
+  };
 
   return {
     get historySetAsideCalls() {
@@ -194,7 +203,7 @@ const createPersistence = (
       return (
         historyReadResults.shift() ?? {
           ok: true,
-          completedTrips: bootstrapResult.completedTrips,
+          completedTrips: durable(),
         }
       );
     },
@@ -231,6 +240,7 @@ const createPersistence = (
     },
     setBootstrapResult(result) {
       bootstrapResult = normalizeBootstrap(result);
+      durableTrips = null;
     },
     queueSaveResult(result) {
       saveResults.push(result);
@@ -262,18 +272,33 @@ const createPersistence = (
     },
     complete(trip, savedAt) {
       completeCalls.push({ trip, savedAt });
+      const result = completeResults.shift() ?? { ok: true };
 
-      return completeResults.shift() ?? { ok: true };
+      if (result.ok || result.historyPersisted) {
+        record(trip);
+      }
+
+      return result;
     },
     saveCompleted(trip, savedAt) {
       saveCompletedCalls.push({ trip, savedAt });
+      const result = completedSaveResults.shift() ?? { ok: true };
 
-      return completedSaveResults.shift() ?? { ok: true };
+      if (result.ok) {
+        record(trip);
+      }
+
+      return result;
     },
     replaceCompletedHistory(trips, savedAt) {
       replaceCompletedHistoryCalls.push({ trips, savedAt });
+      const result = historyReplaceResults.shift() ?? { ok: true };
 
-      return historyReplaceResults.shift() ?? { ok: true };
+      if (result.ok) {
+        durableTrips = trips;
+      }
+
+      return result;
     },
     clearCompletedActive() {
       clearCompletedActiveCalls += 1;

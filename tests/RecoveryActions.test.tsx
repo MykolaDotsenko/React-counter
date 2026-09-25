@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { bootstrapBrowserShoppingAppController } from "../src/app/composition-root";
 import { ShoppingAppShell } from "../src/app/ShoppingAppShell";
+import { useShoppingAppState } from "../src/application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../src/application/shopping-app-controller";
 import { mvpMinorUnits, type MinorUnits } from "../src/domain/money";
 import { createPriceMemoryRecord } from "../src/domain/price-memory";
@@ -248,7 +249,8 @@ describe("HistoryIntegrityNotice", () => {
     expect(live?.textContent).toBe("");
   });
 
-  it("waits for the summary to close before offering repair", () => {
+  it("repairs history from the summary and saves the finished trip again", async () => {
+    const user = userEvent.setup();
     const { storage, values } = memoryStorage({});
     const controller = boot(storage);
     controller.startTrip({ budgetMinor: money(1_000) });
@@ -256,16 +258,31 @@ describe("HistoryIntegrityNotice", () => {
     values.set(HISTORY_STORAGE_KEY, "{broken later");
     controller.setActualCheckout(money(900));
 
-    render(<HistoryIntegrityNotice controller={controller} />);
+    const { container } = render(
+      <HistoryIntegrityNotice controller={controller} />,
+    );
 
-    expect(
-      screen.getByText("You can set it aside after closing this summary."),
-    ).not.toBeNull();
-    expect(screen.queryByText(/try reading it again/)).toBeNull();
-    expect(screen.queryByRole("button", { name: "Set aside…" })).toBeNull();
+    expect(screen.queryByText(/after closing this summary/)).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Set aside…" }));
+
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toMatch(
+      /history will start empty\. The trip you just finished will then be saved to history again\./,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Set aside now" }));
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "completed-summary",
+      historyIntegrity: { status: "healthy" },
+      completedTrips: [{ id: "trip-1", actualCheckoutMinor: 900 }],
+    });
+    expect(document.activeElement).toBe(screen.getByRole("status"));
+    expect(controller.dismissCompletedSummary().ok).toBe(true);
   });
 
-  it("offers only what fits the problem while the summary is open", () => {
+  it("offers a retry from the summary when history could not be read", async () => {
+    const user = userEvent.setup();
     const values = new Map<string, string>();
     const control = { failHistoryRead: false };
     const controller = boot({
@@ -290,32 +307,56 @@ describe("HistoryIntegrityNotice", () => {
 
     render(<HistoryIntegrityNotice controller={controller} />);
 
-    expect(
-      screen.getByText("You can try reading it again after closing this summary."),
-    ).not.toBeNull();
-    expect(screen.queryByText(/set it aside/)).toBeNull();
-    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Set aside…" })).toBeNull();
+
+    control.failHistoryRead = false;
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "completed-summary",
+      historyIntegrity: { status: "healthy" },
+      completedTrips: [{ id: "trip-1" }],
+    });
+    expect(screen.getByRole("status").textContent).toBe(
+      "Saved trip history was read successfully.",
+    );
   });
 
-  it("confirms a successful retry and moves focus to the outcome", async () => {
+  it("forgets an earlier confirmation when history breaks again", async () => {
     const user = userEvent.setup();
-    const history = encodeHistorySnapshot([completedTrip("trip-a")], START);
+    const { storage, values } = memoryStorage({
+      [HISTORY_STORAGE_KEY]: partlyDamagedHistory(),
+    });
+    const controller = boot(storage);
 
-    if (!history.ok) {
-      throw new Error("Expected history");
-    }
+    render(<HistoryIntegrityNotice controller={controller} />);
 
-    const values = new Map([[HISTORY_STORAGE_KEY, history.raw]]);
-    const control = { failHistoryRead: true };
+    await user.click(screen.getByRole("button", { name: "Set aside…" }));
+    await user.click(screen.getByRole("button", { name: "Set aside now" }));
+
+    expect(screen.getByRole("status").textContent).toMatch(/backup copy/);
+
+    values.set(HISTORY_STORAGE_KEY, partlyDamagedHistory());
+    act(() => {
+      controller.deleteCompletedTrip("trip-kept" as never);
+    });
+
+    expect(controller.getSnapshot().historyIntegrity.status).toBe("degraded");
+    expect(screen.queryByRole("button", { name: "Set aside now" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Set aside…" })).not.toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("returns focus to the arming control when a set-aside fails", async () => {
+    const user = userEvent.setup();
+    const values = new Map([[HISTORY_STORAGE_KEY, partlyDamagedHistory()]]);
     const controller = boot({
-      getItem: (key) => {
-        if (key === HISTORY_STORAGE_KEY && control.failHistoryRead) {
-          throw new Error("read failed");
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => {
+        if (key.startsWith(SET_ASIDE_STORAGE_KEY_PREFIX)) {
+          throw new Error("quota");
         }
 
-        return values.get(key) ?? null;
-      },
-      setItem: (key, value) => {
         values.set(key, value);
       },
       removeItem: (key) => {
@@ -325,13 +366,15 @@ describe("HistoryIntegrityNotice", () => {
 
     render(<HistoryIntegrityNotice controller={controller} />);
 
-    control.failHistoryRead = false;
-    await user.click(screen.getByRole("button", { name: "Retry" }));
+    await user.click(screen.getByRole("button", { name: "Set aside…" }));
+    await user.click(screen.getByRole("button", { name: "Set aside now" }));
 
-    const resolved = screen.getByRole("status");
-    expect(resolved.textContent).toBe("Saved trip history was read successfully.");
-    expect(document.activeElement).toBe(resolved);
-    expect(controller.getSnapshot().completedTrips).toHaveLength(1);
+    expect(screen.getByRole("status").textContent).toBe(
+      "History could not be set aside safely, so it was left unchanged.",
+    );
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Set aside…" }),
+    );
   });
 
   it("renders nothing while history is readable", () => {
@@ -624,6 +667,116 @@ describe("trip overlays belong to their trip", () => {
       screen.queryByRole("main", { name: "Ready to finish this trip?" }),
     ).toBeNull();
     expect(screen.getByRole("button", { name: /Finish trip/ })).not.toBeNull();
+  });
+});
+
+describe("finishing a trip edited after its completion was recorded", () => {
+  it("keeps the finish surface and its failure in view when the new id cannot be recorded", async () => {
+    const user = userEvent.setup();
+    const recorded = must(
+      createActiveTrip({ id: "trip-open", budgetMinor: money(3_000), startedAt: START }),
+    );
+    const completed = must(
+      reduceTrip(recorded, { type: "complete-trip", completedAt: time(START) }),
+    );
+
+    if (completed.status !== "completed") {
+      throw new Error("Expected completed trip");
+    }
+
+    const edited = must(
+      reduceTrip(recorded, { type: "set-budget", budgetMinor: money(3_500) }),
+    );
+
+    if (edited.status !== "active") {
+      throw new Error("Expected active trip");
+    }
+
+    const history = encodeHistorySnapshot([completed], START);
+    const active = encodeActiveTripSnapshot(edited, START);
+
+    if (!history.ok || !active.ok) {
+      throw new Error("Expected encodable records");
+    }
+
+    const values = new Map([
+      [ACTIVE_TRIP_STORAGE_KEY, active.raw],
+      [HISTORY_STORAGE_KEY, history.raw],
+    ]);
+    const storage: StorageLike = {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => {
+        if (key === HISTORY_STORAGE_KEY) {
+          throw new Error("quota");
+        }
+
+        values.set(key, value);
+      },
+      removeItem: (key) => {
+        values.delete(key);
+      },
+    };
+    const controller = boot(storage);
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    await user.click(screen.getByRole("button", { name: /Finish trip/ }));
+    const finish = screen.getByRole("main", { name: "Ready to finish this trip?" });
+    const confirm = within(finish).getByRole("button", { name: "Finish trip" });
+    await user.click(confirm);
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "active",
+      activeTrip: { id: "trip-1", budgetMinor: 3_500 },
+    });
+    expect(
+      screen.getByRole("main", { name: "Ready to finish this trip?" }),
+    ).toBe(finish);
+    expect(within(finish).getByRole("alert")).not.toBeNull();
+    expect(document.activeElement).not.toBe(document.body);
+  });
+});
+
+describe("PersistenceHealthNotice after a successful retry", () => {
+  it("shows and focuses the saved outcome instead of dropping focus", async () => {
+    const user = userEvent.setup();
+    const values = new Map<string, string>();
+    const control = { failActiveWrite: true };
+    const controller = boot({
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => {
+        if (key === ACTIVE_TRIP_STORAGE_KEY && control.failActiveWrite) {
+          throw new Error("quota");
+        }
+
+        values.set(key, value);
+      },
+      removeItem: (key) => {
+        values.delete(key);
+      },
+    });
+    controller.startTrip({ budgetMinor: money(1_000) });
+
+    const Harness = () => {
+      const state = useShoppingAppState(controller);
+      return (
+        <PersistenceHealthNotice
+          controller={controller}
+          health={state.persistence}
+          context="active"
+        />
+      );
+    };
+
+    render(<Harness />);
+
+    control.failActiveWrite = false;
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+
+    const saved = screen.getByRole("status");
+    expect(saved.textContent).toBe("Saving works again.");
+    expect(document.activeElement).toBe(saved);
+    expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(true);
   });
 });
 

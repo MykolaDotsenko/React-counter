@@ -294,14 +294,67 @@ const isReadableActive = (state: ActiveState): boolean =>
 interface Outcome {
   readonly finished: boolean;
   readonly actions: readonly string[];
+  readonly finishedTrips: readonly CompletedTrip[];
+}
+
+interface ShopperHooks {
+  readonly afterBoot?: () => void;
+  readonly afterFirstFinish?: (controller: ShoppingAppController) => void;
 }
 
 const shopLikeAUser = (
   boot: () => ShoppingAppController,
+  hooks: ShopperHooks = {},
 ): { readonly controller: ShoppingAppController; readonly outcome: Outcome } => {
   const actions: string[] = [];
   let controller = boot();
   let state = controller.getSnapshot();
+  const finishedTrips: CompletedTrip[] = [];
+
+  hooks.afterBoot?.();
+
+  const noteFinish = (ok: boolean): void => {
+    const summary = controller.getSnapshot().completedSummary;
+
+    if (!ok || summary === null) {
+      return;
+    }
+
+    finishedTrips.push(summary);
+
+    if (finishedTrips.length === 1) {
+      hooks.afterFirstFinish?.(controller);
+    }
+  };
+
+  const closeSummary = (): void => {
+    if (controller.getSnapshot().lifecycle !== "completed-summary") {
+      return;
+    }
+
+    const dismissed = controller.dismissCompletedSummary();
+    actions.push(`dismiss:${dismissed.ok}`);
+
+    if (dismissed.ok) {
+      return;
+    }
+
+    controller.retryPersistence();
+
+    if (controller.getSnapshot().historyIntegrity.status === "degraded") {
+      actions.push(
+        `set-aside-history-in-summary:${controller.setAsideDamagedHistory().ok}`,
+      );
+    }
+
+    const retried = controller.dismissCompletedSummary();
+    actions.push(`dismiss-after-retry:${retried.ok}`);
+
+    if (!retried.ok) {
+      controller = boot();
+      actions.push(`reload:${controller.getSnapshot().lifecycle}`);
+    }
+  };
 
   if (state.lifecycle === "recovery") {
     const setAside = controller.setAsideUnreadableActiveTrip();
@@ -326,27 +379,15 @@ const shopLikeAUser = (
       finished.error.code === "history-unreadable"
     ) {
       actions.push(`set-aside-history:${controller.setAsideDamagedHistory().ok}`);
-      actions.push(`finish-existing-again:${controller.completeTrip().ok}`);
+      const again = controller.completeTrip();
+      actions.push(`finish-existing-again:${again.ok}`);
+      noteFinish(again.ok);
+    } else {
+      noteFinish(finished.ok);
     }
   }
 
-  state = controller.getSnapshot();
-
-  if (state.lifecycle === "completed-summary") {
-    const dismissed = controller.dismissCompletedSummary();
-    actions.push(`dismiss:${dismissed.ok}`);
-
-    if (!dismissed.ok) {
-      controller.retryPersistence();
-      const retried = controller.dismissCompletedSummary();
-      actions.push(`dismiss-after-retry:${retried.ok}`);
-
-      if (!retried.ok) {
-        controller = boot();
-        actions.push(`reload:${controller.getSnapshot().lifecycle}`);
-      }
-    }
-  }
+  closeSummary();
 
   state = controller.getSnapshot();
 
@@ -359,7 +400,7 @@ const shopLikeAUser = (
   state = controller.getSnapshot();
 
   if (state.lifecycle !== "active") {
-    return { controller, outcome: { finished: false, actions } };
+    return { controller, outcome: { finished: false, actions, finishedTrips } };
   }
 
   const added = controller.addManualItem({
@@ -388,11 +429,21 @@ const shopLikeAUser = (
     actions.push(`finish-again:${finished.ok}`);
   }
 
-  return { controller, outcome: { finished: finished.ok, actions } };
+  noteFinish(finished.ok);
+  closeSummary();
+
+  return {
+    controller,
+    outcome: { finished: finished.ok, actions, finishedTrips },
+  };
 };
 
-type MidSession = "none" | "history-corrupted";
-const MID_SESSION: readonly MidSession[] = ["none", "history-corrupted"];
+type MidSession = "none" | "history-corrupted" | "corrupted-after-finish";
+const MID_SESSION: readonly MidSession[] = [
+  "none",
+  "history-corrupted",
+  "corrupted-after-finish",
+];
 const MID_SESSION_RAW = "{corrupted while the app was open";
 
 const scenarios = ACTIVE_STATES.flatMap((active) =>
@@ -448,14 +499,14 @@ describe("persistence scenario matrix", () => {
           },
         });
       const booted = boot().getSnapshot();
-      const corrupts =
-        midSession === "history-corrupted" &&
-        failure !== "storage-blocked" &&
-        failure !== "all-writes-fail";
-
-      if (corrupts) {
+      const writable = failure !== "storage-blocked" && failure !== "all-writes-fail";
+      const canCorrupt = midSession !== "none" && writable;
+      let corrupts = false;
+      let corruptedAfter: CompletedTrip | null = null;
+      const corrupt = () => {
+        corrupts = true;
         values.set(HISTORY_STORAGE_KEY, MID_SESSION_RAW);
-      }
+      };
 
       const expectRecovery =
         failure === "storage-blocked" || !isReadableActive(active);
@@ -472,21 +523,50 @@ describe("persistence scenario matrix", () => {
         expect(booted.historyIntegrity.status).toBe("degraded");
       }
 
-      const { controller, outcome } = shopLikeAUser(boot);
+      const { controller, outcome } = shopLikeAUser(boot, {
+        afterBoot: () => {
+          if (canCorrupt && midSession === "history-corrupted") {
+            corrupt();
+          }
+        },
+        afterFirstFinish: (current) => {
+          if (canCorrupt && midSession === "corrupted-after-finish") {
+            corruptedAfter = current.getSnapshot().completedSummary;
+            corrupt();
+          }
+        },
+      });
       const final = controller.getSnapshot();
       const context = JSON.stringify({
         outcome,
         persistence: final.persistence,
         history: final.historyIntegrity,
       });
+      const decodedEnd = decodeHistorySnapshot(values.get(HISTORY_STORAGE_KEY) ?? "");
+      const durableTrips = decodedEnd.ok ? decodedEnd.trips : [];
+      const recordedOnce = (trip: ActiveTrip | CompletedTrip) =>
+        durableTrips.filter((stored) =>
+          sameTripContents(stored, { ...trip, id: stored.id }),
+        ).length;
 
-      expect(["active", "completed-summary"], context).toContain(final.lifecycle);
+      expect(["idle", "active", "completed-summary"], context).toContain(
+        final.lifecycle,
+      );
+      expect(final.lifecycle === "completed-summary", context).toBe(false);
 
       const durable =
         failure === "none" ||
         (failure === "active-remove-fails" && isReadableActive(active));
+      const lastFinished = outcome.finishedTrips.at(-1);
+      const cleanFinishDestroyedOutside =
+        failure === "none" &&
+        corruptedAfter !== null &&
+        (corruptedAfter as CompletedTrip).id === lastFinished?.id;
       if (durable) {
         expect(outcome.finished, context).toBe(true);
+      }
+
+      if (durable && !cleanFinishDestroyedOutside) {
         const stored = values.get(HISTORY_STORAGE_KEY);
         expect(stored, context).toBeDefined();
         const decoded = decodeHistorySnapshot(stored ?? "");
@@ -495,7 +575,7 @@ describe("persistence scenario matrix", () => {
           decoded.ok && decoded.trips.some((trip) => trip.id.startsWith("trip-new-")),
           context,
         ).toBe(true);
-      } else {
+      } else if (!durable) {
         expect(
           final.persistence.status === "degraded" ||
             final.historyIntegrity.status === "degraded",
@@ -542,14 +622,16 @@ describe("persistence scenario matrix", () => {
             : active === "stale-completed" && !corrupts
               ? activeTrip("trip-done-a")
               : null;
-      if (durable && openCart !== null) {
-        const decoded = decodeHistorySnapshot(values.get(HISTORY_STORAGE_KEY) ?? "");
-        const matches = decoded.ok
-          ? decoded.trips.filter((trip) =>
-              sameTripContents(trip, { ...openCart, id: trip.id }),
-            )
-          : [];
-        expect(matches, context).toHaveLength(1);
+      if (
+        durable &&
+        openCart !== null &&
+        !(failure === "none" && midSession === "corrupted-after-finish")
+      ) {
+        expect(recordedOnce(openCart), context).toBe(1);
+      }
+
+      if (durable && failure === "active-remove-fails" && corruptedAfter !== null) {
+        expect(recordedOnce(corruptedAfter), context).toBe(1);
       }
 
       if (

@@ -948,7 +948,7 @@ describe("independent review regressions", () => {
     expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
   });
 
-  it("closes the summary once its stale copy is cleared, even with history broken", () => {
+  const removeFailingStorage = () => {
     const values = new Map<string, string>();
     const control = { failActiveRemove: true };
     const storage: StorageLike = {
@@ -964,14 +964,19 @@ describe("independent review regressions", () => {
         values.delete(key);
       },
     };
+    return { values, storage, control };
+  };
+
+  it("keeps the last readable copy of a finished trip when history breaks in its summary", () => {
+    const { values, storage, control } = removeFailingStorage();
     const controller = boot(storage);
 
     expect(shopAndFinish(controller).finished.ok).toBe(true);
+    const finished = controller.getSnapshot().completedSummary;
     expect(controller.getSnapshot()).toMatchObject({
       completionCleanupPending: true,
       persistence: { status: "degraded", issue: { code: "remove-failed" } },
     });
-    expect(controller.dismissCompletedSummary().ok).toBe(false);
 
     values.set(HISTORY_STORAGE_KEY, "{corrupted later");
     control.failActiveRemove = false;
@@ -979,14 +984,139 @@ describe("independent review regressions", () => {
 
     expect(controller.getSnapshot()).toMatchObject({
       lifecycle: "completed-summary",
-      completionCleanupPending: false,
-      persistence: { status: "healthy" },
+      completionCleanupPending: true,
+      persistence: { status: "degraded", issue: { code: "remove-failed" } },
       historyIntegrity: { status: "degraded", issue: { code: "malformed-json" } },
       completedTrips: [],
     });
-    expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
+    expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(true);
     expect(values.get(HISTORY_STORAGE_KEY)).toBe("{corrupted later");
+    expect(controller.dismissCompletedSummary().ok).toBe(false);
+
+    expect(controller.setAsideDamagedHistory().ok).toBe(true);
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "completed-summary",
+      completionCleanupPending: false,
+      persistence: { status: "healthy" },
+      historyIntegrity: { status: "healthy" },
+    });
+    expect(restoreHistory(storage).trips).toEqual([finished]);
+    expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
+    expect(
+      [...values.entries()]
+        .filter(([key]) => key.startsWith(SET_ASIDE_STORAGE_KEY_PREFIX))
+        .map(([, value]) => (JSON.parse(value) as { raw: string }).raw),
+    ).toEqual(["{corrupted later"]);
     expect(controller.dismissCompletedSummary().ok).toBe(true);
+  });
+
+  it("clears the stale copy from the summary when readable history still holds the trip", () => {
+    const { values, storage, control } = removeFailingStorage();
+    const controller = boot(storage);
+
+    expect(shopAndFinish(controller).finished.ok).toBe(true);
+
+    const envelope = JSON.parse(values.get(HISTORY_STORAGE_KEY) ?? "") as {
+      data: { trips: Record<string, unknown>[] };
+    };
+    envelope.data.trips.push({ ...envelope.data.trips[0], id: "trip-bad", note: "x" });
+    const partlyDamaged = JSON.stringify(envelope);
+    values.set(HISTORY_STORAGE_KEY, partlyDamaged);
+    control.failActiveRemove = false;
+    controller.retryPersistence();
+
+    expect(controller.getSnapshot()).toMatchObject({
+      completionCleanupPending: true,
+      historyIntegrity: { status: "degraded", issue: { code: "invalid-history-entry" } },
+    });
+
+    expect(controller.setAsideDamagedHistory().ok).toBe(true);
+    expect(controller.getSnapshot()).toMatchObject({
+      completionCleanupPending: false,
+      persistence: { status: "healthy" },
+      historyIntegrity: { status: "healthy" },
+    });
+    expect(restoreHistory(storage).trips.map((trip) => trip.id)).toEqual(["trip-new-1"]);
+    expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
+    expect(controller.dismissCompletedSummary().ok).toBe(true);
+  });
+
+  it("saves an unsaved checkout total once history is set aside in the summary", () => {
+    const storage = memoryStorage({});
+    const controller = boot(storage);
+
+    expect(shopAndFinish(controller).finished.ok).toBe(true);
+    storage.values.set(HISTORY_STORAGE_KEY, "{corrupted later");
+
+    expect(controller.setActualCheckout(money(500))).toMatchObject({
+      ok: true,
+      durability: "memory-only",
+    });
+    expect(controller.setAsideDamagedHistory().ok).toBe(true);
+    expect(restoreHistory(storage).trips).toMatchObject([
+      { id: "trip-new-1", actualCheckoutMinor: 500 },
+    ]);
+    expect(backups(storage)[0]?.raw).toBe("{corrupted later");
+  });
+
+  it("starts another trip from the summary after history breaks", () => {
+    const storage = memoryStorage({});
+    const controller = boot(storage);
+
+    expect(shopAndFinish(controller).finished.ok).toBe(true);
+    storage.values.set(HISTORY_STORAGE_KEY, "{corrupted later");
+    controller.setActualCheckout(money(500));
+
+    expect(controller.getSnapshot().completedTrips).toEqual([]);
+    expect(controller.startTripFromCompleted("trip-new-1" as never)).toMatchObject({
+      ok: true,
+      state: { lifecycle: "active", activeTrip: { budgetMinor: 4_000 } },
+    });
+  });
+
+  it("does not leave a stale save fault behind after reconciling an open copy", () => {
+    const values = new Map<string, string>([
+      [ACTIVE_TRIP_STORAGE_KEY, activeRaw()],
+      [HISTORY_STORAGE_KEY, historyRaw([completedTrip("trip-active")])],
+    ]);
+    const control = { failHistoryRead: true, failActiveWrite: false };
+    const storage: StorageLike = {
+      getItem(key) {
+        if (key === HISTORY_STORAGE_KEY && control.failHistoryRead) {
+          throw new Error("read failed");
+        }
+
+        return values.get(key) ?? null;
+      },
+      setItem(key, value) {
+        if (key === ACTIVE_TRIP_STORAGE_KEY && control.failActiveWrite) {
+          throw new Error("quota");
+        }
+
+        values.set(key, value);
+      },
+      removeItem(key) {
+        values.delete(key);
+      },
+    };
+    const controller = boot(storage);
+
+    control.failActiveWrite = true;
+    controller.addManualItem({ unitPriceMinor: money(120), quantity: 1 });
+    controller.undo();
+
+    expect(controller.getSnapshot().persistence.status).toBe("degraded");
+
+    control.failHistoryRead = false;
+    controller.retryHistoryRead();
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "idle",
+      persistence: { status: "healthy" },
+      completionCleanupPending: false,
+    });
+    expect(controller.startTripFromCompleted("trip-active" as never).ok).toBe(true);
   });
 
   it("lists only readable trips after a checkout total meets broken history", () => {

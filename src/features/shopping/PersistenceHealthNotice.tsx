@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type {
   PersistenceHealth,
@@ -131,9 +131,44 @@ export function PersistenceHealthNotice({
   context = "active",
 }: PersistenceHealthNoticeProps) {
   const [retryMessage, setRetryMessage] = useState("");
+  const [resolved, setResolved] = useState(false);
+  const resolvedRef = useRef<HTMLParagraphElement>(null);
+  const episode = health.status === "degraded" ? health.since : null;
+  const [seenEpisode, setSeenEpisode] = useState(episode);
+
+  if (episode !== seenEpisode) {
+    setSeenEpisode(episode);
+
+    if (episode !== null) {
+      setResolved(false);
+      setRetryMessage("");
+    }
+  }
+
+  useEffect(() => {
+    if (resolved) {
+      resolvedRef.current?.focus();
+    }
+  }, [resolved]);
 
   if (health.status === "healthy") {
-    return null;
+    return resolved ? (
+      <aside
+        className={styles.notice}
+        data-risk="cleanup"
+        aria-labelledby="persistence-notice-title"
+      >
+        <span className={styles.marker} aria-hidden="true">
+          ✓
+        </span>
+        <div className={styles.copy}>
+          <strong id="persistence-notice-title">Saved on this device</strong>
+          <p ref={resolvedRef} tabIndex={-1} role="status">
+            Saving works again.
+          </p>
+        </div>
+      </aside>
+    ) : null;
   }
 
   const copy = noticeCopy(health.issue, context);
@@ -146,6 +181,11 @@ export function PersistenceHealthNotice({
 
     if (!result.ok) {
       setRetryMessage("Saving cannot be retried from the current app state.");
+      return;
+    }
+
+    if (result.state.persistence.status === "healthy") {
+      setResolved(true);
       return;
     }
 
