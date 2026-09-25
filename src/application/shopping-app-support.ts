@@ -1,5 +1,6 @@
 import type { PriceMemoryRecord } from "../domain/price-memory";
 import type {
+  ActiveTrip,
   CompletedTrip,
   IsoTimestamp,
 } from "../domain/shopping-trip";
@@ -103,4 +104,36 @@ export const upsertCompletedTrip = (
       candidateIndex === index ? trip : candidate,
     ),
   );
+};
+
+export const lifecycleBlock = (
+  state: ShoppingAppState,
+): ApplicationError | null => {
+  if (state.lifecycle === "booting") {
+    return applicationError("not-ready");
+  }
+
+  if (state.lifecycle === "recovery") {
+    return applicationError("recovery-required");
+  }
+
+  return null;
+};
+
+export const requireActiveTrip = (
+  state: ShoppingAppState,
+):
+  | { readonly ok: true; readonly trip: ActiveTrip }
+  | { readonly ok: false; readonly error: ApplicationError } => {
+  const blocked = lifecycleBlock(state);
+
+  if (blocked !== null) {
+    return { ok: false, error: blocked };
+  }
+
+  if (state.activeTrip === null) {
+    return { ok: false, error: applicationError("no-active-trip") };
+  }
+
+  return { ok: true, trip: state.activeTrip };
 };

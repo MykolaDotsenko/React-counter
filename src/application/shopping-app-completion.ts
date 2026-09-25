@@ -16,6 +16,8 @@ import {
   applicationError,
   degradedPersistence,
   failure,
+  lifecycleBlock,
+  requireActiveTrip,
   success,
   upsertCompletedTrip,
 } from "./shopping-app-support";
@@ -46,20 +48,14 @@ export const createCompletionUseCases = ({
   const completeTrip = (): AppCommandResult => {
     const state = getState();
 
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const active = requireActiveTrip(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
-    }
-
-    if (state.activeTrip === null) {
-      return failure(state, applicationError("no-active-trip"));
+    if (!active.ok) {
+      return failure(state, active.error);
     }
 
     const completedAt = clock.now();
-    const tripResult = reduceTrip(state.activeTrip, {
+    const tripResult = reduceTrip(active.trip, {
       type: "complete-trip",
       completedAt,
     });
@@ -167,12 +163,10 @@ export const createCompletionUseCases = ({
   ): AppCommandResult => {
     const state = getState();
 
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const blocked = lifecycleBlock(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
+    if (blocked !== null) {
+      return failure(state, blocked);
     }
 
     if (

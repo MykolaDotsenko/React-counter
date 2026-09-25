@@ -17,7 +17,9 @@ import {
   failure,
   freezeState,
   initialState,
+  lifecycleBlock,
   recoveryState,
+  requireActiveTrip,
   success,
 } from "./shopping-app-support";
 import type {
@@ -212,12 +214,10 @@ export const createShoppingAppController = ({
   };
 
   const startTrip = (input: StartTripInput): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const blocked = lifecycleBlock(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
+    if (blocked !== null) {
+      return failure(state, blocked);
     }
 
     if (state.lifecycle === "completed-summary") {
@@ -232,12 +232,10 @@ export const createShoppingAppController = ({
   };
 
   const startTripFromCompleted = (tripId: TripId): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const blocked = lifecycleBlock(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
+    if (blocked !== null) {
+      return failure(state, blocked);
     }
 
     if (state.activeTrip !== null) {
@@ -274,16 +272,10 @@ export const createShoppingAppController = ({
   const addManualItem = (
     input: AddManualItemInput,
   ): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const active = requireActiveTrip(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
-    }
-
-    if (state.activeTrip === null) {
-      return failure(state, applicationError("no-active-trip"));
+    if (!active.ok) {
+      return failure(state, active.error);
     }
 
     const now = clock.now();
@@ -313,16 +305,10 @@ export const createShoppingAppController = ({
   const addRememberedItem = (
     input: AddRememberedItemInput,
   ): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const active = requireActiveTrip(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
-    }
-
-    if (state.activeTrip === null) {
-      return failure(state, applicationError("no-active-trip"));
+    if (!active.ok) {
+      return failure(state, active.error);
     }
 
     const memory = state.priceMemories.find(
@@ -378,19 +364,13 @@ export const createShoppingAppController = ({
   const updateManualItem = (
     input: UpdateManualItemInput,
   ): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
+    const active = requireActiveTrip(state);
+
+    if (!active.ok) {
+      return failure(state, active.error);
     }
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
-    }
-
-    if (state.activeTrip === null) {
-      return failure(state, applicationError("no-active-trip"));
-    }
-
-    const current = state.activeTrip.items.find(
+    const current = active.trip.items.find(
       (item) => item.id === input.itemId,
     );
 
@@ -466,12 +446,10 @@ export const createShoppingAppController = ({
   const replaceCompletedHistory = (
     nextTrips: readonly CompletedTrip[],
   ): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const blocked = lifecycleBlock(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
+    if (blocked !== null) {
+      return failure(state, blocked);
     }
 
     if (state.activeTrip !== null) {
@@ -547,12 +525,10 @@ export const createShoppingAppController = ({
   };
 
   const clearPriceMemory = (): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const blocked = lifecycleBlock(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
+    if (blocked !== null) {
+      return failure(state, blocked);
     }
 
     if (state.activeTrip !== null) {
@@ -586,12 +562,10 @@ export const createShoppingAppController = ({
   };
 
   const retryPersistence = (): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const blocked = lifecycleBlock(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
+    if (blocked !== null) {
+      return failure(state, blocked);
     }
 
     if (
@@ -688,19 +662,13 @@ export const createShoppingAppController = ({
   };
 
   const dispatch = (command: ActiveTripCommand): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
+    const active = requireActiveTrip(state);
+
+    if (!active.ok) {
+      return failure(state, active.error);
     }
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
-    }
-
-    if (state.activeTrip === null) {
-      return failure(state, applicationError("no-active-trip"));
-    }
-
-    const currentTrip = state.activeTrip;
+    const currentTrip = active.trip;
     const tripResult = reduceTrip(currentTrip, command);
 
     if (!tripResult.ok) {
@@ -736,16 +704,10 @@ export const createShoppingAppController = ({
   };
 
   const undo = (): AppCommandResult => {
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const active = requireActiveTrip(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
-    }
-
-    if (state.activeTrip === null) {
-      return failure(state, applicationError("no-active-trip"));
+    if (!active.ok) {
+      return failure(state, active.error);
     }
 
     if (state.undo === null) {
