@@ -34,13 +34,10 @@ describe("settleMotion", () => {
     setReducedMotion(false);
     const animate = vi.fn();
 
-    settleMotion({ animate } as unknown as Element, 180);
+    settleMotion({ animate } as unknown as Element);
 
     expect(animate).toHaveBeenCalledTimes(1);
-    expect(animate.mock.calls[0]?.[1]).toMatchObject({
-      duration: 180,
-      easing: "ease-out",
-    });
+    expect(animate.mock.calls[0]?.[1]).toEqual({ duration: 160 });
   });
 
   it("does not animate when reduced motion is requested", () => {
