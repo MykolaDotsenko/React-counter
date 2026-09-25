@@ -79,8 +79,8 @@ export function AppearanceSwitcher() {
       </div>
 
       <p className={styles.hint}>
-        System follows your device. Aurora changes visuals only; shopping data and
-        calculations stay unchanged.
+        System follows your device. Aurora changes visuals only; shopping data
+        stays unchanged.
       </p>
 
       <a
