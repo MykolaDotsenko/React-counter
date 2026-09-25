@@ -512,9 +512,84 @@ describe("add projection", () => {
       crossesSafeLimit: true,
       crossesNominalBudget: false,
       nominalOverageMinor: 0,
+      safetyBufferUseMinor: 100,
     });
     expect(trip).toBe(before);
     expect(cartTotal(trip)).toBe(4_700);
+  });
+
+  it("attributes only this line's share of the safety buffer when the cart is already in reserve", () => {
+    let trip = createTrip(5_000, 500);
+    trip = addItem(
+      trip,
+      createItem({ id: "existing", price: 4_600 }),
+    );
+
+    const projection = unwrap(
+      projectAddItem(trip, {
+        unitPriceMinor: money(200),
+        quantity: 1,
+      }),
+    );
+
+    expect(projection.safeRemainingMinor).toBe(-300);
+    expect(projection.safetyBufferUseMinor).toBe(200);
+  });
+
+  it("never attributes more buffer than the line adds, whatever the cart already holds", () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 100_000 }),
+        fc.integer({ min: 0, max: 100_000 }),
+        fc.integer({ min: 1, max: 100_000 }),
+        fc.integer({ min: 1, max: 100_000 }),
+        fc.integer({ min: 1, max: 20 }),
+        (budgetInput, bufferInput, existingPrice, price, quantity) => {
+          const budget = Math.max(budgetInput, 1);
+          const buffer = Math.min(bufferInput, budget);
+          const trip = addItem(
+            createTrip(budget, buffer),
+            createItem({ id: "existing", price: existingPrice }),
+          );
+          const projection = unwrap(
+            projectAddItem(trip, { unitPriceMinor: money(price), quantity }),
+          );
+          const committed = addItem(
+            trip,
+            createItem({ id: "projected", price, quantity }),
+          );
+          const bufferUsed = (value: ShoppingTrip): number =>
+            Math.min(safeOverage(value), buffer);
+
+          expect(projection.safetyBufferUseMinor).toBe(
+            bufferUsed(committed) - bufferUsed(trip),
+          );
+          expect(projection.safetyBufferUseMinor).toBeLessThanOrEqual(
+            projection.lineTotalMinor,
+          );
+        },
+      ),
+      { numRuns: 1_500 },
+    );
+  });
+
+  it("counts only the reserve band when a line also crosses the nominal budget", () => {
+    let trip = createTrip(5_000, 500);
+    trip = addItem(
+      trip,
+      createItem({ id: "existing", price: 4_900 }),
+    );
+
+    const projection = unwrap(
+      projectAddItem(trip, {
+        unitPriceMinor: money(300),
+        quantity: 1,
+      }),
+    );
+
+    expect(projection.crossesNominalBudget).toBe(true);
+    expect(projection.nominalOverageMinor).toBe(200);
+    expect(projection.safetyBufferUseMinor).toBe(100);
   });
 
   it("previews nominal overage exactly", () => {
@@ -1060,6 +1135,17 @@ describe("property-based shopping invariants", () => {
           );
           expect(projection.nominalOverageMinor).toBe(
             nominalOverage(committed),
+          );
+
+          const bufferUsed = (value: ShoppingTrip): number =>
+            Math.min(safeOverage(value), buffer);
+
+          expect(projection.safetyBufferUseMinor).toBe(
+            bufferUsed(committed) - bufferUsed(trip),
+          );
+          expect(projection.safetyBufferUseMinor).toBeGreaterThanOrEqual(0);
+          expect(projection.safetyBufferUseMinor).toBeLessThanOrEqual(
+            projection.lineTotalMinor,
           );
         },
       ),

@@ -270,14 +270,30 @@ export const projectAddItem = (
     return domainError("unsafe-integer");
   }
 
+  const tripSafeLimit = safeLimit(trip);
+  const safetyBufferUsed = (total: number): number =>
+    Math.min(
+      Math.max(total - tripSafeLimit, 0),
+      trip.safetyBufferMinor,
+    );
+  const safetyBufferUseResult = signedMinorUnits(
+    safetyBufferUsed(projectedTotal.value) -
+      safetyBufferUsed(currentTotal.value),
+  );
+
+  if (!safetyBufferUseResult.ok) {
+    return domainError("unsafe-integer");
+  }
+
   return ok({
     lineTotalMinor: toSignedOrThrow(pendingLine.value),
     cartTotalMinor: projectedTotal.value,
     remainingMinor: projectedRemaining.value,
     safeRemainingMinor: projectedSafeRemaining.value,
-    crossesSafeLimit: projectedTotal.value > safeLimit(trip),
+    crossesSafeLimit: projectedTotal.value > tripSafeLimit,
     crossesNominalBudget: projectedTotal.value > trip.budgetMinor,
     nominalOverageMinor: nominalOverageResult.value,
+    safetyBufferUseMinor: safetyBufferUseResult.value,
   });
 };
 
