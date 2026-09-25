@@ -1,6 +1,9 @@
+import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
+
+import { ZXING_WASM_SHA256 } from "zxing-wasm/reader";
 
 import { extractInitialAssetPaths } from "./build-budget.mjs";
 
@@ -50,15 +53,19 @@ if (!indexHtml.includes('rel="manifest"')) {
   throw new Error("Public build does not link its web app manifest.");
 }
 
-const MAX_PUBLIC_JS_BYTES = 400_000;
+const MAX_PUBLIC_JS_BYTES = 420_000;
 const MAX_INITIAL_JS_BYTES = 395_000;
 const MAX_SINGLE_JS_CHUNK_BYTES = 395_000;
-const MAX_PUBLIC_JS_GZIP_BYTES = 118_000;
+const MAX_PUBLIC_JS_GZIP_BYTES = 124_000;
 const MAX_INITIAL_JS_GZIP_BYTES = 115_000;
 const MAX_PUBLIC_CSS_BYTES = 80_000;
 const MAX_INITIAL_CSS_BYTES = 70_000;
-const MAX_PUBLIC_CSS_GZIP_BYTES = 12_000;
+const MAX_PUBLIC_CSS_GZIP_BYTES = 13_000;
 const MAX_INITIAL_CSS_GZIP_BYTES = 11_000;
+const BARCODE_ENGINE_CHUNK_PREFIX = "zxing-fallback-detector-";
+const MAX_BARCODE_ENGINE_JS_BYTES = 60_000;
+const MAX_BARCODE_ENGINE_JS_GZIP_BYTES = 20_000;
+const MAX_BARCODE_ENGINE_WASM_BYTES = 1_200_000;
 const forbiddenMarkers = [
   "Retention Beta",
   "Local beta evidence",
@@ -84,8 +91,15 @@ const forbiddenMarkers = [
 ];
 
 const files = await readdir(assets);
-const jsFiles = files.filter((file) => file.endsWith(".js"));
+const allJsFiles = files.filter((file) => file.endsWith(".js"));
+const engineJsFiles = allJsFiles.filter((file) =>
+  file.startsWith(BARCODE_ENGINE_CHUNK_PREFIX),
+);
+const jsFiles = allJsFiles.filter(
+  (file) => !file.startsWith(BARCODE_ENGINE_CHUNK_PREFIX),
+);
 const cssFiles = files.filter((file) => file.endsWith(".css"));
+const wasmFiles = files.filter((file) => file.endsWith(".wasm"));
 
 if (jsFiles.length === 0) {
   throw new Error("Public build contains no JavaScript asset.");
@@ -201,6 +215,55 @@ if (initialCssGzipBytes > MAX_INITIAL_CSS_GZIP_BYTES) {
   );
 }
 
+if (engineJsFiles.length !== 1 || wasmFiles.length !== 1) {
+  throw new Error(
+    `Public build must emit exactly one lazy barcode engine chunk and one WASM asset (found ${engineJsFiles.length} and ${wasmFiles.length}).`,
+  );
+}
+
+if (initialJsSet.has(engineJsFiles[0])) {
+  throw new Error("The barcode engine must stay out of the initial bundle.");
+}
+
+const engineJsBytes = await assetSize(engineJsFiles[0]);
+const engineJsGzipBytes = await assetGzipSize(engineJsFiles[0]);
+const wasmBytes = await assetSize(wasmFiles[0]);
+const wasmSha256 = createHash("sha256")
+  .update(await readFile(path.join(assets, wasmFiles[0])))
+  .digest("hex");
+
+if (engineJsBytes > MAX_BARCODE_ENGINE_JS_BYTES) {
+  throw new Error(
+    `Barcode engine JavaScript budget exceeded: ${engineJsBytes} > ${MAX_BARCODE_ENGINE_JS_BYTES} bytes.`,
+  );
+}
+
+if (engineJsGzipBytes > MAX_BARCODE_ENGINE_JS_GZIP_BYTES) {
+  throw new Error(
+    `Barcode engine gzipped JavaScript budget exceeded: ${engineJsGzipBytes} > ${MAX_BARCODE_ENGINE_JS_GZIP_BYTES} bytes.`,
+  );
+}
+
+if (wasmBytes > MAX_BARCODE_ENGINE_WASM_BYTES) {
+  throw new Error(
+    `Barcode engine WASM budget exceeded: ${wasmBytes} > ${MAX_BARCODE_ENGINE_WASM_BYTES} bytes.`,
+  );
+}
+
+if (wasmSha256 !== ZXING_WASM_SHA256) {
+  throw new Error(
+    "Self-hosted barcode WASM does not match the bundled ZXing reader build.",
+  );
+}
+
+for (const file of initialJsFiles) {
+  const fileContent = await readFile(path.join(assets, file), "utf8");
+
+  if (fileContent.includes("zxing_reader")) {
+    throw new Error(`Initial bundle ${file} includes the barcode engine.`);
+  }
+}
+
 for (const file of jsFiles) {
   const fileContent = await readFile(path.join(assets, file), "utf8");
 
@@ -219,6 +282,8 @@ console.log(
     `total JS ${totalJsBytes} bytes / ${totalJsGzipBytes} gzip`,
     `largest JS chunk ${largestJsChunkBytes} bytes`,
     `lazy JS ${lazyJsFiles.length} chunk(s) / ${lazyJsBytes} bytes`,
+    `barcode engine JS ${engineJsBytes} bytes / ${engineJsGzipBytes} gzip`,
+    `barcode engine WASM ${wasmBytes} bytes`,
     `initial CSS ${initialCssBytes} bytes / ${initialCssGzipBytes} gzip`,
     `total CSS ${totalCssBytes} bytes / ${totalCssGzipBytes} gzip`,
     "installable offline shell present",

@@ -23,6 +23,8 @@ import { SHOPPING_LOCALE } from "./shopping-locale";
 export interface ActiveTripScreenProps {
   readonly controller: ShoppingAppController;
   readonly onAddPrice: () => void;
+  readonly onScanBarcode?: () => void;
+  readonly scanBarcodeButtonRef?: Ref<HTMLButtonElement>;
   readonly onFinishTrip?: () => void;
   readonly onAdjustBudget?: () => void;
   readonly addPriceButtonRef?: Ref<HTMLButtonElement>;
@@ -99,6 +101,8 @@ const formatSignedAmount = (
 export function ActiveTripScreen({
   controller,
   onAddPrice,
+  onScanBarcode,
+  scanBarcodeButtonRef,
   onFinishTrip,
   onAdjustBudget,
   addPriceButtonRef,
@@ -309,6 +313,16 @@ export function ActiveTripScreen({
             <span aria-hidden="true">+</span>
             <span>Add price</span>
           </button>
+          {onScanBarcode ? (
+            <button
+              ref={scanBarcodeButtonRef}
+              type="button"
+              className={styles.finishButton}
+              onClick={onScanBarcode}
+            >
+              Scan barcode
+            </button>
+          ) : null}
           {onAdjustBudget || onFinishTrip ? (
             <div className={styles.secondaryTripActions}>
               {onAdjustBudget ? (

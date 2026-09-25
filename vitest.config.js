@@ -7,6 +7,9 @@ import react from "@vitejs/plugin-react";
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  define: {
+    __SHOPPING_APP_VERSION__: JSON.stringify("test"),
+  },
   plugins: [react()],
   resolve: {
     alias: {
@@ -27,6 +30,8 @@ export default defineConfig({
         "src/domain/**/*.{ts,tsx}",
         "src/application/**/*.{ts,tsx}",
         "src/infrastructure/storage/**/*.{ts,tsx}",
+        "src/infrastructure/barcode/browser-barcode-scanner.ts",
+        "src/infrastructure/product-lookup/**/*.{ts,tsx}",
       ],
       reporter: ["text", "json-summary"],
       reportOnFailure: true,

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -6,6 +7,9 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
+const appVersion = JSON.parse(
+  readFileSync(path.join(rootDir, "package.json"), "utf8"),
+).version;
 
 export default defineConfig(() => {
   const cohortAnalysisEnabled =
@@ -34,6 +38,9 @@ export default defineConfig(() => {
     ocrPairedAnalyzerEnabled;
 
   return {
+    define: {
+      __SHOPPING_APP_VERSION__: JSON.stringify(appVersion),
+    },
     plugins: [
       react(),
       VitePWA({
@@ -92,6 +99,17 @@ export default defineConfig(() => {
           ],
           globPatterns: [
             "**/*.{js,css,html,svg,png,webmanifest}",
+          ],
+          runtimeCaching: [
+            {
+              urlPattern: ({ sameOrigin, url }) =>
+                sameOrigin && url.pathname.endsWith(".wasm"),
+              handler: "CacheFirst",
+              options: {
+                cacheName: "barcode-engine",
+                expiration: { maxEntries: 2 },
+              },
+            },
           ],
         },
       }),
