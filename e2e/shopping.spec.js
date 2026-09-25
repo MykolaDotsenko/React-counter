@@ -195,7 +195,7 @@ test("keeps explicit Aurora appearance durable and independent from shopping sta
     persisted: "aurora",
     page: "#070912",
     panel: "#101625",
-    raised: "#19233a",
+    raised: "#161e31",
     accent: "#8de8ff",
     themeColor: "#070912",
   });
