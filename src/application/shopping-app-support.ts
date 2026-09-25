@@ -61,10 +61,6 @@ export const degradedPersistence = (
     since,
   });
 
-/**
- * Durable history turned out to be unreadable: report it as a history problem
- * (never as the active trip's) and show exactly the trips a set-aside keeps.
- */
 export const withUnreadableHistory = (
   state: ShoppingAppState,
   issue: PersistenceProblem,
@@ -159,11 +155,6 @@ export const requireActiveTrip = (
   return { ok: true, trip: state.activeTrip };
 };
 
-/**
- * Codes for a stored record that exists but cannot be interpreted. Such a
- * record may be set aside, with a byte-for-byte backup, only by an explicit
- * user action.
- */
 const UNREADABLE_ACTIVE_RECORD_CODES: ReadonlySet<string> = new Set([
   "malformed-json",
   "invalid-envelope",

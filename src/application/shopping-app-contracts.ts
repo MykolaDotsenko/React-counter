@@ -93,14 +93,12 @@ export type ActiveTripSaveResult =
   | {
       readonly ok: false;
       readonly issue: PersistenceProblem;
-      /** Set when the stored history could not be read, so nothing was written. */
       readonly stage?: "history-read";
     };
 
 export type CompletionSaveResult =
   | {
       readonly ok: true;
-      /** The durable completed history after the write, when re-read. */
       readonly completedTrips?: readonly CompletedTrip[];
     }
   | {
@@ -152,7 +150,6 @@ export interface ShoppingAppState {
   readonly completedTrips: readonly CompletedTrip[];
   readonly completionCleanupPending: boolean;
   readonly persistence: PersistenceHealth;
-  /** Whether the stored completed history could be read safely. */
   readonly historyIntegrity: PersistenceHealth;
   readonly priceMemories: readonly PriceMemoryRecord[];
   readonly priceMemoryPersistence: PersistenceHealth;

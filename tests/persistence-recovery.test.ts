@@ -108,7 +108,6 @@ const historyRaw = (trips: readonly CompletedTrip[]): string => {
   return encoded.raw;
 };
 
-/** One valid trip plus one entry the v1 schema rejects (an unknown field). */
 const partlyDamagedHistoryRaw = (): string => {
   const envelope = JSON.parse(historyRaw([completedTrip("trip-kept")])) as {
     data: { trips: Record<string, unknown>[] };
@@ -561,7 +560,6 @@ describe("the shopping app never locks the shopper out", () => {
       priceMemoryPersistence: { issue: { code: "session-only" } },
     });
 
-    // The session keeps going: the summary can be left and shopping resumes.
     expect(controller.dismissCompletedSummary().ok).toBe(true);
     const again = controller.startTripFromCompleted(
       controller.getSnapshot().completedTrips[0]!.id,

@@ -16,7 +16,6 @@ import type { StorageLike } from "../infrastructure/storage/shopping-storage";
 
 export interface BrowserShoppingAppDependencies {
   readonly storage?: StorageLike | null;
-  /** Storage key scope; defaults to the deployed surface's own scope. */
   readonly storageScope?: string | null;
   readonly clock?: Clock;
   readonly ids?: IdGenerator;

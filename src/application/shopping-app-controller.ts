@@ -89,8 +89,6 @@ export const createShoppingAppController = ({
 }: ShoppingAppControllerDependencies): ShoppingAppController => {
   let state = initialState();
   const listeners = new Set<() => void>();
-  // Mutable only through continueWithoutSaving(), which swaps every write path
-  // to refusing session-only ports in one step.
   const ports: CompletionPorts = {
     persistence,
     priceMemory: priceMemoryPersistence,
@@ -494,10 +492,6 @@ export const createShoppingAppController = ({
   ): ShoppingAppState =>
     publish(withUnreadableHistory(state, issue, completedTrips, clock.now()));
 
-  /**
-   * Rewrites history from what is durably stored now, never from a possibly
-   * stale in-memory list, so trips this session never loaded are not dropped.
-   */
   const replaceCompletedHistory = (
     nextFrom: (durable: readonly CompletedTrip[]) => readonly CompletedTrip[],
   ): AppCommandResult => {
@@ -673,10 +667,6 @@ export const createShoppingAppController = ({
       );
 
       if (!historySave.ok && historySave.stage === "history-read") {
-        // History became unreadable after this trip finished, so the summary
-        // cannot be written into it; that is reported as a history problem.
-        // Clearing the stale active copy does not touch history, so it still
-        // runs and the summary can close.
         const readable = ports.persistence.readCompletedHistory();
         const cleanup = state.completionCleanupPending
           ? ports.persistence.clearCompletedActive()
@@ -810,9 +800,6 @@ export const createShoppingAppController = ({
       return success(nextState, true, "unchanged");
     }
 
-    // History is the completion authority: an open copy identical to a trip it
-    // already holds is a leftover, exactly as startup reconciliation treats
-    // it. A copy edited since stays open and finishes as a trip of its own.
     const cleanup = ports.persistence.clearCompletedActive();
     const nextState = publish({
       ...state,

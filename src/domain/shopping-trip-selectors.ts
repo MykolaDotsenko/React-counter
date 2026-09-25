@@ -90,10 +90,6 @@ export const itemCount = (trip: ShoppingTrip): number => {
   return count;
 };
 
-/**
- * The latest moment the trip already records. Commands on the trip must not be
- * stamped earlier, even when the device clock has moved backwards.
- */
 export const latestTripTimestamp = (trip: ShoppingTrip): IsoTimestamp => {
   let latest =
     trip.status === "completed"
@@ -108,8 +104,6 @@ export const latestTripTimestamp = (trip: ShoppingTrip): IsoTimestamp => {
   return latest;
 };
 
-// Price sources and confidences are flat records of primitives; an absent
-// optional field and an undefined one mean the same thing.
 const sameFlatRecord = (left: object, right: object): boolean => {
   const definedEntries = (value: object) =>
     Object.entries(value).filter(([, field]) => field !== undefined);
@@ -132,11 +126,6 @@ const sameCartItem = (left: CartItem, right: CartItem): boolean =>
   sameFlatRecord(left.priceSource, right.priceSource) &&
   sameFlatRecord(left.priceConfidence, right.priceConfidence);
 
-/**
- * Whether two trips hold the same shopping: identity, budget, buffer, start
- * and every cart line. Completion fields are ignored, so an open copy left
- * behind by a completion compares equal to the trip it became.
- */
 export const sameTripContents = (
   left: ShoppingTrip,
   right: ShoppingTrip,

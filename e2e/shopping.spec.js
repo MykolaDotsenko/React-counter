@@ -11,8 +11,6 @@ const PRICE_MEMORY_KEY = "budget-cart:price-memory";
 const RETENTION_BETA_KEY = "budget-cart:qa:retention-v1";
 const APPEARANCE_KEY = "shopping-budget:appearance";
 
-// Guarded evidence builds keep storage in their deployed surface's own scope;
-// CI serves each guarded artifact from the test origin root.
 const guardedKey = (key) => `surface:/|${key}`;
 const GUARDED_ACTIVE_TRIP_KEY = guardedKey(ACTIVE_TRIP_KEY);
 const GUARDED_RETENTION_BETA_KEY = guardedKey(RETENTION_BETA_KEY);

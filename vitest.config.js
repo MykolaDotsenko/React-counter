@@ -10,7 +10,6 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // Mirrors tsconfig paths: tests compose the public NoOp evidence adapter.
       "#shopping-evidence": path.resolve(
         rootDir,
         "src/qa/use-shopping-evidence.tsx",

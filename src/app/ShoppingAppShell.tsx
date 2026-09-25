@@ -53,9 +53,6 @@ type TripOverlay =
   | { readonly kind: "edit-item"; readonly itemId: ItemId }
   | { readonly kind: "finish-trip" };
 
-// A trip overlay belongs to the trip it was opened for. If that trip stops
-// being the active one by any route (reconciled, finished, set aside), the
-// overlay must not reopen over whichever trip comes next.
 type OverlayState =
   | { readonly kind: "none" }
   | { readonly kind: "history" }

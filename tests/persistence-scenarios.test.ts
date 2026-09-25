@@ -29,15 +29,6 @@ import {
   HISTORY_STORAGE_KEY,
 } from "../src/infrastructure/storage/shopping-storage-schema";
 
-/*
- * Exhaustive scenario matrix: every combination of stored active record,
- * stored history, stored Price Memory, storage failure mode and mid-session
- * history corruption is booted
- * through the real composition root and driven with only the actions the UI
- * offers. Each run must end with the shopper able to shop, and must never
- * lose a stored record the app could not read.
- */
-
 const START = "2026-09-21T09:00:00.000Z";
 const ITEM_TIME = "2026-09-21T09:05:00.000Z";
 const DONE_TIME = "2026-09-21T09:30:00.000Z";
@@ -93,7 +84,6 @@ const completedTrip = (id: string): CompletedTrip => {
   return done;
 };
 
-/** The recorded trip's open copy, edited after that completion was saved. */
 const editedSinceCompleted = (): ActiveTrip => {
   const edited = must(
     reduceTrip(activeTrip("trip-done-a"), {
@@ -306,10 +296,6 @@ interface Outcome {
   readonly actions: readonly string[];
 }
 
-/**
- * Drives the controller exactly as a shopper using the UI could; `reload`
- * models closing and reopening the app on the same storage.
- */
 const shopLikeAUser = (
   boot: () => ShoppingAppController,
 ): { readonly controller: ShoppingAppController; readonly outcome: Outcome } => {
@@ -356,7 +342,6 @@ const shopLikeAUser = (
       actions.push(`dismiss-after-retry:${retried.ok}`);
 
       if (!retried.ok) {
-        // The finished trip is durable; reopening reconciles the stale copy.
         controller = boot();
         actions.push(`reload:${controller.getSnapshot().lifecycle}`);
       }
@@ -406,7 +391,6 @@ const shopLikeAUser = (
   return { controller, outcome: { finished: finished.ok, actions } };
 };
 
-/** History corrupted by something outside this tab after the app loaded. */
 type MidSession = "none" | "history-corrupted";
 const MID_SESSION: readonly MidSession[] = ["none", "history-corrupted"];
 const MID_SESSION_RAW = "{corrupted while the app was open";
@@ -473,12 +457,10 @@ describe("persistence scenario matrix", () => {
         values.set(HISTORY_STORAGE_KEY, MID_SESSION_RAW);
       }
 
-      // 1. Only an unreadable active record (or unusable storage) blocks.
       const expectRecovery =
         failure === "storage-blocked" || !isReadableActive(active);
       expect(booted.lifecycle === "recovery").toBe(expectRecovery);
 
-      // 2. A readable history problem never hides behind healthy state.
       if (
         !expectRecovery &&
         (history === "partly-damaged" ||
@@ -498,12 +480,8 @@ describe("persistence scenario matrix", () => {
         history: final.historyIntegrity,
       });
 
-      // 3. The shopper can always keep shopping.
       expect(["active", "completed-summary"], context).toContain(final.lifecycle);
 
-      // 4. Durable storage means the new trip really finished durably.
-      // An unreadable active record that cannot be removed cannot be set
-      // aside; the shopper keeps shopping in the honest session-only mode.
       const durable =
         failure === "none" ||
         (failure === "active-remove-fails" && isReadableActive(active));
@@ -518,8 +496,6 @@ describe("persistence scenario matrix", () => {
           context,
         ).toBe(true);
       } else {
-        // Otherwise nothing may claim durability it does not have: a trip
-        // can only finish in memory, in an explicit session-only run.
         expect(
           final.persistence.status === "degraded" ||
             final.historyIntegrity.status === "degraded",
@@ -534,7 +510,6 @@ describe("persistence scenario matrix", () => {
         }
       }
 
-      // 5. No record the app could not read is ever lost.
       const backups = [...values.entries()]
         .filter(([key]) => key.startsWith(SET_ASIDE_STORAGE_KEY_PREFIX))
         .map(([, value]) => (JSON.parse(value) as { raw: string }).raw);
@@ -542,8 +517,6 @@ describe("persistence scenario matrix", () => {
         [ACTIVE_TRIP_STORAGE_KEY, isReadableActive(active) ? null : activeRaw(active)],
         [
           HISTORY_STORAGE_KEY,
-          // An outside writer replaced the original record mid-session; the
-          // app is accountable for the record it then found.
           history === "absent" || history === "valid" || corrupts
             ? null
             : historyRaw(history),
@@ -561,10 +534,6 @@ describe("persistence scenario matrix", () => {
         expect(preserved, `${key} lost: ${context}`).toBe(true);
       }
 
-      // 6. A readable open cart is never discarded and never recorded twice:
-      // it finishes into durable history exactly once, under a new id when
-      // its own id already holds different shopping. (A copy reconciled at
-      // boot may later be set aside with history an outside writer broke.)
       const openCart =
         active === "valid"
           ? activeTrip("trip-open")
@@ -583,7 +552,6 @@ describe("persistence scenario matrix", () => {
         expect(matches, context).toHaveLength(1);
       }
 
-      // 7. Readable completed trips are never dropped from durable history.
       if (
         durable &&
         !corrupts &&

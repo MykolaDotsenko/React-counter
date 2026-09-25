@@ -195,7 +195,6 @@ describe("HistoryIntegrityNotice", () => {
 
     expect(screen.queryByRole("button", { name: "Set aside now" })).toBeNull();
 
-    // A double tap on the arming control never confirms unread.
     await user.dblClick(screen.getByRole("button", { name: "Set aside…" }));
 
     expect(screen.queryByRole("button", { name: "Set aside now" })).toBeNull();
@@ -210,7 +209,6 @@ describe("HistoryIntegrityNotice", () => {
     ).toBeNull();
     expect(values.get(HISTORY_STORAGE_KEY)).not.toBe(damaged);
 
-    // The outcome is announced and focus lands on it instead of the body.
     const resolved = screen.getByRole("status");
     expect(resolved.textContent).toBe(
       "Any unreadable record was kept as a backup copy on this device.",
@@ -232,8 +230,6 @@ describe("HistoryIntegrityNotice", () => {
     const toggle = screen.getByRole("button", { name: "Set aside…" });
     const live = container.querySelector('[aria-live="polite"]');
 
-    // A control whose name changes is not a disclosure; the explanation is
-    // announced instead, from a region that already exists.
     expect(toggle.hasAttribute("aria-expanded")).toBe(false);
     expect(toggle.hasAttribute("aria-controls")).toBe(false);
     expect(live?.textContent).toBe("");
@@ -612,8 +608,6 @@ describe("trip overlays belong to their trip", () => {
     control.failHistoryRead = false;
     await user.click(within(finish).getByRole("button", { name: "Retry" }));
 
-    // The open copy was the recorded trip, so it is reconciled away and
-    // focus lands on the next screen instead of the removed Retry button.
     expect(controller.getSnapshot().lifecycle).toBe("idle");
     const heading = screen.getByRole("heading", {
       name: "How much can you spend today?",

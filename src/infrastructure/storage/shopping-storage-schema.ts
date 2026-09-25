@@ -1,6 +1,3 @@
-// Storage boundaries use the functional `zod/mini` API: it keeps the same
-// validation semantics as classic Zod while staying tree-shakeable, so the
-// public bundle only pays for the validators these schemas actually use.
 import * as z from "zod/mini";
 
 import {

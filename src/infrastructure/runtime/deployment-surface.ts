@@ -1,8 +1,3 @@
-// Guarded evidence builds are copied unchanged to moving routes (/beta/) and
-// to immutable /study/<baseline>/ paths on the same GitHub Pages origin as the
-// public app. Each deployed copy keeps its own storage, keyed by where it is
-// served, so no surface shares or overwrites another's records. The public app
-// keeps its original unscoped keys.
 const guardedEvidenceBuild =
   import.meta.env.VITE_SHOPPING_QA_TIMING === "1" ||
   import.meta.env.VITE_SHOPPING_BETA_EVIDENCE === "1" ||

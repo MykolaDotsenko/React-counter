@@ -12,7 +12,6 @@ export interface HistoryDataControlsProps {
   readonly priceMemoryCount: number;
   readonly priceMemoryDegraded: boolean;
   readonly canChangeHistory: boolean;
-  /** Nothing is saved this session, so stored records stay as they are. */
   readonly sessionOnly?: boolean;
   readonly confirmation: HistoryDataConfirmation;
   readonly confirmationCancelRef: RefObject<HTMLButtonElement | null>;

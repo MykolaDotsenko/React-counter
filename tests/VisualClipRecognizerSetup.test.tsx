@@ -53,7 +53,6 @@ describe("VisualClipRecognizerSetup", () => {
       ),
     );
 
-    // Parsing reads the file and fingerprints it with WebCrypto, both async.
     expect(await screen.findByText("3 labels")).toBeTruthy();
     expect(screen.queryByText("Private Product Alpha")).toBeNull();
     expect(

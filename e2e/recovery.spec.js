@@ -17,7 +17,6 @@ const completedTrip = (id) => ({
   items: [],
 });
 
-/** One readable trip plus one entry the v1 schema rejects. */
 const partlyDamagedHistory = JSON.stringify({
   schemaVersion: 1,
   savedAt: T,

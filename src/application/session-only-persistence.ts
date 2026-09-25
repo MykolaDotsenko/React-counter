@@ -5,23 +5,13 @@ import type {
   ShoppingPersistencePort,
 } from "./shopping-app-contracts";
 
-/**
- * The shopper explicitly chose to keep shopping without durable storage after
- * stored data could not be read. Every write is refused, so records that the
- * app could not read are never overwritten by this session.
- */
 export const SESSION_ONLY_ISSUE: PersistenceProblem = Object.freeze({
   code: "session-only",
 });
 
-/** Whether this health reports the shopper's choice to continue without saving. */
 export const isSessionOnly = (health: PersistenceHealth): boolean =>
   health.status === "degraded" && health.issue.code === "session-only";
 
-/**
- * A save problem the shopper can act on. Continuing without saving is a choice
- * already explained once, not a fault to repair.
- */
 export const needsSaveAttention = (health: PersistenceHealth): boolean =>
   health.status === "degraded" && !isSessionOnly(health);
 

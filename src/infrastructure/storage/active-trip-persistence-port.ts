@@ -81,8 +81,6 @@ export const createActiveTripPersistencePort = (
       completionCleanupPending:
         result.completionCleanupPending,
       issue: toPersistenceProblem(result.issue),
-      // Only an unreadable active-trip record blocks the shopping flow.
-      // History, cleanup and legacy-key problems degrade instead.
       recoveryRequired: result.activeTripUnreadable,
       ...(result.recoveryRaw === undefined
         ? {}

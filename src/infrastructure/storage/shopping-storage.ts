@@ -60,7 +60,6 @@ export type RestoreHistoryResult =
 export type CompletionPersistenceResult =
   | {
       readonly ok: true;
-      /** The completed history exactly as it was just written. */
       readonly trips: readonly CompletedTrip[];
     }
   | {
@@ -99,7 +98,6 @@ export type PersistenceWriteResult =
   | {
       readonly health: "degraded";
       readonly issue: PersistenceIssue;
-      /** The stored history could not be read, so nothing was written. */
       readonly historyUnreadable?: true;
     };
 
@@ -332,9 +330,6 @@ const appendCompletedTripForCompletion = (
     };
   }
 
-  // The same shopping already recorded is this completion arriving again, and
-  // the recorded one stays authoritative. Different shopping under the same id
-  // is a conflict for the caller to resolve; neither record is overwritten.
   if (!sameTripContents(existing, trip)) {
     return {
       ok: false,
@@ -401,10 +396,6 @@ export const completeTripPersistence = (
   return { ok: true, trips: appended.trips };
 };
 
-/**
- * Replaces completed history, but never over a stored record the app cannot
- * read: that record must be set aside explicitly first.
- */
 export const replaceReadableHistory = (
   storage: StorageLike | null | undefined,
   trips: readonly CompletedTrip[],
@@ -587,9 +578,6 @@ export const bootstrapShoppingPersistence = (
   let reconciledCompletion = false;
   let reconciliationIssue: PersistenceIssue | null = null;
 
-  // Only an open copy identical to the trip it became is a leftover of a
-  // completion. A copy edited since then is still the shopper's cart: it stays
-  // open, and finishing it records it as a trip of its own.
   if (
     openTrip !== null &&
     history.trips.some((trip) => sameTripContents(openTrip, trip))
@@ -611,9 +599,6 @@ export const bootstrapShoppingPersistence = (
     ...(reconciledCompletion ? { reconciledCompletion: true as const } : {}),
   };
 
-  // Historical keys are retired only once shopping history is known to be
-  // readable; a damaged history is reported separately and never blocks the
-  // active trip.
   const retirement =
     history.health === "healthy"
       ? retireHistoricalNonShoppingKeys(storage)
@@ -675,10 +660,6 @@ const setAsideKeyFor = (
   return candidate;
 };
 
-/**
- * Copies an unreadable record, byte for byte, to a new backup key and proves
- * the copy is readable before the caller is allowed to replace the original.
- */
 const preserveRawRecord = (
   storage: StorageLike,
   sourceKey: string,
@@ -815,7 +796,6 @@ export const setAsideUnreadableActiveTrip = (
   const decoded = decodeActiveTripSnapshot(raw);
 
   if (decoded.ok) {
-    // A readable trip is never set aside; the caller should restore it instead.
     return { health: "healthy", backupKey: null };
   }
 

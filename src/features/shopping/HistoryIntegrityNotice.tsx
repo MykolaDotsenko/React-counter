@@ -98,8 +98,6 @@ export function HistoryIntegrityNotice({
     );
   }
 
-  // In a session-only run the shopper chose not to touch stored data, and the
-  // persistence notice already says nothing is being saved.
   if (sessionOnly) {
     return null;
   }
@@ -109,7 +107,6 @@ export function HistoryIntegrityNotice({
   const settable = SET_ASIDE_CODES.includes(issue.code);
   const retryable =
     issue.code === "read-failed" || issue.code === "storage-unavailable";
-  // History repair waits until the finished-trip summary is closed.
   const inSummary = state.lifecycle === "completed-summary";
   const canSetAside = !inSummary && settable;
   const canRetry = !inSummary && retryable;
@@ -135,7 +132,6 @@ export function HistoryIntegrityNotice({
       return;
     }
 
-    // A reconciled open copy closes this screen; land on the next one.
     focusNextScreen();
   };
 
@@ -167,8 +163,6 @@ export function HistoryIntegrityNotice({
         <strong id="history-integrity-title">{copy.title}</strong>
         <p>
           {copy.body}
-          {/* Always present, so the confirmation is announced where it appears
-              while focus stays on the control that armed it. */}
           <span aria-live="polite">{confirming ? ` ${confirmation}` : ""}</span>
         </p>
         {inSummary && settable ? (
@@ -193,8 +187,6 @@ export function HistoryIntegrityNotice({
         ) : null}
       </div>
       {canSetAside ? (
-        // The confirming action appears elsewhere, and focus stays here, so a
-        // double tap or a repeated key arms and then cancels, never confirms.
         <button
           type="button"
           className={styles.retryButton}

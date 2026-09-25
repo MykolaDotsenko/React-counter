@@ -142,7 +142,6 @@ export interface TripProjection {
   readonly crossesSafeLimit: boolean;
   readonly crossesNominalBudget: boolean;
   readonly nominalOverageMinor: SignedMinorUnits;
-  /** Portion of the safety buffer consumed by this pending line alone. */
   readonly safetyBufferUseMinor: SignedMinorUnits;
 }
 

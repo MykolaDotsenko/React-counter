@@ -16,9 +16,7 @@ export interface FinishTripSurfaceProps {
   readonly onCancel: () => void;
   readonly onConfirm: () => boolean | void | FinishTripFailure;
   readonly locale?: string;
-  /** Stored-history notice, rendered inside the surface when present. */
   readonly historyNotice?: ReactNode;
-  /** True while stored history must be resolved before finishing. */
   readonly historyNeedsAttention?: boolean;
 }
 
@@ -46,7 +44,6 @@ export function FinishTripSurface({
   const cancelRef = useRef<HTMLButtonElement>(null);
   const [failure, setFailure] = useState<FinishTripFailure | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  // Once the history notice is resolved, its failure no longer applies.
   const visibleFailure =
     failure === "history-unreadable" && !historyNeedsAttention
       ? null

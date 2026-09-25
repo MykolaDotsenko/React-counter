@@ -97,11 +97,6 @@ export const createCompletionUseCases = ({
       persistenceResult.stage === "history-write" &&
       persistenceResult.issue.code === "history-conflict"
     ) {
-      // History already records different shopping under this id: the open
-      // trip was edited after an earlier completion of it was recorded. Keep
-      // both by recording this one as a trip of its own. The open copy takes
-      // the new id first, so a completion interrupted after its history write
-      // leaves a copy that startup reconciliation recognises as finished.
       const forkedId = tripId(ids.tripId());
 
       if (forkedId.ok) {
@@ -137,9 +132,6 @@ export const createCompletionUseCases = ({
       !persistenceResult.ok &&
       persistenceResult.stage === "history-read"
     ) {
-      // The stored history cannot be read safely, so nothing was written and
-      // the active trip is still durable. Report the history, not the trip,
-      // and show exactly the trips a set-aside would keep.
       const readable = ports.persistence.readCompletedHistory();
       const nextState = publish({
         ...withUnreadableHistory(
@@ -155,8 +147,6 @@ export const createCompletionUseCases = ({
       return failure(nextState, applicationError("history-unreadable"));
     }
 
-    // A session-only run finishes in memory: the shopper sees the summary
-    // and can shop again, and nothing claims to be saved.
     const sessionOnly = ports.persistence === SESSION_ONLY_PERSISTENCE_PORT;
 
     if (
@@ -188,8 +178,6 @@ export const createCompletionUseCases = ({
       persistenceResult.completedTrips === undefined
         ? upsertCompletedTrip(state.completedTrips, completedTrip)
         : Object.freeze([...persistenceResult.completedTrips]);
-    // When history already held this very completion, the recorded one (with
-    // its original time and any checkout total) is the trip that finished.
     const completedSummary =
       completedTrips.find((trip) => trip.id === completedTrip.id) ??
       completedTrip;
@@ -301,9 +289,6 @@ export const createCompletionUseCases = ({
     );
 
     if (!saveResult.ok && saveResult.stage === "history-read") {
-      // History became unreadable after this trip finished; nothing was
-      // written. Keep the value in view, report the history rather than the
-      // trip, and list exactly the trips a set-aside would keep.
       const readable = ports.persistence.readCompletedHistory();
       const nextState = publish({
         ...withUnreadableHistory(
