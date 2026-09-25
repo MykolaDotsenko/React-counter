@@ -392,6 +392,7 @@ export function ShoppingAppShell({
     <>
       <ActiveTripScreen
         controller={controller}
+        utilityControl={<AppearanceSwitcher />}
         addPriceButtonRef={addPriceButtonRef}
         finishTripButtonRef={finishTripButtonRef}
         adjustBudgetButtonRef={adjustBudgetButtonRef}
