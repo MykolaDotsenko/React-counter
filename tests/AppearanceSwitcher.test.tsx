@@ -18,6 +18,28 @@ describe("AppearanceSwitcher", () => {
     expect(screen.getByRole("button", { name: "Aurora" })).not.toBeNull();
   });
 
+  it("exposes deployed camera tools without replacing the shopping flow", () => {
+    render(<AppearanceSwitcher />);
+
+    const barcode = screen.getByRole("link", { name: "Barcode scanner" });
+    const visual = screen.getByRole("link", { name: "Visual camera" });
+    const ocr = screen.getByRole("link", { name: "Shelf-price OCR" });
+
+    expect(barcode.getAttribute("href")?.endsWith("/barcode-benchmark/")).toBe(true);
+    expect(
+      visual.getAttribute("href")?.endsWith("/visual-recognition-benchmark/"),
+    ).toBe(true);
+    expect(
+      ocr
+        .getAttribute("href")
+        ?.endsWith("/shelf-label-ocr-tesseract-benchmark/"),
+    ).toBe(true);
+
+    expect(barcode.getAttribute("target")).toBe("_blank");
+    expect(visual.getAttribute("target")).toBe("_blank");
+    expect(ocr.getAttribute("target")).toBe("_blank");
+  });
+
   it("switches immediately and persists the preference without touching shopping state", async () => {
     const user = userEvent.setup();
 
