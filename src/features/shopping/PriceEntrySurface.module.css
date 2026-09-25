@@ -464,6 +464,17 @@
   color: var(--accent-contrast);
   font-size: 1.05rem;
   box-shadow: var(--shopping-primary-action-shadow);
+  transition: transform 120ms ease;
+}
+
+.addButton:active,
+.addAnywayButton:active {
+  transform: scale(0.985);
+}
+
+.addButton[data-submitted="true"],
+.addAnywayButton[data-submitted="true"] {
+  animation: submitPulse 160ms ease-out;
 }
 
 .addButton:disabled {
@@ -655,8 +666,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .key {
+  .key,
+  .addButton {
     transition: none;
+  }
+
+  .addButton[data-submitted="true"],
+  .addAnywayButton[data-submitted="true"] {
+    animation: none;
   }
 }
 
@@ -695,4 +712,8 @@
   .addAnywayButton {
     border: 1px solid ButtonText;
   }
+}
+
+@keyframes submitPulse {
+  50% { transform: scale(0.975); }
 }
