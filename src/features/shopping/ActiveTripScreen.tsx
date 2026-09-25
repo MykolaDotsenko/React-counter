@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties, type Ref } from "react";
+import type { CSSProperties, Ref } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
@@ -73,6 +73,12 @@ const sourceLabel = (item: CartItem): string => {
 const clampPercentage = (value: number): number =>
   Math.min(100, Math.max(0, value));
 
+const settleRemaining = (element: HTMLParagraphElement | null): void => {
+  if (!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+    element?.animate?.([{ opacity: 0.8 }, { opacity: 1 }], { duration: 160 });
+  }
+};
+
 const formatSignedAmount = (
   value: number,
   locale: string,
@@ -104,17 +110,6 @@ export function ActiveTripScreen({
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
   const trip = state.activeTrip;
-  const heroMotionRef = useRef<HTMLParagraphElement>(null);
-
-  useEffect(() => {
-    if (!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
-      heroMotionRef.current?.animate?.(
-        [{ opacity: 0.8 }, { opacity: 1 }],
-        { duration: 160 },
-      );
-    }
-  }, [trip]);
-
   if (state.lifecycle !== "active" || trip === null) {
     return null;
   }
@@ -202,7 +197,11 @@ export function ActiveTripScreen({
                 : "within"
           }
         >
-          <p ref={heroMotionRef} className={styles.heroAmount}>
+          <p
+            key={heroAmount}
+            ref={settleRemaining}
+            className={styles.heroAmount}
+          >
             {formatSignedAmount(heroAmount, locale)}
           </p>
           <p className={styles.heroLabel}>{heroLabel}</p>
