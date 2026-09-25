@@ -85,7 +85,7 @@ export function AppearanceSwitcher() {
 
       <a
         className={styles.option}
-        href={`${import.meta.env.BASE_URL}camera-tools/index.html`}
+        href="./camera-tools/index.html"
         target="_blank"
         rel="noreferrer"
       >
