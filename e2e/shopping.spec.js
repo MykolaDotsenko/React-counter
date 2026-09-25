@@ -41,6 +41,9 @@ test("keeps explicit Light appearance durable and independent from shopping stat
       page: style.getPropertyValue("--shopping-page").trim(),
       panel: style.getPropertyValue("--shopping-panel").trim(),
       accent: style.getPropertyValue("--shopping-accent").trim(),
+      themeColor: document
+        .querySelector('meta[name="theme-color"]')
+        ?.getAttribute("content"),
     };
   }, APPEARANCE_KEY);
 
@@ -50,6 +53,7 @@ test("keeps explicit Light appearance durable and independent from shopping stat
     page: "#f4f1eb",
     panel: "#fffefa",
     accent: "#2f604f",
+    themeColor: "#f4f1eb",
   });
 
   await startQuickBudget(page);
