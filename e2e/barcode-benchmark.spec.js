@@ -45,7 +45,7 @@ test("@barcode-benchmark loads the isolated native scanner benchmark", async ({
   );
 
   const evidence = await page.evaluate(() =>
-    localStorage.getItem("budget-cart:qa:barcode-benchmark-v1"),
+    localStorage.getItem("surface:/|budget-cart:qa:barcode-benchmark-v1"),
   );
 
   expect(evidence).toContain("detector-unsupported");

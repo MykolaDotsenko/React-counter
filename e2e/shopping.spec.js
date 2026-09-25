@@ -11,6 +11,12 @@ const PRICE_MEMORY_KEY = "budget-cart:price-memory";
 const RETENTION_BETA_KEY = "budget-cart:qa:retention-v1";
 const APPEARANCE_KEY = "shopping-budget:appearance";
 
+// Guarded evidence builds keep storage in their deployed surface's own scope;
+// CI serves each guarded artifact from the test origin root.
+const guardedKey = (key) => `surface:/|${key}`;
+const GUARDED_ACTIVE_TRIP_KEY = guardedKey(ACTIVE_TRIP_KEY);
+const GUARDED_RETENTION_BETA_KEY = guardedKey(RETENTION_BETA_KEY);
+
 const startQuickBudget = async (page, label = "€50") => {
   await page.getByRole("button", { name: label, exact: true }).click();
   await expect(
@@ -1402,7 +1408,7 @@ test("@beta records privacy-safe retention evidence across a repeated trip", asy
       parsed,
       foundForbidden,
     };
-  }, RETENTION_BETA_KEY);
+  }, GUARDED_RETENTION_BETA_KEY);
 
   expect(evidence).not.toBeNull();
   expect(evidence.foundForbidden).toEqual([]);
@@ -1501,7 +1507,7 @@ test("@beta freezes invalid retained evidence without overwriting it", async ({
     ({ key, raw }) => {
       localStorage.setItem(key, raw);
     },
-    { key: RETENTION_BETA_KEY, raw: malformed },
+    { key: GUARDED_RETENTION_BETA_KEY, raw: malformed },
   );
 
   await page.goto("/");
@@ -1532,7 +1538,7 @@ test("@beta freezes invalid retained evidence without overwriting it", async ({
 
   const retained = await page.evaluate(
     (key) => localStorage.getItem(key),
-    RETENTION_BETA_KEY,
+    GUARDED_RETENTION_BETA_KEY,
   );
 
   expect(retained).toBe(malformed);
@@ -1554,7 +1560,7 @@ test("@beta keeps shopping usable when retention evidence storage fails", async 
 
       return original.call(this, key, value);
     };
-  }, RETENTION_BETA_KEY);
+  }, GUARDED_RETENTION_BETA_KEY);
 
   await page.goto("/");
 
@@ -1586,8 +1592,8 @@ test("@beta keeps shopping usable when retention evidence storage fails", async 
       active: localStorage.getItem(activeKey),
     }),
     {
-      retentionKey: RETENTION_BETA_KEY,
-      activeKey: ACTIVE_TRIP_KEY,
+      retentionKey: GUARDED_RETENTION_BETA_KEY,
+      activeKey: GUARDED_ACTIVE_TRIP_KEY,
     },
   );
 
@@ -1617,7 +1623,7 @@ test("@beta records an active-trip restore without placing beta UI over the trip
   const evidence = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     return raw === null ? null : JSON.parse(raw);
-  }, RETENTION_BETA_KEY);
+  }, GUARDED_RETENTION_BETA_KEY);
 
   expect(evidence).not.toBeNull();
   expect(evidence.events).toEqual(

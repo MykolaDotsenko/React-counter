@@ -36,6 +36,18 @@ budget-cart:price-memory
 
 Historical counter keys must never be interpreted as shopping money.
 
+### Deployed-surface scope
+
+Every surface of this repository is served from one GitHub Pages origin, so they all share one `localStorage`. The public app uses the keys above unchanged. Guarded evidence builds (QA timing, retention beta, benchmarks) prefix every shopping and evidence key with the path they are served from:
+
+```text
+surface:<served path>|<key>
+surface:/shopping-budget-companion/beta/|budget-cart:active-trip
+surface:/shopping-budget-companion/study/<baseline>/beta/|budget-cart:qa:retention-v1
+```
+
+The scope is resolved at runtime from the relocatable base, so a copied immutable study baseline, the moving guarded route and the public app never read, overwrite or clear each other's records. Appearance preference (`shopping-budget:appearance`) stays shared on purpose; it is convenience state. Study baselines published before scoping shipped keep the unscoped keys they were built with.
+
 ## Common envelope
 
 Logical records use a versioned envelope:

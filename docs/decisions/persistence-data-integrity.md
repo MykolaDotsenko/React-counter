@@ -330,3 +330,28 @@ Backing the raw record up before replacing it keeps D-008 (visible failure) and 
 ### Revisit when
 
 A real schema migration ships: it should read set-aside backups it understands, and may make a backup's recovery visible in the product.
+
+## D-052 — Each deployed evidence surface keeps its own storage
+
+Date: 2026-09-25
+
+Status: accepted
+
+### Decision
+
+Guarded evidence builds prefix every shopping and evidence storage key with the path they are served from (`surface:<served path>|<key>`). The public app keeps its original unscoped keys.
+
+### Rationale
+
+The public app, the moving `/qa/` and `/beta/` routes and every immutable `/study/<baseline>/` copy share one origin and therefore one `localStorage`. Without scoping, a participant's public-app trips and Price Memory leaked into beta sessions (confounding repeat-trip evidence), and a frozen study copy shared records with newer code on `main`. Study copies are byte-identical to the tested artifact, so the scope must be resolved at runtime from where the copy is served rather than at build time.
+
+### Consequence
+
+- a beta or study session starts from its own empty shopping state;
+- moving guarded routes no longer see data written by the public app;
+- appearance preference stays shared;
+- baselines published before this decision keep their unscoped keys.
+
+### Revisit when
+
+The evidence protocol needs a participant's existing public-app history inside the study; that would require an explicit, consented import rather than shared keys.

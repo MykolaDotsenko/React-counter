@@ -29,6 +29,7 @@ Use it when you need to locate code/contract ownership quickly.
 | storage schemas | `src/infrastructure/storage/shopping-storage-schema.ts` + `STORAGE-SCHEMA.md` |
 | Price Memory storage | corresponding infrastructure storage modules |
 | browser composition | `src/app/composition-root.ts` |
+| deployed-surface storage scope | `src/infrastructure/runtime/deployment-surface.ts` + `src/infrastructure/storage/scoped-storage.ts` |
 | React subscription bridge | `src/application/react/use-shopping-app-state.ts` |
 | price-entry interaction | `PRICE-ENTRY-CONTRACT.md` + feature tests |
 | recovery and damaged-history actions | `RecoveryScreen.tsx`, `HistoryIntegrityNotice.tsx` + `STATE-MACHINES.md` |

@@ -148,6 +148,10 @@ Do not instruct participants to use the moving `/beta/`, `/qa/` or benchmark rou
 
 Do not combine evidence from different `buildRevision` values into one interpreted cohort unless the owning evidence protocol explicitly defines a cross-version analysis.
 
+## Storage isolation
+
+All baselines share the GitHub Pages origin with the public app and the moving guarded routes. Guarded builds scope every storage key by the path they are served from, so each published baseline keeps its own shopping state and evidence even though its files are byte-identical to the tested artifact. Baselines published before scoping shipped use unscoped keys shared with the public app; they still cannot be locked out by newer data (D-051), but analyse them knowing a participant's public-app trips may appear in their history.
+
 ## Relationship to `study/*` Git refs
 
 Git refs and deployed study URLs solve different problems:

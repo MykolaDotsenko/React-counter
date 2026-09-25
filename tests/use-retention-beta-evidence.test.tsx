@@ -84,7 +84,8 @@ describe("useRetentionBetaEvidence", () => {
     vi.stubEnv("VITE_SHOPPING_BETA_EVIDENCE", "1");
     vi.resetModules();
 
-    const retentionKey = "budget-cart:qa:retention-v1";
+    // Guarded builds keep evidence in their deployed surface's own scope.
+    const retentionKey = "surface:/|budget-cart:qa:retention-v1";
     localStorage.setItem(retentionKey, "{broken");
 
     const setItem = vi.spyOn(Storage.prototype, "setItem");

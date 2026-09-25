@@ -114,6 +114,8 @@ React components may call domain selectors for display, but financial mutation r
 
 Keep environment-specific construction here instead of scattering singleton creation through features.
 
+It also applies the deployed-surface storage scope: guarded evidence builds prefix every key with the path they are served from, while the public app keeps its original keys (D-052).
+
 ### QA
 
 `src/qa/` records and analyzes validation evidence only. Production shopping code depends on the `#shopping-evidence` adapter contract, which resolves to a NoOp implementation in the public build and to the guarded evidence implementation only when a QA/beta build flag is enabled. The cohort build uses a separate `#app-entry` alias so facilitator analysis code is not bundled into the public product.

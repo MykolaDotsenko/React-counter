@@ -39,7 +39,7 @@ test("@ocr-benchmark loads the isolated shelf-label OCR harness", async ({
 
   const evidence = await page.evaluate(() =>
     localStorage.getItem(
-      "budget-cart:qa:shelf-label-ocr-benchmark-v1",
+      "surface:/|budget-cart:qa:shelf-label-ocr-benchmark-v1",
     ),
   );
 

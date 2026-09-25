@@ -23,6 +23,7 @@ import {
 } from "./shelf-label-ocr-benchmark";
 import { captureShelfLabelOcrEnvironment } from "./shelf-label-ocr-adapter";
 import styles from "./BarcodeBenchmarkApp.module.css";
+import { evidenceStorage } from "./evidence-storage";
 
 const percent = (value: number | null): string =>
   value === null ? "—" : `${(value * 100).toFixed(1)}%`;
@@ -43,7 +44,7 @@ interface ShelfLabelOcrBootstrap {
 const createBootstrap = (): ShelfLabelOcrBootstrap => {
   const environment = captureShelfLabelOcrEnvironment();
   const loaded = loadShelfLabelOcrSession(
-    localStorage,
+    evidenceStorage(),
     environment,
     new Date().toISOString(),
   );
@@ -116,7 +117,7 @@ export function App() {
     if (bootstrap.session !== null && !bootstrap.retainedEvidenceCorrupt) {
       try {
         persistShelfLabelOcrSession(
-          localStorage,
+          evidenceStorage(),
           bootstrap.session,
         );
       } catch {
@@ -138,7 +139,7 @@ export function App() {
       const next = updater(current);
 
       try {
-        persistShelfLabelOcrSession(localStorage, next);
+        persistShelfLabelOcrSession(evidenceStorage(), next);
       } catch {
         setStatus(
           "OCR benchmark evidence could not be persisted. The current page still holds it in memory.",
@@ -174,8 +175,8 @@ export function App() {
     );
 
     try {
-      clearShelfLabelOcrSession(localStorage);
-      persistShelfLabelOcrSession(localStorage, fresh);
+      clearShelfLabelOcrSession(evidenceStorage());
+      persistShelfLabelOcrSession(evidenceStorage(), fresh);
     } catch {
       // The benchmark remains usable in memory.
     }

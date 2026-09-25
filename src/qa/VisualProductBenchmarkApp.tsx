@@ -24,6 +24,7 @@ import {
 } from "./visual-product-benchmark";
 import { captureVisualProductBenchmarkEnvironment } from "./visual-product-benchmark-adapter";
 import styles from "./BarcodeBenchmarkApp.module.css";
+import { evidenceStorage } from "./evidence-storage";
 
 const percent = (value: number | null): string =>
   value === null ? "—" : (value * 100).toFixed(1) + "%";
@@ -46,7 +47,7 @@ interface VisualProductBenchmarkBootstrap {
 const createBootstrap = (): VisualProductBenchmarkBootstrap => {
   const environment = captureVisualProductBenchmarkEnvironment();
   const loaded = loadVisualProductBenchmarkSession(
-    localStorage,
+    evidenceStorage(),
     environment,
     new Date().toISOString(),
   );
@@ -122,7 +123,7 @@ export function App() {
     if (bootstrap.session !== null && !bootstrap.retainedEvidenceCorrupt) {
       try {
         persistVisualProductBenchmarkSession(
-          localStorage,
+          evidenceStorage(),
           bootstrap.session,
         );
       } catch {
@@ -144,7 +145,7 @@ export function App() {
       const next = updater(current);
 
       try {
-        persistVisualProductBenchmarkSession(localStorage, next);
+        persistVisualProductBenchmarkSession(evidenceStorage(), next);
       } catch {
         setStatus(
           "Benchmark evidence could not be persisted. The current page still holds it in memory.",
@@ -184,8 +185,8 @@ export function App() {
     );
 
     try {
-      clearVisualProductBenchmarkSession(localStorage);
-      persistVisualProductBenchmarkSession(localStorage, fresh);
+      clearVisualProductBenchmarkSession(evidenceStorage());
+      persistVisualProductBenchmarkSession(evidenceStorage(), fresh);
     } catch {
       // The evidence harness remains usable in memory.
     }
