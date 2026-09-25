@@ -7,12 +7,14 @@ import {
   laterTimestamp,
   latestTripTimestamp,
   reduceTrip,
+  tripId,
 } from "../domain/shopping-trip";
 import type { PriceMemoryPersistencePort } from "./price-memory-port";
 import { SESSION_ONLY_PERSISTENCE_PORT } from "./session-only-persistence";
 import type {
   AppCommandResult,
   Clock,
+  IdGenerator,
   ShoppingAppState,
   ShoppingPersistencePort,
 } from "./shopping-app-contracts";
@@ -37,6 +39,7 @@ interface CompletionUseCaseDependencies {
   readonly publish: (nextState: ShoppingAppState) => ShoppingAppState;
   readonly ports: Readonly<CompletionPorts>;
   readonly clock: Clock;
+  readonly ids: IdGenerator;
 }
 
 export interface CompletionUseCases {
@@ -52,6 +55,7 @@ export const createCompletionUseCases = ({
   publish,
   ports,
   clock,
+  ids,
 }: CompletionUseCaseDependencies): CompletionUseCases => {
   const completeTrip = (): AppCommandResult => {
     const state = getState();
@@ -79,11 +83,54 @@ export const createCompletionUseCases = ({
       return failure(state, applicationError("no-completed-summary"));
     }
 
-    const completedTrip = tripResult.value;
-    const persistenceResult = ports.persistence.complete(
+    let openTrip = active.trip;
+    let undo = state.undo;
+    let completedTrip = tripResult.value;
+    let persistenceResult = ports.persistence.complete(
       completedTrip,
       completedAt,
     );
+
+    if (
+      !persistenceResult.ok &&
+      persistenceResult.stage === "history-write" &&
+      persistenceResult.issue.code === "history-conflict"
+    ) {
+      // History already records different shopping under this id: the open
+      // trip was edited after an earlier completion of it was recorded. Keep
+      // both by recording this one as a trip of its own. The open copy takes
+      // the new id first, so a completion interrupted after its history write
+      // leaves a copy that startup reconciliation recognises as finished.
+      const forkedId = tripId(ids.tripId());
+
+      if (forkedId.ok) {
+        const forkedOpenTrip = { ...openTrip, id: forkedId.value };
+        const forkSave = ports.persistence.save(forkedOpenTrip, completedAt);
+
+        if (forkSave.ok) {
+          openTrip = forkedOpenTrip;
+          undo =
+            undo === null
+              ? null
+              : {
+                  ...undo,
+                  previousTrip: { ...undo.previousTrip, id: forkedId.value },
+                };
+          completedTrip = { ...completedTrip, id: forkedId.value };
+          persistenceResult = ports.persistence.complete(
+            completedTrip,
+            completedAt,
+          );
+        } else {
+          persistenceResult = {
+            ok: false,
+            stage: "history-write",
+            issue: forkSave.issue,
+            historyPersisted: false,
+          };
+        }
+      }
+    }
 
     if (
       !persistenceResult.ok &&
@@ -95,6 +142,8 @@ export const createCompletionUseCases = ({
       const readable = ports.persistence.readCompletedHistory();
       const nextState = publish({
         ...state,
+        activeTrip: openTrip,
+        undo,
         completedTrips: Object.freeze([...readable.completedTrips]),
         historyIntegrity: degradedPersistence(
           persistenceResult.issue,
@@ -118,6 +167,8 @@ export const createCompletionUseCases = ({
     ) {
       const nextState = publish({
         ...state,
+        activeTrip: openTrip,
+        undo,
         persistence: degradedPersistence(
           persistenceResult.issue,
           completedAt,
@@ -138,10 +189,15 @@ export const createCompletionUseCases = ({
       persistenceResult.completedTrips === undefined
         ? upsertCompletedTrip(state.completedTrips, completedTrip)
         : Object.freeze([...persistenceResult.completedTrips]);
+    // When history already held this very completion, the recorded one (with
+    // its original time and any checkout total) is the trip that finished.
+    const completedSummary =
+      completedTrips.find((trip) => trip.id === completedTrip.id) ??
+      completedTrip;
     let nextState = publish({
       lifecycle: "completed-summary",
       activeTrip: null,
-      completedSummary: completedTrip,
+      completedSummary,
       completedTrips,
       completionCleanupPending: cleanupPending,
       historyIntegrity: HEALTHY_PERSISTENCE,
@@ -158,7 +214,7 @@ export const createCompletionUseCases = ({
     });
 
     const observedMemories =
-      priceMemoryRecordsFromCompletedTrip(completedTrip);
+      priceMemoryRecordsFromCompletedTrip(completedSummary);
     const mergedMemories = mergePriceMemories(
       nextState.priceMemories,
       observedMemories,

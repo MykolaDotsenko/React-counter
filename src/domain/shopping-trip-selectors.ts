@@ -108,6 +108,50 @@ export const latestTripTimestamp = (trip: ShoppingTrip): IsoTimestamp => {
   return latest;
 };
 
+// Price sources and confidences are flat records of primitives; an absent
+// optional field and an undefined one mean the same thing.
+const sameFlatRecord = (left: object, right: object): boolean => {
+  const definedEntries = (value: object) =>
+    Object.entries(value).filter(([, field]) => field !== undefined);
+  const leftEntries = definedEntries(left);
+  const rightFields = new Map(definedEntries(right));
+
+  return (
+    leftEntries.length === rightFields.size &&
+    leftEntries.every(([key, field]) => rightFields.get(key) === field)
+  );
+};
+
+const sameCartItem = (left: CartItem, right: CartItem): boolean =>
+  left.id === right.id &&
+  left.unitPriceMinor === right.unitPriceMinor &&
+  left.quantity === right.quantity &&
+  left.label === right.label &&
+  left.createdAt === right.createdAt &&
+  left.updatedAt === right.updatedAt &&
+  sameFlatRecord(left.priceSource, right.priceSource) &&
+  sameFlatRecord(left.priceConfidence, right.priceConfidence);
+
+/**
+ * Whether two trips hold the same shopping: identity, budget, buffer, start
+ * and every cart line. Completion fields are ignored, so an open copy left
+ * behind by a completion compares equal to the trip it became.
+ */
+export const sameTripContents = (
+  left: ShoppingTrip,
+  right: ShoppingTrip,
+): boolean =>
+  left.id === right.id &&
+  left.currency === right.currency &&
+  left.budgetMinor === right.budgetMinor &&
+  left.safetyBufferMinor === right.safetyBufferMinor &&
+  left.startedAt === right.startedAt &&
+  left.items.length === right.items.length &&
+  left.items.every((item, index) => {
+    const other = right.items[index];
+    return other !== undefined && sameCartItem(item, other);
+  });
+
 export const mostRecentCompletedTrip = (
   trips: readonly CompletedTrip[],
 ): CompletedTrip | null => {

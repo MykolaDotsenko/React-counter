@@ -370,13 +370,6 @@ const toCompletedTripDataV1 = (
   })),
 });
 
-export const sameCompletedTrip = (
-  left: CompletedTrip,
-  right: CompletedTrip,
-): boolean =>
-  JSON.stringify(toCompletedTripDataV1(left)) ===
-  JSON.stringify(toCompletedTripDataV1(right));
-
 const hasDuplicateTripIds = (
   trips: readonly CompletedTrip[],
 ): boolean => {

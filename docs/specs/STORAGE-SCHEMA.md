@@ -117,7 +117,8 @@ Requirements:
 - trip ids are unique;
 - conflicting duplicate ids degrade rather than silently replace;
 - invalid entries do not become domain objects;
-- completion append is idempotent for an identical trip.
+- completion append is idempotent for the same shopping (trip identity, plan and cart lines; completion time and checkout total aside), and the recorded entry is kept;
+- completion append of different shopping under a recorded id reports a history conflict and writes nothing; the application then records the trip under a new id.
 
 ## Price Memory v1
 
@@ -231,12 +232,14 @@ Missing/conflicting history entry degrades rather than inventing a new relations
 
 ## Startup reconciliation
 
-If active trip id already exists identically as a durable completed history entry:
+If the active trip is the same shopping as a durable completed history entry (same id, plan and cart lines):
 
 - treat history as completion authority;
 - attempt to clear stale active snapshot;
 - never duplicate the completed trip;
 - expose cleanup failure if clear fails.
+
+An active trip that only shares the id is kept open; it was edited after that completion was recorded.
 
 ## Historical non-shopping keys
 

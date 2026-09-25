@@ -215,7 +215,7 @@ Completion ordering is intentionally loss-safe:
 2. persist the completed trip into history
 3. only after history is durable, clear the active-trip snapshot
 4. if active clear fails, expose cleanup pending/degraded state
-5. on startup, reconcile a stale active copy whose trip id already exists in durable history
+5. on startup, reconcile a stale active copy that is the same shopping as a trip already in durable history; an open copy edited since keeps its cart and finishes under a new trip id
 
 A failed history write must never delete the active trip.
 

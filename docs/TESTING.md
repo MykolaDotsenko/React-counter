@@ -207,7 +207,7 @@ Tests must prove:
 - committed active-trip mutations attempt persistence promptly;
 - failed history write does not clear active state;
 - history-durable + active-clear failure becomes cleanup-pending/degraded;
-- startup reconciles stale completed copies safely;
+- startup reconciles stale completed copies safely, and never an open copy edited since its completion;
 - malformed/future data is preserved or rejected according to contract;
 - convenience-state failure never masquerades as core durable success.
 

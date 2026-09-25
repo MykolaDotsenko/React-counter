@@ -4,6 +4,7 @@ import {
   latestTripTimestamp,
   laterTimestamp,
   reduceTrip,
+  sameTripContents,
   type ActiveTrip,
   type CompletedTrip,
   type IsoTimestamp,
@@ -129,6 +130,7 @@ export const createShoppingAppController = ({
     publish,
     ports,
     clock,
+    ids,
   });
 
   const bootstrap = (): ShoppingAppState => {
@@ -777,7 +779,9 @@ export const createShoppingAppController = ({
     const activeTrip = state.activeTrip;
     const staleActive =
       activeTrip !== null &&
-      result.completedTrips.some((trip) => trip.id === activeTrip.id);
+      result.completedTrips.some((trip) =>
+        sameTripContents(activeTrip, trip),
+      );
 
     if (!staleActive) {
       const nextState = publish({
@@ -789,8 +793,9 @@ export const createShoppingAppController = ({
       return success(nextState, true, "unchanged");
     }
 
-    // History is the completion authority: an open copy of a trip it already
-    // holds is stale, exactly as startup reconciliation treats it.
+    // History is the completion authority: an open copy identical to a trip it
+    // already holds is a leftover, exactly as startup reconciliation treats
+    // it. A copy edited since stays open and finishes as a trip of its own.
     const cleanup = ports.persistence.clearCompletedActive();
     const nextState = publish({
       ...state,

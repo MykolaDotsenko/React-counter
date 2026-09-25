@@ -27,9 +27,12 @@ import {
   safeLimit,
   safeOverage,
   safeRemaining,
+  sameTripContents,
+  tripId,
   type ActiveTrip,
   type CartItem,
   type DomainError,
+  type EditableItemPatch,
   type IsoTimestamp,
   type ItemId,
   type PriceConfidence,
@@ -546,6 +549,112 @@ describe("trip timestamps", () => {
     expect(
       reduceTrip(corrected, { type: "complete-trip", completedAt: floor }).ok,
     ).toBe(true);
+  });
+});
+
+describe("trip contents", () => {
+  const shopped = (): ActiveTrip =>
+    addItem(
+      createTrip(),
+      createItem({ id: "milk", price: 379, quantity: 2, label: "Milk" }),
+    );
+
+  it("treats a completion as the same shopping as its open copy", () => {
+    const open = shopped();
+    const completed = unwrap(
+      reduceTrip(open, {
+        type: "complete-trip",
+        completedAt: time(FINISH),
+      }),
+    );
+    const reconciled = unwrap(
+      reduceTrip(completed, {
+        type: "set-actual-checkout",
+        actualCheckoutMinor: money(800),
+      }),
+    );
+
+    expect(sameTripContents(open, completed)).toBe(true);
+    expect(sameTripContents(completed, open)).toBe(true);
+    expect(sameTripContents(open, reconciled)).toBe(true);
+  });
+
+  it("tells apart every edit the shopper can make", () => {
+    const open = shopped();
+    const edit = (patch: EditableItemPatch): ActiveTrip =>
+      expectActive(
+        unwrap(
+          reduceTrip(open, {
+            type: "update-item",
+            itemId: id("milk"),
+            patch,
+            now: time(START),
+          }),
+        ),
+      );
+    const variants: readonly ShoppingTrip[] = [
+      edit({ quantity: 3 }),
+      edit({ unitPriceMinor: money(380) }),
+      edit({ label: null }),
+      edit({ label: "Oat milk" }),
+      edit({ priceSource: { kind: "shelf-scan" } }),
+      edit({ priceConfidence: { kind: "estimated" } }),
+      expectActive(
+        unwrap(
+          reduceTrip(open, {
+            type: "update-item",
+            itemId: id("milk"),
+            patch: { quantity: 2 },
+            now: time(LATER),
+          }),
+        ),
+      ),
+      expectActive(
+        unwrap(reduceTrip(open, { type: "remove-item", itemId: id("milk") })),
+      ),
+      addItem(open, createItem({ id: "bread", price: 250 })),
+      expectActive(
+        unwrap(reduceTrip(open, { type: "set-budget", budgetMinor: money(6_000) })),
+      ),
+      expectActive(
+        unwrap(
+          reduceTrip(open, { type: "set-buffer", safetyBufferMinor: money(100) }),
+        ),
+      ),
+      { ...open, id: unwrap(tripId("trip-2")) },
+      { ...open, startedAt: time(LATER) },
+    ];
+
+    for (const variant of variants) {
+      expect(sameTripContents(open, variant)).toBe(false);
+      expect(sameTripContents(variant, open)).toBe(false);
+    }
+  });
+
+  it("ignores an optional field that is present but undefined", () => {
+    const open = shopped();
+    const [item] = open.items;
+
+    if (item === undefined) {
+      throw new Error("Expected an item");
+    }
+
+    const loose = {
+      ...open,
+      items: [
+        {
+          ...item,
+          priceSource: { kind: "shelf-scan", captureId: undefined },
+        },
+      ],
+    } as unknown as ActiveTrip;
+    const strict = {
+      ...open,
+      items: [{ ...item, priceSource: { kind: "shelf-scan" } }],
+    } as ActiveTrip;
+
+    expect(sameTripContents(loose, strict)).toBe(true);
+    expect(sameTripContents(strict, loose)).toBe(true);
   });
 });
 

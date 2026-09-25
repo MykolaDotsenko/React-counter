@@ -1,5 +1,6 @@
 import {
   isoTimestamp,
+  sameTripContents,
   type ActiveTrip,
   type CompletedTrip,
   type IsoTimestamp,
@@ -15,7 +16,6 @@ import {
   encodeActiveTripSnapshot,
   encodeHistorySnapshot,
   persistenceIssue,
-  sameCompletedTrip,
   type PersistenceIssue,
   type PersistenceIssueCode,
 } from "./shopping-storage-codec";
@@ -332,7 +332,10 @@ const appendCompletedTripForCompletion = (
     };
   }
 
-  if (!sameCompletedTrip(existing, trip)) {
+  // The same shopping already recorded is this completion arriving again, and
+  // the recorded one stays authoritative. Different shopping under the same id
+  // is a conflict for the caller to resolve; neither record is overwritten.
+  if (!sameTripContents(existing, trip)) {
     return {
       ok: false,
       issue: persistenceIssue("history-conflict", HISTORY_STORAGE_KEY),
@@ -579,13 +582,17 @@ export const bootstrapShoppingPersistence = (
     };
   }
 
-  let activeTrip = restored.trip;
+  const openTrip = restored.trip;
+  let activeTrip = openTrip;
   let reconciledCompletion = false;
   let reconciliationIssue: PersistenceIssue | null = null;
 
+  // Only an open copy identical to the trip it became is a leftover of a
+  // completion. A copy edited since then is still the shopper's cart: it stays
+  // open, and finishing it records it as a trip of its own.
   if (
-    activeTrip !== null &&
-    history.trips.some((trip) => trip.id === activeTrip?.id)
+    openTrip !== null &&
+    history.trips.some((trip) => sameTripContents(openTrip, trip))
   ) {
     const clearResult = clearActiveTrip(storage);
     activeTrip = null;

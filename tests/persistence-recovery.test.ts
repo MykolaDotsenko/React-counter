@@ -11,6 +11,7 @@ import {
   createActiveTrip,
   createCartItem,
   isoTimestamp,
+  itemId,
   reduceTrip,
   type ActiveTrip,
   type CompletedTrip,
@@ -772,6 +773,180 @@ describe("independent review regressions", () => {
       historyIntegrity: { status: "healthy" },
       completionCleanupPending: false,
     });
+    expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
+  });
+
+  it("keeps in-session edits to an open copy when history becomes readable", () => {
+    const { values, storage, control } = flakyHistoryStorage({
+      [ACTIVE_TRIP_STORAGE_KEY]: activeRaw(),
+      [HISTORY_STORAGE_KEY]: historyRaw([completedTrip("trip-active")]),
+    });
+    const controller = boot(storage);
+
+    expect(
+      controller.addManualItem({ unitPriceMinor: money(120), quantity: 1 }).ok,
+    ).toBe(true);
+
+    control.failHistoryRead = false;
+    controller.retryHistoryRead();
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "active",
+      historyIntegrity: { status: "healthy" },
+      completionCleanupPending: false,
+    });
+    expect(controller.getSnapshot().activeTrip?.items).toHaveLength(2);
+    expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(true);
+
+    expect(controller.completeTrip().ok).toBe(true);
+
+    const stored = restoreHistory(storage).trips;
+    expect(stored.map((trip) => [trip.id, trip.items.length])).toEqual([
+      ["trip-active", 1],
+      ["trip-new-2", 2],
+    ]);
+    expect(stored[0]).toEqual(completedTrip("trip-active"));
+    expect(controller.getSnapshot().completedSummary?.id).toBe("trip-new-2");
+    expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
+  });
+
+  it("keeps an open copy edited since its completion open at startup", () => {
+    const edited = must(
+      reduceTrip(activeTrip(), {
+        type: "update-item",
+        itemId: must(itemId("trip-active-item")),
+        patch: { quantity: 3 },
+        now: time(DONE_TIME),
+      }),
+    );
+
+    if (edited.status !== "active") {
+      throw new Error("Expected active trip");
+    }
+
+    const storage = memoryStorage({
+      [ACTIVE_TRIP_STORAGE_KEY]: activeRaw(edited),
+      [HISTORY_STORAGE_KEY]: historyRaw([completedTrip("trip-active")]),
+    });
+    const bootstrap = bootstrapShoppingPersistence(storage);
+
+    expect(bootstrap.activeTrip).toEqual(edited);
+    expect(bootstrap.reconciledCompletion).toBeUndefined();
+
+    const controller = boot(storage);
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "active",
+      activeTrip: { id: "trip-active", items: [{ quantity: 3 }] },
+    });
+    expect(controller.completeTrip().ok).toBe(true);
+    expect(
+      restoreHistory(storage).trips.map((trip) => [trip.id, trip.items[0]?.quantity]),
+    ).toEqual([
+      ["trip-active", 2],
+      ["trip-new-1", 3],
+    ]);
+  });
+
+  const editedOpenCopy = (): ActiveTrip => {
+    const edited = must(
+      reduceTrip(activeTrip(), {
+        type: "update-item",
+        itemId: must(itemId("trip-active-item")),
+        patch: { quantity: 3 },
+        now: time(DONE_TIME),
+      }),
+    );
+
+    if (edited.status !== "active") {
+      throw new Error("Expected active trip");
+    }
+
+    return edited;
+  };
+
+  it("recognises an interrupted fork as finished when the app reopens", () => {
+    const storage = memoryStorage(
+      {
+        [ACTIVE_TRIP_STORAGE_KEY]: activeRaw(editedOpenCopy()),
+        [HISTORY_STORAGE_KEY]: historyRaw([completedTrip("trip-active")]),
+      },
+      { failRemoveKeys: [ACTIVE_TRIP_STORAGE_KEY] },
+    );
+    const controller = boot(storage);
+
+    expect(controller.completeTrip().ok).toBe(true);
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "completed-summary",
+      completionCleanupPending: true,
+      completedSummary: { id: "trip-new-1" },
+    });
+
+    const reopened = boot(storage);
+
+    expect(reopened.getSnapshot()).toMatchObject({
+      lifecycle: "idle",
+      activeTrip: null,
+      completionCleanupPending: true,
+    });
+    expect(restoreHistory(storage).trips.map((trip) => trip.id)).toEqual([
+      "trip-active",
+      "trip-new-1",
+    ]);
+  });
+
+  it("keeps a divergent open copy unfinished when it cannot take a new id", () => {
+    const openRaw = activeRaw(editedOpenCopy());
+    const recordedRaw = historyRaw([completedTrip("trip-active")]);
+    const storage = memoryStorage(
+      {
+        [ACTIVE_TRIP_STORAGE_KEY]: openRaw,
+        [HISTORY_STORAGE_KEY]: recordedRaw,
+      },
+      { failSetPrefixes: [ACTIVE_TRIP_STORAGE_KEY] },
+    );
+    const controller = boot(storage);
+
+    expect(controller.completeTrip()).toMatchObject({
+      ok: false,
+      error: { code: "completion-not-saved" },
+    });
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "active",
+      activeTrip: { id: "trip-active", items: [{ quantity: 3 }] },
+      persistence: { status: "degraded", issue: { code: "write-failed" } },
+    });
+    expect(storage.values.get(ACTIVE_TRIP_STORAGE_KEY)).toBe(openRaw);
+    expect(storage.values.get(HISTORY_STORAGE_KEY)).toBe(recordedRaw);
+  });
+
+  it("finishes an untouched open copy as the completion already recorded", () => {
+    const recorded = must(
+      reduceTrip(completedTrip("trip-active"), {
+        type: "set-actual-checkout",
+        actualCheckoutMinor: money(800),
+      }),
+    );
+    const { values, storage, control } = flakyHistoryStorage({
+      [ACTIVE_TRIP_STORAGE_KEY]: activeRaw(),
+      [HISTORY_STORAGE_KEY]: historyRaw([recorded as CompletedTrip]),
+    });
+    const controller = boot(storage);
+
+    expect(controller.getSnapshot().lifecycle).toBe("active");
+
+    control.failHistoryRead = false;
+
+    expect(controller.completeTrip().ok).toBe(true);
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "completed-summary",
+      completedSummary: {
+        id: "trip-active",
+        completedAt: DONE_TIME,
+        actualCheckoutMinor: 800,
+      },
+    });
+    expect(restoreHistory(storage).trips).toEqual([recorded]);
     expect(values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
   });
 

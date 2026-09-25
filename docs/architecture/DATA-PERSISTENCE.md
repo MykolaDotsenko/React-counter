@@ -159,25 +159,27 @@ Never reverse the write order.
 
 ## Idempotent completion
 
-If history already contains the same completed trip id with the same canonical content:
+"Same shopping" means the same trip id, currency, budget, safety buffer, start time and cart lines (every line field, in order). Completion time and the optional checkout total are not part of it.
+
+If history already contains the trip id with the same shopping:
 
 - treat append as already durable;
+- the recorded completion stays authoritative: the summary shows it, with its original completion time and any checkout total;
 - do not duplicate the trip.
 
-If the same id has conflicting canonical content:
-
-- degrade with a history conflict;
-- do not silently choose one value.
+If history contains the trip id with different shopping, the open trip was edited after an earlier completion of it was recorded (for example while history could not be read). Storage reports a history conflict and never chooses one value; the completion use case then records the open trip under a new trip id, so both the recorded trip and the shopper's current cart are kept. The open trip is saved under the new id before that completion, so a completion interrupted after its history write leaves a copy that startup reconciliation recognises. If that save fails, nothing is recorded and the trip stays open with completion reported as not saved.
 
 ## Startup reconciliation
 
-If an active snapshot has an id already present as the same completed trip in durable history:
+If an active snapshot is the same shopping as a completed trip in durable history:
 
 - history is completion authority;
 - active state is treated as stale cleanup;
 - attempt to clear active storage;
 - do not duplicate history;
 - expose cleanup failure if removal fails.
+
+An active snapshot that shares an id with a completed trip but holds different shopping is not stale: it stays open, and finishing it follows the conflict rule above. Re-reading history after a read failure ("Try again") applies the same rule in-session, so edits made while history was unreadable are never discarded.
 
 ## Checkout reconciliation
 

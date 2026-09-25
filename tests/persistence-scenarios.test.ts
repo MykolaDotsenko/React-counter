@@ -8,7 +8,9 @@ import {
   createActiveTrip,
   createCartItem,
   isoTimestamp,
+  itemId,
   reduceTrip,
+  sameTripContents,
   type ActiveTrip,
   type CompletedTrip,
   type IsoTimestamp,
@@ -91,6 +93,24 @@ const completedTrip = (id: string): CompletedTrip => {
   return done;
 };
 
+/** The recorded trip's open copy, edited after that completion was saved. */
+const editedSinceCompleted = (): ActiveTrip => {
+  const edited = must(
+    reduceTrip(activeTrip("trip-done-a"), {
+      type: "update-item",
+      itemId: must(itemId("trip-done-a-item")),
+      patch: { quantity: 3 },
+      now: time(DONE_TIME),
+    }),
+  );
+
+  if (edited.status !== "active") {
+    throw new Error("Expected active trip");
+  }
+
+  return edited;
+};
+
 const encodeActive = (trip: ActiveTrip): string => {
   const encoded = encodeActiveTripSnapshot(trip, ITEM_TIME);
 
@@ -121,6 +141,7 @@ type ActiveState =
   | "absent"
   | "valid"
   | "stale-completed"
+  | "edited-since-completed"
   | "malformed"
   | "invalid-data"
   | "future-version";
@@ -146,6 +167,7 @@ const ACTIVE_STATES: readonly ActiveState[] = [
   "absent",
   "valid",
   "stale-completed",
+  "edited-since-completed",
   "malformed",
   "invalid-data",
   "future-version",
@@ -175,6 +197,8 @@ const activeRaw = (state: ActiveState): string | null => {
       return encodeActive(activeTrip("trip-open"));
     case "stale-completed":
       return encodeActive(activeTrip("trip-done-a"));
+    case "edited-since-completed":
+      return encodeActive(editedSinceCompleted());
     case "malformed":
       return "{broken active";
     case "invalid-data": {
@@ -272,7 +296,10 @@ const createStorage = (
 };
 
 const isReadableActive = (state: ActiveState): boolean =>
-  state === "absent" || state === "valid" || state === "stale-completed";
+  state === "absent" ||
+  state === "valid" ||
+  state === "stale-completed" ||
+  state === "edited-since-completed";
 
 interface Outcome {
   readonly finished: boolean;
@@ -534,7 +561,29 @@ describe("persistence scenario matrix", () => {
         expect(preserved, `${key} lost: ${context}`).toBe(true);
       }
 
-      // 6. Readable completed trips are never dropped from durable history.
+      // 6. A readable open cart is never discarded and never recorded twice:
+      // it finishes into durable history exactly once, under a new id when
+      // its own id already holds different shopping. (A copy reconciled at
+      // boot may later be set aside with history an outside writer broke.)
+      const openCart =
+        active === "valid"
+          ? activeTrip("trip-open")
+          : active === "edited-since-completed"
+            ? editedSinceCompleted()
+            : active === "stale-completed" && !corrupts
+              ? activeTrip("trip-done-a")
+              : null;
+      if (durable && openCart !== null) {
+        const decoded = decodeHistorySnapshot(values.get(HISTORY_STORAGE_KEY) ?? "");
+        const matches = decoded.ok
+          ? decoded.trips.filter((trip) =>
+              sameTripContents(trip, { ...openCart, id: trip.id }),
+            )
+          : [];
+        expect(matches, context).toHaveLength(1);
+      }
+
+      // 7. Readable completed trips are never dropped from durable history.
       if (
         durable &&
         !corrupts &&

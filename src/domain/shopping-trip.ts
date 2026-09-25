@@ -46,6 +46,7 @@ export {
   safeLimit,
   safeOverage,
   safeRemaining,
+  sameTripContents,
 } from "./shopping-trip-selectors";
 
 export { reduceTrip } from "./shopping-trip-reducer";
