@@ -21,10 +21,10 @@ describe("AppearanceSwitcher", () => {
   it("links to the static scanner and camera hub without replacing the shopping flow", () => {
     render(<AppearanceSwitcher />);
 
-    const hub = screen.getByRole("link", { name: "Scanner & camera tools" });
+    const hub = screen.getByRole("link", { name: "Scanner & camera" });
 
     expect(
-      hub.getAttribute("href")?.endsWith("/camera-tools/index.html"),
+      hub.getAttribute("href")?.endsWith("/camera-tools/"),
     ).toBe(true);
     expect(hub.getAttribute("target")).toBe("_blank");
   });
