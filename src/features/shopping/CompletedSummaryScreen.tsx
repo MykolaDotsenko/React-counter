@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
-import { settleMotion } from "./shopping-motion";
 import {
   formatEur,
   parseEurDraft,
@@ -81,11 +80,6 @@ export function CompletedSummaryScreen({
   locale = "en-FI",
 }: CompletedSummaryScreenProps) {
   const state = useShoppingAppState(controller);
-  const shellMotionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    settleMotion(shellMotionRef.current);
-  }, []);
   const [checkoutRaw, setCheckoutRaw] = useState(() =>
     trip.actualCheckoutMinor === undefined
       ? ""
@@ -181,7 +175,7 @@ export function CompletedSummaryScreen({
 
   return (
     <main className={styles.screen} aria-labelledby="completed-title">
-      <section ref={shellMotionRef} className={styles.shell}>
+      <section className={styles.shell}>
         <header className={styles.header}>
           <p className={styles.eyebrow}>Trip finished</p>
           <h1 id="completed-title">Your shopping trip is complete</h1>
