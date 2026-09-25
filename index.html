@@ -4,11 +4,45 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f5f3ee" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="application-name" content="Shopping Budget Companion" />
     <meta
       name="description"
       content="A mobile-first shopping budget companion with exact money, local-first persistence, fast price entry, and repeat-trip price memory."
     />
+    <script>
+      (() => {
+        const key = "shopping-budget:appearance";
+        const allowed = ["system", "light", "dark", "aurora"];
+        let mode = "system";
+
+        try {
+          const stored = localStorage.getItem(key);
+
+          if (allowed.includes(stored)) {
+            mode = stored;
+          }
+        } catch {
+          // Appearance persistence is convenience-only. Rendering must continue.
+        }
+
+        document.documentElement.dataset.appearance = mode;
+
+        const prefersDark =
+          typeof matchMedia === "function" &&
+          matchMedia("(prefers-color-scheme: dark)").matches;
+        const resolved =
+          mode === "system" ? (prefersDark ? "dark" : "light") : mode;
+        const colors = {
+          light: "#f5f3ee",
+          dark: "#111512",
+          aurora: "#080b14",
+        };
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+        themeMeta?.setAttribute("content", colors[resolved] ?? colors.light);
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Shopping Budget Companion</title>
   </head>
