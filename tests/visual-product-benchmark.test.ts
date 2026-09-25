@@ -6,6 +6,7 @@ import {
   buildVisualProductBenchmarkExport,
   createVisualProductBenchmarkSession,
   loadVisualProductBenchmarkSession,
+  parseVisualProductBenchmarkExport,
   summarizeVisualProductBenchmark,
 } from "../src/qa/visual-product-benchmark";
 
@@ -64,6 +65,9 @@ describe("visual product benchmark evidence", () => {
       top1Confirmed: 1,
       top3Confirmed: 1,
       rejected: 1,
+      medianDecisionMs: 2_000,
+      p75DecisionMs: 3_000,
+      p90DecisionMs: 3_000,
       medianConfirmedMs: 1_000,
       p75ConfirmedMs: 2_000,
       p90ConfirmedMs: 2_000,
@@ -106,6 +110,99 @@ describe("visual product benchmark evidence", () => {
         "2026-09-24T10:00:01.000Z",
       ).privacy.networkTransmission,
     ).toBe(true);
+  });
+
+  it("round-trips schema-v2 exports through the authoritative parser", () => {
+    let session = createVisualProductBenchmarkSession(
+      environment,
+      "2026-09-24T10:00:00.000Z",
+    );
+    session = appendVisualProductBenchmarkSample(session, {
+      id: "visual-valid",
+      startedAt: "2026-09-24T10:00:01.000Z",
+      completedAt: "2026-09-24T10:00:03.000Z",
+      durationMs: 2_000,
+      outcome: "top1-confirmed",
+      candidateCount: 3,
+      selectedRank: 1,
+      topConfidence: 0.9,
+    });
+
+    const exported = buildVisualProductBenchmarkExport(
+      session,
+      "2026-09-24T10:00:04.000Z",
+    );
+
+    expect(exported.schemaVersion).toBe(2);
+    expect(parseVisualProductBenchmarkExport(exported)).toEqual(
+      exported,
+    );
+  });
+
+  it("rejects tampered visual summaries and privacy metadata", () => {
+    let session = createVisualProductBenchmarkSession(
+      environment,
+      "2026-09-24T10:00:00.000Z",
+    );
+    session = appendVisualProductBenchmarkSample(session, {
+      id: "visual-valid",
+      startedAt: "2026-09-24T10:00:01.000Z",
+      completedAt: "2026-09-24T10:00:03.000Z",
+      durationMs: 2_000,
+      outcome: "top1-confirmed",
+      candidateCount: 3,
+      selectedRank: 1,
+      topConfidence: 0.9,
+    });
+
+    const exported = buildVisualProductBenchmarkExport(
+      session,
+      "2026-09-24T10:00:04.000Z",
+    );
+
+    expect(
+      parseVisualProductBenchmarkExport({
+        ...exported,
+        summary: {
+          ...exported.summary,
+          attempts: 999,
+        },
+      }),
+    ).toBeNull();
+
+    expect(
+      parseVisualProductBenchmarkExport({
+        ...exported,
+        privacy: {
+          ...exported.privacy,
+          containsCandidateLabels: true,
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("requires generatedAt to cover the latest retained observation", () => {
+    let session = createVisualProductBenchmarkSession(
+      environment,
+      "2026-09-24T10:00:00.000Z",
+    );
+    session = appendVisualProductBenchmarkSample(session, {
+      id: "visual-late",
+      startedAt: "2026-09-24T10:01:00.000Z",
+      completedAt: "2026-09-24T10:01:03.000Z",
+      durationMs: 3_000,
+      outcome: "rejected",
+      candidateCount: 3,
+      selectedRank: null,
+      topConfidence: 0.4,
+    });
+
+    expect(() =>
+      buildVisualProductBenchmarkExport(
+        session,
+        "2026-09-24T10:00:30.000Z",
+      ),
+    ).toThrow(/export time/i);
   });
 
   it("fails closed on malformed retained evidence without overwriting it", () => {
