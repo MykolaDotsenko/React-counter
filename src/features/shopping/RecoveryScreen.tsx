@@ -5,6 +5,7 @@ import type {
   PersistenceProblem,
   ShoppingAppController,
 } from "../../application/shopping-app-controller";
+import { focusNextScreen } from "./focus-next-screen";
 import styles from "./RecoveryScreen.module.css";
 
 export interface RecoveryScreenProps {
@@ -54,14 +55,6 @@ const canSetAside = (issue: PersistenceProblem): boolean =>
     "invalid-data",
     "unsupported-version",
   ].includes(issue.code);
-
-// Recovery unmounts once it is resolved; land focus on the next screen's
-// heading rather than leaving it on <body>.
-const focusNextScreen = (): void => {
-  queueMicrotask(() => {
-    document.querySelector<HTMLElement>("main h1[tabindex]")?.focus();
-  });
-};
 
 export function RecoveryScreen({ controller }: RecoveryScreenProps) {
   const state = useShoppingAppState(controller);

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type {
@@ -6,6 +6,7 @@ import type {
   ShoppingAppController,
 } from "../../application/shopping-app-controller";
 import { isSessionOnly } from "../../application/session-only-persistence";
+import { focusNextScreen } from "./focus-next-screen";
 import styles from "./PersistenceHealthNotice.module.css";
 
 export interface HistoryIntegrityNoticeProps {
@@ -53,18 +54,24 @@ const historyCopy = (
   }
 };
 
+type Resolution = "set-aside" | "read";
+
+const RESOLVED_COPY: Record<Resolution, string> = {
+  "set-aside": "Any unreadable record was kept as a backup copy on this device.",
+  read: "Saved trip history was read successfully.",
+};
+
 export function HistoryIntegrityNotice({
   controller,
 }: HistoryIntegrityNoticeProps) {
   const state = useShoppingAppState(controller);
   const [confirming, setConfirming] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-  const [resolved, setResolved] = useState(false);
-  const panelId = useId();
+  const [resolved, setResolved] = useState<Resolution | null>(null);
   const resolvedRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    if (resolved) {
+    if (resolved !== null) {
       resolvedRef.current?.focus();
     }
   }, [resolved]);
@@ -72,7 +79,7 @@ export function HistoryIntegrityNotice({
   const sessionOnly = isSessionOnly(state.persistence);
 
   if (state.historyIntegrity.status === "healthy") {
-    return resolved ? (
+    return resolved === null ? null : (
       <aside
         className={styles.notice}
         data-risk="cleanup"
@@ -84,11 +91,11 @@ export function HistoryIntegrityNotice({
         <div className={styles.copy}>
           <strong id="history-integrity-title">Trip history is readable again</strong>
           <p ref={resolvedRef} tabIndex={-1} role="status">
-            The damaged record was set aside as a backup copy on this device.
+            {RESOLVED_COPY[resolved]}
           </p>
         </div>
       </aside>
-    ) : null;
+    );
   }
 
   // In a session-only run the shopper chose not to touch stored data, and the
@@ -99,21 +106,37 @@ export function HistoryIntegrityNotice({
 
   const issue = state.historyIntegrity.issue;
   const copy = historyCopy(issue, state.completedTrips.length);
+  const settable = SET_ASIDE_CODES.includes(issue.code);
+  const retryable =
+    issue.code === "read-failed" || issue.code === "storage-unavailable";
   // History repair waits until the finished-trip summary is closed.
   const inSummary = state.lifecycle === "completed-summary";
-  const canSetAside = !inSummary && SET_ASIDE_CODES.includes(issue.code);
-  const canRetry =
-    !inSummary &&
-    (issue.code === "read-failed" || issue.code === "storage-unavailable");
+  const canSetAside = !inSummary && settable;
+  const canRetry = !inSummary && retryable;
   const keptCount = state.completedTrips.length;
+  const confirmation = `The unreadable record will be moved to a backup copy on this device and ${
+    keptCount === 0
+      ? "history will start empty"
+      : `${keptCount} readable ${keptCount === 1 ? "trip" : "trips"} will be kept`
+  }.${state.activeTrip === null ? "" : " Your current trip is not affected."} Choose Set aside now to confirm, or Keep as is to leave it unchanged.`;
 
   const retry = (): void => {
     setStatusMessage("");
+    const lifecycle = state.lifecycle;
     const result = controller.retryHistoryRead();
 
     if (result.state.historyIntegrity.status === "degraded") {
       setStatusMessage("History still can't be read. Nothing was changed.");
+      return;
     }
+
+    if (result.state.lifecycle === lifecycle) {
+      setResolved("read");
+      return;
+    }
+
+    // A reconciled open copy closes this screen; land on the next one.
+    focusNextScreen();
   };
 
   const setAside = (): void => {
@@ -121,7 +144,7 @@ export function HistoryIntegrityNotice({
     const result = controller.setAsideDamagedHistory();
 
     if (result.ok) {
-      setResolved(true);
+      setResolved("set-aside");
       return;
     }
 
@@ -142,25 +165,26 @@ export function HistoryIntegrityNotice({
       </span>
       <div className={styles.copy}>
         <strong id="history-integrity-title">{copy.title}</strong>
-        <p>{copy.body}</p>
-        {inSummary ? <p>You can set it aside after closing this summary.</p> : null}
+        <p>
+          {copy.body}
+          {/* Always present, so the confirmation is announced where it appears
+              while focus stays on the control that armed it. */}
+          <span aria-live="polite">{confirming ? ` ${confirmation}` : ""}</span>
+        </p>
+        {inSummary && settable ? (
+          <p>You can set it aside after closing this summary.</p>
+        ) : null}
+        {inSummary && retryable ? (
+          <p>You can try reading it again after closing this summary.</p>
+        ) : null}
         {confirming ? (
-          <div id={panelId} className={styles.copy}>
-            <p>
-              {`The unreadable record will be moved to a backup copy on this device and ${
-                keptCount === 0
-                  ? "history will start empty"
-                  : `${keptCount} readable ${keptCount === 1 ? "trip" : "trips"} will be kept`
-              }.${state.activeTrip === null ? "" : " Your current trip is not affected."}`}
-            </p>
-            <button
-              type="button"
-              className={styles.retryButton}
-              onClick={setAside}
-            >
-              Set aside now
-            </button>
-          </div>
+          <button
+            type="button"
+            className={styles.retryButton}
+            onClick={setAside}
+          >
+            Set aside now
+          </button>
         ) : null}
         {statusMessage ? (
           <p className={styles.retryStatus} role="status" aria-live="polite">
@@ -174,8 +198,6 @@ export function HistoryIntegrityNotice({
         <button
           type="button"
           className={styles.retryButton}
-          aria-expanded={confirming}
-          {...(confirming ? { "aria-controls": panelId } : {})}
           onClick={() => {
             setStatusMessage("");
             setConfirming((current) => !current);

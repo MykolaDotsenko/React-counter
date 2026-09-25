@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -212,28 +212,44 @@ describe("HistoryIntegrityNotice", () => {
 
     // The outcome is announced and focus lands on it instead of the body.
     const resolved = screen.getByRole("status");
-    expect(resolved.textContent).toMatch(/set aside as a backup copy/);
+    expect(resolved.textContent).toBe(
+      "Any unreadable record was kept as a backup copy on this device.",
+    );
     expect(document.activeElement).toBe(resolved);
   });
 
-  it("exposes the confirmation as a disclosure without moving focus", async () => {
+  it("announces the confirmation from an existing live region without moving focus", async () => {
     const user = userEvent.setup();
     const { storage } = memoryStorage({
       [HISTORY_STORAGE_KEY]: partlyDamagedHistory(),
     });
     const controller = boot(storage);
 
-    render(<HistoryIntegrityNotice controller={controller} />);
+    const { container } = render(
+      <HistoryIntegrityNotice controller={controller} />,
+    );
 
     const toggle = screen.getByRole("button", { name: "Set aside…" });
-    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    const live = container.querySelector('[aria-live="polite"]');
+
+    // A control whose name changes is not a disclosure; the explanation is
+    // announced instead, from a region that already exists.
+    expect(toggle.hasAttribute("aria-expanded")).toBe(false);
     expect(toggle.hasAttribute("aria-controls")).toBe(false);
+    expect(live?.textContent).toBe("");
 
     await user.click(toggle);
 
-    expect(toggle.getAttribute("aria-expanded")).toBe("true");
-    expect(document.getElementById(toggle.getAttribute("aria-controls") ?? "")).not.toBeNull();
-    expect(document.activeElement).toBe(toggle);
+    expect(container.querySelector('[aria-live="polite"]')).toBe(live);
+    expect(live?.textContent).toMatch(/1 readable trip will be kept/);
+    expect(live?.textContent).toMatch(/Choose Set aside now to confirm/);
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Keep as is" }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Keep as is" }));
+
+    expect(live?.textContent).toBe("");
   });
 
   it("waits for the summary to close before offering repair", () => {
@@ -246,8 +262,80 @@ describe("HistoryIntegrityNotice", () => {
 
     render(<HistoryIntegrityNotice controller={controller} />);
 
-    expect(screen.getByText(/after closing this summary/)).not.toBeNull();
+    expect(
+      screen.getByText("You can set it aside after closing this summary."),
+    ).not.toBeNull();
+    expect(screen.queryByText(/try reading it again/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Set aside…" })).toBeNull();
+  });
+
+  it("offers only what fits the problem while the summary is open", () => {
+    const values = new Map<string, string>();
+    const control = { failHistoryRead: false };
+    const controller = boot({
+      getItem: (key) => {
+        if (key === HISTORY_STORAGE_KEY && control.failHistoryRead) {
+          throw new Error("read failed");
+        }
+
+        return values.get(key) ?? null;
+      },
+      setItem: (key, value) => {
+        values.set(key, value);
+      },
+      removeItem: (key) => {
+        values.delete(key);
+      },
+    });
+    controller.startTrip({ budgetMinor: money(1_000) });
+    controller.completeTrip();
+    control.failHistoryRead = true;
+    controller.setActualCheckout(money(900));
+
+    render(<HistoryIntegrityNotice controller={controller} />);
+
+    expect(
+      screen.getByText("You can try reading it again after closing this summary."),
+    ).not.toBeNull();
+    expect(screen.queryByText(/set it aside/)).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("confirms a successful retry and moves focus to the outcome", async () => {
+    const user = userEvent.setup();
+    const history = encodeHistorySnapshot([completedTrip("trip-a")], START);
+
+    if (!history.ok) {
+      throw new Error("Expected history");
+    }
+
+    const values = new Map([[HISTORY_STORAGE_KEY, history.raw]]);
+    const control = { failHistoryRead: true };
+    const controller = boot({
+      getItem: (key) => {
+        if (key === HISTORY_STORAGE_KEY && control.failHistoryRead) {
+          throw new Error("read failed");
+        }
+
+        return values.get(key) ?? null;
+      },
+      setItem: (key, value) => {
+        values.set(key, value);
+      },
+      removeItem: (key) => {
+        values.delete(key);
+      },
+    });
+
+    render(<HistoryIntegrityNotice controller={controller} />);
+
+    control.failHistoryRead = false;
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+
+    const resolved = screen.getByRole("status");
+    expect(resolved.textContent).toBe("Saved trip history was read successfully.");
+    expect(document.activeElement).toBe(resolved);
+    expect(controller.getSnapshot().completedTrips).toHaveLength(1);
   });
 
   it("renders nothing while history is readable", () => {
@@ -524,11 +612,15 @@ describe("trip overlays belong to their trip", () => {
     control.failHistoryRead = false;
     await user.click(within(finish).getByRole("button", { name: "Retry" }));
 
-    // The open copy was the recorded trip, so it is reconciled away.
+    // The open copy was the recorded trip, so it is reconciled away and
+    // focus lands on the next screen instead of the removed Retry button.
     expect(controller.getSnapshot().lifecycle).toBe("idle");
-    expect(
-      screen.getByRole("heading", { name: "How much can you spend today?" }),
-    ).not.toBeNull();
+    const heading = screen.getByRole("heading", {
+      name: "How much can you spend today?",
+    });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(heading);
+    });
 
     act(() => {
       controller.startTrip({ budgetMinor: money(2_000) });
