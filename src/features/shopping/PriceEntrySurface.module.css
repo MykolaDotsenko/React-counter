@@ -462,9 +462,7 @@
   box-shadow: var(--shopping-primary-action-shadow);
 }
 
-.key:active,
-.addButton:active,
-.addAnywayButton:active {
+.key:active {
   transform: translateY(1px);
 }
 
