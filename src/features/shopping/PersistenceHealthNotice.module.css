@@ -64,7 +64,7 @@
   padding: 0 14px;
   border: 1px solid var(--shopping-border);
   border-radius: 12px;
-  background: var(--shopping-panel);
+  background: var(--shopping-raised);
   color: var(--shopping-text);
   font: inherit;
   font-size: 0.86rem;

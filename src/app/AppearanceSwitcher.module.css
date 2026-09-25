@@ -60,7 +60,7 @@
   padding: 7px 6px;
   border: 1px solid var(--shopping-border);
   border-radius: 13px;
-  background: var(--shopping-soft);
+  background: var(--shopping-raised);
   color: var(--shopping-text);
   font: inherit;
   font-size: 0.74rem;
@@ -72,8 +72,8 @@
   border-color: var(--shopping-accent);
   background: color-mix(
     in srgb,
-    var(--shopping-accent) 10%,
-    var(--shopping-panel)
+    var(--shopping-accent-soft) 72%,
+    var(--shopping-raised)
   );
   color: var(--shopping-accent);
 }
@@ -87,15 +87,15 @@
 }
 
 .option[data-mode="system"] .swatch {
-  background: linear-gradient(135deg, #f5f3ee 0 50%, #171a18 50%);
+  background: linear-gradient(135deg, #f4f1eb 0 50%, #111512 50%);
 }
 
 .option[data-mode="light"] .swatch {
-  background: #f5f3ee;
+  background: #f4f1eb;
 }
 
 .option[data-mode="dark"] .swatch {
-  background: #171a18;
+  background: #111512;
 }
 
 .option[data-mode="aurora"] .swatch {

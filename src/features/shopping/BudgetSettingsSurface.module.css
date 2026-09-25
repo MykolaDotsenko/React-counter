@@ -19,7 +19,7 @@
     max(14px, env(safe-area-inset-right))
     max(16px, env(safe-area-inset-bottom))
     max(14px, env(safe-area-inset-left));
-  background: var(--page);
+  background: var(--shopping-page-canvas);
   color: var(--text);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -31,10 +31,10 @@
   display: grid;
   gap: 18px;
   padding: clamp(18px, 5vw, 28px);
-  border: 1px solid var(--border);
+  border: 1px solid var(--shopping-border-strong);
   border-radius: 26px;
   background: var(--panel);
-  box-shadow: 0 18px 56px rgb(31 35 32 / 0.12);
+  box-shadow: var(--shopping-elevated-shadow);
 }
 
 .header {
@@ -77,7 +77,7 @@
   flex: 0 0 auto;
   padding: 0 14px;
   border: 1px solid var(--border);
-  background: transparent;
+  background: var(--shopping-raised);
   color: var(--accent);
 }
 
@@ -121,7 +121,7 @@
   padding: 0 16px;
   border: 2px solid var(--border);
   border-radius: 16px;
-  background: var(--soft);
+  background: var(--shopping-raised);
 }
 
 .inputShell:focus-within {
@@ -166,7 +166,7 @@
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: var(--soft);
+  background: color-mix(in srgb, var(--shopping-accent-soft) 40%, var(--soft));
 }
 
 .preview strong {
@@ -192,6 +192,7 @@
   border: 1px solid transparent;
   background: var(--accent);
   color: var(--accent-contrast);
+  box-shadow: var(--shopping-primary-action-shadow);
 }
 
 .saveButton:disabled {

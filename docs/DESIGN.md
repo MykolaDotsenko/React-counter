@@ -66,7 +66,7 @@ The product should feel:
 - lightly playful;
 - premium without looking exclusive.
 
-It should not feel:
+The default Light/Dark experience should not feel:
 
 - corporate;
 - childish;
@@ -77,6 +77,8 @@ It should not feel:
 - neon-heavy;
 - overloaded;
 - aggressively “AI”.
+
+Aurora is the deliberate exception on expression, not on usability: it may use luminous colour, depth and atmospheric effects, but critical money, status, focus and controls must remain calm, legible and structurally identical to the standard shells.
 
 Working phrase:
 
@@ -148,6 +150,25 @@ Rules:
 - normal spending states should not feel alarming;
 - dark mode should be genuinely designed, not mechanically inverted;
 - light mode must remain strong in bright environments.
+
+## Appearance system
+
+The product has four appearance choices:
+
+- **System** — follows the operating-system light/dark preference;
+- **Light** — primary bright-store production shell;
+- **Dark** — deliberate low-light production shell, not an inversion;
+- **Aurora** — optional expressive showcase shell with the same interaction and information architecture.
+
+Rules:
+
+- appearance is presentation-only and never changes ShoppingTrip, persistence, evidence or money semantics;
+- all modes render the same product components rather than theme-specific screen forks;
+- semantic design tokens own colour, depth and surfaces;
+- switching is immediate and does not reload, remount the trip or reset focus unnecessarily;
+- the saved appearance preference is convenience state and failure to store it must never block shopping;
+- Light remains the visual calibration baseline for bright grocery environments;
+- Aurora may add visual effects only when contrast, reduced-motion behaviour, battery/performance budgets and the remaining-first hierarchy remain intact.
 
 ## Surface and depth
 

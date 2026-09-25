@@ -1,39 +1,72 @@
-:root,
-:root[data-appearance="system"],
-:root[data-appearance="light"] {
-  color-scheme: light;
-
-  --surface-page: #f5f3ee;
-  --surface-panel: #fffdf9;
-  --surface-soft: #f0ede6;
-  --text-primary: #202520;
-  --text-secondary: #687068;
-  --text-secondary-strong: #626a62;
-  --border-subtle: #d9d5cc;
-  --accent-primary: #315f4f;
-  --accent-contrast: #ffffff;
-  --status-warning: #8a5b20;
-  --status-danger: #8a2d2d;
-  --focus-ring: #245fca;
-  --progress-track: #dedbd3;
-  --primary-action-shadow: 0 12px 26px rgb(49 95 79 / 0.18);
-  --primary-action-shadow-hover: 0 14px 30px rgb(49 95 79 / 0.24);
+:root {
+  --surface-raised: var(--surface-soft);
+  --surface-accent-soft: var(--surface-soft);
+  --border-strong: var(--border-subtle);
+  --page-canvas: var(--surface-page);
+  --hero-surface: var(--surface-panel);
+  --overlay-backdrop: color-mix(in srgb, var(--surface-page) 88%, #000 12%);
+  --panel-shadow:
+    0 1px 2px rgb(31 35 32 / 0.04),
+    0 18px 48px rgb(31 35 32 / 0.07);
+  --elevated-shadow: 0 18px 56px rgb(31 35 32 / 0.12);
 
   --shopping-page: var(--surface-page);
   --shopping-panel: var(--surface-panel);
   --shopping-soft: var(--surface-soft);
+  --shopping-raised: var(--surface-raised);
+  --shopping-accent-soft: var(--surface-accent-soft);
   --shopping-text: var(--text-primary);
   --shopping-muted: var(--text-secondary);
   --shopping-muted-strong: var(--text-secondary-strong);
   --shopping-border: var(--border-subtle);
+  --shopping-border-strong: var(--border-strong);
   --shopping-accent: var(--accent-primary);
   --shopping-accent-contrast: var(--accent-contrast);
   --shopping-warning: var(--status-warning);
   --shopping-danger: var(--status-danger);
   --shopping-focus: var(--focus-ring);
   --shopping-track: var(--progress-track);
+  --shopping-page-canvas: var(--page-canvas);
+  --shopping-hero-surface: var(--hero-surface);
+  --shopping-overlay-backdrop: var(--overlay-backdrop);
+  --shopping-panel-shadow: var(--panel-shadow);
+  --shopping-elevated-shadow: var(--elevated-shadow);
   --shopping-primary-action-shadow: var(--primary-action-shadow);
-  --shopping-primary-action-shadow-hover: var(--primary-action-shadow-hover);
+}
+
+:root,
+:root[data-appearance="system"],
+:root[data-appearance="light"] {
+  color-scheme: light;
+
+  --surface-page: #f4f1eb;
+  --surface-panel: #fffefa;
+  --surface-soft: #efede7;
+  --surface-raised: #ffffff;
+  --surface-accent-soft: #edf4f0;
+  --text-primary: #1d241f;
+  --text-secondary: #687169;
+  --text-secondary-strong: #5f675f;
+  --border-subtle: #d9d3c9;
+  --border-strong: #c9c1b6;
+  --accent-primary: #2f604f;
+  --accent-contrast: #ffffff;
+  --status-warning: #86591f;
+  --status-danger: #8b3030;
+  --focus-ring: #225fc4;
+  --progress-track: #ddd9d1;
+  --page-canvas:
+    radial-gradient(circle at 50% -8rem, #fff 0, transparent 32rem),
+    linear-gradient(#f7f4ee, #f2eee7);
+  --hero-surface: linear-gradient(#fff, #fdfaf4);
+  --overlay-backdrop: rgb(29 36 31 / 0.26);
+  --panel-shadow:
+    0 1px 2px rgb(31 35 32 / 0.04),
+    0 12px 30px rgb(31 35 32 / 0.055);
+  --elevated-shadow:
+    0 1px 2px rgb(31 35 32 / 0.05),
+    0 22px 56px rgb(31 35 32 / 0.09);
+  --primary-action-shadow: 0 12px 26px rgb(47 96 79 / 0.18);
 }
 
 :root[data-appearance="dark"] {
@@ -53,23 +86,6 @@
   --focus-ring: #a6c6ff;
   --progress-track: #323933;
   --primary-action-shadow: none;
-  --primary-action-shadow-hover: none;
-
-  --shopping-page: var(--surface-page);
-  --shopping-panel: var(--surface-panel);
-  --shopping-soft: var(--surface-soft);
-  --shopping-text: var(--text-primary);
-  --shopping-muted: var(--text-secondary);
-  --shopping-muted-strong: var(--text-secondary-strong);
-  --shopping-border: var(--border-subtle);
-  --shopping-accent: var(--accent-primary);
-  --shopping-accent-contrast: var(--accent-contrast);
-  --shopping-warning: var(--status-warning);
-  --shopping-danger: var(--status-danger);
-  --shopping-focus: var(--focus-ring);
-  --shopping-track: var(--progress-track);
-  --shopping-primary-action-shadow: var(--primary-action-shadow);
-  --shopping-primary-action-shadow-hover: var(--primary-action-shadow-hover);
 }
 
 :root[data-appearance="aurora"] {
@@ -89,23 +105,6 @@
   --focus-ring: #b7c8ff;
   --progress-track: #222b3d;
   --primary-action-shadow: 0 12px 32px rgb(125 232 255 / 0.12);
-  --primary-action-shadow-hover: 0 14px 36px rgb(125 232 255 / 0.18);
-
-  --shopping-page: var(--surface-page);
-  --shopping-panel: var(--surface-panel);
-  --shopping-soft: var(--surface-soft);
-  --shopping-text: var(--text-primary);
-  --shopping-muted: var(--text-secondary);
-  --shopping-muted-strong: var(--text-secondary-strong);
-  --shopping-border: var(--border-subtle);
-  --shopping-accent: var(--accent-primary);
-  --shopping-accent-contrast: var(--accent-contrast);
-  --shopping-warning: var(--status-warning);
-  --shopping-danger: var(--status-danger);
-  --shopping-focus: var(--focus-ring);
-  --shopping-track: var(--progress-track);
-  --shopping-primary-action-shadow: var(--primary-action-shadow);
-  --shopping-primary-action-shadow-hover: var(--primary-action-shadow-hover);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -126,6 +125,5 @@
     --focus-ring: #a6c6ff;
     --progress-track: #323933;
     --primary-action-shadow: none;
-    --primary-action-shadow-hover: none;
-  }
+    }
 }

@@ -325,3 +325,38 @@ The previous large files were still correct, but several contained multiple inde
 ### Consequence
 
 The remaining large modules stay intentionally cohesive. Further splitting requires a clear behavioural or ownership boundary; line count alone is not sufficient justification.
+
+
+## D-050 — Appearance is a semantic-token presentation layer
+
+Date: 2026-09-25
+
+Status: accepted
+
+### Decision
+
+Support System, Light, Dark and Aurora through one component tree and semantic CSS custom properties.
+
+Appearance preference is independent convenience state. It must not enter the shopping domain, application controller, persistence schema or evidence payloads.
+
+Apply the saved preference before the first React paint so explicit Dark/Aurora never flash through the Light shell.
+
+Light is the primary bright-store calibration baseline. Dark and Aurora may change colour, surface and depth treatment, but not information hierarchy, interaction semantics or financial authority.
+
+### Rationale
+
+The product benefits from personalisation and a distinctive showcase mode, but duplicating screens per theme would multiply UX drift, accessibility risk and maintenance cost.
+
+Semantic tokens give high visual leverage while preserving one tested interaction model.
+
+### Consequence
+
+- theme work stays in presentation/design-system code;
+- a storage failure falls back safely without affecting shopping;
+- visual modes share the same accessible controls and product semantics;
+- future effects must earn their performance cost and respect reduced motion;
+- theme-specific React screen forks are not allowed without a separate architecture decision.
+
+### Revisit when
+
+A platform limitation prevents semantic tokens from expressing a required accessible design, or measured user evidence shows that a mode needs materially different interaction rather than presentation.

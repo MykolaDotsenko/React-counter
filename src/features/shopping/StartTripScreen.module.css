@@ -18,7 +18,7 @@
     max(16px, env(safe-area-inset-right))
     max(24px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-left));
-  background: var(--surface-page);
+  background: var(--shopping-page-canvas);
   color: var(--text-primary);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -30,12 +30,10 @@
   display: grid;
   gap: 24px;
   padding: clamp(22px, 6vw, 32px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--shopping-border-strong);
   border-radius: 26px;
-  background: var(--surface-panel);
-  box-shadow:
-    0 1px 2px rgb(31 35 32 / 0.05),
-    0 18px 48px rgb(31 35 32 / 0.08);
+  background: var(--shopping-panel);
+  box-shadow: var(--shopping-elevated-shadow);
 }
 
 .intro {
@@ -55,9 +53,12 @@
 
 .title {
   margin: 0;
+  max-width: 12ch;
+  margin-inline: auto;
   font-size: clamp(2rem, 8vw, 3rem);
+  font-weight: 780;
   line-height: 1.02;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.05em;
   text-wrap: balance;
 }
 
@@ -137,7 +138,7 @@
 .quickButton {
   min-height: 64px;
   border: 1px solid var(--border-subtle);
-  background: var(--surface-soft);
+  background: var(--shopping-raised);
   color: var(--text-primary);
   font-size: clamp(1.2rem, 5vw, 1.45rem);
   font-variant-numeric: tabular-nums;
@@ -150,8 +151,13 @@
 .quickButton:hover {
   border-color: color-mix(
     in srgb,
-    var(--accent-primary) 38%,
-    var(--border-subtle)
+    var(--accent-primary) 48%,
+    var(--shopping-border-strong)
+  );
+  background: color-mix(
+    in srgb,
+    var(--shopping-accent-soft) 58%,
+    var(--shopping-raised)
   );
 }
 
@@ -169,7 +175,7 @@
   min-width: 10rem;
   padding: 0 18px;
   border: 1px solid var(--border-subtle);
-  background: transparent;
+  background: var(--shopping-panel);
   color: var(--accent-primary);
 }
 
@@ -234,7 +240,7 @@
   padding: 0 14px;
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
-  background: var(--surface-soft);
+  background: var(--shopping-raised);
 }
 
 .inputShell:focus-within {
@@ -283,6 +289,7 @@
   background: var(--accent-primary);
   color: var(--accent-contrast);
   padding: 0 22px;
+  box-shadow: var(--shopping-primary-action-shadow);
 }
 
 .error {
@@ -301,7 +308,7 @@
   padding: 0 16px;
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
-  background: transparent;
+  background: var(--shopping-panel);
   color: var(--accent-primary);
   font: inherit;
   font-size: 0.88rem;
@@ -310,7 +317,7 @@
 }
 
 .historyButton:hover {
-  background: var(--surface-soft);
+  background: var(--shopping-accent-soft);
 }
 
 .trustNote {

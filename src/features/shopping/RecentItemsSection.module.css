@@ -2,9 +2,10 @@
   display: grid;
   gap: 12px;
   padding: 16px;
-  border: 1px solid var(--shopping-border);
+  border: 1px solid var(--shopping-border-strong);
   border-radius: 20px;
   background: var(--shopping-panel);
+  box-shadow: var(--shopping-panel-shadow);
 }
 
 .heading {
@@ -88,7 +89,7 @@
   padding: 12px;
   border: 1px solid var(--shopping-border);
   border-radius: 16px;
-  background: var(--shopping-soft);
+  background: color-mix(in srgb, var(--shopping-accent-soft) 34%, var(--shopping-soft));
 }
 
 .identity {
@@ -140,11 +141,12 @@
   border: 1px solid transparent;
   background: var(--shopping-accent);
   color: var(--shopping-accent-contrast);
+  box-shadow: var(--shopping-primary-action-shadow);
 }
 
 .secondaryButton {
   border: 1px solid var(--shopping-border);
-  background: var(--shopping-panel);
+  background: var(--shopping-raised);
   color: var(--shopping-text);
 }
 

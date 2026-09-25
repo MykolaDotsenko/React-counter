@@ -5,7 +5,7 @@ const PUBLIC_METADATA = Object.freeze({
   title: "<title>Shopping Budget Companion</title>",
   description:
     'content="A mobile-first shopping budget companion with exact money, local-first persistence, fast price entry, and repeat-trip price memory."',
-  theme: '<meta name="theme-color" content="#f5f3ee" />',
+  theme: '<meta name="theme-color" content="#f4f1eb" />',
   applicationName:
     '<meta name="application-name" content="Shopping Budget Companion" />',
 });
@@ -26,7 +26,7 @@ export const applyGuardedBuildBrandingHtml = (
     title,
     description,
     applicationName = "Shopping Budget Companion",
-    themeColor = "#f5f3ee",
+    themeColor = "#f4f1eb",
   },
 ) => {
   let next = original;

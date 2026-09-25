@@ -20,7 +20,7 @@ export interface AppearanceDocumentTarget {
 }
 
 const THEME_COLORS = Object.freeze({
-  light: "#f5f3ee",
+  light: "#f4f1eb",
   dark: "#111512",
   aurora: "#080b14",
 });

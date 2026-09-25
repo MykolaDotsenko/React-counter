@@ -3,17 +3,17 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: var(--shopping-page, #f5f3ee);
-  color: var(--shopping-text, #202520);
+  background: var(--shopping-page-canvas, #f4f1eb);
+  color: var(--shopping-text, #1d241f);
 }
 
 .card {
   width: min(100%, 480px);
   padding: 28px;
-  border: 1px solid var(--shopping-border, #d9d5cc);
+  border: 1px solid var(--shopping-border-strong, #c9c1b6);
   border-radius: 24px;
-  background: var(--shopping-panel, #fffdf9);
-  box-shadow: 0 18px 60px rgb(32 37 32 / 0.1);
+  background: var(--shopping-panel, #fffefa);
+  box-shadow: var(--shopping-elevated-shadow, 0 18px 60px rgb(32 37 32 / 0.1));
 }
 
 .card h1 {
@@ -41,7 +41,7 @@
   padding: 0 20px;
   border: 0;
   border-radius: 14px;
-  background: var(--shopping-accent, #315f4f);
+  background: var(--shopping-accent, #2f604f);
   color: var(--shopping-accent-contrast, #fff);
   font: inherit;
   font-weight: 700;

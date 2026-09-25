@@ -18,7 +18,7 @@
     max(16px, env(safe-area-inset-right))
     max(24px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-left));
-  background: var(--page);
+  background: var(--shopping-page-canvas);
   color: var(--text);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -30,12 +30,10 @@
   display: grid;
   gap: 20px;
   padding: clamp(22px, 6vw, 32px);
-  border: 1px solid var(--border);
+  border: 1px solid var(--shopping-border-strong);
   border-radius: 26px;
   background: var(--panel);
-  box-shadow:
-    0 1px 2px rgb(31 35 32 / 0.05),
-    0 18px 48px rgb(31 35 32 / 0.08);
+  box-shadow: var(--shopping-elevated-shadow);
 }
 
 .icon {
@@ -92,6 +90,7 @@
   border-radius: 16px;
   background: var(--accent);
   color: var(--accent-contrast);
+  box-shadow: var(--shopping-primary-action-shadow);
   font: inherit;
   font-weight: 800;
   cursor: pointer;
