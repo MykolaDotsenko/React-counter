@@ -6,14 +6,14 @@ import {
   addMoney,
   minorUnits,
   multiplyMoney,
+  ok,
   signedMinorUnits,
+  type Brand,
   type MinorUnits,
   type Result,
   type SignedMinorUnits,
   type SupportedCurrency,
 } from "./money";
-
-type Brand<T, B extends string> = T & { readonly __brand: B };
 
 export type TripId = Brand<string, "TripId">;
 export type ItemId = Brand<string, "ItemId">;
@@ -179,7 +179,7 @@ export type TripCommand =
       readonly actualCheckoutMinor: MinorUnits;
     };
 
-export const ok = <T>(value: T): Result<T, never> => ({ ok: true, value });
+export { ok };
 
 export const domainError = (code: DomainErrorCode): Result<never, DomainError> => ({
   ok: false,
