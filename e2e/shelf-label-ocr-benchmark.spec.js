@@ -67,7 +67,7 @@ test("@ocr-benchmark loads the isolated shelf-label OCR harness", async ({
 
   expect(expectedBuildRevision).toMatch(/^[0-9a-f]{40}$/);
   expect(exported).toMatchObject({
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "shelf-label-ocr-benchmark-evidence",
     buildRevision: expectedBuildRevision,
     privacy: {
