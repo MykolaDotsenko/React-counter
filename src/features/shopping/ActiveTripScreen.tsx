@@ -106,16 +106,10 @@ export function ActiveTripScreen({
   const state = useShoppingAppState(controller);
   const trip = state.activeTrip;
   const heroMotionRef = useRef<HTMLParagraphElement>(null);
-  const cartMotionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (state.lifecycle !== "active" || trip === null) {
-      return;
-    }
-
-    settleMotion(heroMotionRef.current);
-    settleMotion(cartMotionRef.current, 140);
-  }, [state.lifecycle, trip]);
+    if (trip !== null) settleMotion(heroMotionRef.current);
+  }, [trip]);
 
   if (state.lifecycle !== "active" || trip === null) {
     return null;
@@ -345,11 +339,7 @@ export function ActiveTripScreen({
           />
         ) : null}
 
-        <section
-          ref={cartMotionRef}
-          className={styles.cart}
-          aria-labelledby="cart-title"
-        >
+        <section className={styles.cart} aria-labelledby="cart-title">
           <div className={styles.cartHeading}>
             <div>
               <p className={styles.sectionKicker}>Current cart</p>
