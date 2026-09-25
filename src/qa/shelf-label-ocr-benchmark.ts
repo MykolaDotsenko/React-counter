@@ -85,6 +85,9 @@ export interface ShelfLabelOcrSummary {
   readonly ocrErrors: number;
   readonly parserErrors: number;
   readonly captureErrors: number;
+  readonly medianDecisionMs: number | null;
+  readonly p75DecisionMs: number | null;
+  readonly p90DecisionMs: number | null;
   readonly medianConfirmedMs: number | null;
   readonly p75ConfirmedMs: number | null;
   readonly p90ConfirmedMs: number | null;
@@ -102,7 +105,7 @@ export interface ShelfLabelOcrSummary {
 }
 
 export interface ShelfLabelOcrExport {
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
   readonly kind: "shelf-label-ocr-benchmark-evidence";
   readonly buildRevision: string;
   readonly generatedAt: string;
@@ -529,6 +532,14 @@ export const summarizeShelfLabelOcr = (
   const captureErrors = count("capture-error");
   const attempts = session.samples.length;
   const decisions = top1Confirmed + top3Confirmed + rejected;
+  const decisionDurations = session.samples
+    .filter(
+      (sample) =>
+        sample.outcome === "top1-confirmed" ||
+        sample.outcome === "top3-confirmed" ||
+        sample.outcome === "rejected",
+    )
+    .map((sample) => sample.durationMs);
   const confirmedDurations = session.samples
     .filter(
       (sample) =>
@@ -550,6 +561,9 @@ export const summarizeShelfLabelOcr = (
     ocrErrors,
     parserErrors,
     captureErrors,
+    medianDecisionMs: percentile(decisionDurations, 0.5),
+    p75DecisionMs: percentile(decisionDurations, 0.75),
+    p90DecisionMs: percentile(decisionDurations, 0.9),
     medianConfirmedMs: percentile(confirmedDurations, 0.5),
     p75ConfirmedMs: percentile(confirmedDurations, 0.75),
     p90ConfirmedMs: percentile(confirmedDurations, 0.9),
@@ -685,7 +699,7 @@ export const buildShelfLabelOcrExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "shelf-label-ocr-benchmark-evidence",
     buildRevision: EVIDENCE_BUILD_REVISION,
     generatedAt,
@@ -722,7 +736,7 @@ export const parseShelfLabelOcrExport = (
       "session",
       "summary",
     ]) ||
-    record.schemaVersion !== 1 ||
+    record.schemaVersion !== 2 ||
     record.kind !== "shelf-label-ocr-benchmark-evidence" ||
     !isEvidenceBuildRevision(record.buildRevision) ||
     !isCanonicalIsoTimestamp(record.generatedAt) ||
@@ -766,7 +780,7 @@ export const parseShelfLabelOcrExport = (
   }
 
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "shelf-label-ocr-benchmark-evidence",
     buildRevision: record.buildRevision,
     generatedAt: record.generatedAt,
