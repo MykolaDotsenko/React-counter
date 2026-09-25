@@ -86,7 +86,6 @@
   --focus-ring: #a6c6ff;
   --progress-track: #2a322c;
   --elevated-shadow: 0 20px 52px #0005;
-  --primary-action-shadow: none;
 }
 
 :root[data-theme="aurora"] {
