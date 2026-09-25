@@ -401,6 +401,11 @@ Tests must prove:
 - malformed retained evidence is preserved until explicit reset;
 - viewport/recognizer/data-boundary changes freeze retained evidence instead of mixing environments;
 - export carries the exact guarded-build `buildRevision`;
+- visual export schema v2 has an authoritative runtime parser that recomputes its summary;
+- export `generatedAt` must cover the latest retained sample/failure observation;
+- edited/tampered privacy or derived summary fields are rejected;
+- median/P75/P90 decision latency includes top-1 confirms, rank 2–3 confirms and rejected candidate sets;
+- confirmed-only latency remains diagnostic and is never substituted for full human-decision latency in comparative interpretation;
 - local download uses a non-identifying session timestamp filename;
 - the concrete CLIP experiment is loaded only after explicit facilitator action, never automatically on route load;
 - candidate-catalog parsing rejects unknown fields, duplicates, unbounded label counts and malformed labels;
