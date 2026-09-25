@@ -420,7 +420,7 @@ jobs:
           path: .playwright-site-root/shopping-budget-companion
 
       - name: Expose timing QA index at test origin
-        run: cp .playwright-site-root/shopping-budget-companion/qa/index.html .playwright-site-root/index.html
+        run: cp -R .playwright-site-root/shopping-budget-companion/qa/. .playwright-site-root/
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -467,7 +467,7 @@ jobs:
           path: .playwright-site-root/shopping-budget-companion
 
       - name: Expose beta index at test origin
-        run: cp .playwright-site-root/shopping-budget-companion/beta/index.html .playwright-site-root/index.html
+        run: cp -R .playwright-site-root/shopping-budget-companion/beta/. .playwright-site-root/
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -514,7 +514,7 @@ jobs:
           path: .playwright-site-root/shopping-budget-companion
 
       - name: Expose cohort analyzer index at test origin
-        run: cp .playwright-site-root/shopping-budget-companion/cohort/index.html .playwright-site-root/index.html
+        run: cp -R .playwright-site-root/shopping-budget-companion/cohort/. .playwright-site-root/
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -561,7 +561,7 @@ jobs:
           path: .playwright-site-root/shopping-budget-companion
 
       - name: Expose barcode benchmark index at test origin
-        run: cp .playwright-site-root/shopping-budget-companion/barcode-benchmark/index.html .playwright-site-root/index.html
+        run: cp -R .playwright-site-root/shopping-budget-companion/barcode-benchmark/. .playwright-site-root/
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -608,7 +608,7 @@ jobs:
           path: .playwright-site-root/shopping-budget-companion
 
       - name: Expose paired analyzer index at test origin
-        run: cp .playwright-site-root/shopping-budget-companion/barcode-paired-analyzer/index.html .playwright-site-root/index.html
+        run: cp -R .playwright-site-root/shopping-budget-companion/barcode-paired-analyzer/. .playwright-site-root/
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -655,7 +655,7 @@ jobs:
           path: .playwright-site-root/shopping-budget-companion
 
       - name: Expose OCR paired analyzer index at test origin
-        run: cp .playwright-site-root/shopping-budget-companion/ocr-paired-analyzer/index.html .playwright-site-root/index.html
+        run: cp -R .playwright-site-root/shopping-budget-companion/ocr-paired-analyzer/. .playwright-site-root/
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -702,7 +702,7 @@ jobs:
           path: .playwright-site-root/shopping-budget-companion
 
       - name: Expose visual benchmark index at test origin
-        run: cp .playwright-site-root/shopping-budget-companion/visual-recognition-benchmark/index.html .playwright-site-root/index.html
+        run: cp -R .playwright-site-root/shopping-budget-companion/visual-recognition-benchmark/. .playwright-site-root/
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -749,7 +749,7 @@ jobs:
           path: .playwright-site-root/shopping-budget-companion
 
       - name: Expose OCR benchmark index at test origin
-        run: cp .playwright-site-root/shopping-budget-companion/shelf-label-ocr-benchmark/index.html .playwright-site-root/index.html
+        run: cp -R .playwright-site-root/shopping-budget-companion/shelf-label-ocr-benchmark/. .playwright-site-root/
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -796,7 +796,7 @@ jobs:
           path: .playwright-site-root/shopping-budget-companion
 
       - name: Expose concrete Tesseract OCR index at test origin
-        run: cp .playwright-site-root/shopping-budget-companion/shelf-label-ocr-tesseract-benchmark/index.html .playwright-site-root/index.html
+        run: cp -R .playwright-site-root/shopping-budget-companion/shelf-label-ocr-tesseract-benchmark/. .playwright-site-root/
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
