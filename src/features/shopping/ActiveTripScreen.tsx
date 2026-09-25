@@ -1,7 +1,8 @@
-import type { CSSProperties, Ref } from "react";
+import { useEffect, useRef, type CSSProperties, type Ref } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
+import { settleMotion } from "../../app/motion";
 import { formatEur, signedMinorUnits } from "../../domain/money";
 import type { PriceMemoryRecord } from "../../domain/price-memory";
 import {
@@ -104,6 +105,17 @@ export function ActiveTripScreen({
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
   const trip = state.activeTrip;
+  const heroMotionRef = useRef<HTMLParagraphElement>(null);
+  const cartMotionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (state.lifecycle !== "active" || trip === null) {
+      return;
+    }
+
+    settleMotion(heroMotionRef.current);
+    settleMotion(cartMotionRef.current, 140);
+  }, [state.lifecycle, trip]);
 
   if (state.lifecycle !== "active" || trip === null) {
     return null;
@@ -192,10 +204,7 @@ export function ActiveTripScreen({
                 : "within"
           }
         >
-          <p
-            key={`${heroLabel}:${heroAmount}`}
-            className={styles.heroAmount}
-          >
+          <p ref={heroMotionRef} className={styles.heroAmount}>
             {formatSignedAmount(heroAmount, locale)}
           </p>
           <p className={styles.heroLabel}>{heroLabel}</p>
@@ -336,7 +345,11 @@ export function ActiveTripScreen({
           />
         ) : null}
 
-        <section className={styles.cart} aria-labelledby="cart-title">
+        <section
+          ref={cartMotionRef}
+          className={styles.cart}
+          aria-labelledby="cart-title"
+        >
           <div className={styles.cartHeading}>
             <div>
               <p className={styles.sectionKicker}>Current cart</p>
