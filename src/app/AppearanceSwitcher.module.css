@@ -60,8 +60,9 @@
   padding: 7px 6px;
   border: 1px solid var(--shopping-border);
   border-radius: 13px;
-  background: var(--shopping-soft);
+  background: var(--shopping-raised);
   color: var(--shopping-text);
+  box-shadow: var(--shopping-control-shadow);
   font: inherit;
   font-size: 0.74rem;
   font-weight: 800;
@@ -72,8 +73,8 @@
   border-color: var(--shopping-accent);
   background: color-mix(
     in srgb,
-    var(--shopping-accent) 10%,
-    var(--shopping-panel)
+    var(--shopping-accent-soft) 72%,
+    var(--shopping-raised)
   );
   color: var(--shopping-accent);
 }
