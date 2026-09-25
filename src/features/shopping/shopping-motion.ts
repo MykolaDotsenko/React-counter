@@ -1,25 +1,8 @@
-const reducedMotion = (): boolean =>
-  typeof window !== "undefined" &&
-  typeof window.matchMedia === "function" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-export const settleMotion = (
-  element: Element | null,
-  duration = 160,
-): void => {
+export const settleMotion = (element: Element | null): void => {
   if (
-    element === null ||
-    typeof element.animate !== "function" ||
-    reducedMotion()
+    element?.animate &&
+    !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
   ) {
-    return;
+    element.animate([{ opacity: 0.8 }, { opacity: 1 }], { duration: 160 });
   }
-
-  element.animate(
-    [
-      { opacity: 0.76, transform: "translateY(3px)" },
-      { opacity: 1, transform: "none" },
-    ],
-    { duration, easing: "ease-out" },
-  );
 };
