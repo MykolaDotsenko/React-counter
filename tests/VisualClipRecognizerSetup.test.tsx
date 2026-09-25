@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -53,7 +53,7 @@ describe("VisualClipRecognizerSetup", () => {
       ),
     );
 
-    expect(screen.getByText("3 labels")).toBeTruthy();
+    expect(await screen.findByText("3 labels")).toBeTruthy();
     expect(screen.queryByText("Private Product Alpha")).toBeNull();
     expect(
       onStatus.mock.calls.at(-1)?.[0],
@@ -86,6 +86,7 @@ describe("VisualClipRecognizerSetup", () => {
       ),
     );
 
+    expect(await screen.findByText("3 labels")).toBeTruthy();
     expect(configureVisualClipRecognizer).not.toHaveBeenCalled();
 
     await user.click(
@@ -100,12 +101,13 @@ describe("VisualClipRecognizerSetup", () => {
 
   it("rejects malformed catalogs without configuring a recognizer", async () => {
     const user = userEvent.setup();
+    const onStatus = vi.fn();
 
     render(
       <VisualClipRecognizerSetup
         disabled={false}
         onConfigured={vi.fn()}
-        onStatus={vi.fn()}
+        onStatus={onStatus}
       />,
     );
 
@@ -118,6 +120,12 @@ describe("VisualClipRecognizerSetup", () => {
       ),
     );
 
+    await waitFor(() => {
+      expect(onStatus).toHaveBeenCalledWith(
+        expect.stringContaining("Candidate catalog rejected"),
+      );
+    });
+    expect(screen.getByText("Catalog required")).toBeTruthy();
     expect(
       (
         screen.getByRole("button", {

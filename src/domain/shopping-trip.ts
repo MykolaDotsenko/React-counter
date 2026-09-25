@@ -1,9 +1,11 @@
 export {
+  CANONICAL_ISO_TIMESTAMP_PATTERN,
   MAX_ITEM_LABEL_CODE_POINTS,
   createActiveTrip,
   createCartItem,
   isoTimestamp,
   itemId,
+  laterTimestamp,
   storeId,
   tripId,
 } from "./shopping-trip-model";
@@ -34,6 +36,7 @@ export {
   cartTotal,
   checkoutDifference,
   itemCount,
+  latestTripTimestamp,
   lineTotal,
   mostRecentCompletedTrip,
   nominalOverage,
@@ -43,6 +46,7 @@ export {
   safeLimit,
   safeOverage,
   safeRemaining,
+  sameTripContents,
 } from "./shopping-trip-selectors";
 
 export { reduceTrip } from "./shopping-trip-reducer";

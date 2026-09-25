@@ -28,6 +28,7 @@ import {
   type QaSpotCheckStatus,
   type QaTimingSession,
 } from "./shopping-timing";
+import { evidenceSessionStorage } from "./evidence-storage";
 
 const qaTimingEnabled =
   import.meta.env.VITE_SHOPPING_QA_TIMING === "1";
@@ -69,7 +70,7 @@ export function useShoppingTimingEvidence(
     const environment = captureQaTimingEnvironment();
 
     try {
-      return loadQaTimingSession(sessionStorage, environment);
+      return loadQaTimingSession(evidenceSessionStorage(), environment);
     } catch {
       return createQaTimingSession(environment);
     }
@@ -86,7 +87,7 @@ export function useShoppingTimingEvidence(
       const next = updater(current);
 
       try {
-        persistQaTimingSession(sessionStorage, next);
+        persistQaTimingSession(evidenceSessionStorage(), next);
       } catch {
         // QA persistence must never change shopping product behavior.
       }
@@ -167,7 +168,7 @@ export function useShoppingTimingEvidence(
       }
 
       try {
-        persistQaTimingSession(sessionStorage, next);
+        persistQaTimingSession(evidenceSessionStorage(), next);
       } catch {
         // Timing evidence still remains visible in memory.
       }
@@ -247,7 +248,7 @@ export function useShoppingTimingEvidence(
           );
 
           try {
-            persistQaTimingSession(sessionStorage, next);
+            persistQaTimingSession(evidenceSessionStorage(), next);
           } catch {
             // A fresh QA session must not affect shopping product behavior.
           }

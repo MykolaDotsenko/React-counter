@@ -1,6 +1,8 @@
 import {
   EUR_SPEC,
   MAX_MVP_MONEY_MINOR,
+  ok,
+  type Brand,
   type MinorUnits,
   type Result,
   type SupportedCurrency,
@@ -13,8 +15,6 @@ import {
   type IsoTimestamp,
   type StoreId,
 } from "./shopping-trip";
-
-type Brand<T, B extends string> = T & { readonly __brand: B };
 
 export type ProductId = Brand<string, "ProductId">;
 export type PriceMemoryId = Brand<string, "PriceMemoryId">;
@@ -64,8 +64,6 @@ export interface PriceMemoryError {
   readonly kind: "price-memory";
   readonly code: PriceMemoryErrorCode;
 }
-
-const ok = <T>(value: T): Result<T, never> => ({ ok: true, value });
 
 const memoryError = (
   code: PriceMemoryErrorCode,

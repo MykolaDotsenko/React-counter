@@ -11,6 +11,7 @@ import {
   createActiveTrip,
   createCartItem,
   isoTimestamp,
+  itemId,
   reduceTrip,
   remaining,
   safeRemaining,
@@ -677,7 +678,7 @@ describe("completed trip history persistence", () => {
 
     expect(
       completeTripPersistence(storage, completed, COMPLETE_TIME),
-    ).toEqual({ ok: true });
+    ).toEqual({ ok: true, trips: [completed] });
 
     expect(storage.events).toContain(`set:${HISTORY_STORAGE_KEY}`);
     expect(storage.events).toContain(`remove:${ACTIVE_TRIP_STORAGE_KEY}`);
@@ -753,6 +754,7 @@ describe("completed trip history persistence", () => {
         storageKey: ACTIVE_TRIP_STORAGE_KEY,
       },
       historyPersisted: true,
+      trips: [completed],
     });
     expect(storage.values.get(ACTIVE_TRIP_STORAGE_KEY)).toBe(active.raw);
     expect(storage.values.has(HISTORY_STORAGE_KEY)).toBe(true);
@@ -825,7 +827,49 @@ describe("completed trip history persistence", () => {
     expect(storage.values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(true);
   });
 
-  it("rejects conflicting same-id completion instead of silently overwriting history", () => {
+  it("keeps the recorded completion when the same shopping completes again", () => {
+    const existing = createCompletedTrip(800);
+    const existingHistory = encodeHistorySnapshot(
+      [existing],
+      COMPLETE_TIME,
+    );
+
+    if (!existingHistory.ok) {
+      throw new Error("Expected history encoding");
+    }
+
+    const repeated = reduceTrip(createTrip(), {
+      type: "complete-trip",
+      completedAt: time(RECONCILE_TIME),
+    });
+
+    if (!repeated.ok || repeated.value.status !== "completed") {
+      throw new Error("Expected repeated completed fixture");
+    }
+
+    const active = encodeActiveTripSnapshot(createTrip(), SAVE_TIME);
+
+    if (!active.ok) {
+      throw new Error("Expected active encoding");
+    }
+
+    const storage = createStorage({
+      [ACTIVE_TRIP_STORAGE_KEY]: active.raw,
+      [HISTORY_STORAGE_KEY]: existingHistory.raw,
+    });
+
+    const result = completeTripPersistence(
+      storage,
+      repeated.value,
+      RECONCILE_TIME,
+    );
+
+    expect(result).toEqual({ ok: true, trips: [existing] });
+    expect(storage.values.has(ACTIVE_TRIP_STORAGE_KEY)).toBe(false);
+    expect(restoreHistory(storage).trips).toEqual([existing]);
+  });
+
+  it("rejects different shopping under a recorded id instead of overwriting history", () => {
     const existing = createCompletedTrip();
     const existingHistory = encodeHistorySnapshot(
       [existing],
@@ -836,7 +880,15 @@ describe("completed trip history persistence", () => {
       throw new Error("Expected history encoding");
     }
 
-    const conflictingResult = reduceTrip(createTrip(), {
+    const edited = unwrap(
+      reduceTrip(createTrip(), {
+        type: "update-item",
+        itemId: unwrap(itemId("item-1")),
+        patch: { quantity: 3 },
+        now: time(RECONCILE_TIME),
+      }),
+    );
+    const conflictingResult = reduceTrip(edited, {
       type: "complete-trip",
       completedAt: time(RECONCILE_TIME),
     });

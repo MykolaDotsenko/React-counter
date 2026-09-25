@@ -114,6 +114,8 @@ React components may call domain selectors for display, but financial mutation r
 
 Keep environment-specific construction here instead of scattering singleton creation through features.
 
+It also applies the deployed-surface storage scope: guarded evidence builds prefix every key with the path they are served from, while the public app keeps its original keys (D-052).
+
 ### QA
 
 `src/qa/` records and analyzes validation evidence only. Production shopping code depends on the `#shopping-evidence` adapter contract, which resolves to a NoOp implementation in the public build and to the guarded evidence implementation only when a QA/beta build flag is enabled. The cohort build uses a separate `#app-entry` alias so facilitator analysis code is not bundled into the public product.
@@ -135,6 +137,7 @@ The controller owns the in-memory application snapshot:
 - active trip
 - completed summary/history
 - durability health
+- completed-history integrity (independent of write health)
 - completion-cleanup state
 - Price Memory snapshot/health
 - Undo snapshot
@@ -212,7 +215,7 @@ Completion ordering is intentionally loss-safe:
 2. persist the completed trip into history
 3. only after history is durable, clear the active-trip snapshot
 4. if active clear fails, expose cleanup pending/degraded state
-5. on startup, reconcile a stale active copy whose trip id already exists in durable history
+5. on startup, reconcile a stale active copy that is the same shopping as a trip already in durable history; an open copy edited since keeps its cart and finishes under a new trip id
 
 A failed history write must never delete the active trip.
 
@@ -221,6 +224,8 @@ A failed history write must never delete the active trip.
 Malformed, invalid-business-value, conflicting or unsupported-future persisted data is not silently coerced.
 
 Recovery surfaces preserve raw material where the contract allows it.
+
+Only an unreadable active record blocks the shopping flow. Every unreadable state keeps an explicit exit that never destroys data: continue without saving (writes refused for the session) or set the record aside (exact raw backup first). See D-051.
 
 ### Price Memory
 

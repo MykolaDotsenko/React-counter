@@ -71,6 +71,8 @@ Do not load every decision file for a narrow task. Use the category links or tab
 | D-048 | Separate application contracts and compress current AI context surfaces | [Architecture and Technology](./decisions/architecture-technology.md) |
 | D-049 | Decompose architectural hotspots by reason to change | [Architecture and Technology](./decisions/architecture-technology.md) |
 | D-050 | Appearance is a semantic-token presentation layer | [Architecture and Technology](./decisions/architecture-technology.md) |
+| D-051 | Damaged local data always leaves the shopper a safe exit | [Persistence and Data Integrity](./decisions/persistence-data-integrity.md) |
+| D-052 | Each deployed evidence surface keeps its own storage | [Persistence and Data Integrity](./decisions/persistence-data-integrity.md) |
 
 ## Usage rule
 

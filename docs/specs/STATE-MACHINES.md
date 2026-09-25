@@ -47,7 +47,9 @@ Transitions:
 - ADD_ITEM / EDIT_ITEM / REMOVE_ITEM / UNDO → ACTIVE;
 - SET_BUDGET / SET_BUFFER → ACTIVE;
 - FINISH_TRIP(success) → COMPLETED_SUMMARY;
+- FINISH_TRIP(history already records different shopping under this id) → save the open trip under a new id, then finish it under that id; if that save or the history write fails → ACTIVE under the new id (when saved) + persistence DEGRADED;
 - FINISH_TRIP(history-write failure) → ACTIVE + persistence DEGRADED;
+- FINISH_TRIP(stored history unreadable) → ACTIVE + history integrity DEGRADED; nothing is written and the active trip stays durable;
 - active-state write failure → ACTIVE + persistence DEGRADED.
 
 ### COMPLETED_SUMMARY
@@ -60,7 +62,8 @@ Meaning:
 Transitions:
 
 - SET_ACTUAL_CHECKOUT → COMPLETED_SUMMARY;
-- SHOP_AGAIN(valid completed source) → ACTIVE with a new trip id and empty cart;
+- SHOP_AGAIN(valid completed source, including the open summary's own trip) → ACTIVE with a new trip id and empty cart;
+- SET_ASIDE_HISTORY / RETRY_HISTORY_READ → COMPLETED_SUMMARY; a set-aside saves the summary's trip into the new history;
 - DISMISS_SUMMARY → IDLE.
 
 Reopening the same completed trip is **PLANNED / GATED** and is not a current transition.
@@ -69,12 +72,15 @@ Reopening the same completed trip is **PLANNED / GATED** and is not a current tr
 
 Meaning:
 
-Persisted active data cannot safely become a valid ShoppingTrip.
+Persisted active data cannot safely become a valid ShoppingTrip: the active record is unreadable, or browser storage cannot be read at all.
+
+Only the active record enters RECOVERY. Damaged history, a failed stale-copy cleanup and failed legacy-key retirement degrade instead.
 
 Allowed behaviour:
 
-- explicit recovery/reset actions supported by the product;
-- retry where failure is capability-related;
+- RETRY_READ → re-run bootstrap;
+- SET_ASIDE_ACTIVE (unreadable record with raw material only) → back up the exact raw record, remove it, re-run bootstrap;
+- CONTINUE_WITHOUT_SAVING → IDLE with persistence and Price Memory DEGRADED(`session-only`): every write is refused for the rest of the session, so unreadable stored data is never overwritten. Trips still finish into an in-memory summary, the summary can be dismissed and Shop again works; nothing survives a reload, which returns to RECOVERY;
 - preserve raw recovery material where the persistence contract requires it.
 
 RECOVERY never invents prices/budgets from malformed data.
@@ -108,6 +114,32 @@ Requirements:
 - retry/recovery remains explicit.
 
 Do not create a generic blocking ERROR lifecycle for ordinary storage failure.
+
+## History integrity
+
+History integrity is orthogonal to lifecycle and to write health.
+
+```text
+READABLE
+  └─ stored history unreadable (bootstrap, finish, checkout total, save retry) → DAMAGED
+
+DAMAGED
+  ├─ SET_ASIDE_HISTORY (backup, keep readable trips) → READABLE
+  ├─ RETRY_HISTORY_READ succeeds (read failures only) → READABLE
+  └─ otherwise ──────────────────────────────────────→ DAMAGED
+```
+
+While DAMAGED:
+
+- starting, tracking and correcting trips work;
+- readable completed trips stay visible and can seed Shop again;
+- finishing, deleting a trip and clearing history are refused, because each would overwrite the unreadable record;
+- a successful active-trip write never hides the history warning;
+- the shown trips are exactly those a set-aside would keep;
+- if history becomes unreadable while a finished-trip summary is open, repair is offered in the summary itself; setting history aside there saves the finished trip (with any checkout total) into the new history;
+- a stale active copy is the last readable copy of a trip history cannot confirm, so a save retry only clears it when readable history holds that same shopping.
+
+Deleting a trip or clearing history always re-reads durable history first and never writes from a stale in-memory list, so trips this session never loaded cannot be dropped. After a successful re-read, an open copy that is the same shopping as a trip history already holds is reconciled exactly as at startup; an open copy edited since keeps its cart.
 
 ## Add-price interaction
 
@@ -172,6 +204,11 @@ CLEAR_ACTIVE_STORAGE
   ├─ fail → COMPLETED_SUMMARY + DEGRADED + cleanup pending
   └─ success → COMPLETED_SUMMARY
 ```
+
+When WRITE_HISTORY finds the same id already recorded:
+
+- same shopping → the recorded completion stands; CLEAR_ACTIVE_STORAGE follows;
+- different shopping → nothing is written; the open trip is first saved under a new id, then the sequence above runs under that id.
 
 Invariant:
 
@@ -244,14 +281,16 @@ Prefer one discriminated UI state, conceptually:
 ```ts
 type OverlayState =
   | { kind: "none" }
-  | { kind: "add-price" }
-  | { kind: "edit-item"; itemId: ItemId }
-  | { kind: "budget-settings" }
-  | { kind: "finish-trip" }
   | { kind: "history" }
+  | ({ tripId: TripId } & (
+      | { kind: "add-price" }
+      | { kind: "edit-item"; itemId: ItemId }
+      | { kind: "budget-settings" }
+      | { kind: "finish-trip" }
+    ))
 ```
 
-Overlay state is UI state, not ShoppingTrip lifecycle.
+Overlay state is UI state, not ShoppingTrip lifecycle. A trip overlay belongs to the trip it was opened for: when that trip stops being the active one by any route (finished, reconciled, set aside), the overlay is treated as closed and never reopens over the next trip.
 
 ## Startup reconciliation
 
@@ -260,12 +299,12 @@ Startup:
 1. restore active-trip state;
 2. restore history;
 3. validate envelopes/data/domain invariants;
-4. detect stale active copy of an already completed trip;
+4. detect a stale active copy: the same shopping as an already completed trip;
 5. reconcile safely;
 6. derive application lifecycle;
 7. render.
 
-If the same valid trip id exists in completed history and as stale active state:
+If stale active state is the same shopping (same id, plan and cart lines) as a completed history entry:
 
 - completed history is durability authority;
 - attempt to clear stale active storage;

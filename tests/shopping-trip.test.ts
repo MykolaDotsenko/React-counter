@@ -15,6 +15,8 @@ import {
   isoTimestamp,
   itemCount,
   itemId,
+  latestTripTimestamp,
+  laterTimestamp,
   lineTotal,
   nominalOverage,
   mostRecentCompletedTrip,
@@ -25,9 +27,12 @@ import {
   safeLimit,
   safeOverage,
   safeRemaining,
+  sameTripContents,
+  tripId,
   type ActiveTrip,
   type CartItem,
   type DomainError,
+  type EditableItemPatch,
   type IsoTimestamp,
   type ItemId,
   type PriceConfidence,
@@ -487,6 +492,185 @@ describe("derived shopping values", () => {
   });
 });
 
+describe("trip timestamps", () => {
+  it("reports the latest moment the trip records", () => {
+    let trip = createTrip();
+
+    expect(latestTripTimestamp(trip)).toBe(START);
+
+    trip = addItem(
+      trip,
+      createItem({
+        id: "late",
+        price: 100,
+        createdAt: LATER,
+        updatedAt: "2026-09-21T09:07:00.000Z",
+      }),
+    );
+    trip = addItem(trip, createItem({ id: "early", price: 100 }));
+
+    expect(latestTripTimestamp(trip)).toBe("2026-09-21T09:07:00.000Z");
+
+    const completed = unwrap(
+      reduceTrip(trip, {
+        type: "complete-trip",
+        completedAt: unwrap(isoTimestamp("2026-09-21T09:08:00.000Z")),
+      }),
+    );
+
+    expect(latestTripTimestamp(completed)).toBe("2026-09-21T09:08:00.000Z");
+  });
+
+  it("picks the later of two canonical timestamps", () => {
+    const start = unwrap(isoTimestamp(START));
+    const later = unwrap(isoTimestamp(LATER));
+
+    expect(laterTimestamp(start, later)).toBe(later);
+    expect(laterTimestamp(later, start)).toBe(later);
+    expect(laterTimestamp(start, start)).toBe(start);
+  });
+
+  it("accepts corrections and completion stamped at the latest trip moment", () => {
+    const trip = addItem(
+      createTrip(),
+      createItem({ id: "ahead", price: 100, createdAt: LATER }),
+    );
+    const floor = latestTripTimestamp(trip);
+
+    const corrected = unwrap(
+      reduceTrip(trip, {
+        type: "update-item",
+        itemId: unwrap(itemId("ahead")),
+        patch: { quantity: 2 },
+        now: floor,
+      }),
+    );
+
+    expect(
+      reduceTrip(corrected, { type: "complete-trip", completedAt: floor }).ok,
+    ).toBe(true);
+  });
+});
+
+describe("trip contents", () => {
+  const shopped = (): ActiveTrip =>
+    addItem(
+      createTrip(),
+      createItem({ id: "milk", price: 379, quantity: 2, label: "Milk" }),
+    );
+
+  it("treats a completion as the same shopping as its open copy", () => {
+    const open = shopped();
+    const completed = unwrap(
+      reduceTrip(open, {
+        type: "complete-trip",
+        completedAt: time(FINISH),
+      }),
+    );
+    const reconciled = unwrap(
+      reduceTrip(completed, {
+        type: "set-actual-checkout",
+        actualCheckoutMinor: money(800),
+      }),
+    );
+
+    expect(sameTripContents(open, completed)).toBe(true);
+    expect(sameTripContents(completed, open)).toBe(true);
+    expect(sameTripContents(open, reconciled)).toBe(true);
+  });
+
+  it("tells apart every edit the shopper can make", () => {
+    const open = shopped();
+    const edit = (patch: EditableItemPatch): ActiveTrip =>
+      expectActive(
+        unwrap(
+          reduceTrip(open, {
+            type: "update-item",
+            itemId: id("milk"),
+            patch,
+            now: time(START),
+          }),
+        ),
+      );
+    const variants: readonly ShoppingTrip[] = [
+      edit({ quantity: 3 }),
+      edit({ unitPriceMinor: money(380) }),
+      edit({ label: null }),
+      edit({ label: "Oat milk" }),
+      edit({ priceSource: { kind: "shelf-scan" } }),
+      edit({ priceConfidence: { kind: "estimated" } }),
+      expectActive(
+        unwrap(reduceTrip(open, { type: "remove-item", itemId: id("milk") })),
+      ),
+      addItem(open, createItem({ id: "bread", price: 250 })),
+      expectActive(
+        unwrap(reduceTrip(open, { type: "set-budget", budgetMinor: money(6_000) })),
+      ),
+      expectActive(
+        unwrap(
+          reduceTrip(open, { type: "set-buffer", safetyBufferMinor: money(100) }),
+        ),
+      ),
+      { ...open, id: unwrap(tripId("trip-2")) },
+      { ...open, startedAt: time(LATER) },
+    ];
+
+    for (const variant of variants) {
+      expect(sameTripContents(open, variant)).toBe(false);
+      expect(sameTripContents(variant, open)).toBe(false);
+    }
+  });
+
+  it("treats an edit that was reverted as the same shopping", () => {
+    const open = shopped();
+    const reedit = (trip: ActiveTrip, quantity: number, now: string) =>
+      expectActive(
+        unwrap(
+          reduceTrip(trip, {
+            type: "update-item",
+            itemId: id("milk"),
+            patch: {
+              quantity,
+              priceConfidence: { kind: "confirmed", confirmedAt: time(now) },
+            },
+            now: time(now),
+          }),
+        ),
+      );
+    const reverted = reedit(reedit(open, 3, LATER), 2, FINISH);
+
+    expect(reverted.items[0]?.updatedAt).toBe(FINISH);
+    expect(sameTripContents(open, reverted)).toBe(true);
+    expect(sameTripContents(open, reedit(open, 3, LATER))).toBe(false);
+  });
+
+  it("ignores an optional field that is present but undefined", () => {
+    const open = shopped();
+    const [item] = open.items;
+
+    if (item === undefined) {
+      throw new Error("Expected an item");
+    }
+
+    const loose = {
+      ...open,
+      items: [
+        {
+          ...item,
+          priceSource: { kind: "shelf-scan", captureId: undefined },
+        },
+      ],
+    } as unknown as ActiveTrip;
+    const strict = {
+      ...open,
+      items: [{ ...item, priceSource: { kind: "shelf-scan" } }],
+    } as ActiveTrip;
+
+    expect(sameTripContents(loose, strict)).toBe(true);
+    expect(sameTripContents(strict, loose)).toBe(true);
+  });
+});
+
 describe("add projection", () => {
   it("previews a safety-buffer crossing without mutating the trip", () => {
     let trip = createTrip(5_000, 200);
@@ -512,9 +696,84 @@ describe("add projection", () => {
       crossesSafeLimit: true,
       crossesNominalBudget: false,
       nominalOverageMinor: 0,
+      safetyBufferUseMinor: 100,
     });
     expect(trip).toBe(before);
     expect(cartTotal(trip)).toBe(4_700);
+  });
+
+  it("attributes only this line's share of the safety buffer when the cart is already in reserve", () => {
+    let trip = createTrip(5_000, 500);
+    trip = addItem(
+      trip,
+      createItem({ id: "existing", price: 4_600 }),
+    );
+
+    const projection = unwrap(
+      projectAddItem(trip, {
+        unitPriceMinor: money(200),
+        quantity: 1,
+      }),
+    );
+
+    expect(projection.safeRemainingMinor).toBe(-300);
+    expect(projection.safetyBufferUseMinor).toBe(200);
+  });
+
+  it("never attributes more buffer than the line adds, whatever the cart already holds", () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 100_000 }),
+        fc.integer({ min: 0, max: 100_000 }),
+        fc.integer({ min: 1, max: 100_000 }),
+        fc.integer({ min: 1, max: 100_000 }),
+        fc.integer({ min: 1, max: 20 }),
+        (budgetInput, bufferInput, existingPrice, price, quantity) => {
+          const budget = Math.max(budgetInput, 1);
+          const buffer = Math.min(bufferInput, budget);
+          const trip = addItem(
+            createTrip(budget, buffer),
+            createItem({ id: "existing", price: existingPrice }),
+          );
+          const projection = unwrap(
+            projectAddItem(trip, { unitPriceMinor: money(price), quantity }),
+          );
+          const committed = addItem(
+            trip,
+            createItem({ id: "projected", price, quantity }),
+          );
+          const bufferUsed = (value: ShoppingTrip): number =>
+            Math.min(safeOverage(value), buffer);
+
+          expect(projection.safetyBufferUseMinor).toBe(
+            bufferUsed(committed) - bufferUsed(trip),
+          );
+          expect(projection.safetyBufferUseMinor).toBeLessThanOrEqual(
+            projection.lineTotalMinor,
+          );
+        },
+      ),
+      { numRuns: 1_500 },
+    );
+  });
+
+  it("counts only the reserve band when a line also crosses the nominal budget", () => {
+    let trip = createTrip(5_000, 500);
+    trip = addItem(
+      trip,
+      createItem({ id: "existing", price: 4_900 }),
+    );
+
+    const projection = unwrap(
+      projectAddItem(trip, {
+        unitPriceMinor: money(300),
+        quantity: 1,
+      }),
+    );
+
+    expect(projection.crossesNominalBudget).toBe(true);
+    expect(projection.nominalOverageMinor).toBe(200);
+    expect(projection.safetyBufferUseMinor).toBe(100);
   });
 
   it("previews nominal overage exactly", () => {
@@ -1060,6 +1319,17 @@ describe("property-based shopping invariants", () => {
           );
           expect(projection.nominalOverageMinor).toBe(
             nominalOverage(committed),
+          );
+
+          const bufferUsed = (value: ShoppingTrip): number =>
+            Math.min(safeOverage(value), buffer);
+
+          expect(projection.safetyBufferUseMinor).toBe(
+            bufferUsed(committed) - bufferUsed(trip),
+          );
+          expect(projection.safetyBufferUseMinor).toBeGreaterThanOrEqual(0);
+          expect(projection.safetyBufferUseMinor).toBeLessThanOrEqual(
+            projection.lineTotalMinor,
           );
         },
       ),

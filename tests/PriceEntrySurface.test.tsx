@@ -5,6 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { mvpMinorUnits, type Result } from "../src/domain/money";
 import {
   createActiveTrip,
+  createCartItem,
+  isoTimestamp,
+  reduceTrip,
   type ActiveTrip,
 } from "../src/domain/shopping-trip";
 import { PriceEntrySurface } from "../src/features/shopping/PriceEntrySurface";
@@ -140,6 +143,47 @@ describe("PriceEntrySurface", () => {
     ).not.toBeNull();
     expect(
       screen.getByText("€45.21 remains before your nominal limit."),
+    ).not.toBeNull();
+  });
+
+  it("attributes only the new item's share when the cart is already using the buffer", async () => {
+    const user = userEvent.setup();
+    const base = createTrip(5_000, 500);
+    const existing = unwrap(
+      createCartItem({
+        id: "item-existing",
+        unitPriceMinor: money(4_600),
+        quantity: 1,
+        priceSource: { kind: "manual" },
+        priceConfidence: {
+          kind: "confirmed",
+          confirmedAt: unwrap(isoTimestamp("2026-09-21T09:01:00.000Z")),
+        },
+        createdAt: "2026-09-21T09:01:00.000Z",
+      }),
+    );
+    const trip = unwrap(reduceTrip(base, { type: "add-item", item: existing }));
+
+    if (trip.status !== "active") {
+      throw new Error("Expected an active trip");
+    }
+
+    render(
+      <PriceEntrySurface
+        trip={trip}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "2.00");
+
+    expect(
+      screen.getByText("This item uses €2.00 of your safety buffer."),
+    ).not.toBeNull();
+    expect(
+      screen.getByText("€2.00 remains before your nominal limit."),
     ).not.toBeNull();
   });
 

@@ -1,5 +1,6 @@
 import type { PriceMemoryRecord } from "../domain/price-memory";
 import type {
+  ActiveTrip,
   CompletedTrip,
   IsoTimestamp,
 } from "../domain/shopping-trip";
@@ -43,6 +44,7 @@ export const initialState = (): ShoppingAppState =>
     completedTrips: EMPTY_COMPLETED_TRIPS,
     completionCleanupPending: false,
     persistence: HEALTHY_PERSISTENCE,
+    historyIntegrity: HEALTHY_PERSISTENCE,
     priceMemories: EMPTY_PRICE_MEMORIES,
     priceMemoryPersistence: HEALTHY_PERSISTENCE,
     undo: null,
@@ -58,6 +60,22 @@ export const degradedPersistence = (
     issue,
     since,
   });
+
+export const withUnreadableHistory = (
+  state: ShoppingAppState,
+  issue: PersistenceProblem,
+  readableTrips: readonly CompletedTrip[],
+  now: IsoTimestamp,
+): ShoppingAppState => ({
+  ...state,
+  completedTrips: Object.freeze([...readableTrips]),
+  historyIntegrity: degradedPersistence(
+    issue,
+    state.historyIntegrity.status === "degraded"
+      ? state.historyIntegrity.since
+      : now,
+  ),
+});
 
 export const recoveryState = (
   issue: PersistenceProblem,
@@ -104,3 +122,54 @@ export const upsertCompletedTrip = (
     ),
   );
 };
+
+export const lifecycleBlock = (
+  state: ShoppingAppState,
+): ApplicationError | null => {
+  if (state.lifecycle === "booting") {
+    return applicationError("not-ready");
+  }
+
+  if (state.lifecycle === "recovery") {
+    return applicationError("recovery-required");
+  }
+
+  return null;
+};
+
+export const requireActiveTrip = (
+  state: ShoppingAppState,
+):
+  | { readonly ok: true; readonly trip: ActiveTrip }
+  | { readonly ok: false; readonly error: ApplicationError } => {
+  const blocked = lifecycleBlock(state);
+
+  if (blocked !== null) {
+    return { ok: false, error: blocked };
+  }
+
+  if (state.activeTrip === null) {
+    return { ok: false, error: applicationError("no-active-trip") };
+  }
+
+  return { ok: true, trip: state.activeTrip };
+};
+
+const UNREADABLE_ACTIVE_RECORD_CODES: ReadonlySet<string> = new Set([
+  "malformed-json",
+  "invalid-envelope",
+  "invalid-data",
+  "unsupported-version",
+]);
+
+const UNREADABLE_HISTORY_RECORD_CODES: ReadonlySet<string> = new Set([
+  ...UNREADABLE_ACTIVE_RECORD_CODES,
+  "invalid-history-entry",
+  "history-conflict",
+]);
+
+export const canSetAsideActiveTrip = (issue: PersistenceProblem): boolean =>
+  UNREADABLE_ACTIVE_RECORD_CODES.has(issue.code);
+
+export const canSetAsideHistory = (issue: PersistenceProblem): boolean =>
+  UNREADABLE_HISTORY_RECORD_CODES.has(issue.code);

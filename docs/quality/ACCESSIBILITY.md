@@ -90,6 +90,10 @@ Closing/cancelling should restore focus to:
 
 After destructive state changes, focus must not disappear.
 
+When a notice or recovery surface resolves, focus lands on its announced outcome, or on the next screen's heading when the surface itself closes.
+
+A two-step confirmation (for example setting damaged history aside) keeps focus on the control that armed it, so a double tap arms and cancels rather than confirms. The explanation, naming the confirming action, is announced from a live region that exists before it fills. A control whose name changes between steps is not marked as a disclosure (`aria-expanded`).
+
 ## Semantic information hierarchy
 
 Critical numbers need semantic meaning.

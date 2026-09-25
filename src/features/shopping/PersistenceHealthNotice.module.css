@@ -6,7 +6,7 @@
   padding: 14px 16px;
   border: 1px solid color-mix(in srgb, var(--shopping-warning) 38%, var(--shopping-border));
   border-radius: 16px;
-  background: color-mix(in srgb, var(--shopping-warning) 8%, var(--shopping-panel));
+  background: color-mix(in srgb, var(--shopping-warning) 6%, var(--shopping-panel));
   color: var(--shopping-text);
 }
 
@@ -86,7 +86,7 @@
     grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .retryButton {
+  .notice > .retryButton {
     grid-column: 2;
     justify-self: start;
   }

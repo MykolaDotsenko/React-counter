@@ -36,6 +36,18 @@ budget-cart:price-memory
 
 Historical counter keys must never be interpreted as shopping money.
 
+### Deployed-surface scope
+
+Every surface of this repository is served from one GitHub Pages origin, so they all share one `localStorage`. The public app uses the keys above unchanged. Guarded evidence builds (QA timing, retention beta, benchmarks) prefix every shopping and evidence key with the path they are served from:
+
+```text
+surface:<served path>|<key>
+surface:/shopping-budget-companion/beta/|budget-cart:active-trip
+surface:/shopping-budget-companion/study/<baseline>/beta/|budget-cart:qa:retention-v1
+```
+
+The scope is resolved at runtime from the relocatable base, so a copied immutable study baseline, the moving guarded route and the public app never read, overwrite or clear each other's records. The same scope applies to the tab-scoped QA timing evidence in `sessionStorage`. Appearance preference (`shopping-budget:appearance`) stays shared on purpose; it is convenience state. Study baselines published before scoping shipped keep the unscoped keys they were built with.
+
 ## Common envelope
 
 Logical records use a versioned envelope:
@@ -105,7 +117,8 @@ Requirements:
 - trip ids are unique;
 - conflicting duplicate ids degrade rather than silently replace;
 - invalid entries do not become domain objects;
-- completion append is idempotent for an identical trip.
+- completion append is idempotent for the same shopping (trip identity, plan and cart lines; completion time, checkout total and line edit times aside), and the recorded entry is kept;
+- completion append of different shopping under a recorded id reports a history conflict and writes nothing; the application then records the trip under a new id.
 
 ## Price Memory v1
 
@@ -157,6 +170,32 @@ Malformed/invalid raw active-trip data must not be silently replaced during boot
 
 History may preserve valid entries while reporting invalid-entry degradation only where the contract explicitly allows that partial result.
 
+## Set-aside backups
+
+An unreadable record (malformed JSON, invalid envelope/data, unsupported version, invalid or conflicting history entries) leaves its canonical key only through an explicit user action. Before the canonical key is replaced or removed, the exact raw string is copied to a new backup key and read back:
+
+```text
+budget-cart:set-aside:<source>:<setAsideAt>[:<n>]
+```
+
+- `<source>` is `active-trip` or `history`;
+- `<setAsideAt>` is the canonical ISO timestamp of the action;
+- `:<n>` is appended when a backup with the same timestamp already exists, so an earlier backup is never overwritten.
+
+Backup value:
+
+```json
+{
+  "schemaVersion": 1,
+  "setAsideAt": "2026-09-22T10:00:00.000Z",
+  "sourceKey": "budget-cart:history",
+  "reason": "invalid-history-entry",
+  "raw": "<exact original string>"
+}
+```
+
+If the backup cannot be written and read back, nothing else changes. A readable record is never set aside. Setting history aside rewrites it with exactly the readable trips the app already showed (none when the record could not be parsed). Backups are not read by the product; they remain on the device until site data is cleared.
+
 ## Write semantics
 
 ### Active trip
@@ -193,12 +232,14 @@ Missing/conflicting history entry degrades rather than inventing a new relations
 
 ## Startup reconciliation
 
-If active trip id already exists identically as a durable completed history entry:
+If the active trip is the same shopping as a durable completed history entry (same id, plan and cart lines):
 
 - treat history as completion authority;
 - attempt to clear stale active snapshot;
 - never duplicate the completed trip;
 - expose cleanup failure if clear fails.
+
+An active trip that only shares the id is kept open; it was edited after that completion was recorded.
 
 ## Historical non-shopping keys
 

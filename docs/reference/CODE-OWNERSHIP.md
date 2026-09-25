@@ -17,6 +17,7 @@ Use it when you need to locate code/contract ownership quickly.
 | completion use cases | `src/application/shopping-app-completion.ts` |
 | controller helpers | `src/application/shopping-app-support.ts` |
 | Price Memory port | `src/application/price-memory-port.ts` |
+| session-only (write-refusing) ports | `src/application/session-only-persistence.ts` |
 | exact money | `src/domain/money.ts` + `MONEY-SPEC.md` |
 | trip public API | `src/domain/shopping-trip.ts` façade |
 | trip model/validation | `src/domain/shopping-trip-model.ts` |
@@ -28,8 +29,10 @@ Use it when you need to locate code/contract ownership quickly.
 | storage schemas | `src/infrastructure/storage/shopping-storage-schema.ts` + `STORAGE-SCHEMA.md` |
 | Price Memory storage | corresponding infrastructure storage modules |
 | browser composition | `src/app/composition-root.ts` |
+| deployed-surface storage scope | `src/infrastructure/runtime/deployment-surface.ts` + `src/infrastructure/storage/scoped-storage.ts` |
 | React subscription bridge | `src/application/react/use-shopping-app-state.ts` |
 | price-entry interaction | `PRICE-ENTRY-CONTRACT.md` + feature tests |
+| recovery and damaged-history actions | `RecoveryScreen.tsx`, `HistoryIntegrityNotice.tsx` + `STATE-MACHINES.md` |
 
 ## Public application boundary
 
@@ -43,7 +46,8 @@ The application layer exposes:
 - completion;
 - checkout reconciliation;
 - history/local-data controls;
-- persistence retry.
+- persistence retry;
+- history re-read, set-aside of unreadable records and continue-without-saving.
 
 Consumers should depend on public application contracts rather than controller implementation details.
 

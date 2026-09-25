@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { formatEur } from "../../domain/money";
 import {
@@ -7,23 +7,47 @@ import {
   type ActiveTrip,
 } from "../../domain/shopping-trip";
 import styles from "./FinishTripSurface.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
+
+export type FinishTripFailure = "not-saved" | "history-unreadable";
 
 export interface FinishTripSurfaceProps {
   readonly trip: ActiveTrip;
   readonly onCancel: () => void;
-  readonly onConfirm: () => boolean | void;
+  readonly onConfirm: () => boolean | void | FinishTripFailure;
   readonly locale?: string;
+  readonly historyNotice?: ReactNode;
+  readonly historyNeedsAttention?: boolean;
 }
+
+const failureMessage = (failure: FinishTripFailure): string => {
+  switch (failure) {
+    case "history-unreadable":
+      return "Saved trip history needs attention before this trip can be added to it. The trip is still open here.";
+    case "not-saved":
+      return "Trip history could not be saved. Your active trip is still intact.";
+    default: {
+      const exhaustive: never = failure;
+      return exhaustive;
+    }
+  }
+};
 
 export function FinishTripSurface({
   trip,
   onCancel,
   onConfirm,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
+  historyNotice,
+  historyNeedsAttention = false,
 }: FinishTripSurfaceProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [failure, setFailure] = useState<FinishTripFailure | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const visibleFailure =
+    failure === "history-unreadable" && !historyNeedsAttention
+      ? null
+      : failure;
 
   useEffect(() => {
     cancelRef.current?.focus();
@@ -37,16 +61,16 @@ export function FinishTripSurface({
       return;
     }
 
-    setErrorMessage("");
+    setFailure(null);
     setSubmitting(true);
-    const accepted = onConfirm();
+    const outcome = onConfirm();
 
-    if (accepted === false) {
-      setSubmitting(false);
-      setErrorMessage(
-        "Trip history could not be saved. Your active trip is still intact.",
-      );
+    if (outcome === true || outcome === undefined) {
+      return;
     }
+
+    setSubmitting(false);
+    setFailure(outcome === false ? "not-saved" : outcome);
   };
 
   return (
@@ -92,11 +116,13 @@ export function FinishTripSurface({
           of being discarded.
         </p>
 
-        {errorMessage ? (
+        {visibleFailure !== null ? (
           <p className={styles.error} role="alert">
-            {errorMessage}
+            {failureMessage(visibleFailure)}
           </p>
         ) : null}
+
+        {historyNotice}
 
         <div className={styles.actions}>
           <button

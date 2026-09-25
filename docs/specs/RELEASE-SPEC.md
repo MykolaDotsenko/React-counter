@@ -141,6 +141,8 @@ Valid saved active state restores after reload.
 
 Malformed/unsupported data follows the recovery contract rather than being guessed into validity.
 
+No stored-data problem may leave the shopper without a path to shop: an unreadable saved trip offers continue-without-saving and set-aside, and damaged history never blocks starting a trip and can be set aside before finishing.
+
 ### FR-015 — Finish trip
 
 Finishing creates a completed trip.

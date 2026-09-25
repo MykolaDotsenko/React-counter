@@ -5,6 +5,7 @@ import type {
   PersistenceProblem,
   ShoppingAppController,
 } from "../../application/shopping-app-controller";
+import { focusNextScreen } from "./focus-next-screen";
 import styles from "./RecoveryScreen.module.css";
 
 export interface RecoveryScreenProps {
@@ -22,7 +23,7 @@ const recoveryCopy = (
       return {
         title: "Saved trip needs a newer app version",
         body:
-          "This device contains shopping data written by a newer version. It has been preserved unchanged and will not be overwritten.",
+          "This device contains shopping data written by a newer version. It has been preserved unchanged. Update the app to use it, or choose another way to continue below.",
       };
     case "malformed-json":
     case "invalid-envelope":
@@ -47,6 +48,14 @@ const recoveryCopy = (
   }
 };
 
+const canSetAside = (issue: PersistenceProblem): boolean =>
+  [
+    "malformed-json",
+    "invalid-envelope",
+    "invalid-data",
+    "unsupported-version",
+  ].includes(issue.code);
+
 export function RecoveryScreen({ controller }: RecoveryScreenProps) {
   const state = useShoppingAppState(controller);
   const [retryMessage, setRetryMessage] = useState("");
@@ -55,8 +64,10 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
     return null;
   }
 
-  const copy = recoveryCopy(state.recovery.issue);
+  const issue = state.recovery.issue;
+  const copy = recoveryCopy(issue);
   const raw = state.recovery.raw;
+  const setAsideAvailable = canSetAside(issue) && raw !== undefined;
 
   const retry = (): void => {
     setRetryMessage("");
@@ -66,6 +77,31 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
       setRetryMessage(
         "The saved trip still cannot be restored safely. Nothing was overwritten.",
       );
+      return;
+    }
+
+    focusNextScreen();
+  };
+
+  const setAside = (): void => {
+    setRetryMessage("");
+    const result = controller.setAsideUnreadableActiveTrip();
+
+    if (!result.ok) {
+      setRetryMessage(
+        "The saved trip could not be set aside safely, so it was left unchanged.",
+      );
+      return;
+    }
+
+    focusNextScreen();
+  };
+
+  const continueWithoutSaving = (): void => {
+    setRetryMessage("");
+
+    if (controller.continueWithoutSaving().ok) {
+      focusNextScreen();
     }
   };
 
@@ -90,8 +126,7 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
             Try reading again
           </button>
           <p className={styles.safetyNote}>
-            The app will not replace the saved record unless it can be
-            validated as a supported shopping trip.
+            Trying again only reads the saved record; it never changes it.
           </p>
         </div>
 
@@ -100,6 +135,42 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
             {retryMessage}
           </p>
         ) : null}
+
+        <details className={styles.details}>
+          <summary>Other ways to continue</summary>
+          <p>
+            Keep shopping without saving: totals, finished trips and
+            remembered prices work in this tab only, and closing or reloading
+            it loses them. The saved record stays untouched.
+          </p>
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.retryButton}
+              onClick={continueWithoutSaving}
+            >
+              Continue without saving
+            </button>
+          </div>
+          {setAsideAvailable ? (
+            <>
+              <p>
+                Set the unreadable trip aside: the app keeps an exact backup
+                copy of it on this device, stops using it, and lets you start
+                a new saved trip. The backup is not shown in the app.
+              </p>
+              <div className={styles.actions}>
+                <button
+                  type="button"
+                  className={styles.retryButton}
+                  onClick={setAside}
+                >
+                  Set aside and start fresh
+                </button>
+              </div>
+            </>
+          ) : null}
+        </details>
 
         {raw !== undefined ? (
           <details className={styles.details}>

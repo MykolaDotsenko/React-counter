@@ -121,6 +121,8 @@ For a valid draft, show the consequence before commit when useful:
 - reserve use;
 - nominal overage.
 
+Reserve use is the part of the safety buffer consumed by **this line alone**: the overlap between the line and the band from the safe limit to the nominal budget. When the cart is already inside the buffer, the preview must not attribute earlier buffer use to the new item. The domain projection (`safetyBufferUseMinor`) owns this arithmetic; presentation only formats it.
+
 Projection never mutates canonical state.
 
 ## Over-budget confirmation

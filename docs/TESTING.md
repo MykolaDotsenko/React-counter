@@ -58,14 +58,16 @@ Coverage is a regression guard for code where arithmetic, lifecycle or durabilit
 - `src/application/**`;
 - `src/infrastructure/storage/**`.
 
-The current baseline measured on 2026-09-24 was:
+The current baseline measured on 2026-09-25 was:
 
 | Scope | Statements | Branches | Functions | Lines |
 | --- | ---: | ---: | ---: | ---: |
-| Critical aggregate | 83.80% | 73.33% | 96.25% | 83.65% |
-| Domain | 86.51% | 77.15% | 100% | 86.31% |
-| Application | 82.48% | 74.40% | 95.55% | 82.37% |
-| Storage infrastructure | 81.10% | 67.10% | 91.07% | 81.03% |
+| Critical aggregate | 86.61% | 77.22% | 98.61% | 86.51% |
+| Domain | 86.57% | 77.47% | 100% | 86.42% |
+| Application | 89.09% | 80.22% | 96.96% | 89.03% |
+| Storage infrastructure | 84.94% | 74.46% | 98.43% | 84.86% |
+
+Persistence recovery is additionally exercised by an exhaustive scenario matrix (`tests/persistence-scenarios.test.ts`): every combination of stored active record, history, Price Memory and storage failure mode is booted through the real composition root and must leave the shopper able to shop without losing any unreadable record.
 
 CI enforces floors slightly below that measured baseline instead of claiming an arbitrary 100% target. Domain has the strongest aggregate floor; application and storage retain their own risk-based floors. Per-file minimums also prevent a newly added critical module from silently entering the repository with no meaningful tests.
 
@@ -205,7 +207,7 @@ Tests must prove:
 - committed active-trip mutations attempt persistence promptly;
 - failed history write does not clear active state;
 - history-durable + active-clear failure becomes cleanup-pending/degraded;
-- startup reconciles stale completed copies safely;
+- startup reconciles stale completed copies safely, and never an open copy edited since its completion;
 - malformed/future data is preserved or rejected according to contract;
 - convenience-state failure never masquerades as core durable success.
 
@@ -479,18 +481,18 @@ Tests must prove:
 
 ### Public bundle budget
 
-The production build has separate total and initial-load budgets. The current deployed baseline measured from commit `21bb512d88ec7566beb4a5b57337d76b8868130b` is approximately:
+The production build has separate total and initial-load budgets. The baseline measured on 2026-09-25, after storage validation moved to the tree-shakeable `zod/mini` API, is approximately:
 
-- initial application JavaScript: 421,535 raw bytes / 120,581 gzip bytes;
-- total public JavaScript: 427,188 raw bytes / 122,780 gzip bytes;
+- initial application JavaScript: 369,739 raw bytes / 106,694 gzip bytes;
+- total public JavaScript: 375,392 raw bytes / 108,893 gzip bytes;
 - non-initial Workbox JavaScript: 5,653 raw bytes;
-- initial/total CSS: 64,308 raw bytes / 10,141 gzip bytes.
+- initial/total CSS: 68,081 raw bytes / 10,986 gzip bytes.
 
-CI currently enforces:
+The JavaScript budgets were lowered with that change so the ~55 KB it reclaimed cannot silently return, while keeping roughly 25 KB raw / 8 KB gzip of headroom for justified work. CI currently enforces:
 
-- total public JavaScript: <= 430,000 raw / 126,000 gzip bytes;
-- initial JavaScript referenced by the public HTML: <= 425,000 raw / 123,000 gzip bytes;
-- any single JavaScript chunk: <= 425,000 raw bytes;
+- total public JavaScript: <= 400,000 raw / 118,000 gzip bytes;
+- initial JavaScript referenced by the public HTML: <= 395,000 raw / 115,000 gzip bytes;
+- any single JavaScript chunk: <= 395,000 raw bytes;
 - total public CSS: <= 80,000 raw / 12,000 gzip bytes;
 - initial CSS referenced by the public HTML: <= 70,000 raw / 11,000 gzip bytes.
 

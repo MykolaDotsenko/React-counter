@@ -3,11 +3,18 @@ import {
   mergePriceMemories,
   priceMemoryRecordsFromCompletedTrip,
 } from "../domain/price-memory";
-import { reduceTrip } from "../domain/shopping-trip";
+import {
+  laterTimestamp,
+  latestTripTimestamp,
+  reduceTrip,
+  tripId,
+} from "../domain/shopping-trip";
 import type { PriceMemoryPersistencePort } from "./price-memory-port";
+import { SESSION_ONLY_PERSISTENCE_PORT } from "./session-only-persistence";
 import type {
   AppCommandResult,
   Clock,
+  IdGenerator,
   ShoppingAppState,
   ShoppingPersistencePort,
 } from "./shopping-app-contracts";
@@ -16,16 +23,24 @@ import {
   applicationError,
   degradedPersistence,
   failure,
+  lifecycleBlock,
+  requireActiveTrip,
   success,
   upsertCompletedTrip,
+  withUnreadableHistory,
 } from "./shopping-app-support";
+
+export interface CompletionPorts {
+  persistence: ShoppingPersistencePort;
+  priceMemory: PriceMemoryPersistencePort;
+}
 
 interface CompletionUseCaseDependencies {
   readonly getState: () => ShoppingAppState;
   readonly publish: (nextState: ShoppingAppState) => ShoppingAppState;
-  readonly persistence: ShoppingPersistencePort;
-  readonly priceMemoryPersistence: PriceMemoryPersistencePort;
+  readonly ports: Readonly<CompletionPorts>;
   readonly clock: Clock;
+  readonly ids: IdGenerator;
 }
 
 export interface CompletionUseCases {
@@ -39,27 +54,24 @@ export interface CompletionUseCases {
 export const createCompletionUseCases = ({
   getState,
   publish,
-  persistence,
-  priceMemoryPersistence,
+  ports,
   clock,
+  ids,
 }: CompletionUseCaseDependencies): CompletionUseCases => {
   const completeTrip = (): AppCommandResult => {
     const state = getState();
 
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
+    const active = requireActiveTrip(state);
+
+    if (!active.ok) {
+      return failure(state, active.error);
     }
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
-    }
-
-    if (state.activeTrip === null) {
-      return failure(state, applicationError("no-active-trip"));
-    }
-
-    const completedAt = clock.now();
-    const tripResult = reduceTrip(state.activeTrip, {
+    const completedAt = laterTimestamp(
+      clock.now(),
+      latestTripTimestamp(active.trip),
+    );
+    const tripResult = reduceTrip(active.trip, {
       type: "complete-trip",
       completedAt,
     });
@@ -72,18 +84,80 @@ export const createCompletionUseCases = ({
       return failure(state, applicationError("no-completed-summary"));
     }
 
-    const completedTrip = tripResult.value;
-    const persistenceResult = persistence.complete(
+    let openTrip = active.trip;
+    let undo = state.undo;
+    let completedTrip = tripResult.value;
+    let persistenceResult = ports.persistence.complete(
       completedTrip,
       completedAt,
     );
 
     if (
       !persistenceResult.ok &&
-      !persistenceResult.historyPersisted
+      persistenceResult.stage === "history-write" &&
+      persistenceResult.issue.code === "history-conflict"
+    ) {
+      const forkedId = tripId(ids.tripId());
+
+      if (forkedId.ok) {
+        const forkedOpenTrip = { ...openTrip, id: forkedId.value };
+        const forkSave = ports.persistence.save(forkedOpenTrip, completedAt);
+
+        if (forkSave.ok) {
+          openTrip = forkedOpenTrip;
+          undo =
+            undo === null
+              ? null
+              : {
+                  ...undo,
+                  previousTrip: { ...undo.previousTrip, id: forkedId.value },
+                };
+          completedTrip = { ...completedTrip, id: forkedId.value };
+          persistenceResult = ports.persistence.complete(
+            completedTrip,
+            completedAt,
+          );
+        } else {
+          persistenceResult = {
+            ok: false,
+            stage: "history-write",
+            issue: forkSave.issue,
+            historyPersisted: false,
+          };
+        }
+      }
+    }
+
+    if (
+      !persistenceResult.ok &&
+      persistenceResult.stage === "history-read"
+    ) {
+      const readable = ports.persistence.readCompletedHistory();
+      const nextState = publish({
+        ...withUnreadableHistory(
+          state,
+          persistenceResult.issue,
+          readable.completedTrips,
+          completedAt,
+        ),
+        activeTrip: openTrip,
+        undo,
+      });
+
+      return failure(nextState, applicationError("history-unreadable"));
+    }
+
+    const sessionOnly = ports.persistence === SESSION_ONLY_PERSISTENCE_PORT;
+
+    if (
+      !persistenceResult.ok &&
+      !persistenceResult.historyPersisted &&
+      !sessionOnly
     ) {
       const nextState = publish({
         ...state,
+        activeTrip: openTrip,
+        undo,
         persistence: degradedPersistence(
           persistenceResult.issue,
           completedAt,
@@ -100,16 +174,20 @@ export const createCompletionUseCases = ({
     const cleanupPending =
       !persistenceResult.ok &&
       persistenceResult.stage === "active-clear";
-    const completedTrips = upsertCompletedTrip(
-      state.completedTrips,
-      completedTrip,
-    );
+    const completedTrips =
+      persistenceResult.completedTrips === undefined
+        ? upsertCompletedTrip(state.completedTrips, completedTrip)
+        : Object.freeze([...persistenceResult.completedTrips]);
+    const completedSummary =
+      completedTrips.find((trip) => trip.id === completedTrip.id) ??
+      completedTrip;
     let nextState = publish({
       lifecycle: "completed-summary",
       activeTrip: null,
-      completedSummary: completedTrip,
+      completedSummary,
       completedTrips,
       completionCleanupPending: cleanupPending,
+      historyIntegrity: HEALTHY_PERSISTENCE,
       persistence: persistenceResult.ok
         ? HEALTHY_PERSISTENCE
         : degradedPersistence(
@@ -123,7 +201,7 @@ export const createCompletionUseCases = ({
     });
 
     const observedMemories =
-      priceMemoryRecordsFromCompletedTrip(completedTrip);
+      priceMemoryRecordsFromCompletedTrip(completedSummary);
     const mergedMemories = mergePriceMemories(
       nextState.priceMemories,
       observedMemories,
@@ -136,7 +214,7 @@ export const createCompletionUseCases = ({
 
       if (canAttemptMemoryWrite) {
         const memorySavedAt = clock.now();
-        const memorySave = priceMemoryPersistence.save(
+        const memorySave = ports.priceMemory.save(
           mergedMemories,
           memorySavedAt,
         );
@@ -159,7 +237,11 @@ export const createCompletionUseCases = ({
       }
     }
 
-    return success(nextState, true, "persisted");
+    return success(
+      nextState,
+      true,
+      sessionOnly ? "memory-only" : "persisted",
+    );
   };
 
   const setActualCheckout = (
@@ -167,12 +249,10 @@ export const createCompletionUseCases = ({
   ): AppCommandResult => {
     const state = getState();
 
-    if (state.lifecycle === "booting") {
-      return failure(state, applicationError("not-ready"));
-    }
+    const blocked = lifecycleBlock(state);
 
-    if (state.lifecycle === "recovery") {
-      return failure(state, applicationError("recovery-required"));
+    if (blocked !== null) {
+      return failure(state, blocked);
     }
 
     if (
@@ -203,14 +283,31 @@ export const createCompletionUseCases = ({
     }
 
     const now = clock.now();
-    const saveResult = persistence.saveCompleted(
+    const saveResult = ports.persistence.saveCompleted(
       tripResult.value,
       now,
     );
+
+    if (!saveResult.ok && saveResult.stage === "history-read") {
+      const readable = ports.persistence.readCompletedHistory();
+      const nextState = publish({
+        ...withUnreadableHistory(
+          state,
+          saveResult.issue,
+          readable.completedTrips,
+          now,
+        ),
+        completedSummary: tripResult.value,
+      });
+
+      return success(nextState, true, "memory-only");
+    }
+
     const completedTrips = upsertCompletedTrip(
       state.completedTrips,
       tripResult.value,
     );
+
     const shouldStayDegraded =
       state.completionCleanupPending || !saveResult.ok;
     const issue = !saveResult.ok
@@ -250,8 +347,10 @@ export const createCompletionUseCases = ({
       return failure(state, applicationError("no-completed-summary"));
     }
 
+    const sessionOnly = ports.persistence === SESSION_ONLY_PERSISTENCE_PORT;
+
     if (
-      state.persistence.status === "degraded" ||
+      (state.persistence.status === "degraded" && !sessionOnly) ||
       state.completionCleanupPending
     ) {
       return failure(

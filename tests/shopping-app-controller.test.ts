@@ -17,7 +17,9 @@ import {
   type ActiveTripPersistencePort,
   type ActiveTripSaveResult,
   type Clock,
+  type CompletedHistoryReadResult,
   type CompletionSaveResult,
+  type HistorySetAsideResult,
   type IdGenerator,
   type PersistenceProblem,
 } from "../src/application/shopping-app-controller";
@@ -117,7 +119,13 @@ interface PersistenceFake extends ActiveTripPersistencePort {
     savedAt: IsoTimestamp;
   }[];
   readonly clearCompletedActiveCalls: number;
+  readonly historySetAsideCalls: readonly IsoTimestamp[];
+  readonly activeSetAsideCalls: readonly IsoTimestamp[];
+  readonly historyReadCalls: number;
   setBootstrapResult(result: BootstrapInput): void;
+  queueHistoryReadResult(result: CompletedHistoryReadResult): void;
+  queueHistorySetAsideResult(result: HistorySetAsideResult): void;
+  queueActiveSetAsideResult(result: ActiveTripSaveResult): void;
   queueSaveResult(result: ActiveTripSaveResult): void;
   queueCompleteResult(result: CompletionSaveResult): void;
   queueCompletedSaveResult(result: ActiveTripSaveResult): void;
@@ -155,8 +163,63 @@ const createPersistence = (
   const completedSaveResults: ActiveTripSaveResult[] = [];
   const historyReplaceResults: ActiveTripSaveResult[] = [];
   const clearResults: ActiveTripSaveResult[] = [];
+  const historyReadResults: CompletedHistoryReadResult[] = [];
+  const historySetAsideResults: HistorySetAsideResult[] = [];
+  const activeSetAsideResults: ActiveTripSaveResult[] = [];
+  const historySetAsideCalls: IsoTimestamp[] = [];
+  const activeSetAsideCalls: IsoTimestamp[] = [];
+  let historyReadCalls = 0;
+  let durableTrips: readonly CompletedTrip[] | null = null;
+  const durable = (): readonly CompletedTrip[] =>
+    durableTrips ?? bootstrapResult.completedTrips;
+  const record = (trip: CompletedTrip): void => {
+    durableTrips = [
+      ...durable().filter((candidate) => candidate.id !== trip.id),
+      trip,
+    ];
+  };
 
   return {
+    get historySetAsideCalls() {
+      return historySetAsideCalls;
+    },
+    get activeSetAsideCalls() {
+      return activeSetAsideCalls;
+    },
+    get historyReadCalls() {
+      return historyReadCalls;
+    },
+    queueHistoryReadResult(result) {
+      historyReadResults.push(result);
+    },
+    queueHistorySetAsideResult(result) {
+      historySetAsideResults.push(result);
+    },
+    queueActiveSetAsideResult(result) {
+      activeSetAsideResults.push(result);
+    },
+    readCompletedHistory() {
+      historyReadCalls += 1;
+      return (
+        historyReadResults.shift() ?? {
+          ok: true,
+          completedTrips: durable(),
+        }
+      );
+    },
+    setAsideDamagedHistory(setAsideAt) {
+      historySetAsideCalls.push(setAsideAt);
+      return (
+        historySetAsideResults.shift() ?? {
+          ok: true,
+          completedTrips: bootstrapResult.completedTrips,
+        }
+      );
+    },
+    setAsideUnreadableActiveTrip(setAsideAt) {
+      activeSetAsideCalls.push(setAsideAt);
+      return activeSetAsideResults.shift() ?? { ok: true };
+    },
     get bootstrapCalls() {
       return bootstrapCalls;
     },
@@ -177,6 +240,7 @@ const createPersistence = (
     },
     setBootstrapResult(result) {
       bootstrapResult = normalizeBootstrap(result);
+      durableTrips = null;
     },
     queueSaveResult(result) {
       saveResults.push(result);
@@ -208,18 +272,33 @@ const createPersistence = (
     },
     complete(trip, savedAt) {
       completeCalls.push({ trip, savedAt });
+      const result = completeResults.shift() ?? { ok: true };
 
-      return completeResults.shift() ?? { ok: true };
+      if (result.ok || result.historyPersisted) {
+        record(trip);
+      }
+
+      return result;
     },
     saveCompleted(trip, savedAt) {
       saveCompletedCalls.push({ trip, savedAt });
+      const result = completedSaveResults.shift() ?? { ok: true };
 
-      return completedSaveResults.shift() ?? { ok: true };
+      if (result.ok) {
+        record(trip);
+      }
+
+      return result;
     },
     replaceCompletedHistory(trips, savedAt) {
       replaceCompletedHistoryCalls.push({ trips, savedAt });
+      const result = historyReplaceResults.shift() ?? { ok: true };
 
-      return historyReplaceResults.shift() ?? { ok: true };
+      if (result.ok) {
+        durableTrips = trips;
+      }
+
+      return result;
     },
     clearCompletedActive() {
       clearCompletedActiveCalls += 1;
@@ -281,6 +360,7 @@ describe("ShoppingAppController snapshot contract", () => {
       completedTrips: [],
       completionCleanupPending: false,
       persistence: { status: "healthy" },
+      historyIntegrity: { status: "healthy" },
       priceMemories: [],
       priceMemoryPersistence: { status: "healthy" },
       undo: null,
@@ -1676,6 +1756,128 @@ describe("ShoppingAppController trip completion", () => {
     expect(state.activeTrip).toBeNull();
     expect(state.completedSummary).toBeNull();
     expect(state.completedTrips).toEqual([completedResult.value]);
+  });
+});
+
+describe("ShoppingAppController device clock moving backwards", () => {
+  const AHEAD = "2026-09-21T10:00:00.000Z";
+  const BEHIND = "2026-09-21T09:30:00.000Z";
+
+  const restoredTripWithItemAt = (at: string): ActiveTrip => {
+    const item = unwrap(
+      createCartItem({
+        id: "item-ahead",
+        unitPriceMinor: money(379),
+        quantity: 1,
+        priceSource: { kind: "manual" },
+        priceConfidence: { kind: "confirmed", confirmedAt: time(at) },
+        createdAt: at,
+      }),
+    );
+    const trip = unwrap(
+      reduceTrip(createTrip(5_000, 0), { type: "add-item", item }),
+    );
+
+    if (trip.status !== "active") {
+      throw new Error("Expected active trip");
+    }
+
+    return trip;
+  };
+
+  it("stamps corrections no earlier than the trip's latest recorded moment", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: restoredTripWithItemAt(AHEAD),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(BEHIND),
+      ids,
+    });
+    controller.bootstrap();
+
+    const edited = controller.updateManualItem({
+      itemId: unwrap(parseItemId("item-ahead")),
+      unitPriceMinor: money(399),
+      quantity: 2,
+    });
+
+    expect(edited.ok).toBe(true);
+
+    if (!edited.ok) {
+      throw new Error("Expected correction despite clock rollback");
+    }
+
+    const item = edited.state.activeTrip?.items[0];
+
+    expect(item?.unitPriceMinor).toBe(399);
+    expect(item?.updatedAt).toBe(AHEAD);
+    expect(item?.priceConfidence).toEqual({
+      kind: "confirmed",
+      confirmedAt: AHEAD,
+    });
+    expect(edited.durability).toBe("persisted");
+  });
+
+  it("adds items and finishes the trip without an invalid-timestamp dead end", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: restoredTripWithItemAt(AHEAD),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(BEHIND),
+      ids,
+    });
+    controller.bootstrap();
+
+    const added = controller.addManualItem({
+      unitPriceMinor: money(120),
+      quantity: 1,
+    });
+
+    expect(added.ok).toBe(true);
+
+    if (!added.ok) {
+      throw new Error("Expected add despite clock rollback");
+    }
+
+    expect(added.state.activeTrip?.items.at(-1)?.createdAt).toBe(AHEAD);
+
+    const finished = controller.completeTrip();
+
+    expect(finished.ok).toBe(true);
+
+    if (!finished.ok) {
+      throw new Error("Expected completion despite clock rollback");
+    }
+
+    expect(finished.state.lifecycle).toBe("completed-summary");
+    expect(finished.state.completedSummary?.completedAt).toBe(AHEAD);
+  });
+
+  it("keeps using the device clock when it is ahead of the trip", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: restoredTripWithItemAt(NEXT),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const finished = controller.completeTrip();
+
+    expect(finished.ok).toBe(true);
+
+    if (!finished.ok) {
+      throw new Error("Expected completion");
+    }
+
+    expect(finished.state.completedSummary?.completedAt).toBe(LATER);
   });
 });
 

@@ -19,8 +19,10 @@ import {
   type MoneyInputErrorCode,
 } from "../../domain/money";
 import type { CompletedTrip } from "../../domain/shopping-trip";
+import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./StartTripScreen.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 interface QuickBudget {
   readonly label: string;
@@ -138,7 +140,7 @@ export function StartTripScreen({
   recentTrip = null,
   persistenceHealth,
   onOpenHistory,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
   utilityControl,
 }: StartTripScreenProps) {
   const customRegionId = useId();
@@ -253,7 +255,7 @@ export function StartTripScreen({
       >
         <div className={styles.intro}>
           <p className={styles.eyebrow}>New shopping trip</p>
-          <h1 id="start-trip-title" className={styles.title}>
+          <h1 id="start-trip-title" className={styles.title} tabIndex={-1}>
             How much can you spend today?
           </h1>
           <p className={styles.supporting}>
@@ -268,6 +270,7 @@ export function StartTripScreen({
             context="idle"
           />
         ) : null}
+        <HistoryIntegrityNotice controller={controller} />
 
         {recentTrip !== null ? (
           <button

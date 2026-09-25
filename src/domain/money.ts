@@ -10,7 +10,7 @@ export const MAX_MVP_QUANTITY = 999;
 
 export type SupportedCurrency = typeof EUR_SPEC.code;
 
-type Brand<T, B extends string> = T & { readonly __brand: B };
+export type Brand<T, B extends string> = T & { readonly __brand: B };
 
 export type MinorUnits = Brand<number, "MinorUnits">;
 export type SignedMinorUnits = Brand<number, "SignedMinorUnits">;
@@ -52,7 +52,7 @@ export interface MoneyError {
   readonly code: MoneyErrorCode;
 }
 
-const ok = <T>(value: T): Result<T, never> => ({ ok: true, value });
+export const ok = <T>(value: T): Result<T, never> => ({ ok: true, value });
 
 const inputError = (
   code: MoneyInputErrorCode,

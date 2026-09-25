@@ -1,56 +1,28 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 
 import {
-  MAX_MVP_MONEY_MINOR,
-} from "../../domain/money";
-import { MAX_ITEM_LABEL_CODE_POINTS } from "../../domain/shopping-trip";
+  canonicalIdentifierSchema,
+  canonicalIsoTimestampSchema,
+  canonicalLabelSchema,
+  positiveMvpMoneySchema,
+} from "./shopping-storage-schema";
 
 export const PRICE_MEMORY_STORAGE_KEY = "budget-cart:price-memory";
 export const CURRENT_PRICE_MEMORY_SCHEMA_VERSION = 1;
 
-const CANONICAL_ISO_TIMESTAMP =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+const manualObservationSourceSchema = z.strictObject({
+  kind: z.literal("manual"),
+});
 
-const canonicalIsoTimestampSchema = z
-  .string()
-  .regex(CANONICAL_ISO_TIMESTAMP);
+const shelfScanObservationSourceSchema = z.strictObject({
+  kind: z.literal("shelf-scan"),
+  captureId: z.optional(canonicalIdentifierSchema),
+});
 
-const canonicalIdentifierSchema = z
-  .string()
-  .min(1)
-  .refine((value) => value.trim() === value);
-
-const canonicalLabelSchema = z
-  .string()
-  .min(1)
-  .refine((value) => value.trim() === value)
-  .refine((value) => [...value].length <= MAX_ITEM_LABEL_CODE_POINTS);
-
-const positiveMvpMoneySchema = z
-  .number()
-  .int()
-  .min(1)
-  .max(MAX_MVP_MONEY_MINOR);
-
-const manualObservationSourceSchema = z
-  .object({
-    kind: z.literal("manual"),
-  })
-  .strict();
-
-const shelfScanObservationSourceSchema = z
-  .object({
-    kind: z.literal("shelf-scan"),
-    captureId: canonicalIdentifierSchema.optional(),
-  })
-  .strict();
-
-const retailerFeedObservationSourceSchema = z
-  .object({
-    kind: z.literal("retailer-feed"),
-    provider: canonicalIdentifierSchema,
-  })
-  .strict();
+const retailerFeedObservationSourceSchema = z.strictObject({
+  kind: z.literal("retailer-feed"),
+  provider: canonicalIdentifierSchema,
+});
 
 export const priceMemoryObservationSourceV1Schema =
   z.discriminatedUnion("kind", [
@@ -59,38 +31,30 @@ export const priceMemoryObservationSourceV1Schema =
     retailerFeedObservationSourceSchema,
   ]);
 
-export const priceMemoryRecordV1Schema = z
-  .object({
-    id: canonicalIdentifierSchema,
-    productId: canonicalIdentifierSchema,
-    label: canonicalLabelSchema,
-    currency: z.literal("EUR"),
-    unitPriceMinor: positiveMvpMoneySchema,
-    observedAt: canonicalIsoTimestampSchema,
-    storeId: canonicalIdentifierSchema.optional(),
-    source: priceMemoryObservationSourceV1Schema,
-  })
-  .strict();
+export const priceMemoryRecordV1Schema = z.strictObject({
+  id: canonicalIdentifierSchema,
+  productId: canonicalIdentifierSchema,
+  label: canonicalLabelSchema,
+  currency: z.literal("EUR"),
+  unitPriceMinor: positiveMvpMoneySchema,
+  observedAt: canonicalIsoTimestampSchema,
+  storeId: z.optional(canonicalIdentifierSchema),
+  source: priceMemoryObservationSourceV1Schema,
+});
 
-export const priceMemoryDataEnvelopeV1Schema = z
-  .object({
-    records: z.array(z.unknown()),
-  })
-  .strict();
+export const priceMemoryDataEnvelopeV1Schema = z.strictObject({
+  records: z.array(z.unknown()),
+});
 
-export const priceMemoryStorageEnvelopeV1Schema = z
-  .object({
-    schemaVersion: z.literal(CURRENT_PRICE_MEMORY_SCHEMA_VERSION),
-    savedAt: canonicalIsoTimestampSchema,
-    data: z.unknown(),
-  })
-  .strict();
+export const priceMemoryStorageEnvelopeV1Schema = z.strictObject({
+  schemaVersion: z.literal(CURRENT_PRICE_MEMORY_SCHEMA_VERSION),
+  savedAt: canonicalIsoTimestampSchema,
+  data: z.unknown(),
+});
 
-export const priceMemoryStorageEnvelopeHeaderSchema = z
-  .object({
-    schemaVersion: z.number().int().min(1),
-  })
-  .passthrough();
+export const priceMemoryStorageEnvelopeHeaderSchema = z.looseObject({
+  schemaVersion: z.int().check(z.minimum(1)),
+});
 
 export type PriceMemoryObservationSourceV1 = z.infer<
   typeof priceMemoryObservationSourceV1Schema

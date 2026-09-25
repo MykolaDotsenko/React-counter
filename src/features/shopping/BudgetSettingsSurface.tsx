@@ -13,6 +13,7 @@ import {
   type ActiveTrip,
 } from "../../domain/shopping-trip";
 import styles from "./BudgetSettingsSurface.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface SpendingPlanIntent {
   readonly budgetMinor: MinorUnits;
@@ -68,7 +69,7 @@ export function BudgetSettingsSurface({
   trip,
   onCancel,
   onSave,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
 }: BudgetSettingsSurfaceProps) {
   const budgetId = useId();
   const bufferId = useId();

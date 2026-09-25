@@ -94,9 +94,13 @@ Key:
 budget-cart:qa:retention-v1
 ~~~
 
+scoped to the deployed surface (`surface:<served path>|budget-cart:qa:retention-v1`, see [STORAGE-SCHEMA](../specs/STORAGE-SCHEMA.md)).
+
 Storage:
 
 > localStorage on the beta device
+
+The beta's shopping trips, history and Price Memory are scoped the same way: a participant's public-app trips do not appear in a beta session, and a frozen study baseline never shares evidence or shopping state with the moving `/beta/` route.
 
 The record is versioned and runtime-validated.
 

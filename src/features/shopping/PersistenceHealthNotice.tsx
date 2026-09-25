@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type {
   PersistenceHealth,
@@ -15,6 +15,7 @@ export interface PersistenceHealthNoticeProps {
 
 const retryIsMeaningful = (issue: PersistenceProblem): boolean =>
   ![
+    "session-only",
     "storage-unavailable",
     "legacy-retirement-failed",
     "invalid-history-entry",
@@ -56,33 +57,38 @@ const noticeCopy = (
     }
   }
 
-  if (context === "idle" && issue.storageKey === "budget-cart:history") {
-    switch (issue.code) {
-      case "invalid-history-entry":
-        return {
-          title: "Some trip history could not be restored",
-          body:
-            "Valid completed trips are still available. At least one damaged history entry was ignored rather than guessed or overwritten.",
-          risk: "cleanup",
-        };
-      case "history-conflict":
-        return {
-          title: "Trip history needs recovery",
-          body:
-            "Conflicting completed-trip records were preserved unchanged. Starting a new trip is still separate from resolving that history data.",
-          risk: "cleanup",
-        };
-      default:
-        return {
-          title: "Trip history could not be read safely",
-          body:
-            "Saved history was preserved unchanged. The app will not overwrite data it cannot validate.",
-          risk: "cleanup",
-        };
-    }
+  if (
+    context === "idle" &&
+    issue.code === "remove-failed" &&
+    issue.storageKey === "budget-cart:active-trip"
+  ) {
+    return {
+      title: "A finished trip left an old copy behind",
+      body:
+        "The finished trip is safe in history, but an old active copy of it could not be removed. Retry cleanup.",
+      risk: "cleanup",
+    };
+  }
+
+  if (context === "active" && issue.storageKey === "budget-cart:history") {
+    return {
+      title: "This trip could not be added to history",
+      body:
+        "Finishing did not save it to history, so the trip is still open here. Keep this page open and try finishing again.",
+      risk: "trip",
+    };
   }
 
   switch (issue.code) {
+    case "session-only":
+      return {
+        title: "Not saving on this device",
+        body:
+          context === "active"
+            ? "You chose to continue without saving, so saved data here stays untouched. Your totals work in this tab, but closing or reloading it loses this trip."
+            : "You chose to continue without saving, so saved data here stays untouched. Reload the app to return to recovery.",
+        risk: "trip",
+      };
     case "legacy-retirement-failed":
       return {
         title: "Old app data could not be cleaned up",
@@ -125,9 +131,44 @@ export function PersistenceHealthNotice({
   context = "active",
 }: PersistenceHealthNoticeProps) {
   const [retryMessage, setRetryMessage] = useState("");
+  const [resolved, setResolved] = useState(false);
+  const resolvedRef = useRef<HTMLParagraphElement>(null);
+  const episode = health.status === "degraded" ? health.since : null;
+  const [seenEpisode, setSeenEpisode] = useState(episode);
+
+  if (episode !== seenEpisode) {
+    setSeenEpisode(episode);
+
+    if (episode !== null) {
+      setResolved(false);
+      setRetryMessage("");
+    }
+  }
+
+  useEffect(() => {
+    if (resolved) {
+      resolvedRef.current?.focus();
+    }
+  }, [resolved]);
 
   if (health.status === "healthy") {
-    return null;
+    return resolved ? (
+      <aside
+        className={styles.notice}
+        data-risk="cleanup"
+        aria-labelledby="persistence-notice-title"
+      >
+        <span className={styles.marker} aria-hidden="true">
+          ✓
+        </span>
+        <div className={styles.copy}>
+          <strong id="persistence-notice-title">Saved on this device</strong>
+          <p ref={resolvedRef} tabIndex={-1} role="status">
+            Saving works again.
+          </p>
+        </div>
+      </aside>
+    ) : null;
   }
 
   const copy = noticeCopy(health.issue, context);
@@ -140,6 +181,11 @@ export function PersistenceHealthNotice({
 
     if (!result.ok) {
       setRetryMessage("Saving cannot be retried from the current app state.");
+      return;
+    }
+
+    if (result.state.persistence.status === "healthy") {
+      setResolved(true);
       return;
     }
 

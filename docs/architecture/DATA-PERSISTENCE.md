@@ -105,6 +105,28 @@ History restore validates:
 
 A valid subset may be retained only where the schema/persistence contract explicitly supports partial recovery.
 
+Unreadable history never blocks the shopping flow and never enters RECOVERY. It is reported as its own history-integrity state, separate from write health, so a later successful active-trip write cannot hide it. Readable trips stay visible; finishing, deletion and clearing are refused until the shopper sets the damaged record aside, because each of them would overwrite it.
+
+## Setting unreadable data aside
+
+An unreadable record leaves its canonical key only through an explicit, clearly described user action:
+
+1. copy the exact raw string to a new `budget-cart:set-aside:*` backup key;
+2. read the backup back and compare it byte for byte;
+3. only then rewrite history with the readable trips (or remove the unreadable active record).
+
+If any step fails, the canonical record is left unchanged. A readable record is never set aside. The key format is defined in [STORAGE-SCHEMA](../specs/STORAGE-SCHEMA.md).
+
+## Continuing without saving
+
+When the active record cannot be read, or storage is unavailable, the shopper may explicitly continue without saving. The session then refuses every write, keeps an honest `session-only` degraded state and never touches stored data. Trips still finish into an in-memory summary and the next trip can start, but nothing survives a reload, which returns to recovery.
+
+Session-only is a choice, not a fault: its single notice says nothing is saved, and the product never offers to repair, reset or clear stored records it has promised not to touch (no Price Memory repair, no history deletion or clearing, no "saved independently" reassurance).
+
+## History rewrites
+
+Every rewrite of completed history (append on completion, checkout update, deleting a trip, clearing history) re-reads the stored record first and refuses to write when it cannot be read. Completion returns the history exactly as written, and deletion is computed from that durable list, never from what the session happened to load.
+
 ## Completion transaction
 
 Completion has the highest durability sensitivity.
@@ -133,31 +155,34 @@ Then:
 - completion is durable;
 - completed summary/history remain authoritative;
 - cleanup is marked pending/degraded;
-- startup reconciliation attempts to clear the stale active copy.
+- startup reconciliation attempts to clear the stale active copy;
+- if history becomes unreadable before the copy is cleared, the copy is the last readable record of the trip: it is cleared only once readable history holds the same shopping, and setting history aside from the summary saves the trip into the new history first.
 
 Never reverse the write order.
 
 ## Idempotent completion
 
-If history already contains the same completed trip id with the same canonical content:
+"Same shopping" means the same trip id, currency, budget, safety buffer, start time and cart lines (every line field, in order). Completion time, the optional checkout total and when a line was last edited or its price last confirmed are not part of it, so an edit that was reverted is still the same shopping.
+
+If history already contains the trip id with the same shopping:
 
 - treat append as already durable;
+- the recorded completion stays authoritative: the summary shows it, with its original completion time and any checkout total;
 - do not duplicate the trip.
 
-If the same id has conflicting canonical content:
-
-- degrade with a history conflict;
-- do not silently choose one value.
+If history contains the trip id with different shopping, the open trip was edited after an earlier completion of it was recorded (for example while history could not be read). Storage reports a history conflict and never chooses one value; the completion use case then records the open trip under a new trip id, so both the recorded trip and the shopper's current cart are kept. The open trip is saved under the new id before that completion, so a completion interrupted after its history write leaves a copy that startup reconciliation recognises. If that save fails, nothing is recorded and the trip stays open with completion reported as not saved. Both records then stay in history as separate trips; the shopper can delete either one.
 
 ## Startup reconciliation
 
-If an active snapshot has an id already present as the same completed trip in durable history:
+If an active snapshot is the same shopping as a completed trip in durable history:
 
 - history is completion authority;
 - active state is treated as stale cleanup;
 - attempt to clear active storage;
 - do not duplicate history;
 - expose cleanup failure if removal fails.
+
+An active snapshot that shares an id with a completed trip but holds different shopping is not stale: it stays open, and finishing it follows the conflict rule above. Re-reading history after a read failure ("Try again") applies the same rule in-session, so edits made while history was unreadable are never discarded.
 
 ## Checkout reconciliation
 
@@ -203,6 +228,8 @@ An older app encountering a newer schema must:
 - surface recovery/degraded semantics;
 - wait for an explicit migration/compatibility rule.
 
+The shopper may still continue without saving, or set the newer record aside; setting aside preserves the exact raw value in a backup key rather than overwriting it.
+
 ## Malformed data
 
 Do not “repair” money or lifecycle facts by guessing.
@@ -227,7 +254,7 @@ Clear independently through explicit user action.
 
 ### Active trip
 
-Any future reset/discard action must clearly communicate data loss before destructive removal.
+Setting an unreadable active record aside is not destructive: the raw record is kept as a backup. Any future discard action for a readable trip must clearly communicate data loss before destructive removal.
 
 ## Privacy
 

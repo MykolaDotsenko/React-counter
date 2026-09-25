@@ -22,6 +22,7 @@ import {
 } from "./barcode-benchmark";
 import { captureBarcodeBenchmarkEnvironment } from "./barcode-benchmark-native";
 import styles from "./BarcodeBenchmarkApp.module.css";
+import { evidenceStorage } from "./evidence-storage";
 
 const percent = (value: number | null): string =>
   value === null ? "—" : `${(value * 100).toFixed(1)}%`;
@@ -73,7 +74,7 @@ export function App() {
       const next = updater(current);
 
       try {
-        persistBarcodeBenchmarkSession(localStorage, next);
+        persistBarcodeBenchmarkSession(evidenceStorage(), next);
       } catch {
         // Benchmark evidence failure must never affect the product.
       }
@@ -106,7 +107,7 @@ export function App() {
       setEnvironment(captured);
 
       const restored = loadBarcodeBenchmarkSession(
-        localStorage,
+        evidenceStorage(),
         captured,
         new Date().toISOString(),
       );
@@ -156,7 +157,7 @@ export function App() {
     setAttemptActive(false);
 
     try {
-      persistBarcodeBenchmarkSession(localStorage, fresh);
+      persistBarcodeBenchmarkSession(evidenceStorage(), fresh);
     } catch {
       // The benchmark remains usable in memory.
     }

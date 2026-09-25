@@ -26,6 +26,7 @@ import {
   type RetentionBetaSession,
   type RetentionBetaTripSource,
 } from "./retention-beta";
+import { evidenceStorage } from "./evidence-storage";
 
 const betaEvidenceEnabled =
   import.meta.env.VITE_SHOPPING_BETA_EVIDENCE === "1";
@@ -69,7 +70,7 @@ export function useRetentionBetaEvidence({
     }
 
     return loadRetentionBetaSessionResult(
-      localStorage,
+      evidenceStorage(),
       new Date().toISOString(),
     );
   });
@@ -99,7 +100,7 @@ export function useRetentionBetaEvidence({
       setSession(next);
 
       try {
-        persistRetentionBetaSession(localStorage, next);
+        persistRetentionBetaSession(evidenceStorage(), next);
         setRecordingStatus("persisted");
       } catch {
         setRecordingStatus("memory-only");

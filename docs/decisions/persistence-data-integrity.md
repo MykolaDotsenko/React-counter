@@ -293,3 +293,68 @@ Retaining the old UI therefore adds noise without adding meaningful release safe
 Only if a genuinely separate product shell becomes a validated product requirement. A demo or migration convenience is not sufficient reason to reintroduce one.
 
 ---
+
+## D-051 — Damaged local data always leaves the shopper a safe exit
+
+Date: 2026-09-25
+
+Status: accepted
+
+### Decision
+
+Only an unreadable active-trip record (or unreadable storage) enters RECOVERY. Damaged completed history is a separate history-integrity state that never blocks starting, tracking or correcting a trip.
+
+Every unreadable state has an explicit exit that never destroys data:
+
+- **Continue without saving** — the session refuses every write, so unreadable stored data is never overwritten;
+- **Set aside** — the exact raw record is copied to a new `budget-cart:set-aside:*` backup key and read back before the canonical key is replaced (history) or removed (active record);
+- **Try again** — for read failures that may be transient.
+
+Operations that would overwrite unreadable history (finishing, deleting a trip, clearing history) are refused until the shopper sets it aside.
+
+### Rationale
+
+Before this decision any history problem with no active trip forced RECOVERY, whose only action was "try reading again". One damaged or newer-version history entry therefore locked the shopper out permanently; with an active trip, finishing failed forever and the warning disappeared after the next successful save. The only escape was clearing site data, which destroyed the valid trips, Price Memory and the unreadable record itself.
+
+Every GitHub Pages surface of this repository (public app, guarded routes, immutable `/study/<baseline>/` copies) shares one origin. With strict schemas, the first schema change on `main` would have produced exactly this state in older study copies.
+
+Backing the raw record up before replacing it keeps D-008 (visible failure) and the "never silently discard" rule intact while restoring the core promise that manual shopping always works.
+
+### Consequence
+
+- `ShoppingAppState.historyIntegrity` is separate from `persistence`;
+- completion reports a `history-read` stage and the application error `history-unreadable`;
+- session-only mode is an explicit application state, not a silent fallback; trips finish into an in-memory summary so the shopper can keep shopping;
+- every history rewrite re-reads durable history and never writes from a stale in-memory list;
+- an open trip is reconciled away only when it is the same shopping as a recorded completion; one edited while history was unreadable stays open and finishes under a new trip id;
+- a stale copy of a finished trip is never removed while history cannot confirm that trip; setting history aside from the summary records the trip in the new history;
+- backups are local, are not read by the product and remain until site data is cleared.
+
+### Revisit when
+
+A real schema migration ships: it should read set-aside backups it understands, and may make a backup's recovery visible in the product.
+
+## D-052 — Each deployed evidence surface keeps its own storage
+
+Date: 2026-09-25
+
+Status: accepted
+
+### Decision
+
+Guarded evidence builds prefix every shopping and evidence storage key with the path they are served from (`surface:<served path>|<key>`). The public app keeps its original unscoped keys.
+
+### Rationale
+
+The public app, the moving `/qa/` and `/beta/` routes and every immutable `/study/<baseline>/` copy share one origin and therefore one `localStorage`. Without scoping, a participant's public-app trips and Price Memory leaked into beta sessions (confounding repeat-trip evidence), and a frozen study copy shared records with newer code on `main`. Study copies are byte-identical to the tested artifact, so the scope must be resolved at runtime from where the copy is served rather than at build time.
+
+### Consequence
+
+- a beta or study session starts from its own empty shopping state;
+- moving guarded routes no longer see data written by the public app;
+- appearance preference stays shared;
+- baselines published before this decision keep their unscoped keys.
+
+### Revisit when
+
+The evidence protocol needs a participant's existing public-app history inside the study; that would require an explicit, consented import rather than shared keys.

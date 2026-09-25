@@ -13,6 +13,7 @@ import {
   type IsoTimestamp,
 } from "../../domain/shopping-trip";
 import styles from "./RecentItemsSection.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface RecentItemsSectionProps {
   readonly trip: ActiveTrip;
@@ -27,6 +28,7 @@ export interface RecentItemsSectionProps {
   readonly locale?: string;
   readonly limit?: number;
   readonly persistenceDegraded?: boolean;
+  readonly activeTripSaving?: boolean;
 }
 
 const ageLabel = (
@@ -75,9 +77,10 @@ export function RecentItemsSection({
   now,
   onUseRemembered,
   onEnterCurrentPrice,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
   limit = 4,
   persistenceDegraded = false,
+  activeTripSaving = true,
 }: RecentItemsSectionProps) {
   const effectiveNow = now ?? currentTimestamp();
   const recent = useMemo(
@@ -136,7 +139,8 @@ export function RecentItemsSection({
       {persistenceDegraded ? (
         <p className={styles.memoryWarning} role="status">
           Recent Items are available now, but price-memory changes are not
-          safely saving. Your active cart is still saved independently.
+          safely saving.
+          {activeTripSaving ? " Your active cart is still saved independently." : ""}
         </p>
       ) : null}
 

@@ -279,6 +279,12 @@ At minimum:
 - completed state has completion timestamp;
 - canonical data reconstructs through domain validation.
 
+### Monotonic trip time
+
+Trip commands are ordered: an item can be corrected only at or after its last update, and completion cannot precede the start or any item update.
+
+The application stamps each trip command with the later of the device clock and `latestTripTimestamp(trip)`. A device clock that moves backwards (manual change, network-time correction) therefore never blocks correcting or finishing a trip; trip timestamps behave as a per-trip logical clock that never goes earlier than what the trip already records.
+
 ## Domain boundaries
 
 ### Domain owns

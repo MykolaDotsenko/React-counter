@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode, Ref } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
+import { needsSaveAttention } from "../../application/session-only-persistence";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
 import { formatEur, signedMinorUnits } from "../../domain/money";
 import type { PriceMemoryRecord } from "../../domain/price-memory";
@@ -13,9 +14,11 @@ import {
   safeRemaining,
   type CartItem,
 } from "../../domain/shopping-trip";
+import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import { RecentItemsSection } from "./RecentItemsSection";
 import styles from "./ActiveTripScreen.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface ActiveTripScreenProps {
   readonly controller: ShoppingAppController;
@@ -108,7 +111,7 @@ export function ActiveTripScreen({
   onUseRemembered,
   onEnterCurrentPrice,
   utilityControl,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
   const trip = state.activeTrip;
@@ -177,7 +180,7 @@ export function ActiveTripScreen({
         <header className={styles.header}>
           <div>
             <p className={styles.eyebrow}>Shopping trip</p>
-            <h1 id="active-trip-title" className={styles.title}>
+            <h1 id="active-trip-title" className={styles.title} tabIndex={-1}>
               Know what’s left
             </h1>
           </div>
@@ -216,6 +219,7 @@ export function ActiveTripScreen({
           controller={controller}
           health={state.persistence}
         />
+        <HistoryIntegrityNotice controller={controller} />
 
         <section className={styles.summary} aria-label="Budget summary">
           <div className={styles.summaryRow}>
@@ -337,9 +341,10 @@ export function ActiveTripScreen({
           <RecentItemsSection
             trip={trip}
             records={state.priceMemories}
-            persistenceDegraded={
-              state.priceMemoryPersistence.status === "degraded"
-            }
+            persistenceDegraded={needsSaveAttention(
+              state.priceMemoryPersistence,
+            )}
+            activeTripSaving={state.persistence.status === "healthy"}
             onUseRemembered={onUseRemembered}
             onEnterCurrentPrice={onEnterCurrentPrice}
             locale={locale}

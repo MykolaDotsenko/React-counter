@@ -9,6 +9,7 @@ import {
 import {
   cartTotalResult,
   domainError,
+  laterTimestamp,
   lineTotalResult,
   normalizeLabel,
   ok,
@@ -22,6 +23,8 @@ import {
   type CartItem,
   type CompletedTrip,
   type DomainError,
+  type IsoTimestamp,
+  type PriceConfidence,
   type ShoppingTrip,
   type SpendingPlanProjection,
   type TripProjection,
@@ -87,6 +90,62 @@ export const itemCount = (trip: ShoppingTrip): number => {
 
   return count;
 };
+
+export const latestTripTimestamp = (trip: ShoppingTrip): IsoTimestamp => {
+  let latest =
+    trip.status === "completed"
+      ? laterTimestamp(trip.completedAt, trip.startedAt)
+      : trip.startedAt;
+
+  for (const item of trip.items) {
+    latest = laterTimestamp(item.createdAt, latest);
+    latest = laterTimestamp(item.updatedAt, latest);
+  }
+
+  return latest;
+};
+
+const sameFlatRecord = (left: object, right: object): boolean => {
+  const definedEntries = (value: object) =>
+    Object.entries(value).filter(([, field]) => field !== undefined);
+  const leftEntries = definedEntries(left);
+  const rightFields = new Map(definedEntries(right));
+
+  return (
+    leftEntries.length === rightFields.size &&
+    leftEntries.every(([key, field]) => rightFields.get(key) === field)
+  );
+};
+
+const withoutEditTime = (confidence: PriceConfidence): object =>
+  confidence.kind === "confirmed" ? { kind: confidence.kind } : confidence;
+
+const sameCartItem = (left: CartItem, right: CartItem): boolean =>
+  left.id === right.id &&
+  left.unitPriceMinor === right.unitPriceMinor &&
+  left.quantity === right.quantity &&
+  left.label === right.label &&
+  left.createdAt === right.createdAt &&
+  sameFlatRecord(left.priceSource, right.priceSource) &&
+  sameFlatRecord(
+    withoutEditTime(left.priceConfidence),
+    withoutEditTime(right.priceConfidence),
+  );
+
+export const sameTripContents = (
+  left: ShoppingTrip,
+  right: ShoppingTrip,
+): boolean =>
+  left.id === right.id &&
+  left.currency === right.currency &&
+  left.budgetMinor === right.budgetMinor &&
+  left.safetyBufferMinor === right.safetyBufferMinor &&
+  left.startedAt === right.startedAt &&
+  left.items.length === right.items.length &&
+  left.items.every((item, index) => {
+    const other = right.items[index];
+    return other !== undefined && sameCartItem(item, other);
+  });
 
 export const mostRecentCompletedTrip = (
   trips: readonly CompletedTrip[],
@@ -270,14 +329,30 @@ export const projectAddItem = (
     return domainError("unsafe-integer");
   }
 
+  const tripSafeLimit = safeLimit(trip);
+  const safetyBufferUsed = (total: number): number =>
+    Math.min(
+      Math.max(total - tripSafeLimit, 0),
+      trip.safetyBufferMinor,
+    );
+  const safetyBufferUseResult = signedMinorUnits(
+    safetyBufferUsed(projectedTotal.value) -
+      safetyBufferUsed(currentTotal.value),
+  );
+
+  if (!safetyBufferUseResult.ok) {
+    return domainError("unsafe-integer");
+  }
+
   return ok({
     lineTotalMinor: toSignedOrThrow(pendingLine.value),
     cartTotalMinor: projectedTotal.value,
     remainingMinor: projectedRemaining.value,
     safeRemainingMinor: projectedSafeRemaining.value,
-    crossesSafeLimit: projectedTotal.value > safeLimit(trip),
+    crossesSafeLimit: projectedTotal.value > tripSafeLimit,
     crossesNominalBudget: projectedTotal.value > trip.budgetMinor,
     nominalOverageMinor: nominalOverageResult.value,
+    safetyBufferUseMinor: safetyBufferUseResult.value,
   });
 };
 

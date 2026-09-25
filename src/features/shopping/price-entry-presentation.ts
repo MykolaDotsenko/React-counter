@@ -73,7 +73,7 @@ export const projectionCopy = (
     }
 
     return {
-      primary: `This item uses ${formatAbsoluteSigned(projection.safeRemainingMinor, locale)} of your safety buffer.`,
+      primary: `This item uses ${formatAbsoluteSigned(projection.safetyBufferUseMinor, locale)} of your safety buffer.`,
       secondary: `${formatAbsoluteSigned(projection.remainingMinor, locale)} remains before your nominal limit.`,
       status: "reserve",
     };

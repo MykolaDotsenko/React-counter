@@ -130,6 +130,15 @@ const createPersistence = (
     clearCompletedActive() {
       return { ok: true };
     },
+    readCompletedHistory() {
+      return { ok: true, completedTrips: [] };
+    },
+    setAsideDamagedHistory() {
+      return { ok: true, completedTrips: [] };
+    },
+    setAsideUnreadableActiveTrip() {
+      return { ok: true };
+    },
   };
 };
 
@@ -338,7 +347,7 @@ describe("RecoveryScreen", () => {
       }),
     ).not.toBeNull();
     expect(
-      screen.getByText(/preserved unchanged and will not be overwritten/),
+      screen.getByText(/preserved unchanged\. Update the app to use it/),
     ).not.toBeNull();
     expect(screen.getByText(raw)).not.toBeNull();
     expect(persistence.saveCalls).toHaveLength(0);

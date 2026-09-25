@@ -21,7 +21,7 @@ This file records current stack intent and dependency admission rules. It does n
 
 ### Validation
 
-- Zod at untrusted/runtime boundaries
+- Zod 4 at untrusted/runtime boundaries, through the tree-shakeable `zod/mini` API so the public bundle pays only for the validators it uses
 
 ### Persistence
 

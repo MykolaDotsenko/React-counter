@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
+import {
+  isSessionOnly,
+  needsSaveAttention,
+} from "../../application/session-only-persistence";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
 import {
   type CompletedTrip,
@@ -11,8 +15,10 @@ import {
   type HistoryDataConfirmation,
 } from "./HistoryDataControls";
 import { HistoryTripCard } from "./HistoryTripCard";
+import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./HistoryScreen.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface HistoryScreenProps {
   readonly controller: ShoppingAppController;
@@ -31,7 +37,7 @@ export function HistoryScreen({
   controller,
   onBack,
   onTripStarted,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
 }: HistoryScreenProps) {
   const state = useShoppingAppState(controller);
   const ordered = [...state.completedTrips].sort(
@@ -46,6 +52,7 @@ export function HistoryScreen({
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
   const canChangeHistory =
     state.persistence.status === "healthy" &&
+    state.historyIntegrity.status === "healthy" &&
     !state.completionCleanupPending;
 
   useEffect(() => {
@@ -192,6 +199,7 @@ export function HistoryScreen({
           health={state.persistence}
           context="idle"
         />
+        <HistoryIntegrityNotice controller={controller} />
 
         {statusMessage ? (
           <p className={styles.status} role="status" aria-live="polite">
@@ -241,10 +249,11 @@ export function HistoryScreen({
         <HistoryDataControls
           tripCount={state.completedTrips.length}
           priceMemoryCount={state.priceMemories.length}
-          priceMemoryDegraded={
-            state.priceMemoryPersistence.status === "degraded"
-          }
+          priceMemoryDegraded={needsSaveAttention(
+            state.priceMemoryPersistence,
+          )}
           canChangeHistory={canChangeHistory}
+          sessionOnly={isSessionOnly(state.persistence)}
           confirmation={dataConfirmation}
           confirmationCancelRef={confirmationCancelRef}
           onRequestClearHistory={() => {

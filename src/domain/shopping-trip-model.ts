@@ -6,14 +6,14 @@ import {
   addMoney,
   minorUnits,
   multiplyMoney,
+  ok,
   signedMinorUnits,
+  type Brand,
   type MinorUnits,
   type Result,
   type SignedMinorUnits,
   type SupportedCurrency,
 } from "./money";
-
-type Brand<T, B extends string> = T & { readonly __brand: B };
 
 export type TripId = Brand<string, "TripId">;
 export type ItemId = Brand<string, "ItemId">;
@@ -142,6 +142,7 @@ export interface TripProjection {
   readonly crossesSafeLimit: boolean;
   readonly crossesNominalBudget: boolean;
   readonly nominalOverageMinor: SignedMinorUnits;
+  readonly safetyBufferUseMinor: SignedMinorUnits;
 }
 
 export interface EditableItemPatch {
@@ -177,7 +178,7 @@ export type TripCommand =
       readonly actualCheckoutMinor: MinorUnits;
     };
 
-export const ok = <T>(value: T): Result<T, never> => ({ ok: true, value });
+export { ok };
 
 export const domainError = (code: DomainErrorCode): Result<never, DomainError> => ({
   ok: false,
@@ -283,7 +284,7 @@ export const itemId = (value: string): Result<ItemId, DomainError> =>
 export const storeId = (value: string): Result<StoreId, DomainError> =>
   normalizeIdentifier<StoreId>(value);
 
-const ISO_TIMESTAMP_PATTERN =
+export const CANONICAL_ISO_TIMESTAMP_PATTERN =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 export const isoTimestamp = (
@@ -291,7 +292,7 @@ export const isoTimestamp = (
 ): Result<IsoTimestamp, DomainError> => {
   const normalized = value.trim();
 
-  if (!ISO_TIMESTAMP_PATTERN.test(normalized)) {
+  if (!CANONICAL_ISO_TIMESTAMP_PATTERN.test(normalized)) {
     return domainError("invalid-timestamp");
   }
 
@@ -313,6 +314,11 @@ export const timestampAtOrAfter = (
   candidate: IsoTimestamp,
   floor: IsoTimestamp,
 ): boolean => timestampMs(candidate) >= timestampMs(floor);
+
+export const laterTimestamp = (
+  candidate: IsoTimestamp,
+  floor: IsoTimestamp,
+): IsoTimestamp => (timestampAtOrAfter(candidate, floor) ? candidate : floor);
 
 export const normalizeLabel = (
   label: string | null | undefined,

@@ -38,6 +38,7 @@ import {
   projectionCopy,
 } from "./price-entry-presentation";
 import styles from "./PriceEntrySurface.module.css";
+import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface ValidatedItemIntent {
   readonly unitPriceMinor: MinorUnits;
@@ -71,7 +72,7 @@ export function PriceEntrySurface({
   onCancel,
   onValidatedItem,
   initialLabel,
-  locale = "en-FI",
+  locale = SHOPPING_LOCALE,
 }: PriceEntrySurfaceProps) {
   const amountInputId = useId();
   const statusId = useId();
