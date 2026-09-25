@@ -288,9 +288,9 @@ test("reduced motion removes decorative shopping transitions without changing th
 
   expect(
     await remainingAmount.evaluate(
-      (element) => getComputedStyle(element).animationName,
+      (element) => getComputedStyle(element).transitionDuration,
     ),
-  ).toBe("none");
+  ).toBe("0s");
 
   await page.getByRole("button", { name: "Add price" }).click();
   await page.getByRole("textbox", { name: "Price" }).fill("4.79");
