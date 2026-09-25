@@ -84,7 +84,6 @@
   border: 1px solid var(--border);
   background: var(--shopping-raised);
   color: var(--accent);
-  box-shadow: var(--shopping-control-shadow);
 }
 
 .currentPriceContext {
@@ -126,7 +125,6 @@
 .modeButton[aria-pressed="true"] {
   background: var(--shopping-raised);
   color: var(--text);
-  box-shadow: var(--shopping-control-shadow);
 }
 
 .modeButton:disabled {
@@ -163,7 +161,6 @@
   border: 2px solid var(--border);
   border-radius: 18px;
   background: var(--shopping-raised);
-  box-shadow: var(--shopping-control-shadow);
 }
 
 .amountShell:focus-within {
@@ -221,7 +218,6 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--shopping-panel);
-  box-shadow: var(--shopping-control-shadow);
 }
 
 .quantityCopy {
@@ -259,7 +255,6 @@
   color: var(--text);
   font: inherit;
   font-size: 1.25rem;
-  box-shadow: var(--shopping-control-shadow);
   font-weight: 850;
   cursor: pointer;
 }
@@ -395,7 +390,6 @@
   border: 1px solid var(--border);
   background: var(--shopping-raised);
   color: var(--text);
-  box-shadow: var(--shopping-control-shadow);
 }
 
 .addAnywayButton {
@@ -427,7 +421,6 @@
   background: var(--shopping-raised);
   color: var(--text);
   font-size: 1.25rem;
-  box-shadow: var(--shopping-control-shadow);
 }
 
 .key:active {
@@ -529,7 +522,6 @@
   background: var(--shopping-raised);
   color: var(--text);
   font: inherit;
-  box-shadow: var(--shopping-control-shadow);
 }
 
 .labelField input:focus-visible {
