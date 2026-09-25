@@ -58,6 +58,13 @@ describe("appearance preference", () => {
     expect(appearanceThemeColor("system", true)).toBe("#0f1210");
   });
 
+  it("resolves System to a concrete document theme", () => {
+    applyAppearanceToDocument("system", document, true);
+
+    expect(document.documentElement.dataset.appearance).toBe("system");
+    expect(document.documentElement.dataset.theme).toBe("dark");
+  });
+
   it("updates document appearance and browser theme color together", () => {
     document.head.innerHTML =
       '<meta name="theme-color" content="#ffffff" />';
@@ -65,6 +72,7 @@ describe("appearance preference", () => {
     applyAppearanceToDocument("dark", document, false);
 
     expect(document.documentElement.dataset.appearance).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
     expect(
       document.querySelector('meta[name="theme-color"]')?.getAttribute("content"),
     ).toBe(appearanceThemeColor("dark", false));
