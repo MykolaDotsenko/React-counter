@@ -33,7 +33,6 @@
   background: var(--shopping-raised);
   color: var(--shopping-text);
   font: inherit;
-  box-shadow: var(--shopping-control-shadow);
   font-weight: 800;
   cursor: pointer;
 }
@@ -482,7 +481,6 @@
   border-radius: 13px;
   background: var(--shopping-raised);
   color: var(--shopping-accent);
-  box-shadow: var(--shopping-control-shadow);
   font: inherit;
   font-weight: 850;
   cursor: pointer;
