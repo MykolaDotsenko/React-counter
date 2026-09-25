@@ -106,14 +106,14 @@ export const applyAppearanceToDocument = (
     return;
   }
 
+  const theme = resolvedAppearance(mode, prefersDark);
+
   target.documentElement.dataset.appearance = mode;
+  target.documentElement.dataset.theme = theme;
 
   const themeMeta = target.querySelector<HTMLMetaElement>(
     'meta[name="theme-color"]',
   );
 
-  themeMeta?.setAttribute(
-    "content",
-    appearanceThemeColor(mode, prefersDark),
-  );
+  themeMeta?.setAttribute("content", THEME_COLORS[theme]);
 };
