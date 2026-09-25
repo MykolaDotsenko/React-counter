@@ -301,13 +301,13 @@ export function App() {
                 detail={`${summary.manualHighFixture.count} valid samples`}
               />
               <Metric
-                label="OCR median"
-                value={seconds(summary.ocr?.medianConfirmedMs ?? null)}
+                label="OCR decision median"
+                value={seconds(summary.ocr?.medianDecisionMs ?? null)}
                 detail={`${summary.ocr?.attempts ?? 0} timed attempts`}
               />
               <Metric
-                label="OCR P90"
-                value={seconds(summary.ocr?.p90ConfirmedMs ?? null)}
+                label="OCR decision P90"
+                value={seconds(summary.ocr?.p90DecisionMs ?? null)}
               />
               <Metric
                 label="Top-1 correct"
