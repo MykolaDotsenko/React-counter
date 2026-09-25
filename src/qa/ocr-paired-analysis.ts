@@ -425,9 +425,9 @@ export const analyzeOcrPairedEvidence = (
       : "incomplete";
 
   const ocrTiming = {
-    medianMs: ocr.summary.medianConfirmedMs,
-    p75Ms: ocr.summary.p75ConfirmedMs,
-    p90Ms: ocr.summary.p90ConfirmedMs,
+    medianMs: ocr.summary.medianDecisionMs,
+    p75Ms: ocr.summary.p75DecisionMs,
+    p90Ms: ocr.summary.p90DecisionMs,
   };
 
   return Object.freeze({
