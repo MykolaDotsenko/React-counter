@@ -180,14 +180,76 @@ const resolveLocalTarget = (sourceFile, rawTarget) => {
   return path.resolve(absoluteTarget);
 };
 
+const headingAnchors = (source) => {
+  const anchors = new Set();
+  const occurrences = new Map();
+  const withoutFences = source.replace(
+    /^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[^\n]*$/gm,
+    "",
+  );
+
+  for (const match of withoutFences.matchAll(
+    /^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$/gm,
+  )) {
+    const base = match[1]
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s_-]/gu, "")
+      .replace(/\s/g, "-");
+    const seen = occurrences.get(base) ?? 0;
+
+    occurrences.set(base, seen + 1);
+    anchors.add(seen === 0 ? base : `${base}-${seen}`);
+  }
+
+  return anchors;
+};
+
+const anchorCache = new Map();
+
+const anchorsOf = async (file) => {
+  if (!anchorCache.has(file)) {
+    anchorCache.set(file, headingAnchors(await readFile(file, "utf8")));
+  }
+
+  return anchorCache.get(file);
+};
+
+const decodedFragment = (rawTarget) => {
+  const fragment = rawTarget.slice(rawTarget.indexOf("#") + 1);
+
+  try {
+    return decodeURIComponent(fragment).toLowerCase();
+  } catch {
+    return fragment.toLowerCase();
+  }
+};
+
 for (const file of markdownFiles) {
   const source = await readFile(file, "utf8");
 
   for (const match of source.matchAll(markdownLinkPattern)) {
-    const target = resolveLocalTarget(file, match[1]);
+    const rawTarget = match[1];
+    const sameFile = rawTarget.startsWith("#");
+    const target = sameFile
+      ? path.resolve(file)
+      : resolveLocalTarget(file, rawTarget);
 
-    if (target !== null && markdownSet.has(target)) {
+    if (target === null) {
+      continue;
+    }
+
+    if (!sameFile && markdownSet.has(target)) {
       linkGraph.get(path.resolve(file))?.add(target);
+    }
+
+    if (
+      rawTarget.includes("#") &&
+      target.endsWith(".md") &&
+      !(await anchorsOf(target)).has(decodedFragment(rawTarget))
+    ) {
+      failures.push(
+        `Broken Markdown anchor in ${toRepoPath(file)}: ${rawTarget}`,
+      );
     }
   }
 }

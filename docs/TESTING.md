@@ -50,7 +50,7 @@ npm run test:e2e
 
 `npm run check` runs these steps in order and stops at the first failure:
 
-1. `docs:check` — documentation structure (`scripts/validate-docs.mjs`): required contract paths, retired paths, repository-root and docs-root file placement, relative Markdown links and reachability from `docs/README.md`;
+1. `docs:check` — documentation structure (`scripts/validate-docs.mjs`): required contract paths, retired paths, repository-root and docs-root file placement, relative Markdown links and their heading anchors, and reachability from `docs/README.md`;
 2. `lint` — ESLint with no warnings allowed, including the architectural layer-boundary import rules;
 3. `typecheck` — strict TypeScript (`tsc --noEmit`);
 4. `test:coverage` — every Vitest unit and component test, with the coverage floors below;

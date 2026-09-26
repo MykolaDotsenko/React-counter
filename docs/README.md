@@ -170,7 +170,7 @@ Documentation structure is enforced by:
 npm run docs:check
 ```
 
-The validator checks required contract paths, retired legacy paths, the allowed repository-root and docs-root Markdown files, relative Markdown links, and that every document under `docs/` is reachable by links from this file. It runs inside `npm run check`.
+The validator checks required contract paths, retired legacy paths, the allowed repository-root and docs-root Markdown files, relative Markdown links and their heading anchors, and that every document under `docs/` is reachable by links from this file. It runs inside `npm run check`.
 
 Current docs use only:
 
