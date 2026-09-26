@@ -246,7 +246,7 @@ export function ScanBarcodeResult({
             {lookup.kind === "loading" ? "Looking up…" : "Find name online"}
           </button>
           <p className={styles.note}>
-            {`Sends only this barcode number to ${productLookup.providerName}. Nothing else leaves your device.`}
+            {`Sends this barcode number to ${productLookup.providerName}. Nothing else from your trip leaves your device.`}
           </p>
           <p className={styles.note} role="status" aria-live="polite">
             {lookupCopy(lookup, productLookup.providerName)}
