@@ -158,7 +158,7 @@ describe("RecoveryScreen exits", () => {
 
     render(<ShoppingAppShell controller={controller} />);
 
-    await user.click(screen.getByText("Other ways to continue"));
+    await user.click(await screen.findByText("Other ways to continue"));
     await user.click(
       screen.getByRole("button", { name: "Continue without saving" }),
     );
@@ -502,7 +502,7 @@ describe("session-only mode never asks to repair what it chose not to save", () 
 
     render(<ShoppingAppShell controller={controller} />);
 
-    await user.click(screen.getByText("Other ways to continue"));
+    await user.click(await screen.findByText("Other ways to continue"));
     await user.click(
       screen.getByRole("button", { name: "Continue without saving" }),
     );
@@ -542,7 +542,7 @@ describe("session-only mode never asks to repair what it chose not to save", () 
 
     render(<ShoppingAppShell controller={controller} />);
 
-    await user.click(screen.getByText("Other ways to continue"));
+    await user.click(await screen.findByText("Other ways to continue"));
     await user.click(
       screen.getByRole("button", { name: "Continue without saving" }),
     );
@@ -556,7 +556,7 @@ describe("session-only mode never asks to repair what it chose not to save", () 
     );
 
     expect(
-      screen.getByText(/This session is not saving/).textContent,
+      (await screen.findByText(/This session is not saving/)).textContent,
     ).toMatch(/stay as they are/);
     expect(
       screen.queryByText("Fix the local-save warning before changing trip history."),

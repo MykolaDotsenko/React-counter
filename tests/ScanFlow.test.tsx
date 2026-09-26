@@ -306,7 +306,7 @@ describe("scanning while shopping", () => {
     render(<ShoppingAppShell controller={controller} />);
 
     await user.click(screen.getByRole("button", { name: /View trip history/ }));
-    const clear = screen.getByRole("button", { name: /Clear remembered prices/ });
+    const clear = await screen.findByRole("button", { name: /Clear remembered prices/ });
 
     expect(clear.textContent).toMatch(/1 remembered barcode name/);
     expect(clear.hasAttribute("disabled")).toBe(false);
@@ -325,7 +325,7 @@ describe("scanning while shopping", () => {
     render(<ShoppingAppShell controller={controller} />);
 
     await user.click(screen.getByRole("button", { name: "Repair remembered prices" }));
-    const clear = screen.getByRole("button", { name: /Clear remembered prices/ });
+    const clear = await screen.findByRole("button", { name: /Clear remembered prices/ });
 
     expect(clear.textContent).toMatch(/Reset the damaged remembered-price record/);
     expect(values.get(BARCODE_LINK_STORAGE_KEY)).toBe("{broken");

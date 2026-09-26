@@ -29,7 +29,6 @@ import {
 import { CompletedSummaryScreen } from "../features/shopping/CompletedSummaryScreen";
 import { FinishTripSurface } from "../features/shopping/FinishTripSurface";
 import { HistoryIntegrityNotice } from "../features/shopping/HistoryIntegrityNotice";
-import { HistoryScreen } from "../features/shopping/HistoryScreen";
 import {
   ItemEditSurface,
   type ItemEditIntent,
@@ -38,7 +37,6 @@ import {
   PriceEntrySurface,
   type ValidatedItemIntent,
 } from "../features/shopping/PriceEntrySurface";
-import { RecoveryScreen } from "../features/shopping/RecoveryScreen";
 import type {
   PriceEntryTarget,
   ScanContext,
@@ -61,6 +59,15 @@ export interface ShoppingAppShellProps {
 }
 
 const ScanSurface = lazy(() => import("../features/shopping/ScanSurface"));
+const loadHistoryScreen = () => import("../features/shopping/HistoryScreen");
+const HistoryScreen = lazy(() =>
+  loadHistoryScreen().then((module) => ({ default: module.HistoryScreen })),
+);
+const RecoveryScreen = lazy(() =>
+  import("../features/shopping/RecoveryScreen").then((module) => ({
+    default: module.RecoveryScreen,
+  })),
+);
 
 type FocusReturn = "scan" | "price-trigger";
 
@@ -164,6 +171,20 @@ export function ShoppingAppShell({
       scanBarcode?.prepare();
     }
   }, [scanBarcode, state.lifecycle]);
+  const hasHistory = state.completedTrips.length > 0;
+  useEffect(() => {
+    if (!hasHistory) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void loadHistoryScreen();
+    }, 1_500);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [hasHistory]);
   const recentCompletedTrip = mostRecentCompletedTrip(
     state.completedTrips,
   );
@@ -176,19 +197,26 @@ export function ShoppingAppShell({
   });
   const qaPanel = evidence.panel;
 
+  const openingScreen = (
+    <main className={styles.loading} aria-busy="true">
+      <p>Opening…</p>
+    </main>
+  );
   const historyScreen = (
     <>
-      <HistoryScreen
-        controller={controller}
-        onTripStarted={() => {
-          evidence.recordTripStarted("repeat");
-          setOverlay(NO_OVERLAY);
-        }}
-        onBack={() => {
-          setOverlay(NO_OVERLAY);
-        }}
-        locale={SHOPPING_LOCALE}
-      />
+      <Suspense fallback={openingScreen}>
+        <HistoryScreen
+          controller={controller}
+          onTripStarted={() => {
+            evidence.recordTripStarted("repeat");
+            setOverlay(NO_OVERLAY);
+          }}
+          onBack={() => {
+            setOverlay(NO_OVERLAY);
+          }}
+          locale={SHOPPING_LOCALE}
+        />
+      </Suspense>
       {qaPanel}
     </>
   );
@@ -207,7 +235,9 @@ export function ShoppingAppShell({
   if (state.lifecycle === "recovery") {
     return (
       <>
-        <RecoveryScreen controller={controller} />
+        <Suspense fallback={openingScreen}>
+          <RecoveryScreen controller={controller} />
+        </Suspense>
         {qaPanel}
       </>
     );
