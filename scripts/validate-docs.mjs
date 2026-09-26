@@ -94,7 +94,7 @@ for (const entry of await readdir(root, { withFileTypes: true })) {
     !allowedRepoRootMarkdown.has(entry.name)
   ) {
     failures.push(
-      `Unexpected repository-root Markdown file: ${entry.name}. Keep root documentation limited to README.md and AGENTS.md.`,
+      `Unexpected repository-root Markdown file: ${entry.name}. Keep root documentation limited to ${[...allowedRepoRootMarkdown].join(", ")}.`,
     );
   }
 }
@@ -113,8 +113,7 @@ for (const entry of await readdir(docsRoot, { withFileTypes: true })) {
 
 const docsMarkdown = await walkMarkdown(docsRoot);
 const markdownFiles = [
-  path.join(root, "README.md"),
-  path.join(root, "AGENTS.md"),
+  ...[...allowedRepoRootMarkdown].map((file) => path.join(root, file)),
   ...docsMarkdown,
 ];
 const markdownSet = new Set(markdownFiles.map((file) => path.resolve(file)));
