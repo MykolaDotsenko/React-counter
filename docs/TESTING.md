@@ -523,11 +523,11 @@ Tests must prove:
 
 The production build has separate total, initial-load and on-demand engine budgets. The baseline measured on 2026-09-26 for the release build, with barcode scanning and price tag reading shipped, is approximately:
 
-- initial application JavaScript: 391,205 raw bytes / 113,172 gzip bytes;
-- total public JavaScript (without the barcode and price engines): 421,333 raw bytes / 123,676 gzip bytes, including the lazy scan surface, the lazy camera implementation, the lazy Open Food Facts adapter and `workbox-window`;
-- barcode engine JavaScript (`zxing-fallback-detector-*`): 43,515 raw bytes / 14,944 gzip bytes; barcode engine WASM: 1,093,289 bytes;
-- price reader JavaScript (`tesseract-price-reader-*`): 26,661 raw bytes / 10,830 gzip bytes; price reader files: 9,798,124 bytes, of which a device downloads one 2.9 MB core and the 3.8 MB language file;
-- initial CSS: 68,130 raw bytes / 11,001 gzip bytes; total CSS with the lazy scan surface: 74,164 raw / 12,739 gzip bytes.
+- initial application JavaScript: 391,335 raw bytes / 113,185 gzip bytes;
+- total public JavaScript (without the barcode and price engines): 421,473 raw bytes / 123,693 gzip bytes, including the lazy scan surface, the lazy camera implementation, the lazy Open Food Facts adapter and `workbox-window`;
+- barcode engine JavaScript (`zxing-fallback-detector-*`): 43,541 raw bytes / 14,964 gzip bytes; barcode engine WASM: 1,093,289 bytes;
+- price reader JavaScript (`tesseract-price-reader-*`): 26,919 raw bytes / 11,022 gzip bytes; price reader files: 9,798,124 bytes, of which a device downloads one 2.9 MB core and the 3.8 MB language file;
+- initial CSS: 68,130 raw bytes / 11,001 gzip bytes; total CSS with the lazy scan surface: 74,164 raw / 12,735 gzip bytes.
 
 CI currently enforces:
 
