@@ -163,20 +163,23 @@
   overflow-wrap: anywhere;
 }
 
-.difference,
-.neutral {
+.difference {
   margin: 0;
   font-size: 0.84rem;
   line-height: 1.4;
 }
 
+.metrics dd[data-outcome="over"] {
+  color: var(--shopping-danger);
+}
+
+.difference[data-direction="more"] {
+  color: var(--shopping-warning);
+}
+
 .difference {
   color: var(--shopping-accent);
   font-weight: 800;
-}
-
-.neutral {
-  color: var(--shopping-muted-strong);
 }
 
 .backButton:focus-visible {

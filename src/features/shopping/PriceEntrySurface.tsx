@@ -271,6 +271,19 @@ export function PriceEntrySurface({
     <main
       className={styles.screen}
       aria-labelledby="price-entry-title"
+      onKeyDown={(event) => {
+        if (event.key !== "Escape") {
+          return;
+        }
+
+        event.preventDefault();
+
+        if (activeConfirmation !== null) {
+          cancelOverBudgetConfirmation();
+        } else {
+          onCancel();
+        }
+      }}
     >
       <div className={styles.sheet}>
         <header className={styles.header}>
@@ -396,16 +409,6 @@ export function PriceEntrySurface({
 
                   if (activeConfirmation === null) {
                     commit();
-                  }
-                }
-
-                if (event.key === "Escape") {
-                  event.preventDefault();
-
-                  if (activeConfirmation !== null) {
-                    cancelOverBudgetConfirmation();
-                  } else {
-                    onCancel();
                   }
                 }
               }}
@@ -588,12 +591,6 @@ export function PriceEntrySurface({
             className={styles.overBudgetConfirmation}
             aria-labelledby="over-budget-title"
             aria-describedby="over-budget-detail"
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                event.preventDefault();
-                cancelOverBudgetConfirmation();
-              }
-            }}
           >
             <div className={styles.confirmationCopy}>
               <p className={styles.confirmationEyebrow}>Over budget</p>
@@ -623,6 +620,7 @@ export function PriceEntrySurface({
                 ref={confirmationCancelRef}
                 type="button"
                 className={styles.confirmationCancel}
+                aria-describedby="over-budget-detail"
                 onClick={cancelOverBudgetConfirmation}
               >
                 Change price
@@ -630,6 +628,7 @@ export function PriceEntrySurface({
               <button
                 type="button"
                 className={styles.addAnywayButton}
+                aria-describedby="over-budget-detail"
                 disabled={submitted}
                 onClick={confirmOverBudget}
               >

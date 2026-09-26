@@ -81,6 +81,7 @@ export function CompletedSummaryScreen({
   const total = cartTotal(currentTrip);
   const quantity = itemCount(currentTrip);
   const reconciliation = reconciliationCopy(currentTrip, locale);
+  const paidMore = (checkoutDifference(currentTrip) ?? 0) > 0;
   const outcome = budgetOutcome(currentTrip, locale);
 
   const parsedCheckout = useMemo(() => {
@@ -165,7 +166,9 @@ export function CompletedSummaryScreen({
       <section className={styles.shell}>
         <header className={styles.header}>
           <p className={styles.eyebrow}>Trip finished</p>
-          <h1 id="completed-title">Your shopping trip is complete</h1>
+          <h1 id="completed-title" tabIndex={-1}>
+            Your shopping trip is complete
+          </h1>
           <p>
             Saved to History. Add your receipt total to see how close you
             were.
@@ -253,7 +256,11 @@ export function CompletedSummaryScreen({
           ) : null}
 
           {reconciliation ? (
-            <p className={styles.difference} role="status">
+            <p
+              className={styles.difference}
+              role="status"
+              data-direction={paidMore ? "more" : "within"}
+            >
               {reconciliation}
             </p>
           ) : null}

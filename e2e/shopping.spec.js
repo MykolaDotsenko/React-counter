@@ -128,7 +128,7 @@ test("keeps explicit Dark appearance durable and independent from shopping state
     persisted: "dark",
     page: "#0f1210",
     panel: "#181d19",
-    raised: "#202621",
+    raised: "#262d27",
     accent: "#8fd4b7",
     themeColor: "#0f1210",
   });
@@ -199,7 +199,7 @@ test("keeps explicit Aurora appearance durable and independent from shopping sta
     persisted: "aurora",
     page: "#070912",
     panel: "#101625",
-    raised: "#161e31",
+    raised: "#1c2640",
     accent: "#8de8ff",
     themeColor: "#070912",
   });
@@ -420,7 +420,7 @@ test("adjusts budget and safety buffer as one canonical mutation", async ({
   await expect(page.getByText("€0.79", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("over your limit", { exact: true })).toBeVisible();
   await expect(
-    page.getByText("Budget updated. €0.79 over your limit.", {
+    page.getByRole("main").getByText("Budget updated. €0.79 over your limit.", {
       exact: true,
     }),
   ).toBeVisible();
@@ -523,7 +523,7 @@ test("commits exact price and quantity, persists them, and restores the same car
   ).toBeVisible();
   await expect(page.getByText("€46.13", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("€1.29 × 3", { exact: true })).toBeVisible();
-  await expect(page.getByText("€3.87 added. €46.13 left.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByText("€3.87 added. €46.13 left.", { exact: true })).toBeVisible();
 
   const persistedBeforeReload = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)),
@@ -588,7 +588,7 @@ test("edits price and quantity, removes the item, undoes removal, and restores t
     page.getByText("€5.29 × 2", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("Item updated. €39.42 left.", {
+    page.getByRole("main").getByText("Item updated. €39.42 left.", {
       exact: true,
     }),
   ).toBeVisible();
@@ -617,7 +617,7 @@ test("edits price and quantity, removes the item, undoes removal, and restores t
     page.getByText("€0.00 of €50.00", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("Item removed. €50.00 left.", {
+    page.getByRole("main").getByText("Item removed. €50.00 left.", {
       exact: true,
     }),
   ).toBeVisible();
@@ -654,7 +654,7 @@ test("offers one-action Undo, persists the restored cart, and survives reload", 
   await page.getByRole("button", { name: "Add · €4.79" }).click();
 
   await expect(
-    page.getByText("€4.79 added. €45.21 left.", { exact: true }),
+    page.getByRole("main").getByText("€4.79 added. €45.21 left.", { exact: true }),
   ).toBeVisible();
 
   const undo = page.getByRole("button", { name: "Undo" });
@@ -662,7 +662,7 @@ test("offers one-action Undo, persists the restored cart, and survives reload", 
   await undo.click();
 
   await expect(
-    page.getByText("Last change undone. €50.00 left.", {
+    page.getByRole("main").getByText("Last change undone. €50.00 left.", {
       exact: true,
     }),
   ).toBeVisible();
@@ -1845,7 +1845,7 @@ test("supports keyboard add and returns focus to the canonical Add price action"
 
   const returnedAddPrice = page.getByRole("button", { name: "Add price" });
   await expect(returnedAddPrice).toBeFocused();
-  await expect(page.getByText("€4.79 added")).toBeVisible();
+  await expect(page.getByRole("main").getByText("€4.79 added")).toBeVisible();
   await expect(
     page.getByText("€4.79 of €50.00", { exact: true }),
   ).toBeVisible();

@@ -342,6 +342,35 @@ describe("PriceEntrySurface", () => {
     ).toBeNull();
   });
 
+  it("closes on Escape from any control and describes the over-budget choice", async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={onCancel}
+        onValidatedItem={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "53.41");
+    await user.click(screen.getByRole("button", { name: "Add · €53.41" }));
+
+    const change = screen.getByRole("button", { name: "Change price" });
+    expect(change.getAttribute("aria-describedby")).toBe("over-budget-detail");
+    expect(document.getElementById("over-budget-detail")?.textContent).toMatch(
+      /€3\.41 over your limit/,
+    );
+
+    await user.click(change);
+    screen.getByRole("button", { name: "Digit 1" }).focus();
+    await user.keyboard("{Escape}");
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
   it("guards Add anyway from rapid duplicate submission", async () => {
     const user = userEvent.setup();
     const onValidatedItem = vi.fn();

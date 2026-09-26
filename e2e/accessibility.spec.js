@@ -430,7 +430,7 @@ test("returns keyboard focus to the edited item after cancel and save", async ({
   await page.keyboard.press("Enter");
 
   await expect(
-    page.getByText("Item updated. €44.71 left.", {
+    page.getByRole("main").getByText("Item updated. €44.71 left.", {
       exact: true,
     }),
   ).toBeVisible();

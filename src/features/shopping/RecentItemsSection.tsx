@@ -205,6 +205,7 @@ export function RecentItemsSection({
               {isPending && projection.ok ? (
                 <div
                   className={styles.confirmation}
+                  role="group"
                   aria-label={`Confirm remembered price for ${record.label}`}
                   onKeyDown={(event) => {
                     if (event.key === "Escape") {

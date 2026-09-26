@@ -169,7 +169,7 @@
 
 .customToggle {
   justify-self: center;
-  min-width: 10rem;
+  min-width: min(10rem, 100%);
   padding: 0 18px;
   border: 1px solid var(--border-subtle);
   background: var(--shopping-panel);
@@ -250,7 +250,7 @@
   align-items: center;
   gap: 8px;
   padding: 0 14px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--shopping-field-border);
   border-radius: 16px;
   background: var(--shopping-raised);
 }
@@ -281,7 +281,8 @@
 }
 
 .amountInput::placeholder {
-  color: color-mix(in srgb, var(--text-secondary) 62%, transparent);
+  color: var(--text-secondary);
+  opacity: 1;
 }
 
 .hint {

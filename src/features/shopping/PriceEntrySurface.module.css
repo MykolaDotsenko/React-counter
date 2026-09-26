@@ -131,8 +131,8 @@
 }
 
 .modeButton[aria-pressed="true"] {
-  background: var(--shopping-raised);
-  color: var(--text);
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 .modeButton:disabled {
@@ -160,6 +160,7 @@
 
 .amountLabelRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -177,7 +178,7 @@
   align-items: center;
   gap: 8px;
   padding: 0 18px;
-  border: 2px solid var(--border);
+  border: 2px solid var(--shopping-field-border);
   border-radius: 18px;
   background: var(--shopping-raised);
 }
@@ -210,7 +211,8 @@
 }
 
 .amountInput::placeholder {
-  color: color-mix(in srgb, var(--muted) 58%, transparent);
+  color: var(--shopping-muted);
+  opacity: 1;
 }
 
 .status {
@@ -550,7 +552,7 @@
 .labelField input {
   min-height: 48px;
   width: 100%;
-  border: 1px solid var(--border);
+  border: 1px solid var(--shopping-field-border);
   border-radius: 14px;
   padding: 0 13px;
   background: var(--shopping-raised);
@@ -760,5 +762,10 @@
   .confirmationCancel,
   .addAnywayButton {
     border: 1px solid ButtonText;
+  }
+
+  .modeButton[aria-pressed="true"] {
+    outline: 3px solid Highlight;
+    outline-offset: -4px;
   }
 }

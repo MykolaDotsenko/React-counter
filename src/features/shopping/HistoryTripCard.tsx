@@ -72,6 +72,7 @@ export function HistoryTripCard({
   const tracked = cartTotal(trip);
   const quantity = itemCount(trip);
   const difference = differenceLabel(trip, locale);
+  const outcome = budgetOutcome(trip, locale);
 
   return (
     <li className={styles.trip}>
@@ -102,21 +103,24 @@ export function HistoryTripCard({
         </div>
         <div>
           <dt>Budget outcome</dt>
-          <dd>{budgetOutcome(trip, locale).label}</dd>
+          <dd data-outcome={outcome.status}>{outcome.label}</dd>
         </div>
       </dl>
 
       {difference ? (
-        <p className={styles.difference}>{difference}</p>
-      ) : (
-        <p className={styles.neutral}>
-          No checkout comparison recorded.
+        <p
+          className={styles.difference}
+          data-direction={(checkoutDifference(trip) ?? 0) > 0 ? "more" : "within"}
+        >
+          {difference}
         </p>
-      )}
+      ) : null}
 
       {trip.items.length > 0 ? (
         <details className={styles.tripDetails}>
-          <summary>View items · {trip.items.length}</summary>
+          <summary>
+            View {quantity} {quantity === 1 ? "item" : "items"}
+          </summary>
           <ul>
             {trip.items.map((item, index) => (
               <li key={item.id}>

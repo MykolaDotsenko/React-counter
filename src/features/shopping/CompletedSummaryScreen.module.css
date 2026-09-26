@@ -157,7 +157,7 @@
   align-items: center;
   gap: 7px;
   padding: 0 14px;
-  border: 1px solid var(--shopping-border);
+  border: 1px solid var(--shopping-field-border);
   border-radius: 14px;
   background: var(--shopping-raised);
 }
@@ -206,6 +206,10 @@
   font-size: 0.88rem;
   font-weight: 800;
   line-height: 1.4;
+}
+
+.difference[data-direction="more"] {
+  color: var(--shopping-warning);
 }
 
 .error {

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 
 import type {
   BarcodeReaderPort,
@@ -47,6 +47,7 @@ import { useShoppingEvidence } from "#shopping-evidence";
 import { addedFeedback, remainingFeedback } from "../features/shopping/shopping-feedback";
 import { AppearanceSwitcher } from "./AppearanceSwitcher";
 import { SHOPPING_LOCALE } from "../features/shopping/shopping-locale";
+import { focusNextScreen } from "../features/shopping/focus-next-screen";
 import { useShoppingShellFocus } from "./use-shopping-shell-focus";
 import styles from "./ShoppingAppShell.module.css";
 
@@ -56,6 +57,11 @@ export interface ShoppingAppShellProps {
   readonly barcodeReader?: BarcodeReaderPort | null;
   readonly priceReader?: PriceTagReaderPort | null;
   readonly productLookup?: ProductLookupPort | null;
+}
+
+interface ShoppingAppScreensProps extends ShoppingAppShellProps {
+  readonly lastAddedMessage: string;
+  readonly setLastAddedMessage: (message: string) => void;
 }
 
 const ScanSurface = lazy(() => import("../features/shopping/ScanSurface"));
@@ -117,13 +123,50 @@ type OverlayState =
 
 const NO_OVERLAY: OverlayState = { kind: "none" };
 
-export function ShoppingAppShell({
+function LiveStatus({ message }: { readonly message: string }) {
+  const [spoken, setSpoken] = useState("");
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setSpoken(message);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [message]);
+
+  return (
+    <p className={styles.liveStatus} role="status" aria-live="polite">
+      {spoken === message ? message : ""}
+    </p>
+  );
+}
+
+export function ShoppingAppShell(props: ShoppingAppShellProps) {
+  const [lastAddedMessage, setLastAddedMessage] = useState("");
+
+  return (
+    <>
+      <LiveStatus message={lastAddedMessage} />
+      <ShoppingAppScreens
+        {...props}
+        lastAddedMessage={lastAddedMessage}
+        setLastAddedMessage={setLastAddedMessage}
+      />
+    </>
+  );
+}
+
+function ShoppingAppScreens({
   controller,
   camera = null,
   barcodeReader = null,
   priceReader = null,
   productLookup = null,
-}: ShoppingAppShellProps) {
+  lastAddedMessage,
+  setLastAddedMessage,
+}: ShoppingAppScreensProps) {
   const state = useShoppingAppState(controller);
   const {
     addPriceButtonRef,
@@ -148,7 +191,6 @@ export function ShoppingAppShell({
       setOverlay({ ...next, tripId: state.activeTrip.id });
     }
   };
-  const [lastAddedMessage, setLastAddedMessage] = useState("");
   const cameraReady = camera !== null && camera.isAvailable() ? camera : null;
   const scanBarcode = cameraReady === null ? null : barcodeReader;
   const scanPrice = cameraReady === null ? null : priceReader;
@@ -171,6 +213,21 @@ export function ShoppingAppShell({
       scanBarcode?.prepare();
     }
   }, [scanBarcode, state.lifecycle]);
+  const screenName =
+    (state.lifecycle === "idle" || state.lifecycle === "completed-summary") &&
+    overlay.kind === "history"
+      ? "history"
+      : state.lifecycle;
+  const shownScreen = useRef(screenName);
+  useEffect(() => {
+    if (shownScreen.current === screenName) {
+      return;
+    }
+
+    shownScreen.current = screenName;
+    window.scrollTo(0, 0);
+    focusNextScreen();
+  }, [screenName]);
   const hasHistory = state.completedTrips.length > 0;
   useEffect(() => {
     if (!hasHistory) {
@@ -179,7 +236,7 @@ export function ShoppingAppShell({
 
     const timer = window.setTimeout(() => {
       void loadHistoryScreen();
-    }, 1_500);
+    }, 300);
 
     return () => {
       window.clearTimeout(timer);

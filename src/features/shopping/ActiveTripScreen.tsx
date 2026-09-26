@@ -277,12 +277,8 @@ export function ActiveTripScreen({
         </section>
 
         {feedbackMessage || (state.undo !== null && onUndo) ? (
-          <div className={styles.feedback}>
-            {feedbackMessage ? (
-              <p role="status" aria-live="polite">
-                {feedbackMessage}
-              </p>
-            ) : null}
+          <div className={styles.feedback} data-status={status}>
+            {feedbackMessage ? <p>{feedbackMessage}</p> : null}
             {state.undo !== null && onUndo ? (
               <button
                 type="button"

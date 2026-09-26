@@ -119,6 +119,28 @@ describe("ItemEditSurface", () => {
     });
   });
 
+  it("closes on Escape from any control, not only the price field", async () => {
+    const user = userEvent.setup();
+    const item = createItem();
+    const onCancel = vi.fn();
+
+    render(
+      <ItemEditSurface
+        trip={createTrip(item)}
+        item={item}
+        onCancel={onCancel}
+        onSave={vi.fn(() => true)}
+        onRemove={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    screen.getByRole("button", { name: "Increase edited quantity" }).focus();
+    await user.keyboard("{Escape}");
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
   it("can name an item for future Recent Items without requiring a price change", async () => {
     const user = userEvent.setup();
     const item = createItem();

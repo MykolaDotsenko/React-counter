@@ -50,10 +50,15 @@ export function HistoryScreen({
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const canChangeHistory =
     state.persistence.status === "healthy" &&
     state.historyIntegrity.status === "healthy" &&
     !state.completionCleanupPending;
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     if (confirmation.kind !== "none") {
@@ -186,7 +191,9 @@ export function HistoryScreen({
           </button>
           <div>
             <p className={styles.eyebrow}>Trip history</p>
-            <h1 id="history-title">Past shopping trips</h1>
+            <h1 id="history-title" ref={titleRef} tabIndex={-1}>
+              Past shopping trips
+            </h1>
             <p>
               Your past trips and, when you added one, the receipt total.
             </p>

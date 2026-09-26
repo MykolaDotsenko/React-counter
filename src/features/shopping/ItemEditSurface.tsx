@@ -227,7 +227,16 @@ export function ItemEditSurface({
         : "";
 
   return (
-    <main className={styles.screen} aria-labelledby="edit-item-title">
+    <main
+      className={styles.screen}
+      aria-labelledby="edit-item-title"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onCancel();
+        }
+      }}
+    >
       <section className={styles.sheet}>
         <header className={styles.header}>
           <div>
@@ -301,11 +310,6 @@ export function ItemEditSurface({
                 if (event.key === "Enter") {
                   event.preventDefault();
                   submit();
-                }
-
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  onCancel();
                 }
               }}
             />

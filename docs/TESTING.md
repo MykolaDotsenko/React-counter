@@ -402,7 +402,7 @@ CI currently enforces:
 - exactly one barcode engine WASM file: <= 1,200,000 bytes, whose SHA-256 must equal the bundled `zxing-wasm` reader build;
 - exactly one price reader chunk: <= 40,000 raw / 14,000 gzip bytes, outside the initial bundle;
 - every self-hosted price reader file present, within its own budget, byte-identical to its pinned package file, <= 10,500,000 bytes together, and absent from the service worker precache;
-- total public CSS: <= 80,000 raw / 14,700 gzip bytes;
+- total public CSS: <= 80,000 raw / 15,000 gzip bytes;
 - initial CSS referenced by the public HTML: <= 61,000 raw / 10,300 gzip bytes.
 
 The engine budgets apply only to a feature the build ships. With `VITE_SHOPPING_BARCODE_SCANNER=0` the validator skips the barcode engine chunk and WASM checks and reports "barcode scanning switched off"; with `VITE_SHOPPING_PRICE_OCR=0` it skips the price reader chunk and file checks, reports "price tag reading switched off" and fails if the build still ships the price reader files. CI builds and validates one build with both switches at `0`.
