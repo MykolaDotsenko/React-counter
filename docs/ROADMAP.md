@@ -127,7 +127,7 @@ Shipped in these layers:
 8. permission/error/manual-fallback UX;
 9. release switches `VITE_SHOPPING_BARCODE_SCANNER` and `VITE_SHOPPING_PRODUCT_LOOKUP`, which CI reads from repository variables of the same name.
 
-If issue #73 concludes REMEDIATE or DEFER, switch scanning off rather than weakening manual entry: set the `VITE_SHOPPING_BARCODE_SCANNER` repository variable to `0`; the next push to `main`, such as the commit recording that outcome here, builds, tests and deploys the app without scanning.
+If issue #73 concludes that scanning must be remediated or withdrawn, switch it off rather than weakening manual entry: set the `VITE_SHOPPING_BARCODE_SCANNER` repository variable to `0`; the next push to `main`, such as the commit recording that outcome here, builds, tests and deploys the app without scanning.
 
 Barcode identifies **product identity only**. It never supplies authoritative current shelf price. Manual current-price entry remains complete and always available.
 
@@ -163,7 +163,7 @@ Shipped in these layers:
 6. candidate choice, then pre-filled price entry that the shopper confirms;
 7. release switch `VITE_SHOPPING_PRICE_OCR`, read by CI from a repository variable.
 
-If issue #90 concludes REMEDIATE or DEFER, switch price reading off rather than weakening manual entry: set the `VITE_SHOPPING_PRICE_OCR` repository variable to `0`, and the next push to `main` builds, tests and deploys the app without it.
+If issue #90 concludes that price reading must be remediated or withdrawn, switch it off rather than weakening manual entry: set the `VITE_SHOPPING_PRICE_OCR` repository variable to `0`, and the next push to `main` builds, tests and deploys the app without it.
 
 The parser reuses the `parseEurDraft` money contract. It does not invent decimals in bare OCR digits, does not treat percentages or dates as money, and keeps unit-price, member, regular and multi-buy context distinguishable for ranking and human review ([DOMAIN.md](./DOMAIN.md#shelf-price-reading)).
 
