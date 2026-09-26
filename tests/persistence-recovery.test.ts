@@ -707,6 +707,40 @@ describe("independent review regressions", () => {
     });
   });
 
+  it("refuses to delete when history cannot be read at the moment of writing", () => {
+    const { values, storage, control } = flakyHistoryStorage({
+      [HISTORY_STORAGE_KEY]: historyRaw([completedTrip("trip-a"), completedTrip("trip-b")]),
+    });
+    control.failHistoryRead = false;
+    const controller = boot(storage);
+    const before = values.get(HISTORY_STORAGE_KEY);
+    control.failHistoryRead = true;
+
+    expect(controller.deleteCompletedTrip("trip-a" as never)).toMatchObject({
+      ok: false,
+      error: { code: "history-write-unavailable" },
+    });
+    expect(values.get(HISTORY_STORAGE_KEY)).toBe(before);
+    expect(controller.getSnapshot()).toMatchObject({
+      historyIntegrity: { status: "degraded" },
+    });
+  });
+
+  it("keeps the open summary when an older trip is deleted from history", () => {
+    const storage = memoryStorage({
+      [HISTORY_STORAGE_KEY]: historyRaw([completedTrip("trip-a")]),
+    });
+    const controller = boot(storage);
+
+    expect(shopAndFinish(controller).finished.ok).toBe(true);
+    expect(controller.deleteCompletedTrip("trip-a" as never).ok).toBe(true);
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "completed-summary",
+      completedSummary: { id: "trip-new-1" },
+    });
+    expect(restoreHistory(storage).trips.map((trip) => trip.id)).toEqual(["trip-new-1"]);
+  });
+
   it("shows exactly the trips a set-aside keeps when history breaks mid-session", () => {
     const storage = memoryStorage({
       [HISTORY_STORAGE_KEY]: historyRaw([completedTrip("trip-a"), completedTrip("trip-b")]),

@@ -512,7 +512,6 @@
 }
 
 .labelDetails summary::before {
-  content: "+";
   content: "+" / "";
   margin-right: -4px;
   font-size: 1rem;
@@ -520,7 +519,6 @@
 }
 
 .labelDetails[open] summary::before {
-  content: "−";
   content: "−" / "";
 }
 
@@ -689,21 +687,12 @@
     display: none;
   }
 
-  .header h1 {
-    font-size: 1.3rem;
-  }
-
-  .cancelButton,
   .modeButton {
     min-height: 40px;
   }
 
   .amountShell {
     min-height: 56px;
-  }
-
-  .amountInput {
-    font-size: 2.2rem;
   }
 
   .quantitySection {

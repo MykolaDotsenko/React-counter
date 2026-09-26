@@ -402,12 +402,12 @@ CI currently enforces:
 - exactly one barcode engine WASM file: <= 1,200,000 bytes, whose SHA-256 must equal the bundled `zxing-wasm` reader build;
 - exactly one price reader chunk: <= 40,000 raw / 14,000 gzip bytes, outside the initial bundle;
 - every self-hosted price reader file present, within its own budget, byte-identical to its pinned package file, <= 10,500,000 bytes together, and absent from the service worker precache;
-- total public CSS: <= 80,000 raw / 13,000 gzip bytes;
-- initial CSS referenced by the public HTML: <= 70,000 raw / 11,100 gzip bytes.
+- total public CSS: <= 80,000 raw / 13,200 gzip bytes;
+- initial CSS referenced by the public HTML: <= 70,000 raw / 11,300 gzip bytes.
 
 The engine budgets apply only to a feature the build ships. With `VITE_SHOPPING_BARCODE_SCANNER=0` the validator skips the barcode engine chunk and WASM checks and reports "barcode scanning switched off"; with `VITE_SHOPPING_PRICE_OCR=0` it skips the price reader chunk and file checks, reports "price tag reading switched off" and fails if the build still ships the price reader files. CI builds and validates one build with both switches at `0`.
 
-The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a camera capability can be code-split without silently joining the startup path. Its guarded-evidence marker scan reads every public JavaScript chunk except the two lazy engine chunks. The total budgets were raised explicitly for the lazy scan surface (D-053, D-055), and the initial CSS gzip budget by 100 bytes for the price entry "Read price tag" control (D-055).
+The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a camera capability can be code-split without silently joining the startup path. Its guarded-evidence marker scan reads every public JavaScript chunk except the two lazy engine chunks. The total budgets were raised explicitly for the lazy scan surface (D-053, D-055), and the initial CSS gzip budget by 100 bytes for the price entry "Read price tag" control (D-055). The 2026-09-26 release audit raised both CSS gzip budgets by 200 bytes for the price-entry layout that keeps Add and the keypad on screen from 360x640 to 430x932, and for the reserve and over-budget colours of the capacity bar.
 
 Protect:
 
