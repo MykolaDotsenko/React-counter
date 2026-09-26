@@ -123,6 +123,29 @@ const contextualScore = (
   (context.multiBuy ? 30 : 0) -
   (context.regularPrice ? 15 : 0);
 
+const isDateFragment = (
+  text: string,
+  end: number,
+  rawMoney: string,
+): boolean => {
+  const date = /^(\d{1,2})\.(\d{1,2})$/.exec(rawMoney);
+
+  if (date === null) {
+    return false;
+  }
+
+  const day = Number(date[1]);
+  const month = Number(date[2]);
+
+  return (
+    day >= 1 &&
+    day <= 31 &&
+    month >= 1 &&
+    month <= 12 &&
+    /^\.(?:\d|\s|[-–—]|$)/.test(text.slice(end, end + 2))
+  );
+};
+
 const addIfNonOverlapping = (
   candidates: RawCandidate[],
   next: RawCandidate,
@@ -179,6 +202,10 @@ const collectRawCandidates = (text: string): RawCandidate[] => {
     }
 
     const start = match.index + prefix.length;
+
+    if (isDateFragment(text, start + rawMoney.length, rawMoney)) {
+      continue;
+    }
 
     addIfNonOverlapping(candidates, {
       start,

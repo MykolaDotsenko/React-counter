@@ -40,6 +40,13 @@ describe("shelf-label price candidate parser", () => {
     expect(values("Price 3.79")).toEqual([379]);
   });
 
+  it("does not read offer dates as prices, even next to a price word", () => {
+    expect(values("Tarjous voimassa 24.09.–30.09.")).toEqual([]);
+    expect(values("Tarjous 1,29 €\nVoimassa 1.10.-7.10.")).toEqual([129]);
+    expect(values("Parasta ennen 24.9.2026 hinta 2,49 €")).toEqual([249]);
+    expect(values("Hinta 4.29.")).toEqual([429]);
+  });
+
   it("does not parse percentage discounts as money", () => {
     expect(values("ALE -30%")).toEqual([]);
     expect(values("ALE 30%\nHinta 3,49 €")).toEqual([349]);
@@ -138,6 +145,13 @@ describe("price tag candidate ranking", () => {
     expect(candidates[1]?.context.regularPrice).toBe(true);
     expect(candidates[2]?.context.unitPrice).toBe(true);
     expect(candidates.map((candidate) => candidate.prominent)).toEqual([true, false, false]);
+  });
+
+  it("does not offer offer dates as prices, however large they are printed", () => {
+    expect(
+      valuesOf(rank([["Tarjous", 40], ["1,29 €", 120], ["voimassa 24.9.–30.9.", 35]])),
+    ).toEqual([129]);
+    expect(valuesOf(rank([["24.09.2026", 110], ["Hinta 2,49 €", 60]]))).toEqual([249]);
   });
 
   it("keeps one entry per amount, preferring the headline reading", () => {
