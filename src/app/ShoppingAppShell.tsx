@@ -46,6 +46,10 @@ import { StartTripScreen } from "../features/shopping/StartTripScreen";
 import { useShoppingEvidence } from "#shopping-evidence";
 import { addedFeedback, remainingFeedback } from "../features/shopping/shopping-feedback";
 import { AppFooter } from "./AppFooter";
+import {
+  readScanModePreference,
+  writeScanModePreference,
+} from "./scan-mode-preference";
 import { AppearanceSwitcher } from "./AppearanceSwitcher";
 import { SHOPPING_LOCALE } from "../features/shopping/shopping-locale";
 import { focusNextScreen } from "../features/shopping/focus-next-screen";
@@ -487,6 +491,7 @@ function ShoppingAppScreens({
             priceReader={scanPrice}
             productLookup={productLookup}
             initialMode={overlay.mode}
+            onModeChange={writeScanModePreference}
             context={overlay.context}
             locale={SHOPPING_LOCALE}
             onCancel={() => {
@@ -748,7 +753,12 @@ function ShoppingAppScreens({
                 setLastAddedMessage("");
                 openTripOverlay({
                   kind: "scan",
-                  mode: scanBarcode === null ? "price" : "barcode",
+                  mode:
+                    scanBarcode === null
+                      ? "price"
+                      : scanPrice === null
+                        ? "barcode"
+                        : readScanModePreference("barcode"),
                   context: {},
                 });
               },

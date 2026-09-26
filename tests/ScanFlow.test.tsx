@@ -161,6 +161,31 @@ describe("scanning while shopping", () => {
     expect(controller.getSnapshot().activeTrip?.items).toMatchObject([{ unitPriceMinor: 135 }]);
   });
 
+  it("opens the scanner in the mode the shopper chose last time", async () => {
+    const user = userEvent.setup();
+    const { controller, camera, barcodeReader, priceReader } = setup();
+    controller.startTrip({ budgetMinor: money(5_000) });
+
+    render(
+      <ShoppingAppShell
+        controller={controller}
+        camera={camera}
+        barcodeReader={barcodeReader}
+        priceReader={priceReader}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Scan barcode or price tag" }));
+    expect(await screen.findByRole("heading", { name: "Find the product" })).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Price tag" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    await user.click(await screen.findByRole("button", { name: "Scan barcode or price tag" }));
+
+    expect(await screen.findByRole("heading", { name: "Read the price tag" })).not.toBeNull();
+    expect(window.localStorage.getItem("shopping-budget:scan-mode")).toBe("price");
+  });
+
   it("returns from the price tag reader to the price being entered, keeping its name and quantity", async () => {
     const user = userEvent.setup();
     const { controller, camera, barcodeReader, priceReader } = setup();

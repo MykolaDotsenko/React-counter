@@ -56,7 +56,8 @@
 
 .viewport {
   position: relative;
-  aspect-ratio: 4 / 3;
+  height: min(75vw, 36dvh);
+  min-height: 180px;
   overflow: hidden;
   border-radius: 20px;
   background: #0b0d0c;
