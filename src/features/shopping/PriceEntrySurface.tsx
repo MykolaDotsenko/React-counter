@@ -432,7 +432,7 @@ export function PriceEntrySurface({
             ) : state.kind === "incomplete" ? (
               <span>Finish the amount.</span>
             ) : (
-              <span>Price only. Name and category are optional.</span>
+              <span>Price only. A name is optional.</span>
             )}
           </div>
         </div>

@@ -377,7 +377,7 @@ test("starts with a safety buffer and makes safe remaining unambiguous", async (
     page.getByText("safe to spend", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText(/^€2\.00 kept in reserve\./),
+    page.getByText("plus a €2.00 safety buffer", { exact: true }),
   ).toBeVisible();
 
   const capacity = page.getByRole("progressbar", {
@@ -386,7 +386,7 @@ test("starts with a safety buffer and makes safe remaining unambiguous", async (
 
   await expect(capacity).toHaveAttribute(
     "aria-valuetext",
-    /€48\.00 available before your reserve/,
+    "€0.00 in cart of €50.00. €48.00 safe to spend, plus a €2.00 safety buffer.",
   );
 });
 
@@ -864,7 +864,7 @@ test("completes the Sprint B flagship exact-money shopping journey", async ({
   await expect(page.getByText("safe to spend", { exact: true })).toBeVisible();
   await expect(
     page.getByText(
-      "Safety buffer reached · €1.44 remains in your nominal budget",
+      "€1.44 of your €2.00 safety buffer left",
       { exact: true },
     ),
   ).toBeVisible();
@@ -909,9 +909,9 @@ test("completes the Sprint B flagship exact-money shopping journey", async ({
     page.getByText("€49.76 of €50.00", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText(
-      "Safety buffer reached · €0.24 remains in your nominal budget",
-    ),
+    page.getByText("€0.24 of your €2.00 safety buffer left", {
+      exact: true,
+    }),
   ).toBeVisible();
 });
 
@@ -1189,7 +1189,7 @@ test("repeats the last spending plan immediately and after a later reload", asyn
 
   const repeatShortcut = page.getByRole("button", { name: /Shop again/i });
   await expect(repeatShortcut).toContainText("€50.00 budget");
-  await expect(repeatShortcut).toContainText("€2.00 reserve");
+  await expect(repeatShortcut).toContainText("€2.00 safety buffer");
 
   await repeatShortcut.click();
 

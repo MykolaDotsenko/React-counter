@@ -143,6 +143,25 @@ describe("CompletedSummaryScreen", () => {
     ).not.toBeNull();
   });
 
+  it("states how the finished trip ended against its budget", () => {
+    const { controller, trip } = createController();
+
+    render(
+      <CompletedSummaryScreen
+        controller={controller}
+        trip={trip}
+        onDone={vi.fn()}
+        onShopAgain={vi.fn()}
+        onViewHistory={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    const outcome = screen.getByText("€45.21 under budget");
+
+    expect(outcome.getAttribute("data-outcome")).toBe("under");
+  });
+
   it("starts a fresh trip from the completed budget in one action", async () => {
     const user = userEvent.setup();
     const { controller, trip } = createController();

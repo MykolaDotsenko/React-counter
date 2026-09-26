@@ -1,15 +1,15 @@
 import type { RefObject } from "react";
 
-import { formatEur, signedMinorUnits } from "../../domain/money";
+import { formatEur } from "../../domain/money";
 import {
   cartTotal,
   checkoutDifference,
   itemCount,
   lineTotal,
-  remaining,
   type CompletedTrip,
 } from "../../domain/shopping-trip";
 import styles from "./HistoryScreen.module.css";
+import { budgetOutcome, formatAbsoluteEur } from "./shopping-feedback";
 
 export interface HistoryTripCardProps {
   readonly trip: CompletedTrip;
@@ -22,19 +22,6 @@ export interface HistoryTripCardProps {
   readonly onCancelDelete: () => void;
   readonly onConfirmDelete: (trip: CompletedTrip) => void;
 }
-
-const formatAbsoluteEur = (
-  value: number,
-  locale: string,
-): string => {
-  const amount = signedMinorUnits(Math.abs(value));
-
-  if (!amount.ok) {
-    throw new RangeError("History reconciliation exceeded safe integer bounds");
-  }
-
-  return formatEur(amount.value, locale);
-};
 
 const differenceLabel = (
   trip: CompletedTrip,
@@ -53,21 +40,6 @@ const differenceLabel = (
   return difference > 0
     ? `${formatAbsoluteEur(difference, locale)} more at checkout`
     : `${formatAbsoluteEur(difference, locale)} less at checkout`;
-};
-
-const budgetOutcomeLabel = (
-  trip: CompletedTrip,
-  locale: string,
-): string => {
-  const amount = remaining(trip);
-
-  if (amount === 0) {
-    return "On budget";
-  }
-
-  return amount > 0
-    ? `${formatAbsoluteEur(amount, locale)} under budget`
-    : `${formatAbsoluteEur(amount, locale)} over budget`;
 };
 
 const completedLabel = (
@@ -130,7 +102,7 @@ export function HistoryTripCard({
         </div>
         <div>
           <dt>Budget outcome</dt>
-          <dd>{budgetOutcomeLabel(trip, locale)}</dd>
+          <dd>{budgetOutcome(trip, locale).label}</dd>
         </div>
       </dl>
 

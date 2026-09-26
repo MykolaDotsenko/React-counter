@@ -91,6 +91,17 @@
   font-size: 0.86rem;
 }
 
+.outcome {
+  margin: 6px 0 0;
+  color: var(--shopping-accent);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.outcome[data-outcome="over"] {
+  color: var(--shopping-danger);
+}
+
 .reconciliation {
   display: grid;
   gap: 16px;

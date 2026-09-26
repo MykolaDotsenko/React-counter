@@ -287,7 +287,7 @@ export function StartTripScreen({
                   ? ` · ${formatEur(
                       recentTrip.safetyBufferMinor,
                       locale,
-                    )} reserve`
+                    )} safety buffer`
                   : ""}
               </small>
             </span>

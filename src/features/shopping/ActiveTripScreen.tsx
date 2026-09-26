@@ -169,16 +169,23 @@ export function ActiveTripScreen({
   } as CSSProperties;
 
   const totalQuantity = itemCount(trip);
-  const remainingContext = nominalOverBudget
-    ? `${formatSignedAmount(Math.abs(nominalRemaining), locale)} over your limit`
+  const status = nominalOverBudget
+    ? "over"
     : reserveInUse
-      ? `Safety buffer reached · ${formatSignedAmount(
-          nominalRemaining,
-          locale,
-        )} remains in your nominal budget`
-      : hasBuffer
-        ? `${formatSignedAmount(protectedRemaining, locale)} available before your reserve`
-        : `${formatSignedAmount(nominalRemaining, locale)} available before your limit`;
+      ? "reserve"
+      : "within";
+  const heroContext =
+    !hasBuffer || nominalOverBudget
+      ? null
+      : reserveInUse
+        ? `${formatSignedAmount(nominalRemaining, locale)} of your ${formatEur(
+            trip.safetyBufferMinor,
+            locale,
+          )} safety buffer left`
+        : `plus a ${formatEur(trip.safetyBufferMinor, locale)} safety buffer`;
+  const statusSentence = `${formatSignedAmount(heroAmount, locale)} ${heroLabel}${
+    heroContext === null ? "" : `, ${heroContext}`
+  }`;
 
   return (
     <main className={styles.screen}>
@@ -197,18 +204,10 @@ export function ActiveTripScreen({
           </p>
         </header>
 
-        {utilityControl}
-
         <section
           className={styles.hero}
           aria-label="Current spending status"
-          data-status={
-            nominalOverBudget
-              ? "over"
-              : reserveInUse
-                ? "reserve"
-                : "within"
-          }
+          data-status={status}
         >
           <p
             key={heroAmount}
@@ -218,7 +217,9 @@ export function ActiveTripScreen({
             {formatSignedAmount(heroAmount, locale)}
           </p>
           <p className={styles.heroLabel}>{heroLabel}</p>
-          <p className={styles.heroContext}>{remainingContext}</p>
+          {heroContext === null ? null : (
+            <p className={styles.heroContext}>{heroContext}</p>
+          )}
         </section>
 
         <PersistenceHealthNotice
@@ -242,14 +243,11 @@ export function ActiveTripScreen({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(spentPercent)}
-            aria-valuetext={
-              hasBuffer
-                ? `${formatEur(total, locale)} in cart. ${remainingContext}. Reserve ${formatEur(
-                    trip.safetyBufferMinor,
-                    locale,
-                  )}.`
-                : `${formatEur(total, locale)} in cart. ${remainingContext}.`
-            }
+            aria-valuetext={`${formatEur(total, locale)} in cart of ${formatEur(
+              trip.budgetMinor,
+              locale,
+            )}. ${statusSentence}.`}
+            data-status={status}
             style={capacityStyle}
           >
             <span className={styles.capacityFill} aria-hidden="true" />
@@ -262,28 +260,14 @@ export function ActiveTripScreen({
             ) : null}
           </div>
 
-          <div className={styles.capacityLabels} aria-hidden="true">
-            <span>Cart {formatEur(total, locale)}</span>
-            <span>
-              {hasBuffer
-                ? `Safe limit ${formatEur(protectedLimit, locale)} · Reserve ${formatEur(
-                    trip.safetyBufferMinor,
-                    locale,
-                  )}`
-                : `Budget ${formatEur(trip.budgetMinor, locale)}`}
-            </span>
-          </div>
-
           {hasBuffer ? (
-            <p className={styles.reserveNote}>
-              {formatEur(trip.safetyBufferMinor, locale)} kept in reserve.
-              Nominally{" "}
-              {nominalRemaining >= 0
-                ? `${formatSignedAmount(nominalRemaining, locale)} remains`
-                : `${formatSignedAmount(Math.abs(nominalRemaining), locale)} over budget`}.
-            </p>
+            <div className={styles.capacityLabels} aria-hidden="true">
+              <span>Safe limit {formatEur(protectedLimit, locale)}</span>
+              <span>
+                Safety buffer {formatEur(trip.safetyBufferMinor, locale)}
+              </span>
+            </div>
           ) : null}
-
         </section>
 
         {feedbackMessage || (state.undo !== null && onUndo) ? (
@@ -446,6 +430,8 @@ export function ActiveTripScreen({
             </ul>
           )}
         </section>
+
+        {utilityControl}
       </section>
     </main>
   );

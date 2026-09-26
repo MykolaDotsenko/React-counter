@@ -3,7 +3,6 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   formatEur,
   parseEurDraft,
-  signedMinorUnits,
   type MinorUnits,
   type MoneyInputErrorCode,
 } from "../../domain/money";
@@ -13,6 +12,7 @@ import {
   type ActiveTrip,
 } from "../../domain/shopping-trip";
 import styles from "./BudgetSettingsSurface.module.css";
+import { formatAbsoluteEur } from "./shopping-feedback";
 import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface SpendingPlanIntent {
@@ -53,16 +53,6 @@ const inputErrorMessage = (code: MoneyInputErrorCode): string => {
       return exhaustive;
     }
   }
-};
-
-const formatAbsoluteEur = (value: number, locale: string): string => {
-  const amount = signedMinorUnits(Math.abs(value));
-
-  if (!amount.ok) {
-    throw new RangeError("Spending-plan preview exceeded safe integer bounds");
-  }
-
-  return formatEur(amount.value, locale);
 };
 
 export function BudgetSettingsSurface({
@@ -162,7 +152,7 @@ export function BudgetSettingsSurface({
           locale,
         )} over this budget.`,
         secondary:
-          "You can still save this limit; the app will show the over-budget state clearly.",
+          "You can still save it; the trip will show how far over you are.",
       };
     }
 
@@ -173,7 +163,10 @@ export function BudgetSettingsSurface({
         secondary: `${formatAbsoluteEur(
           projection.value.remainingMinor,
           locale,
-        )} remains before the nominal budget.`,
+        )} of this ${formatEur(
+          parsedPlan.safetyBufferMinor,
+          locale,
+        )} safety buffer would be left.`,
       };
     }
 
@@ -194,7 +187,7 @@ export function BudgetSettingsSurface({
           ? `${formatEur(
               parsedPlan.safetyBufferMinor,
               locale,
-            )} stays in reserve.`
+            )} is kept as your safety buffer.`
           : "No safety buffer will be held back.",
     };
   }, [locale, parsedPlan, trip]);

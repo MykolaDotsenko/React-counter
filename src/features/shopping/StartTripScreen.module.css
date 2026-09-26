@@ -189,7 +189,24 @@
   font-size: 0.92rem;
   font-weight: 650;
   cursor: pointer;
-  list-style-position: inside;
+  list-style: none;
+}
+
+.reserveSummary::-webkit-details-marker {
+  display: none;
+}
+
+.reserveSummary::before {
+  content: "+";
+  content: "+" / "";
+  margin-right: 8px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.reserveDetails[open] > .reserveSummary::before {
+  content: "−";
+  content: "−" / "";
 }
 
 .reserveSummary:hover {
@@ -287,6 +304,10 @@
   color: var(--accent-contrast);
   padding: 0 22px;
   box-shadow: var(--shopping-primary-action-shadow);
+}
+
+.error:empty {
+  display: contents;
 }
 
 .error {

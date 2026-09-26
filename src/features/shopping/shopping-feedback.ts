@@ -5,16 +5,34 @@ import {
   safeRemaining,
   type ActiveTrip,
   type CartItem,
+  type ShoppingTrip,
 } from "../../domain/shopping-trip";
 
-const formatAbsoluteEur = (value: number, locale: string): string => {
+export const formatAbsoluteEur = (value: number, locale: string): string => {
   const amount = signedMinorUnits(Math.abs(value));
 
   if (!amount.ok) {
-    throw new RangeError("Shopping feedback amount exceeded safe integer bounds");
+    throw new RangeError("Amount exceeded safe integer bounds");
   }
 
   return formatEur(amount.value, locale);
+};
+
+export type BudgetOutcomeStatus = "under" | "on" | "over";
+
+export const budgetOutcome = (
+  trip: ShoppingTrip,
+  locale: string,
+): { readonly status: BudgetOutcomeStatus; readonly label: string } => {
+  const amount = remaining(trip);
+
+  if (amount === 0) {
+    return { status: "on", label: "On budget" };
+  }
+
+  return amount > 0
+    ? { status: "under", label: `${formatAbsoluteEur(amount, locale)} under budget` }
+    : { status: "over", label: `${formatAbsoluteEur(amount, locale)} over budget` };
 };
 
 export const remainingFeedback = (
@@ -34,7 +52,10 @@ export const remainingFeedback = (
       return `${formatEur(protectedRemaining, locale)} safe to spend.`;
     }
 
-    return `${formatEur(nominalRemaining, locale)} remains before your nominal limit.`;
+    return `${formatEur(nominalRemaining, locale)} of your ${formatEur(
+      trip.safetyBufferMinor,
+      locale,
+    )} safety buffer left.`;
   }
 
   return `${formatEur(nominalRemaining, locale)} remaining.`;

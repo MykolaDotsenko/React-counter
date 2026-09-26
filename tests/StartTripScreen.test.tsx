@@ -215,7 +215,7 @@ describe("StartTripScreen", () => {
 
     const repeat = screen.getByRole("button", { name: /Shop again/i });
     expect(repeat.textContent).toContain("€37.50 budget");
-    expect(repeat.textContent).toContain("€2.00 reserve");
+    expect(repeat.textContent).toContain("€2.00 safety buffer");
 
     await user.click(repeat);
 

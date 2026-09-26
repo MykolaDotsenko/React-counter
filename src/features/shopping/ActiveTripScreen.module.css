@@ -180,6 +180,14 @@
   transition: width 180ms ease;
 }
 
+.capacity[data-status="reserve"] .capacityFill {
+  background: var(--warning);
+}
+
+.capacity[data-status="over"] .capacityFill {
+  background: var(--danger);
+}
+
 .reserveZone {
   position: absolute;
   inset-block: -1px;
@@ -224,16 +232,6 @@
 .capacityLabels span:last-child {
   text-align: right;
 }
-
-.reserveNote {
-  margin: 2px 0 0;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.45;
-}
-
 
 .feedback {
   margin: -4px 0 0;
@@ -325,7 +323,6 @@
   outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
-
 
 .finishButton {
   width: 100%;
@@ -597,7 +594,8 @@
     border: 1px solid ButtonText;
   }
 
-  .capacityFill {
+  .capacityFill,
+  .capacity[data-status] .capacityFill {
     background: Highlight;
   }
 
@@ -610,7 +608,6 @@
     border: 1px solid ButtonText;
   }
 }
-
 
 .adjustBudgetButton {
   width: fit-content;

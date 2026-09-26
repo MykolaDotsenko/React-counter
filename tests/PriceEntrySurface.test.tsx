@@ -142,7 +142,7 @@ describe("PriceEntrySurface", () => {
       screen.getByText("After adding: €43.21 safe to spend"),
     ).not.toBeNull();
     expect(
-      screen.getByText("€45.21 remains before your nominal limit."),
+      screen.getByText("Your €2.00 safety buffer stays untouched."),
     ).not.toBeNull();
   });
 
@@ -183,7 +183,7 @@ describe("PriceEntrySurface", () => {
       screen.getByText("This item uses €2.00 of your safety buffer."),
     ).not.toBeNull();
     expect(
-      screen.getByText("€2.00 remains before your nominal limit."),
+      screen.getByText("€2.00 of your €5.00 safety buffer would be left."),
     ).not.toBeNull();
   });
 
@@ -207,7 +207,7 @@ describe("PriceEntrySurface", () => {
       screen.getByText("This item uses €1.00 of your safety buffer."),
     ).not.toBeNull();
     expect(
-      screen.getByText("€1.00 remains before your nominal limit."),
+      screen.getByText("€1.00 of your €2.00 safety buffer would be left."),
     ).not.toBeNull();
     expect(
       screen.queryByRole("heading", { name: "Add this price anyway?" }),
@@ -479,7 +479,7 @@ describe("PriceEntrySurface", () => {
       screen.getByText("This item uses €1.50 of your safety buffer."),
     ).not.toBeNull();
     expect(
-      screen.getByText("€0.50 remains before your nominal limit."),
+      screen.getByText("€0.50 of your €2.00 safety buffer would be left."),
     ).not.toBeNull();
     expect(
       screen.queryByRole("heading", { name: "Add this price anyway?" }),

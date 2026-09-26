@@ -191,16 +191,19 @@ export function ItemEditSurface({
       projectionSecondary = `${formatEur(
         absoluteMoney(nominal),
         locale,
-      )} remains in your nominal budget.`;
+      )} of your ${formatEur(
+        projectedTrip.safetyBufferMinor,
+        locale,
+      )} safety buffer would be left.`;
     } else if (projectedTrip.safetyBufferMinor > 0) {
       projectionPrimary = `After saving: ${formatEur(
         absoluteMoney(safe),
         locale,
       )} safe to spend`;
-      projectionSecondary = `${formatEur(
-        absoluteMoney(nominal),
+      projectionSecondary = `Your ${formatEur(
+        projectedTrip.safetyBufferMinor,
         locale,
-      )} remains before your nominal limit.`;
+      )} safety buffer stays untouched.`;
     } else {
       projectionPrimary = `After saving: ${formatEur(
         absoluteMoney(nominal),

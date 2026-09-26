@@ -67,14 +67,14 @@ export const projectionCopy = (
     if (projection.safeRemainingMinor >= 0) {
       return {
         primary: `After adding: ${formatAbsoluteSigned(projection.safeRemainingMinor, locale)} safe to spend`,
-        secondary: `${formatAbsoluteSigned(projection.remainingMinor, locale)} remains before your nominal limit.`,
+        secondary: `Your ${formatEur(trip.safetyBufferMinor, locale)} safety buffer stays untouched.`,
         status: "within",
       };
     }
 
     return {
       primary: `This item uses ${formatAbsoluteSigned(projection.safetyBufferUseMinor, locale)} of your safety buffer.`,
-      secondary: `${formatAbsoluteSigned(projection.remainingMinor, locale)} remains before your nominal limit.`,
+      secondary: `${formatAbsoluteSigned(projection.remainingMinor, locale)} of your ${formatEur(trip.safetyBufferMinor, locale)} safety buffer would be left.`,
       status: "reserve",
     };
   }

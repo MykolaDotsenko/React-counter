@@ -2,11 +2,7 @@ import { useMemo, useState } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
-import {
-  formatEur,
-  parseEurDraft,
-  signedMinorUnits,
-} from "../../domain/money";
+import { formatEur, parseEurDraft } from "../../domain/money";
 import {
   cartTotal,
   checkoutDifference,
@@ -16,6 +12,7 @@ import {
 import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./CompletedSummaryScreen.module.css";
+import { budgetOutcome, formatAbsoluteEur } from "./shopping-feedback";
 import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface CompletedSummaryScreenProps {
@@ -31,19 +28,6 @@ const rawMoney = (minor: number): string => {
   const euros = Math.floor(minor / 100);
   const cents = minor % 100;
   return `${euros}.${String(cents).padStart(2, "0")}`;
-};
-
-const formatAbsoluteEur = (
-  value: number,
-  locale: string,
-): string => {
-  const result = signedMinorUnits(Math.abs(value));
-
-  if (!result.ok) {
-    throw new RangeError("Checkout difference exceeded safe integer bounds");
-  }
-
-  return formatEur(result.value, locale);
 };
 
 const reconciliationCopy = (
@@ -97,6 +81,7 @@ export function CompletedSummaryScreen({
   const total = cartTotal(currentTrip);
   const quantity = itemCount(currentTrip);
   const reconciliation = reconciliationCopy(currentTrip, locale);
+  const outcome = budgetOutcome(currentTrip, locale);
 
   const parsedCheckout = useMemo(() => {
     if (checkoutRaw.trim() === "") {
@@ -201,6 +186,9 @@ export function CompletedSummaryScreen({
             {quantity} {quantity === 1 ? "item" : "items"} · budget{" "}
             {formatEur(currentTrip.budgetMinor, locale)}
           </small>
+          <p className={styles.outcome} data-outcome={outcome.status}>
+            {outcome.label}
+          </p>
         </section>
 
         <section
