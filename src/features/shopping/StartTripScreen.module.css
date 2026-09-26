@@ -176,6 +176,11 @@
   color: var(--accent-primary);
 }
 
+.customToggle[aria-expanded="true"] {
+  border-color: var(--accent-primary);
+  background: var(--shopping-accent-soft);
+}
+
 .reserveDetails {
   border: 0;
 }

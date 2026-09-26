@@ -97,7 +97,6 @@ test("sets an unreadable saved trip aside and starts a new saved trip", async ({
     page.getByRole("heading", { name: "Saved trip needs recovery" }),
   ).toBeVisible();
 
-  await page.getByText("Other ways to continue").click();
   await page.getByRole("button", { name: "Set aside and start fresh" }).click();
 
   await page.getByRole("button", { name: "€25", exact: true }).click();
@@ -134,7 +133,6 @@ test("continues without saving when saved data cannot be read", async ({
     page.getByRole("heading", { name: "Saved trip could not be restored safely" }),
   ).toBeVisible();
 
-  await page.getByText("Other ways to continue").click();
   await page.getByRole("button", { name: "Continue without saving" }).click();
   await expect(
     page.getByRole("heading", { name: "How much can you spend today?" }),
@@ -177,7 +175,6 @@ test("continues without saving when browser storage is blocked", async ({
     page.getByRole("heading", { name: "Saved trip is unavailable" }),
   ).toBeVisible();
 
-  await page.getByText("Other ways to continue").click();
   await expect(
     page.getByRole("button", { name: "Set aside and start fresh" }),
   ).toHaveCount(0);
@@ -244,7 +241,6 @@ test("has no detectable WCAG A/AA violations in recovery and history repair stat
   test.skip(browserName !== "chromium", "axe scan runs once in Chromium");
 
   await seed(page, { [ACTIVE_TRIP_KEY]: "{broken" });
-  await page.getByText("Other ways to continue").click();
   expect((await scan(page)).violations).toEqual([]);
 
   for (const appearance of ["light", "dark", "aurora"]) {

@@ -160,6 +160,9 @@ export function StartTripScreen({
   useEffect(() => {
     if (customOpen) {
       customInputRef.current?.focus();
+      customInputRef.current
+        ?.closest("form")
+        ?.scrollIntoView?.({ block: "nearest" });
     }
   }, [customOpen]);
 
@@ -341,6 +344,49 @@ export function StartTripScreen({
             Custom amount
           </button>
 
+          {customOpen ? (
+            <form
+              id={customRegionId}
+              className={styles.customRegion}
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitCustom();
+              }}
+            >
+              <label
+                htmlFor={customInputId}
+                className={styles.label}
+              >
+                Custom budget
+              </label>
+              <div className={styles.inputShell}>
+                <span aria-hidden="true" className={styles.currency}>
+                  €
+                </span>
+                <input
+                  ref={customInputRef}
+                  id={customInputId}
+                  className={styles.amountInput}
+                  inputMode="decimal"
+                  autoComplete="off"
+                  value={customBudget}
+                  placeholder="50.00"
+                  aria-describedby={errorMessage ? errorId : undefined}
+                  onChange={(event) => {
+                    setCustomBudget(event.currentTarget.value);
+                    setErrorMessage("");
+                  }}
+                />
+              </div>
+              <button
+                type="submit"
+                className={styles.startButton}
+              >
+                Start shopping
+              </button>
+            </form>
+          ) : null}
+
           <details
             className={styles.reserveDetails}
             open={bufferOpen}
@@ -387,48 +433,6 @@ export function StartTripScreen({
           </details>
         </div>
 
-        {customOpen ? (
-          <form
-            id={customRegionId}
-            className={styles.customRegion}
-            onSubmit={(event) => {
-              event.preventDefault();
-              submitCustom();
-            }}
-          >
-            <label
-              htmlFor={customInputId}
-              className={styles.label}
-            >
-              Custom budget
-            </label>
-            <div className={styles.inputShell}>
-              <span aria-hidden="true" className={styles.currency}>
-                €
-              </span>
-              <input
-                ref={customInputRef}
-                id={customInputId}
-                className={styles.amountInput}
-                inputMode="decimal"
-                autoComplete="off"
-                value={customBudget}
-                placeholder="50.00"
-                aria-describedby={errorMessage ? errorId : undefined}
-                onChange={(event) => {
-                  setCustomBudget(event.currentTarget.value);
-                  setErrorMessage("");
-                }}
-              />
-            </div>
-            <button
-              type="submit"
-              className={styles.startButton}
-            >
-              Start shopping
-            </button>
-          </form>
-        ) : null}
 
         <div
           id={errorId}

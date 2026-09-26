@@ -122,12 +122,37 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
         </div>
 
         <div className={styles.actions}>
-          <button type="button" className={styles.retryButton} onClick={retry}>
-            Try reading again
+          {setAsideAvailable ? (
+            <>
+              <button
+                type="button"
+                className={styles.retryButton}
+                onClick={setAside}
+              >
+                Set aside and start fresh
+              </button>
+              <p className={styles.safetyNote}>
+                Keeps an exact backup of the unreadable trip on this device and
+                starts a new saved trip. The backup is not shown in the app.
+              </p>
+            </>
+          ) : null}
+          <button
+            type="button"
+            className={
+              setAsideAvailable ? styles.secondaryButton : styles.retryButton
+            }
+            onClick={continueWithoutSaving}
+          >
+            Continue without saving
           </button>
           <p className={styles.safetyNote}>
-            Trying again only reads the saved record; it never changes it.
+            Totals, finished trips and remembered prices work in this tab only;
+            closing or reloading it loses them. The saved record stays untouched.
           </p>
+          <button type="button" className={styles.linkButton} onClick={retry}>
+            Try reading again
+          </button>
         </div>
 
         {retryMessage ? (
@@ -136,42 +161,6 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
           </p>
         ) : null}
 
-        <details className={styles.details}>
-          <summary>Other ways to continue</summary>
-          <p>
-            Keep shopping without saving: totals, finished trips and
-            remembered prices work in this tab only, and closing or reloading
-            it loses them. The saved record stays untouched.
-          </p>
-          <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.retryButton}
-              onClick={continueWithoutSaving}
-            >
-              Continue without saving
-            </button>
-          </div>
-          {setAsideAvailable ? (
-            <>
-              <p>
-                Set the unreadable trip aside: the app keeps an exact backup
-                copy of it on this device, stops using it, and lets you start
-                a new saved trip. The backup is not shown in the app.
-              </p>
-              <div className={styles.actions}>
-                <button
-                  type="button"
-                  className={styles.retryButton}
-                  onClick={setAside}
-                >
-                  Set aside and start fresh
-                </button>
-              </div>
-            </>
-          ) : null}
-        </details>
-
         {raw !== undefined ? (
           <details className={styles.details}>
             <summary>Recovery details</summary>
@@ -179,7 +168,9 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
               This is the preserved raw record for diagnostics. Opening this
               section does not modify it.
             </p>
-            <pre>{raw}</pre>
+            <pre tabIndex={0} aria-label="Preserved raw record">
+              {raw}
+            </pre>
           </details>
         ) : null}
       </section>

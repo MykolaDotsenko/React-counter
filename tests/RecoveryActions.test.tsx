@@ -112,7 +112,6 @@ describe("RecoveryScreen exits", () => {
 
     render(<RecoveryScreen controller={controller} />);
 
-    await user.click(screen.getByText("Other ways to continue"));
     expect(
       screen.getByRole("button", { name: "Continue without saving" }),
     ).not.toBeNull();
@@ -136,7 +135,6 @@ describe("RecoveryScreen exits", () => {
 
     render(<RecoveryScreen controller={controller} />);
 
-    await user.click(screen.getByText("Other ways to continue"));
 
     expect(
       screen.queryByRole("button", { name: "Set aside and start fresh" }),
@@ -158,7 +156,7 @@ describe("RecoveryScreen exits", () => {
 
     render(<ShoppingAppShell controller={controller} />);
 
-    await user.click(await screen.findByText("Other ways to continue"));
+    await screen.findByRole("button", { name: "Continue without saving" });
     await user.click(
       screen.getByRole("button", { name: "Continue without saving" }),
     );
@@ -502,7 +500,7 @@ describe("session-only mode never asks to repair what it chose not to save", () 
 
     render(<ShoppingAppShell controller={controller} />);
 
-    await user.click(await screen.findByText("Other ways to continue"));
+    await screen.findByRole("button", { name: "Continue without saving" });
     await user.click(
       screen.getByRole("button", { name: "Continue without saving" }),
     );
@@ -542,7 +540,7 @@ describe("session-only mode never asks to repair what it chose not to save", () 
 
     render(<ShoppingAppShell controller={controller} />);
 
-    await user.click(await screen.findByText("Other ways to continue"));
+    await screen.findByRole("button", { name: "Continue without saving" });
     await user.click(
       screen.getByRole("button", { name: "Continue without saving" }),
     );
