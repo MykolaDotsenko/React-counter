@@ -19,7 +19,7 @@ The common add-price flow must be:
 
 ## Modes
 
-The UI supports the current money-draft modes implemented by the price-entry draft model.
+The UI supports the current money-draft modes implemented by the price-entry draft model: decimal ("Euros"), the default, and auto-cents ("Cents mode").
 
 ### Decimal mode
 
@@ -111,6 +111,21 @@ The user must be able to add a price without naming the item.
 
 If a remembered-item/current-price flow pre-fills a label, the label must remain editable according to the feature contract.
 
+When entry opens with a label ("Enter current price" on a remembered item, a scanned product, or a label carried through the camera), it shows "Current price for <label>".
+
+## Pre-filled price
+
+**IMPLEMENTED (D-055).**
+
+Where price-tag reading is available, entry offers "Read price tag". It opens the camera's Price tag mode with the label and quantity entered so far; returning from the camera keeps both.
+
+Choosing a read price opens entry with:
+
+- the amount as a decimal ("Euros") draft, for example `4.29`, so the mode stays locked until the draft is cleared;
+- the note "Read from the price tag. Check it matches the shelf." beside the valid amount, shown only while the amount still matches what was read, so editing it removes the note.
+
+The price commits only through the shopper's Add, like a typed price, and is recorded as manual + confirmed.
+
 ## Projection
 
 For a valid draft, show the consequence before commit when useful:
@@ -184,6 +199,7 @@ Do not add decorative motion or visual treatment that slows entry.
 - Same parser as the domain money boundary?
 - Price can be added without metadata?
 - Mode never changes unexpectedly?
+- A pre-filled price is marked until edited and commits only through Add?
 - Invalid input cannot commit?
 - Quantity projection remains exact?
 - Reserve/overage consequence appears before intentional commit?

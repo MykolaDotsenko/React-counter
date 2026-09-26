@@ -6,7 +6,7 @@
 
 Accessibility is part of release quality and premium product quality, not post-release polish.
 
-This contract applies to the current shopping product. Future PWA/camera/scanner-specific requirements live in [../reference/FUTURE-QUALITY-PLANS.md](../reference/FUTURE-QUALITY-PLANS.md) until those capabilities ship.
+This contract covers the current product, including the offline shell and optional camera scanning. Requirements for capabilities that have not shipped live in [../reference/FUTURE-QUALITY-PLANS.md](../reference/FUTURE-QUALITY-PLANS.md).
 
 ## Goal
 
@@ -269,15 +269,15 @@ Do not imply currentness through iconography alone.
 
 Scanning is optional; "Add price" stays the primary action and manual entry is reachable from every scan state.
 
-- every control is a text-labelled button; the Barcode / Price tag mode switch and the light toggle expose `aria-pressed`;
+- every action is a text-labelled button and every field has a visible label; the Barcode / Price tag mode switch and the light toggle expose `aria-pressed`;
 - the scan status is an always-present polite live region (what to point at, hints after 8 s, first-time preparation progress, how many prices were found);
 - a determinate progress bar reports price reader preparation, and an indeterminate one reports reading;
 - price candidates are large buttons whose names include the amount and, where it applies, "Unit price", "Member price", "Regular price" or "Multi-buy";
 - a price read from a tag stays marked as such in price entry until the shopper changes it;
 - the surface focuses its heading on open, the result or failure heading when one appears, and the digit field when typing a barcode; closing returns focus to the scan action, or to price entry when the camera was opened from there;
 - Escape closes the surface from anywhere in it;
-- a blocked, missing or busy camera explains the cause and offers typing the digits and entering the price without scanning;
-- a successful read vibrates briefly where supported and is announced; the scanning line does not animate with reduced motion, and the frame keeps a visible border in forced colours;
+- a blocked, missing or busy camera explains the cause and offers typing the price instead, and in Barcode mode typing the barcode digits;
+- a successful barcode read vibrates briefly where supported; every result is announced; the scanning line does not animate with reduced motion, and the frame keeps a visible border in forced colours;
 - the camera preview is labelled; no action depends on seeing it.
 
 ## Persistence / recovery errors
@@ -324,9 +324,11 @@ Cover representative states with axe/semantic assertions:
 - over-budget review;
 - finish confirmation;
 - completed summary;
-- history.
+- history;
+- recovery and history repair;
+- camera barcode result and price candidates.
 
-Also test focus restoration and keyboard journeys where browser automation is reliable.
+Also test focus restoration, keyboard journeys, committed announcements and disabled-state semantics where automation is reliable. The axe scans run once, in Chromium; the focus and keyboard journeys run in Chromium, Firefox and WebKit.
 
 ## Manual checks
 

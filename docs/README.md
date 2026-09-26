@@ -4,17 +4,7 @@ The documentation is organized to minimize AI/contributor context while keeping 
 
 ## Authority
 
-Current implementation truth:
-
-1. code + green executable tests.
-
-Current intended behaviour:
-
-2. authoritative documents listed below.
-
-Rationale/history:
-
-3. decisions, reference, research and archive.
+Code and green executable tests establish what is implemented; the authoritative documents below establish intended current behaviour; decisions, reference and research explain rationale. The full source-of-truth order is in [AGENTS.md](../AGENTS.md).
 
 If code and an authoritative contract disagree, reconcile the drift in the same change.
 
@@ -33,7 +23,6 @@ Each location has one purpose:
 | `docs/evidence/` | protocols/results that support validation claims | product requirements |
 | `docs/research/` | dated/external evidence and hypotheses | shipped capability claims |
 | `docs/marketing/` | launch/store operational material | core product contracts |
-| `docs/archive/` | completed/historical execution material | anything an implementation agent should follow today |
 
 ### New-document rule
 
@@ -103,10 +92,12 @@ Cross-cutting durable decisions:
 | architecture refactor / file ownership | ARCHITECTURE → CODE-OWNERSHIP → affected tests |
 | persistence/recovery | ARCHITECTURE → DATA-PERSISTENCE → STORAGE-SCHEMA → tests |
 | UI/interaction | PRODUCT → DESIGN → ACCESSIBILITY → component/E2E tests |
+| camera, barcode, price tags | PRODUCT → DOMAIN → STATE-MACHINES (camera scan) → ACCESSIBILITY → component/E2E tests |
 | tests/CI | TESTING → workflow/config |
 | new capability | PRODUCT → ROADMAP → relevant decision/research |
 | premium/brand polish | PRODUCT → DESIGN → BRAND reference only if identity work |
-| historical rationale | relevant DECISIONS/reference/archive only |
+| marketing/launch | PRODUCT → MARKETING reference → launch material |
+| historical rationale | relevant DECISIONS/reference only; git history keeps completed plans |
 
 Do not read all docs for a narrow change.
 
@@ -132,13 +123,6 @@ Evidence documents define how claims become validated:
 - [evidence/RETENTION-BETA.md](./evidence/RETENTION-BETA.md)
 - [evidence/RETENTION-BETA-PLAYBOOK.md](./evidence/RETENTION-BETA-PLAYBOOK.md)
 - [evidence/RETENTION-STUDY-LOG-TEMPLATE.md](./evidence/RETENTION-STUDY-LOG-TEMPLATE.md)
-- [evidence/BARCODE-BENCHMARK.md](./evidence/BARCODE-BENCHMARK.md)
-- [evidence/BARCODE-PAIRED-DECISION-TEMPLATE.md](./evidence/BARCODE-PAIRED-DECISION-TEMPLATE.md)
-- [evidence/VISUAL-PRODUCT-BENCHMARK.md](./evidence/VISUAL-PRODUCT-BENCHMARK.md)
-- [evidence/VISUAL-CLIP-EXPERIMENT.md](./evidence/VISUAL-CLIP-EXPERIMENT.md)
-- [evidence/SHELF-LABEL-OCR-BENCHMARK.md](./evidence/SHELF-LABEL-OCR-BENCHMARK.md)
-- [evidence/TESSERACT-OCR-EXPERIMENT.md](./evidence/TESSERACT-OCR-EXPERIMENT.md)
-- [evidence/OCR-PAIRED-DECISION-TEMPLATE.md](./evidence/OCR-PAIRED-DECISION-TEMPLATE.md)
 - [evidence/PHASE-4-DESIGN-VALIDATION.md](./evidence/PHASE-4-DESIGN-VALIDATION.md)
 - [evidence/BRAND-IMPLEMENTATION-AUDIT.md](./evidence/BRAND-IMPLEMENTATION-AUDIT.md)
 
@@ -154,12 +138,6 @@ Use only when the task depends on market evidence, alternatives or launch strate
 - [research/MARKETING-RESEARCH.md](./research/MARKETING-RESEARCH.md)
 - [marketing/LAUNCH-CHECKLIST.md](./marketing/LAUNCH-CHECKLIST.md)
 - [marketing/STORE-LISTING-SPEC.md](./marketing/STORE-LISTING-SPEC.md)
-
-## Historical material
-
-[archive/](./archive/) is traceability only.
-
-Archived files are never current instructions.
 
 ## Maintenance
 
@@ -178,7 +156,7 @@ Documentation structure is enforced by:
 npm run docs:check
 ```
 
-The validator checks required contract paths, retired legacy paths, docs-root classification, and relative Markdown links. It runs inside `npm run check`.
+The validator checks required contract paths, retired legacy paths, the allowed repository-root and docs-root Markdown files, relative Markdown links and their heading anchors, and that every document under `docs/` is reachable by links from this file. It runs inside `npm run check`.
 
 Current docs use only:
 

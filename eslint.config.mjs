@@ -23,8 +23,7 @@ export default [
   {
     ignores: [
       "dist",
-      "dist-qa",
-      "dist-beta",
+      "dist-*",
       "site",
       "coverage",
       "playwright-report",

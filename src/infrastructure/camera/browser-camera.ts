@@ -29,7 +29,7 @@ export interface BrowserCameraEnvironment {
   readonly grabFrame: FrameGrabber;
 }
 
-export const MAX_CAPTURE_EDGE = 1600;
+const MAX_CAPTURE_EDGE = 1600;
 
 export const cameraFailure = (error: unknown): CameraFailure => {
   const name =

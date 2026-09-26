@@ -19,8 +19,8 @@ import {
   type OcrRectangle,
 } from "./tesseract-layout";
 
-export const PRICE_OCR_LANGUAGE = "fin";
-export const PRICE_OCR_TIMEOUT_MS = 20_000;
+const PRICE_OCR_LANGUAGE = "fin";
+const PRICE_OCR_TIMEOUT_MS = 20_000;
 
 export interface TesseractAssets {
   readonly workerPath: string;

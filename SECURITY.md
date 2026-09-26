@@ -4,7 +4,12 @@
 
 Security fixes target the current `main` branch.
 
-This is a local-first browser application with no production backend, account system or remote analytics dependency. Security work should preserve that small attack surface.
+This is a local-first browser application with no production backend, account system or remote analytics dependency. Security work should preserve that small attack surface:
+
+- shopping data stays in the browser's `localStorage`;
+- camera frames for barcode and price-tag reading are processed on the device and never stored or uploaded;
+- the barcode and OCR engines are self-hosted with the app, not loaded from a third-party CDN;
+- the only request that leaves the site is the optional Open Food Facts name lookup, sent only when the shopper taps it, carrying the barcode number and the app's name and version.
 
 ## Reporting a vulnerability
 
@@ -25,10 +30,10 @@ Include, when relevant:
 
 Changes must preserve:
 
-- runtime validation at persistence boundaries;
+- runtime validation at persistence and network boundaries (stored data and Open Food Facts responses are Zod-validated);
 - exact-money invariants;
 - no unsafe HTML injection;
-- least-privilege GitHub Actions permissions;
+- least-privilege GitHub Actions permissions and CodeQL analysis of every change;
 - dependency lockfile integrity;
 - each quality run emits a SHA-scoped production CycloneDX SBOM plus SHA-256 digest using a commit-pinned SBOM action and pinned Syft version;
 - the exact uploaded `pages-site` artifact digest receives GitHub/Sigstore build-provenance and SBOM attestations before production deployment;

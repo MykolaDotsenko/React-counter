@@ -24,7 +24,7 @@ const retailerFeedObservationSourceSchema = z.strictObject({
   provider: canonicalIdentifierSchema,
 });
 
-export const priceMemoryObservationSourceV1Schema =
+const priceMemoryObservationSourceV1Schema =
   z.discriminatedUnion("kind", [
     manualObservationSourceSchema,
     shelfScanObservationSourceSchema,
@@ -56,9 +56,6 @@ export const priceMemoryStorageEnvelopeHeaderSchema = z.looseObject({
   schemaVersion: z.int().check(z.minimum(1)),
 });
 
-export type PriceMemoryObservationSourceV1 = z.infer<
-  typeof priceMemoryObservationSourceV1Schema
->;
 export type PriceMemoryRecordV1 = z.infer<typeof priceMemoryRecordV1Schema>;
 
 export interface PriceMemoryEnvelopeV1 {

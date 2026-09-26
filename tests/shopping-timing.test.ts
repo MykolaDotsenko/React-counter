@@ -13,7 +13,6 @@ import {
   createQaTimingSession,
   documentQaTimingInterruption,
   loadQaTimingSession,
-  parseQaTimingExport,
   qaChecklistComplete,
   resetQaTimingSamples,
   restoreQaTimingSample,
@@ -159,28 +158,7 @@ describe("shopping timing QA model", () => {
         containsDeviceMetadata: true,
       },
     });
-    expect(parseQaTimingExport(exported)).not.toBeNull();
-
-    const withoutRevision = { ...exported } as Record<string, unknown>;
-    delete withoutRevision.buildRevision;
-
-    expect(parseQaTimingExport(withoutRevision)).toBeNull();
-    expect(
-      parseQaTimingExport({
-        ...exported,
-        buildRevision: "not-a-git-revision",
-      }),
-    ).toBeNull();
-
-    const tampered = {
-      ...exported,
-      gate: {
-        ...exported.gate,
-        b6Eligible: true,
-      },
-    };
-
-    expect(parseQaTimingExport(tampered)).toBeNull();
+    expect(exported.gate).toEqual(summarizeQaEmpiricalGate(exported.session));
   });
 
   it("reports pending until ten representative samples exist", () => {
@@ -747,7 +725,6 @@ describe("shopping timing QA model", () => {
       session,
       "2026-09-23T20:00:00.000Z",
     );
-    expect(parseQaTimingExport(exported)).not.toBeNull();
     expect(exported.session.samples).toHaveLength(11);
 
     session = restoreQaTimingSample(session, "interrupted");
@@ -777,7 +754,7 @@ describe("shopping timing QA model", () => {
     ).toThrow("unknown QA timing sample");
   });
 
-  it("rejects exported exclusions that reference unknown samples", () => {
+  it("does not restore stored exclusions that reference unknown samples", () => {
     const session = documentQaTimingInterruption(
       appendQaTimingSample(
         createQaTimingSession(environment),
@@ -786,25 +763,21 @@ describe("shopping timing QA model", () => {
       "known",
       "External interruption",
     );
-    const exported = buildQaTimingExport(
-      session,
-      "2026-09-23T20:00:00.000Z",
-    );
 
-    const tampered = {
-      ...exported,
-      session: {
-        ...exported.session,
+    sessionStorage.setItem(
+      QA_TIMING_STORAGE_KEY,
+      JSON.stringify({
+        ...session,
         exclusions: [
           {
             sampleId: "missing",
             reason: "External interruption",
           },
         ],
-      },
-    };
+      }),
+    );
 
-    expect(parseQaTimingExport(tampered)).toBeNull();
+    expect(loadQaTimingSession(sessionStorage, environment).samples).toEqual([]);
   });
 
 });

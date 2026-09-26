@@ -7,7 +7,7 @@ const R = L.map((code) => [...code].map((bit) => (bit === "0" ? "1" : "0")).join
 const G = R.map((code) => [...code].reverse().join(""));
 const PARITY = ["LLLLLL", "LLGLGG", "LLGGLG", "LLGGGL", "LGLLGG", "LGGLLG", "LGGGLL", "LGLGLG", "LGLGGL", "LGGLGL"];
 
-export const ean13Modules = (digits) => {
+const ean13Modules = (digits) => {
   if (!/^\d{13}$/u.test(digits)) {
     throw new Error("EAN-13 needs 13 digits");
   }

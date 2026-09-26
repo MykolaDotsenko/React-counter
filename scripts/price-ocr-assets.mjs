@@ -6,7 +6,7 @@ const packageVersion = (rootDir, name) =>
     readFileSync(path.join(rootDir, "node_modules", name, "package.json"), "utf8"),
   ).version;
 
-export const PRICE_OCR_ASSET_SOURCES = [
+const PRICE_OCR_ASSET_SOURCES = [
   ["tesseract.js/dist/worker.min.js", "worker.min.js", 150_000],
   ["tesseract.js-core/tesseract-core-lstm.js", "tesseract-core-lstm.js", 120_000],
   ["tesseract.js-core/tesseract-core-lstm.wasm", "tesseract-core-lstm.wasm", 3_200_000],

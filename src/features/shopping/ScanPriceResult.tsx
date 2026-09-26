@@ -9,7 +9,7 @@ import {
 } from "./scan-copy";
 import styles from "./ScanSurface.module.css";
 
-export const MAX_SHOWN_PRICE_CANDIDATES = 4;
+const MAX_SHOWN_PRICE_CANDIDATES = 4;
 
 export type PriceReadOutcome =
   | {

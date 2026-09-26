@@ -11,7 +11,6 @@ export {
 } from "./shopping-trip-model";
 export type {
   ActiveTrip,
-  AddItemDraft,
   AddItemProjectionDraft,
   CartItem,
   CompletedTrip,

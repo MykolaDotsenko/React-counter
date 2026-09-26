@@ -83,7 +83,6 @@ Across all scenarios:
 - **Duplicate/repeated item** — no surprising silent merge.
 - **Recent Items reuse** — less typing/identification than manual-from-scratch.
 - **Remembered value is stale** — freshness/context prevents false confidence.
-- **Store context differs** — ranking/context must not imply universal price truth.
 - **History deletion** — explicit and independent from Price Memory.
 - **Price Memory deletion** — explicit and independent from history.
 - **Persistence retry succeeds** — degraded status clears correctly.
@@ -92,11 +91,13 @@ Across all scenarios:
 - **Dark/light appearance** — both feel intentional and premium.
 - **Bright store condition** — primary financial information remains legible.
 
-## Tier 2 — planned/gated scenarios
+## Tier 1b — shipped optional capabilities
 
-These scenarios are useful for future design but do **not** represent current shipped capability.
+These capabilities are **IMPLEMENTED**. None of them is required to complete the manual core.
 
 ### Installable PWA
+
+**IMPLEMENTED** (FR-029). Install, precache and offline restore are covered by `e2e/pwa.spec.js`.
 
 - offline launch after prior cache/install;
 - update while active trip exists;
@@ -133,22 +134,33 @@ Key rule: a read price is a candidate until the shopper confirms it.
 
 Key rule: OCR is candidate capture; correction cost must beat manual entry.
 
+## Tier 2 — planned/gated scenarios
+
+These scenarios are useful for future design but do **not** represent current shipped capability.
+
+### Store context
+
+- **Store context differs** — ranking/context must not imply universal price truth.
+
+No current flow records a store, so this cannot happen today.
+
 ### Advanced pricing
 
 - multi-buy discount;
 - weighted item;
-- deposit/extra charge;
-- tax-exclusive context.
+- deposit/extra charge.
 
 Do not implement until exact-money/rounding semantics are explicit.
 
+Not planned (ROADMAP non-goal): tax-exclusive context.
+
 ### Multi-device / concurrency
 
-- multiple tabs edit same trip;
-- cloud sync conflict;
-- stale remote overwrite.
+- multiple tabs edit same trip.
 
 No silent merge without an explicit ownership/conflict contract.
+
+Not planned (ROADMAP non-goals): cloud sync conflict; stale remote overwrite.
 
 ## Meta-scenario — smart feature is worse than manual
 

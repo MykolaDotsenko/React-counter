@@ -242,7 +242,7 @@ describe("ScanSurface barcode mode", () => {
 
     await screen.findByRole("heading", { name: "New product" });
     expect(screen.getByText("Barcode 6414893386303")).not.toBeNull();
-    expect(screen.getByText(/Sends only this barcode number to Open Food Facts/)).not.toBeNull();
+    expect(screen.getByText(/Sends this barcode number to Open Food Facts/)).not.toBeNull();
     expect(lookup.lookup).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Find name online" }));

@@ -40,6 +40,13 @@ describe("shelf-label price candidate parser", () => {
     expect(values("Price 3.79")).toEqual([379]);
   });
 
+  it("does not read offer dates as prices, even next to a price word", () => {
+    expect(values("Tarjous voimassa 24.09.–30.09.")).toEqual([]);
+    expect(values("Tarjous 1,29 €\nVoimassa 1.10.-7.10.")).toEqual([129]);
+    expect(values("Parasta ennen 24.9.2026 hinta 2,49 €")).toEqual([249]);
+    expect(values("Hinta 4.29.")).toEqual([429]);
+  });
+
   it("does not parse percentage discounts as money", () => {
     expect(values("ALE -30%")).toEqual([]);
     expect(values("ALE 30%\nHinta 3,49 €")).toEqual([349]);
@@ -73,6 +80,25 @@ describe("shelf-label price candidate parser", () => {
     expect(candidates[0]?.context.loyaltyPrice).toBe(true);
     expect(candidates[0]?.context.regularPrice).toBe(false);
     expect(candidates[1]?.context.regularPrice).toBe(true);
+  });
+
+  it("gives each price only the labels printed since the previous price", () => {
+    const candidates = parseShelfPriceCandidates(
+      "Norm. 2,99 €\nJäsenhinta 2,49 €",
+    );
+
+    expect(candidates.map((candidate) => Number(candidate.minorUnits))).toEqual([
+      249,
+      299,
+    ]);
+    expect(candidates[0]?.context).toMatchObject({
+      loyaltyPrice: true,
+      regularPrice: false,
+    });
+    expect(candidates[1]?.context).toMatchObject({
+      loyaltyPrice: false,
+      regularPrice: true,
+    });
   });
 
   it("keeps multi-buy totals visible but ranks a direct price above them", () => {
@@ -135,9 +161,27 @@ describe("price tag candidate ranking", () => {
     ]);
 
     expect(valuesOf(candidates)).toEqual([249, 299, 755]);
+    expect(candidates[0]?.context.loyaltyPrice).toBe(true);
     expect(candidates[1]?.context.regularPrice).toBe(true);
-    expect(candidates[2]?.context.unitPrice).toBe(true);
+    expect(candidates[2]?.context).toMatchObject({ unitPrice: true, regularPrice: false });
     expect(candidates.map((candidate) => candidate.prominent)).toEqual([true, false, false]);
+  });
+
+  it("ranks a member price above the regular price printed on the line before it", () => {
+    const candidates = rank([
+      ["Norm. 2,99 €", 40],
+      ["Jäsenhinta 2,49 €", 40],
+    ]);
+
+    expect(valuesOf(candidates)).toEqual([249, 299]);
+    expect(candidates[0]?.context).toMatchObject({ loyaltyPrice: true, regularPrice: false });
+  });
+
+  it("does not offer offer dates as prices, however large they are printed", () => {
+    expect(
+      valuesOf(rank([["Tarjous", 40], ["1,29 €", 120], ["voimassa 24.9.–30.9.", 35]])),
+    ).toEqual([129]);
+    expect(valuesOf(rank([["24.09.2026", 110], ["Hinta 2,49 €", 60]]))).toEqual([249]);
   });
 
   it("keeps one entry per amount, preferring the headline reading", () => {

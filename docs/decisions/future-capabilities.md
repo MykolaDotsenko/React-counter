@@ -252,8 +252,33 @@ The harness, parser and engine were already built and measured on fixtures. What
 - issue #90 becomes post-release validation: REMEDIATE or DEFER means switching price reading off rather than weakening manual entry;
 - read prices are candidates and never become canonical money without confirmation (D-004);
 - camera images stay on the device; only engine files are downloaded, from this site;
-- the guarded Tesseract experiment keeps its own pinned `fin+swe+eng` configuration for comparable evidence.
+- the guarded Tesseract experiment kept its own pinned `fin+swe+eng` configuration until D-056 retired it.
 
 ### Revisit when
 
 Issue #90 or real-shopper evidence shows reading tags is slower, less accurate or less trusted than typing the price.
+
+## D-056 — Retire the camera benchmarks once the camera features ship
+
+Date: 2026-09-26
+
+Status: accepted
+
+### Decision
+
+The owner retires the guarded camera evidence tools: the barcode benchmark, the paired barcode/manual analyzer, the shelf-label OCR benchmark, the Tesseract experiment, the paired OCR/manual analyzer and the visual-recognition (CLIP) benchmark, together with their tests, CI surfaces and documents. The timing QA, retention beta and cohort analyzer stay.
+
+### Rationale
+
+Production barcode reading (D-053) and price-tag reading (D-055) shipped, and the benchmarks measured other configurations: a native-only barcode reader, multilingual OCR without the production layout pass, and a CLIP model loaded from a remote hub. Evidence from them would not describe what shoppers use. The CLIP benchmark was also the only user of `@huggingface/transformers`, which brought about 480 MB of native and WebAssembly runtimes into every install.
+
+### Consequence
+
+- issues #73 and #90 are answered from the production app with the field log in ROADMAP section A, and still end in keeping or switching off each feature;
+- the immutable study baseline `evidence-baseline-2026-09-25-r10` keeps the last published copies of the retired tools;
+- production visual recognition (issue #88) is designed for the product itself rather than benchmarked through the retired harness;
+- the camera flows have no in-app instrumented timing.
+
+### Revisit when
+
+A camera decision needs quantitative evidence that a field log cannot provide.

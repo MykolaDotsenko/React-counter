@@ -83,16 +83,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          for route in \
-            qa \
-            beta \
-            cohort \
-            barcode-benchmark \
-            barcode-paired-analyzer \
-            ocr-paired-analyzer \
-            visual-recognition-benchmark \
-            shelf-label-ocr-benchmark \
-            shelf-label-ocr-tesseract-benchmark; do
+          for route in qa beta cohort; do
             test -f "/tmp/pages-site/${route}/index.html"
             test ! -e "/tmp/pages-site/${route}/manifest.webmanifest"
             test ! -e "/tmp/pages-site/${route}/sw.js"
@@ -127,16 +118,7 @@ jobs:
 
           mkdir -p "${target}"
 
-          for route in \
-            qa \
-            beta \
-            cohort \
-            barcode-benchmark \
-            barcode-paired-analyzer \
-            ocr-paired-analyzer \
-            visual-recognition-benchmark \
-            shelf-label-ocr-benchmark \
-            shelf-label-ocr-tesseract-benchmark; do
+          for route in qa beta cohort; do
             cp -R "/tmp/pages-site/${route}" "${target}/${route}"
           done
 
@@ -168,12 +150,6 @@ jobs:
                   <li><a href="./qa/">Timing QA</a></li>
                   <li><a href="./beta/">Retention beta</a></li>
                   <li><a href="./cohort/">Retention cohort analyzer</a></li>
-                  <li><a href="./barcode-benchmark/">Barcode benchmark</a></li>
-                  <li><a href="./barcode-paired-analyzer/">Barcode paired analyzer</a></li>
-                  <li><a href="./visual-recognition-benchmark/">Visual recognition benchmark</a></li>
-                  <li><a href="./shelf-label-ocr-benchmark/">Shelf-label OCR benchmark</a></li>
-                  <li><a href="./shelf-label-ocr-tesseract-benchmark/">Tesseract OCR benchmark</a></li>
-                  <li><a href="./ocr-paired-analyzer/">OCR paired analyzer</a></li>
                 </ul>
               </main>
             </body>

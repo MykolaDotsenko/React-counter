@@ -85,7 +85,7 @@ test("scans a product from the camera, names it once and recognises it next time
   await expect(page.getByRole("button", { name: "Scan barcode" })).toBeFocused();
 });
 
-test("leaves only manual price entry when the build switches the scanner off", async ({ page }) => {
+test("offers no barcode scanning when the build switches the scanner off", async ({ page }) => {
   test.skip(!scannerSwitchedOff, "This build ships the barcode scanner.");
 
   await page.goto("/");

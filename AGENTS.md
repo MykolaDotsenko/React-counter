@@ -21,36 +21,19 @@ When sources disagree:
 1. current code and green executable tests establish what is implemented;
 2. authoritative documents under `docs/` establish intended current behaviour;
 3. accepted decisions in `docs/DECISIONS.md` explain durable choices;
-4. supporting reference/research explains rationale;
-5. `docs/archive/` is historical only.
+4. supporting reference/research explains rationale.
 
 If code and an authoritative contract disagree, treat that as drift and reconcile both in the same change.
-
-Never use archive material as current implementation instruction.
 
 ## Load only the context the task needs
 
 Always read:
 
 - this file;
-- `docs/README.md`;
+- `docs/README.md`, whose "Read by task" table names the owning contract for each kind of change;
 - affected code and tests.
 
-Then load only the owning contract:
-
-| Change | Required context |
-| --- | --- |
-| product scope / release behaviour | `PRODUCT.md`, `specs/RELEASE-SPEC.md` when acceptance detail matters |
-| money / trip rules | `DOMAIN.md`, relevant money/state spec |
-| controller / lifecycle | `ARCHITECTURE.md`, `specs/STATE-MACHINES.md` |
-| persistence / recovery | `ARCHITECTURE.md`, `architecture/DATA-PERSISTENCE.md`, `specs/STORAGE-SCHEMA.md` |
-| UI / interaction | `PRODUCT.md`, `DESIGN.md`, `quality/ACCESSIBILITY.md`, relevant interaction spec |
-| architecture refactor / ownership | `ARCHITECTURE.md`, `reference/CODE-OWNERSHIP.md` |
-| tests / CI | `TESTING.md` |
-| new capability / sequencing | `ROADMAP.md`, relevant decision/research |
-| brand / marketing | `PRODUCT.md` first, then brand/marketing reference |
-
-Do not load research, archive or long rationale unless the task needs it.
+Then load only that owning contract. Do not load research or long rationale unless the task needs it.
 
 ## Current repository reality
 
@@ -63,20 +46,21 @@ Implemented:
 - start, active trip, edit/remove/Undo, budget adjustment, completion and history;
 - Shop again, Recent Items and local Price Memory;
 - independent local-data controls;
-- timing QA and retention-beta evidence tooling;
 - installable offline PWA shell with prompt-based updates;
 - optional barcode identification (native detector, lazy self-hosted ZXing WASM fallback, local barcode names, tap-only online name lookup) behind build switches;
 - optional price tag reading (lazy self-hosted Tesseract.js, geometry-aware exact-money candidates, confirmation in price entry) in the same camera, behind a build switch;
+- guarded evidence builds in `src/qa/` (timing QA, retention beta and cohort analysis);
 - Chromium / Firefox / WebKit browser and accessibility coverage.
 
 Gated / not implemented:
 
 - physical evidence for barcode scanning (issue #73, post-release);
 - physical evidence for price tag reading (issue #90, post-release);
-- representative human one-hand/timing/bright-store validation;
-- real-shopper second-/third-trip retention validation.
+- production visual product recognition (issue #88);
+- an exact quantitative manual-entry timing baseline (physical-phone usability was accepted by owner attestation on 2026-09-24);
+- real-shopper second-/third-trip retention validation (issue #72).
 
-Internal `/qa/` and `/beta/` routes are evidence surfaces for the same product, not alternate product shells.
+The `/qa/` and `/beta/` builds wrap the same product with evidence instrumentation, and `/cohort/` is a standalone analyzer that never composes the product. None of them is an alternate product shell.
 
 ## Product decision rule
 
@@ -124,15 +108,12 @@ MUST NOT:
 Dependency direction:
 
 ```text
-React feature UI
-      ↓
-application controller / use cases / contracts
-      ↓
-pure domain rules
-      ↓
-application ports
-      ↓
-browser infrastructure adapters
+features ─────────▶ application ─────────▶ domain
+                         ▲                    ▲
+        implements ports │                    │ uses
+                         └── infrastructure ──┘
+
+composition root (src/app/composition-root.ts): wires the infrastructure adapters into the application
 ```
 
 Rules:
@@ -208,7 +189,7 @@ npm run check
 npm run test:e2e
 ```
 
-`npm run check` covers documentation validation, architecture-aware lint, strict TypeScript, unit/component tests, production build and public-bundle validation. CI then tests the exact staged production artifact across Chromium, Firefox and WebKit before deployment.
+What each gate covers, and what CI adds before deployment, is defined in `docs/TESTING.md`.
 
 Add regression coverage when changing:
 
@@ -223,24 +204,7 @@ Money, persistence, recovery and evidence-integrity bug fixes are incomplete wit
 
 ## Documentation maintenance
 
-Current authoritative docs contain current contracts and current decisions, not chronological implementation narration.
-
-When behaviour changes:
-
-1. update code/tests;
-2. update the smallest owning authoritative document;
-3. update detailed specs only when their contract changed;
-4. add a decision only for cross-cutting/reversibility-sensitive choices;
-5. move useful historical rationale to reference/archive;
-6. delete duplicated status narration;
-7. before creating a new Markdown file, apply the placement/new-document rules in `docs/README.md`.
-
-Use only these status words for current docs:
-
-- **IMPLEMENTED**
-- **VALIDATED**
-- **PLANNED / GATED**
-- **HISTORICAL**
+Current authoritative docs contain current contracts and current decisions, not chronological implementation narration. Follow the maintenance steps, placement rules and status vocabulary in `docs/README.md`.
 
 Do not infer human validation from automation.
 
@@ -272,14 +236,14 @@ Before declaring complete:
 
 Runtime dependencies must earn product value.
 
-Prefer native Web APIs and existing abstractions. Do not add state libraries, routers, backends, analytics SDKs, scanner/OCR SDKs, PWA tooling or UI frameworks without a validated requirement.
+Prefer native Web APIs and existing abstractions. The admitted runtime dependencies are React, Zod, the Workbox PWA tooling (D-028), `barcode-detector` + `zxing-wasm` (D-031, D-053), and Tesseract.js with its core and Finnish data (D-055). Add nothing further — state libraries, routers, backends, analytics SDKs, other scanner/OCR SDKs or UI frameworks — without an accepted decision.
 
 ## Git discipline
 
 - focused commits;
 - no unrelated refactor + feature bundles;
 - preserve accepted decision history;
-- prefer PRs for multi-file architecture/documentation changes;
+- change `main` only through pull requests, so CI and Dependency Review run first;
 - never claim CI is green until the run is green.
 
 ## Review questions

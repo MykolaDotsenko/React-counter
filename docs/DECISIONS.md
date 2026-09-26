@@ -53,11 +53,11 @@ Do not load every decision file for a narrow task. Use the category links or tab
 | D-030 | No router until URLs have real product value | [Architecture and Technology](./decisions/architecture-technology.md) |
 | D-031 | Barcode scanning uses progressive native + lazy WASM detection | [Future Capability](./decisions/future-capabilities.md) |
 | D-032 | Open Food Facts is an optional product-identity provider, not a price provider | [Future Capability](./decisions/future-capabilities.md) |
-| D-033 | Shelf OCR provider remains benchmark-gated | [Future Capability](./decisions/future-capabilities.md) |
+| D-033 | Shelf OCR provider remains benchmark-gated (superseded for production by D-055) | [Future Capability](./decisions/future-capabilities.md) |
 | D-034 | localStorage remains MVP persistence despite adding runtime validation | [Persistence and Data Integrity](./decisions/persistence-data-integrity.md) |
 | D-035 | Repeat-trip acceleration precedes scanner breadth | [Product, Scope and Competition](./decisions/product-scope-competition.md) |
 | D-036 | Second-trip rate is the primary early product-validation signal | [Product, Scope and Competition](./decisions/product-scope-competition.md) |
-| D-037 | Run an early scanner benchmark without promoting scanner to the production roadmap | [Future Capability](./decisions/future-capabilities.md) |
+| D-037 | Run an early scanner benchmark without promoting scanner to the production roadmap (retired by D-056) | [Future Capability](./decisions/future-capabilities.md) |
 | D-038 | Refine retention thresholds and include third-trip behaviour | [Product, Scope and Competition](./decisions/product-scope-competition.md) |
 | D-039 | Human B6 gate is explicitly waived for continued development, not declared passed | [Evidence, Brand and Validation](./decisions/evidence-brand-validation.md) |
 | D-040 | Repeat budget derives from completed history, not duplicate settings state | [Persistence and Data Integrity](./decisions/persistence-data-integrity.md) |
@@ -76,6 +76,7 @@ Do not load every decision file for a narrow task. Use the category links or tab
 | D-053 | Production barcode ships ahead of physical evidence, behind kill switches | [Future Capability](./decisions/future-capabilities.md) |
 | D-054 | Barcode names are remembered in their own advisory record | [Persistence and Data Integrity](./decisions/persistence-data-integrity.md) |
 | D-055 | Production price-tag reading ships ahead of field evidence, behind a kill switch | [Future Capability](./decisions/future-capabilities.md) |
+| D-056 | Retire the camera benchmarks once the camera features ship | [Future Capability](./decisions/future-capabilities.md) |
 
 ## Usage rule
 

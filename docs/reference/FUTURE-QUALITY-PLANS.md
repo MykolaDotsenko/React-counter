@@ -8,7 +8,7 @@ These test plans apply only after the corresponding capability is approved and i
 
 ## Visual product recognition
 
-The provider-neutral benchmark harness is implemented, but a concrete model/provider remains gated by issue #88.
+Production recognition remains gated by issue #88; the guarded CLIP benchmark was retired (D-056).
 
 Before production recognition:
 
@@ -24,23 +24,13 @@ Before production recognition:
 
 A generic category classifier is not evidence of SKU-level product recognition.
 
-## Shelf-label OCR
+## Price tag reading field evidence
 
-Production price tag reading shipped by owner decision (D-055); issue #90 now validates it after release.
+Production price tag reading shipped by owner decision (D-055), and [../TESTING.md](../TESTING.md) owns its automated contract. Its field evidence remains open as issue #90, whose gate is defined in [../ROADMAP.md](../ROADMAP.md).
 
-For the post-release evidence:
+That post-release evidence should measure the top-1/top-3 correct-candidate rate and capture → human-decision latency on physical devices and real shelf labels, covering comma/dot decimals, split cents, a unit price beside the product price, loyalty/regular prices, multi-buy, percentage discounts and tags with no valid price.
 
-- test one named OCR adapter/engine on static fixtures before physical camera evidence;
-- include comma/dot decimals, split cents, unit price + product price, loyalty/regular prices, multi-buy, percentage discount and no-valid-price cases;
-- verify the parser always routes accepted money through the existing exact-money contract;
-- verify bare OCR digits do not gain an invented decimal separator;
-- measure top-1/top-3 correct-candidate rate and capture → human-decision latency;
-- verify timeout, cancellation, late-result suppression and manual fallback;
-- verify raw OCR text, images and parsed prices never enter retained benchmark evidence;
-- document any remote-image boundary explicitly;
-- require human confirmation before any price can become canonical shopping money.
-
-A visually impressive scan flow that saves no interaction or reduces trust should not ship.
+If reading tags saves no interaction or reduces trust, price reading is switched off rather than manual entry weakened (D-055).
 
 ## Advanced price mechanics
 
@@ -50,19 +40,6 @@ For discounts, weighted goods or tax mechanics:
 - add deterministic money fixtures;
 - test boundary values and multiplication/division semantics;
 - ensure UI projection and persisted canonical values agree.
-
-## Future capability accessibility
-
-These requirements become current only when the corresponding capability ships.
-
-### Shelf OCR
-
-Candidate review must expose:
-
-- detected candidate values as text;
-- ambiguity clearly;
-- manual entry/edit;
-- no auto-commit from visual recognition alone.
 
 ## Future state-machine rule
 

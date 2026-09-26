@@ -8,9 +8,9 @@ The repository no longer contains an alternate prototype product shell. The publ
 
 The guarded `/cohort/` route is intentionally different: it is a facilitator-only local analyzer that imports already-exported retention evidence and never composes or mutates shopping state.
 
-The guarded camera routes are also standalone: `/barcode-benchmark/` measures native barcode interaction, `/visual-recognition-benchmark/` exercises the local visual-recognition experiment, and `/shelf-label-ocr-tesseract-benchmark/` exercises the concrete OCR camera flow. The public shopping UI does not link to them; its own camera lives inside the trip, and the old `/camera-tools/` address redirects to the app. The guarded routes never compose or mutate shopping state.
+The shopping product's camera lives inside the trip; the old `/camera-tools/` address redirects to the app.
 
-Physical-phone usability was accepted for the current cycle by owner attestation, exact human timing statistics remain unverified, and the real-shopper retention gate remains open. The installable offline PWA shell and optional barcode identification are implemented. Camera tools are discoverable from the product, while OCR-derived prices and visual candidates remain evidence-gated and require explicit human confirmation before any future production-state integration.
+The installable offline PWA shell is **IMPLEMENTED**. Barcode identification (D-053) and price-tag reading (D-055) are **IMPLEMENTED** in the in-trip camera behind build kill switches; a read price only pre-fills price entry, and nothing reaches the cart until the shopper confirms it there. Visual product recognition is not implemented. Human evidence gates (physical-phone usability, timing, retention and camera field evidence) are tracked in [ROADMAP.md](./ROADMAP.md).
 
 ## Architectural goal
 
@@ -19,16 +19,15 @@ Protect financial correctness and local durability while keeping the product sma
 The architecture should make the common path obvious:
 
 ```text
-React feature UI
-      ↓
-ShoppingAppController + application contracts
-      ↓
-pure shopping domain / selectors
-      ↓
-application ports
-      ↓
-browser infrastructure adapters
+features ─────────▶ application ─────────▶ domain
+                         ▲                    ▲
+        implements ports │                    │ uses
+                         └── infrastructure ──┘
+
+composition root (src/app/composition-root.ts): wires the infrastructure adapters into the application
 ```
+
+Arrows point at what a layer may import (features may also read domain selectors for display); `eslint.config.mjs` enforces the direction. The domain imports nothing outside itself.
 
 ## Source shape
 
@@ -36,11 +35,13 @@ browser infrastructure adapters
 src/
 ├── app/             composition root + product shell
 ├── application/     public contracts, controller, React state bridge, ports
-├── domain/          exact money, ShoppingTrip, Price Memory rules
+├── domain/          exact money, ShoppingTrip, Price Memory, product codes,
+│                    barcode links, shelf-price candidates
 ├── features/
 │   └── shopping/    product UI and ephemeral interaction drafts
-├── infrastructure/  runtime/storage adapters and validation
-└── qa/              timing/retention evidence only
+├── infrastructure/  runtime, storage, camera, barcode, price-OCR and
+│                    product-lookup adapters + validation
+└── qa/              guarded evidence builds, never product state
 ```
 
 Entry points are TypeScript/TSX. Runtime business code should not require JavaScript escape hatches.
@@ -72,9 +73,9 @@ Canonical money is integer minor units. Derived totals are selectors/calculation
 - Undo semantics
 - persistence ordering
 - recovery/degraded-durability behaviour
-- coordination between completed history and Price Memory
+- coordination of the advisory Price Memory and barcode-link records with trips and completed history
 
-Public application interfaces and state/result types live in `shopping-app-contracts.ts`.
+Public application state/result types, the controller interface and the shopping persistence, clock and id ports live in `shopping-app-contracts.ts`. The Price Memory, camera, barcode and price-tag ports live in their own modules (`price-memory-port.ts`, `camera-ports.ts`, `barcode-ports.ts`, `price-tag-ports.ts`).
 
 `shopping-app-controller.ts` contains controller behaviour, not public contract declarations. Consumers may continue importing re-exported types from the controller where compatibility matters, but new application-level types should be owned by the contracts module.
 
@@ -92,6 +93,7 @@ It owns:
 - browser storage access
 - explicit persistence failure mapping
 - safe retirement of historical non-shopping keys
+- camera, barcode, price-OCR and product-lookup adapters
 
 Infrastructure must reconstruct domain objects through domain validation rather than trusting raw persisted JSON.
 
@@ -114,11 +116,11 @@ React components may call domain selectors for display, but financial mutation r
 
 Keep environment-specific construction here instead of scattering singleton creation through features.
 
-It also applies the deployed-surface storage scope: guarded evidence builds prefix every key with the path they are served from, while the public app keeps its original keys (D-052).
+It also applies the deployed-surface storage scope to the shopping keys: guarded evidence builds prefix them with the path they are served from, while the public app keeps its original keys (D-052). Evidence keys get the same scope in `src/qa/evidence-storage.ts`; the appearance preference stays unscoped.
 
 ### QA
 
-`src/qa/` records and analyzes validation evidence only. Production shopping code depends on the `#shopping-evidence` adapter contract, which resolves to a NoOp implementation in the public build and to the guarded evidence implementation only when a QA/beta build flag is enabled. The cohort build uses a separate `#app-entry` alias so facilitator analysis code is not bundled into the public product.
+`src/qa/` records and analyzes validation evidence only. Production shopping code depends on the `#shopping-evidence` adapter contract, which resolves to a NoOp implementation in the public build and to the guarded evidence implementation only in guarded evidence builds. The cohort build points the separate `#app-entry` alias at the analyzer instead of the shopping product, so analysis code is never bundled into the public product.
 
 QA data:
 
@@ -140,6 +142,7 @@ The controller owns the in-memory application snapshot:
 - completed-history integrity (independent of write health)
 - completion-cleanup state
 - Price Memory snapshot/health
+- barcode-link snapshot/health
 - Undo snapshot
 - recovery state
 
@@ -207,17 +210,11 @@ Current durable stores are local-first and versioned.
 
 Core durability is stronger than convenience durability.
 
+[architecture/DATA-PERSISTENCE.md](./architecture/DATA-PERSISTENCE.md) owns the persistence rules: completion ordering, startup reconciliation, recovery and the advisory stores.
+
 ### Active trip and completed history
 
-Completion ordering is intentionally loss-safe:
-
-1. validate/restore completed history
-2. persist the completed trip into history
-3. only after history is durable, clear the active-trip snapshot
-4. if active clear fails, expose cleanup pending/degraded state
-5. on startup, reconcile a stale active copy that is the same shopping as a trip already in durable history; an open copy edited since keeps its cart and finishes under a new trip id
-
-A failed history write must never delete the active trip.
+Completed history is durable before the active-trip snapshot is cleared. A failed history write must never delete the active trip, and a stale active copy of a recorded trip is reconciled rather than duplicated.
 
 ### Read failure
 
@@ -237,6 +234,8 @@ It may improve repeated use, but:
 - remembered prices remain explicitly remembered
 - reuse does not refresh observation age unless a current price is actually confirmed
 - deletion semantics remain independent from completed-trip history
+
+Barcode names (D-054) are advisory and independently durable in the same way.
 
 ## React boundary
 
@@ -302,7 +301,7 @@ Reduced-motion behaviour must preserve the same information and controls.
 
 The product is intentionally **account-free, backend-free and offline-first**.
 
-Canonical shopping state, history and Price Memory remain device-local. The active roadmap does not include:
+Canonical shopping state, history, Price Memory and barcode names remain device-local. The active roadmap does not include:
 
 - authentication;
 - backend account infrastructure;
@@ -310,7 +309,7 @@ Canonical shopping state, history and Price Memory remain device-local. The acti
 - shared-shopping collaboration;
 - remote shopping-state persistence.
 
-Optional future product-identity lookup may use a narrow external network adapter, but it must remain an accelerator rather than infrastructure authority:
+The optional, tap-only product-name lookup (the Open Food Facts adapter in `infrastructure/product-lookup/`) is the one external network adapter; barcode and price-reader engine files are served by this site. The lookup remains an accelerator rather than infrastructure authority:
 
 - provider payloads are runtime validated;
 - network failure degrades to manual entry;
@@ -323,16 +322,16 @@ Do not introduce remote state pre-emptively.
 
 The public product ships an **IMPLEMENTED** installable/offline application shell.
 
-- `vite-plugin-pwa` generates the service worker through Workbox `generateSW`.
-- Workbox precaches application-shell assets only.
+- `vite-plugin-pwa` generates the service worker through Workbox `generateSW`;
+- Workbox precaches the application shell; the self-hosted barcode (`.wasm`) and price-reader engine files are cached on first use (`CacheFirst`) instead of being precached;
 - canonical shopping state remains owned by the application/localStorage persistence adapters, never Cache Storage or the service worker;
-- `/qa/`, `/beta/`, `/cohort/` and `/barcode-benchmark/` guarded evidence builds do not generate/register their own PWA service workers;
+- no guarded build generates or registers a service worker (`VitePWA` is disabled for every guarded build, and CI asserts it);
 - service-worker updates use a prompt flow rather than auto-update;
 - the update prompt is withheld during active/recovery/completed-summary shopping lifecycle states and is only offered from the idle state, so a new worker never forces a reload during an active trip.
 
 Offline browser coverage verifies that an already installed/cached shell can restore an active trip, complete it while offline, persist history and restore that history after another offline reload.
 
-## Scanner extension points
+## Barcode and price-tag reading
 
 Production barcode identification (D-053) and price-tag reading (D-055) are implemented and share one camera.
 
@@ -343,8 +342,6 @@ Layers:
 - `infrastructure/camera/` opens the stream, maps camera errors, exposes the torch and captures the framed part of a cover-fitted preview, loaded only when the camera opens; `infrastructure/barcode/` adapts the native detector and the lazily imported ZXing fallback; `infrastructure/price-ocr/` holds the lazily imported Tesseract adapter and its layout mapping; `infrastructure/product-lookup/` holds the lazily imported Open Food Facts adapter; `infrastructure/storage/barcode-link-storage.ts` owns the `budget-cart:barcode-links` record;
 - `features/shopping/ScanSurface.tsx` is a lazily loaded trip overlay that never mutates state itself;
 - the composition root builds the adapters only when the build switches allow them.
-
-The `/barcode-benchmark/` route remains an evidence-only native `BarcodeDetector` harness, separate from the product scanner.
 
 Production adapters preserve these boundaries:
 
@@ -405,8 +402,8 @@ A change is architecturally acceptable only if all relevant invariants remain tr
 7. Price Memory remains advisory and independently durable
 8. QA evidence remains separate from product state
 9. manual entry remains available
-10. future external payloads are validated at boundaries
-11. current docs describe current code; historical phase narration belongs in archive
+10. external payloads are validated at boundaries
+11. current docs describe current code; completed phase narration is deleted, and git history keeps it
 
 ## Review checklist
 

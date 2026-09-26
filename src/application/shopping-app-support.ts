@@ -15,7 +15,7 @@ import type {
   ShoppingAppState,
 } from "./shopping-app-contracts";
 
-export const EMPTY_COMPLETED_TRIPS = Object.freeze(
+const EMPTY_COMPLETED_TRIPS = Object.freeze(
   [],
 ) as readonly CompletedTrip[];
 export const EMPTY_BARCODE_LINKS = Object.freeze(

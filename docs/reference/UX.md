@@ -204,11 +204,9 @@ Async optional capability loading must never block manual shopping.
 
 ## Offline / network
 
-Current core logic is local-first after the page is loaded.
+The app is local-first. After one online visit, the installed shell opens offline with the active trip and history.
 
-Do not claim installable PWA/offline-shell capability until it ships.
-
-Network-dependent future features should explain unavailability and return to manual flow.
+Optional network features, such as the tap-only Open Food Facts lookup, say when they are unavailable and fall back to manual entry.
 
 ## Motion
 
@@ -223,15 +221,9 @@ Avoid:
 
 ## Tone
 
-Prefer factual, calm copy.
+Prefer factual, calm copy. Avoid moral judgement or panic language.
 
-Good:
-
-- “€12.40 safe to spend”
-- “Uses €1.20 of your safety buffer”
-- “€2.10 over your limit”
-
-Avoid moral judgement or panic language.
+Copy examples live in [Content design](../DESIGN.md#content-design) in DESIGN.md.
 
 ## Performance perception
 

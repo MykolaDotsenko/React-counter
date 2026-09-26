@@ -292,7 +292,7 @@ This made it easier for a contributor or AI agent to load stale or redundant con
 - application consumers have a dedicated contracts module
 - existing controller type imports remain compatible through re-exports
 - current documentation is shorter and more present-tense
-- historical execution detail remains available in `docs/archive/`
+- historical execution detail remained in `docs/archive/` until that folder was removed on 2026-09-26; git history keeps it
 - AI contributors are instructed to load task-specific authoritative context rather than the entire documentation tree
 - future refactors should be driven by cohesive responsibility boundaries, not line-count targets
 
@@ -325,7 +325,6 @@ The previous large files were still correct, but several contained multiple inde
 ### Consequence
 
 The remaining large modules stay intentionally cohesive. Further splitting requires a clear behavioural or ownership boundary; line count alone is not sufficient justification.
-
 
 ## D-050 — Appearance is a semantic-token presentation layer
 

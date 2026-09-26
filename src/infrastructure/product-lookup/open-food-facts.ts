@@ -9,8 +9,8 @@ import { normalizeProductLabel } from "../../domain/barcode-link";
 import { gtinForDisplay, type Gtin } from "../../domain/product-code";
 import { OPEN_FOOD_FACTS_PROVIDER_NAME } from "./lazy-product-lookup";
 
-export const OPEN_FOOD_FACTS_ORIGIN = "https://world.openfoodfacts.org";
-export const OPEN_FOOD_FACTS_FIELDS = [
+const OPEN_FOOD_FACTS_ORIGIN = "https://world.openfoodfacts.org";
+const OPEN_FOOD_FACTS_FIELDS = [
   "code",
   "product_name",
   "product_name_en",

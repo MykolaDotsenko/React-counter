@@ -25,7 +25,7 @@ const THEME_COLORS = Object.freeze({
   aurora: "#070912",
 });
 
-export const isAppearanceMode = (
+const isAppearanceMode = (
   value: string | null | undefined,
 ): value is AppearanceMode =>
   APPEARANCE_MODES.some((mode) => mode === value);

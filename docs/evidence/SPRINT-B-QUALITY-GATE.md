@@ -65,7 +65,7 @@ Supporting scenario/rationale inputs:
 
 - docs/reference/SCENARIOS.md
 - docs/reference/UX.md
-- docs/archive/CORE-UI-EXECUTION-BRIEF.md
+- the core UI execution brief (completed and removed; git history keeps it)
 
 ## Automated B6 evidence
 
@@ -317,7 +317,7 @@ General evidence-quality exit remains:
 7. automated mobile/200%/reduced-motion/offline-runtime checks are green
 8. representative physical-phone usability is checked
 9. one-hand and bright-store behaviour is checked
-10. no unresolved B6 blocker from docs/archive/CORE-UI-EXECUTION-BRIEF.md remains
+10. no unresolved B6 blocker from the core UI execution brief remains
 
 Current-cycle resolution:
 
