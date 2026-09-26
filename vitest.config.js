@@ -9,6 +9,7 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   define: {
     __SHOPPING_APP_VERSION__: JSON.stringify("test"),
+    __PRICE_OCR_ASSET_DIR__: JSON.stringify("assets/ocr/test"),
   },
   plugins: [react()],
   resolve: {
@@ -30,7 +31,10 @@ export default defineConfig({
         "src/domain/**/*.{ts,tsx}",
         "src/application/**/*.{ts,tsx}",
         "src/infrastructure/storage/**/*.{ts,tsx}",
-        "src/infrastructure/barcode/browser-barcode-scanner.ts",
+        "src/infrastructure/barcode/browser-barcode-reader.ts",
+        "src/infrastructure/camera/browser-camera.ts",
+        "src/infrastructure/price-ocr/tesseract-layout.ts",
+        "src/infrastructure/price-ocr/lazy-price-reader.ts",
         "src/infrastructure/product-lookup/**/*.{ts,tsx}",
       ],
       reporter: ["text", "json-summary"],

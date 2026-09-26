@@ -8,7 +8,7 @@ The repository no longer contains an alternate prototype product shell. The publ
 
 The guarded `/cohort/` route is intentionally different: it is a facilitator-only local analyzer that imports already-exported retention evidence and never composes or mutates shopping state.
 
-The guarded camera routes are also standalone: `/barcode-benchmark/` measures native barcode interaction, `/visual-recognition-benchmark/` exercises the local visual-recognition experiment, and `/shelf-label-ocr-tesseract-benchmark/` exercises the concrete OCR camera flow. The public shopping UI links to them through the static `/camera-tools/index.html` hub in a separate tab, but they never compose or mutate shopping state.
+The guarded camera routes are also standalone: `/barcode-benchmark/` measures native barcode interaction, `/visual-recognition-benchmark/` exercises the local visual-recognition experiment, and `/shelf-label-ocr-tesseract-benchmark/` exercises the concrete OCR camera flow. The public shopping UI does not link to them; its own camera lives inside the trip, and the old `/camera-tools/` address redirects to the app. The guarded routes never compose or mutate shopping state.
 
 Physical-phone usability was accepted for the current cycle by owner attestation, exact human timing statistics remain unverified, and the real-shopper retention gate remains open. The installable offline PWA shell and optional barcode identification are implemented. Camera tools are discoverable from the product, while OCR-derived prices and visual candidates remain evidence-gated and require explicit human confirmation before any future production-state integration.
 
@@ -334,15 +334,15 @@ Offline browser coverage verifies that an already installed/cached shell can res
 
 ## Scanner extension points
 
-Production barcode identification is implemented; OCR is not a current production capability.
+Production barcode identification (D-053) and price-tag reading (D-055) are implemented and share one camera.
 
-Barcode layers:
+Layers:
 
-- `domain/product-code.ts` parses EAN-13/EAN-8/UPC-A/UPC-E into a GTIN-14 or a store-code/coupon verdict; `domain/barcode-link.ts` owns remembered barcode names;
-- `application/barcode-ports.ts` defines `BarcodeScannerPort`, `ProductLookupPort` and `BarcodeLinkPersistencePort`; `application/barcode-scan.ts` stabilises readings; the controller's `identifyBarcode` and the `barcode` input on add commands are the only state entry points;
-- `infrastructure/barcode/` adapts the camera, the native detector and the lazily imported ZXing fallback; `infrastructure/product-lookup/` holds the lazily imported Open Food Facts adapter; `infrastructure/storage/barcode-link-storage.ts` owns the `budget-cart:barcode-links` record;
-- `features/shopping/BarcodeScanSurface.tsx` is a lazily loaded trip overlay that never mutates state itself;
-- the composition root builds the adapters only when the build switches allow them (D-053).
+- `domain/product-code.ts` parses EAN-13/EAN-8/UPC-A/UPC-E into a GTIN-14 or a store-code/coupon verdict; `domain/barcode-link.ts` owns remembered barcode names; `domain/shelf-price.ts` turns OCR text lines and their printed heights into ranked exact-money price candidates;
+- `application/camera-ports.ts` defines `CameraPort`; `application/barcode-ports.ts` defines `BarcodeReaderPort`, `ProductLookupPort` and `BarcodeLinkPersistencePort`; `application/price-tag-ports.ts` defines `PriceTagReaderPort`; `application/barcode-scan.ts` stabilises readings; the controller's `identifyBarcode` and the `barcode` input on add commands are the only state entry points, and a read price reaches state only through confirmed price entry;
+- `infrastructure/camera/` opens the stream, maps camera errors, exposes the torch and captures the framed part of a cover-fitted preview, loaded only when the camera opens; `infrastructure/barcode/` adapts the native detector and the lazily imported ZXing fallback; `infrastructure/price-ocr/` holds the lazily imported Tesseract adapter and its layout mapping; `infrastructure/product-lookup/` holds the lazily imported Open Food Facts adapter; `infrastructure/storage/barcode-link-storage.ts` owns the `budget-cart:barcode-links` record;
+- `features/shopping/ScanSurface.tsx` is a lazily loaded trip overlay that never mutates state itself;
+- the composition root builds the adapters only when the build switches allow them.
 
 The `/barcode-benchmark/` route remains an evidence-only native `BarcodeDetector` harness, separate from the product scanner.
 

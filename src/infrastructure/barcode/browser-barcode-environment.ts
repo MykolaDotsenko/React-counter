@@ -1,9 +1,9 @@
-import type { BarcodeScannerPort } from "../../application/barcode-ports";
+import type { BarcodeReaderPort } from "../../application/barcode-ports";
 import {
-  createBarcodeScanner,
+  createBarcodeReader,
   type FrameBarcodeDetector,
   type NativeDetectorConstructor,
-} from "./browser-barcode-scanner";
+} from "./browser-barcode-reader";
 
 const loadFallbackDetector = async (): Promise<FrameBarcodeDetector> => {
   const { createZxingFallbackDetector } = await import(
@@ -20,8 +20,8 @@ const prefetchFallback = (): void => {
     .catch(() => undefined);
 };
 
-export const createBrowserBarcodeScanner = (): BarcodeScannerPort | null => {
-  if (typeof window === "undefined" || typeof navigator === "undefined") {
+export const createBrowserBarcodeReader = (): BarcodeReaderPort | null => {
+  if (typeof window === "undefined") {
     return null;
   }
 
@@ -32,12 +32,7 @@ export const createBrowserBarcodeScanner = (): BarcodeScannerPort | null => {
       }
     ).BarcodeDetector ?? null;
 
-  return createBarcodeScanner({
-    secureContext: window.isSecureContext,
-    mediaDevices:
-      typeof navigator.mediaDevices?.getUserMedia === "function"
-        ? navigator.mediaDevices
-        : null,
+  return createBarcodeReader({
     nativeDetector,
     loadFallbackDetector,
     prefetchFallback,

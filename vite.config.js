@@ -6,10 +6,58 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
+import { priceOcrAssetDir, priceOcrAssets } from "./scripts/price-ocr-assets.mjs";
+
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const appVersion = JSON.parse(
   readFileSync(path.join(rootDir, "package.json"), "utf8"),
 ).version;
+const priceOcrAssetDirectory = priceOcrAssetDir(rootDir);
+const priceOcrFiles = priceOcrAssets(rootDir);
+
+const selfHostedPriceReader = (enabled) => ({
+  name: "self-hosted-price-reader",
+  configureServer(server) {
+    if (!enabled) {
+      return;
+    }
+
+    server.middlewares.use((request, response, next) => {
+      const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
+      const asset = priceOcrFiles.find((candidate) =>
+        pathname.endsWith(`/${candidate.fileName}`),
+      );
+
+      if (asset === undefined) {
+        next();
+        return;
+      }
+
+      response.setHeader(
+        "Content-Type",
+        asset.fileName.endsWith(".wasm")
+          ? "application/wasm"
+          : asset.fileName.endsWith(".js")
+            ? "text/javascript"
+            : "application/octet-stream",
+      );
+      response.end(readFileSync(asset.source));
+    });
+  },
+  generateBundle() {
+    if (!enabled) {
+      return;
+    }
+
+    for (const asset of priceOcrFiles) {
+      this.emitFile({
+        type: "asset",
+        fileName: asset.fileName,
+        source: readFileSync(asset.source),
+      });
+    }
+  },
+});
 
 export default defineConfig(() => {
   const cohortAnalysisEnabled =
@@ -37,12 +85,26 @@ export default defineConfig(() => {
     barcodePairedAnalyzerEnabled ||
     ocrPairedAnalyzerEnabled;
 
+  const shoppingAppBuild = !(
+    cohortAnalysisEnabled ||
+    barcodeBenchmarkEnabled ||
+    visualBenchmarkEnabled ||
+    ocrBenchmarkEnabled ||
+    ocrTesseractBenchmarkEnabled ||
+    barcodePairedAnalyzerEnabled ||
+    ocrPairedAnalyzerEnabled
+  );
+  const priceOcrBuild =
+    shoppingAppBuild && process.env.VITE_SHOPPING_PRICE_OCR !== "0";
+
   return {
     define: {
       __SHOPPING_APP_VERSION__: JSON.stringify(appVersion),
+      __PRICE_OCR_ASSET_DIR__: JSON.stringify(priceOcrAssetDirectory),
     },
     plugins: [
       react(),
+      selfHostedPriceReader(priceOcrBuild),
       VitePWA({
         disable: evidenceEnabled,
         strategies: "generateSW",
@@ -100,7 +162,17 @@ export default defineConfig(() => {
           globPatterns: [
             "**/*.{js,css,html,svg,png,webmanifest}",
           ],
+          globIgnores: ["**/assets/ocr/**"],
           runtimeCaching: [
+            {
+              urlPattern: ({ sameOrigin, url }) =>
+                sameOrigin && url.pathname.includes("/assets/ocr/"),
+              handler: "CacheFirst",
+              options: {
+                cacheName: "price-reader",
+                expiration: { maxEntries: 8 },
+              },
+            },
             {
               urlPattern: ({ sameOrigin, url }) =>
                 sameOrigin && url.pathname.endsWith(".wasm"),

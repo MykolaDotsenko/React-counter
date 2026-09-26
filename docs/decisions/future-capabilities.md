@@ -63,7 +63,7 @@ A standardized native/ponyfill interface gives cleaner capability boundaries tha
 
 ### Consequence
 
-Scanner code remains outside the initial bundle and behind the `BarcodeScannerPort` application port.
+Scanner code remains outside the initial bundle and behind the `BarcodeReaderPort` and `CameraPort` application ports.
 
 Manual price entry remains available in every scanner failure state.
 
@@ -127,6 +127,8 @@ Locking a heavy OCR library or cloud vendor before mobile benchmarking would be 
 ### Consequence
 
 No OCR production dependency is added until fixture/mobile tests demonstrate useful speed and candidate quality.
+
+Superseded for production by D-055: Tesseract.js 7 became the production price reader by owner decision, behind the provider-neutral `PriceTagReaderPort`, before field evidence existed.
 
 If local OCR fails, cloud OCR can be evaluated behind the same port without changing domain/application code.
 
@@ -205,7 +207,7 @@ The owner promotes production barcode identification into the public app before 
 
 It ships as an optional accelerator:
 
-- a "Scan barcode" action appears only where a secure context and camera access exist;
+- scanning appears only where a secure context and camera access exist; since D-055 barcodes are one mode of the shared in-trip camera;
 - `VITE_SHOPPING_BARCODE_SCANNER=0` removes scanning from a build, and `VITE_SHOPPING_PRODUCT_LOOKUP=0` removes only the online lookup; CI reads both from repository variables, so switching off needs no code change;
 - manual price entry stays complete and one tap away in every state.
 
@@ -222,3 +224,36 @@ The layered design in ROADMAP section B was already specified. What remained was
 ### Revisit when
 
 Issue #73 or real-shopper evidence shows scanning is slower, more error-prone or less trusted than manual entry.
+
+## D-055 — Production price-tag reading ships ahead of field evidence, behind a kill switch
+
+Date: 2026-09-26
+
+Status: accepted
+
+### Decision
+
+The owner promotes shelf-label price reading into the public app before issue #90 has produced field evidence.
+
+It ships as one mode of a shared in-trip camera:
+
+- the trip's scan action opens one camera with Barcode and Price tag modes, and price entry offers "Read price tag" directly;
+- Tesseract.js 7 reads the framed tag on the device in a worker; its worker, core and Finnish language files are served by this site under a versioned path, never from a CDN, and the service worker caches them on first use instead of precaching them for every visitor;
+- the tallest printed number is ranked as the headline price, superscript cents get a second digits-only read, and the existing exact-money parser still decides what counts as money;
+- a read price only pre-fills price entry, marked as read from the tag; the shopper confirms with Add, and every state keeps typing the price one tap away;
+- `VITE_SHOPPING_PRICE_OCR=0` removes price reading from a build; CI reads it from a repository variable of the same name.
+
+### Rationale
+
+The harness, parser and engine were already built and measured on fixtures. What remained was an owner decision. Reading a tag reduces typing in the core job while confirmation keeps manual authority, so the risk stays bounded and reversible.
+
+### Consequence
+
+- issue #90 becomes post-release validation: REMEDIATE or DEFER means switching price reading off rather than weakening manual entry;
+- read prices are candidates and never become canonical money without confirmation (D-004);
+- camera images stay on the device; only engine files are downloaded, from this site;
+- the guarded Tesseract experiment keeps its own pinned `fin+swe+eng` configuration for comparable evidence.
+
+### Revisit when
+
+Issue #90 or real-shopper evidence shows reading tags is slower, less accurate or less trusted than typing the price.

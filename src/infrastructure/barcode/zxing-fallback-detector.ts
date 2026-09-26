@@ -7,7 +7,7 @@ import zxingReaderWasmUrl from "zxing-wasm/reader/zxing_reader.wasm?url";
 import {
   RETAIL_BARCODE_FORMATS,
   type FrameBarcodeDetector,
-} from "./browser-barcode-scanner";
+} from "./browser-barcode-reader";
 
 export const ZXING_READER_WASM_URL = zxingReaderWasmUrl;
 

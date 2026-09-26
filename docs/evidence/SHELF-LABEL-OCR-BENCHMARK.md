@@ -168,7 +168,7 @@ Compare the result with the same-device manual price-entry baseline.
 
 ## Promotion rule
 
-Production OCR remains **GATED** until issue #90 demonstrates meaningful end-to-end benefit for a named OCR engine/model.
+Production price tag reading was promoted by owner decision before issue #90 (D-055). Issue #90 now decides after release whether it stays, needs remediation or is switched off.
 
 If approved later, production OCR must preserve:
 

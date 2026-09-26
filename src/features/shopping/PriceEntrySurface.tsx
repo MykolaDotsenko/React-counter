@@ -20,6 +20,7 @@ import {
   classifyPriceEntryDraft,
   clearPriceEntry,
   initialPriceEntryDraft,
+  priceEntryDraftFor,
   replacePriceEntryRaw,
   setPriceEntryMode,
   type PriceEntryDraft,
@@ -46,6 +47,11 @@ export interface ValidatedItemIntent {
   readonly label?: string;
 }
 
+export interface PriceTagDraft {
+  readonly label?: string;
+  readonly quantity: number;
+}
+
 export interface PriceEntrySurfaceProps {
   readonly trip: ActiveTrip;
   readonly onCancel: () => void;
@@ -53,6 +59,9 @@ export interface PriceEntrySurfaceProps {
     intent: ValidatedItemIntent,
   ) => boolean | void;
   readonly initialLabel?: string;
+  readonly initialPrice?: MinorUnits;
+  readonly initialQuantity?: number;
+  readonly onReadPriceTag?: (draft: PriceTagDraft) => void;
   readonly locale?: string;
 }
 
@@ -72,6 +81,9 @@ export function PriceEntrySurface({
   onCancel,
   onValidatedItem,
   initialLabel,
+  initialPrice,
+  initialQuantity,
+  onReadPriceTag,
   locale = SHOPPING_LOCALE,
 }: PriceEntrySurfaceProps) {
   const amountInputId = useId();
@@ -85,10 +97,15 @@ export function PriceEntrySurface({
   const [submissionError, setSubmissionError] = useState("");
   const [overBudgetConfirmation, setOverBudgetConfirmation] =
     useState<OverBudgetConfirmation | null>(null);
-  const [draft, setDraft] = useState<PriceEntryDraft>(
-    initialPriceEntryDraft,
+  const [tagDraft] = useState<PriceEntryDraft | null>(() =>
+    initialPrice === undefined ? null : priceEntryDraftFor(initialPrice),
   );
-  const [quantity, setQuantity] = useState(defaultQuantity);
+  const [draft, setDraft] = useState<PriceEntryDraft>(
+    () => tagDraft ?? initialPriceEntryDraft(),
+  );
+  const [quantity, setQuantity] = useState(
+    () => initialQuantity ?? defaultQuantity(),
+  );
   const [label, setLabel] = useState(initialLabel ?? "");
   const [labelError, setLabelError] = useState("");
 
@@ -124,6 +141,11 @@ export function PriceEntrySurface({
 
   const validPrice =
     state.kind === "valid" ? state.value : null;
+
+  const priceFromTag =
+    tagDraft !== null &&
+    draft.raw === tagDraft.raw &&
+    draft.mode === tagDraft.mode;
 
   const projectionResult = useMemo(
     () =>
@@ -315,9 +337,27 @@ export function PriceEntrySurface({
         </div>
 
         <div className={styles.amountBlock}>
-          <label htmlFor={amountInputId} className={styles.amountLabel}>
-            Price
-          </label>
+          <div className={styles.amountLabelRow}>
+            <label htmlFor={amountInputId} className={styles.amountLabel}>
+              Price
+            </label>
+            {onReadPriceTag !== undefined && activeConfirmation === null ? (
+              <button
+                type="button"
+                className={styles.cancelButton}
+                onClick={() => {
+                  const normalized = label.trim();
+                  onReadPriceTag(
+                    normalized === ""
+                      ? { quantity }
+                      : { label: normalized, quantity },
+                  );
+                }}
+              >
+                Read price tag
+              </button>
+            ) : null}
+          </div>
           <div className={styles.amountShell}>
             <span aria-hidden="true">€</span>
             <input
@@ -380,6 +420,12 @@ export function PriceEntrySurface({
             ) : state.kind === "valid" ? (
               <span className={styles.validPreview}>
                 {formatEur(state.value, locale)}
+                {priceFromTag ? (
+                  <span className={styles.tagSource}>
+                    {" "}
+                    Read from the price tag. Check it matches the shelf.
+                  </span>
+                ) : null}
               </span>
             ) : invalidCopy ? (
               <span className={styles.error}>{invalidCopy}</span>

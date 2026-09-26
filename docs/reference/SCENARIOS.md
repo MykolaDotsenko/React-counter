@@ -104,7 +104,7 @@ These scenarios are useful for future design but do **not** represent current sh
 
 ### Barcode
 
-**IMPLEMENTED.** Covered by `tests/BarcodeScanSurface.test.tsx`, `tests/BarcodeScanFlow.test.tsx`, `tests/shopping-app-barcode.test.ts` and `e2e/barcode-scanner.spec.js`.
+**IMPLEMENTED.** Covered by `tests/ScanSurface.test.tsx`, `tests/ScanFlow.test.tsx`, `tests/shopping-app-barcode.test.ts` and `e2e/barcode-scanner.spec.js`.
 
 - known barcode + remembered context;
 - known barcode with no current price;
@@ -115,13 +115,21 @@ These scenarios are useful for future design but do **not** represent current sh
 
 Key rule: identity is not authoritative current shelf price.
 
-### Shelf OCR
+### Price tag reading
 
-- one clear price;
+**IMPLEMENTED.** Covered by `tests/shelf-price.test.ts`, `tests/price-ocr.test.ts`, `tests/ScanSurface.test.tsx`, `tests/ScanFlow.test.tsx` and `e2e/price-tag-scanner.spec.js`.
+
+- one clear price, with or without a euro sign;
+- superscript cents;
 - multiple plausible prices;
-- loyalty/member ambiguity;
+- loyalty/member and regular price ambiguity;
 - unit price vs product price;
-- OCR failure/latency.
+- multi-buy offer vs single-item price;
+- no readable price, slow reading, reader unavailable;
+- reading the current price for a scanned product;
+- returning from the camera to price entry with its name and quantity.
+
+Key rule: a read price is a candidate until the shopper confirms it.
 
 Key rule: OCR is candidate capture; correction cost must beat manual entry.
 

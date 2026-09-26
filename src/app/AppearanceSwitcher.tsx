@@ -78,10 +78,6 @@ export function AppearanceSwitcher() {
         ))}
       </div>
 
-      <a className={styles.hint} href="./camera-tools/">
-        Scanner & camera
-      </a>
-
       {saveFailed ? (
         <p className={styles.saveWarning} role="status">
           Appearance changed for this session but could not be saved.

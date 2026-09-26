@@ -143,7 +143,7 @@ Do not construct storage/provider singletons inside feature components.
 
 ## Future capability rule
 
-A future OCR/backend contract is not current product behaviour merely because a type or extension point exists. Barcode adapters live in `infrastructure/barcode/` and `infrastructure/product-lookup/` and are composed in `app/composition-root.ts`.
+A future OCR/backend contract is not current product behaviour merely because a type or extension point exists. Camera, barcode and price reading adapters live in `infrastructure/camera/`, `infrastructure/barcode/`, `infrastructure/price-ocr/` and `infrastructure/product-lookup/` and are composed in `app/composition-root.ts`.
 
 Before adding an adapter:
 

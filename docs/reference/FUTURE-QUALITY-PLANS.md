@@ -26,9 +26,9 @@ A generic category classifier is not evidence of SKU-level product recognition.
 
 ## Shelf-label OCR
 
-The provider-neutral OCR benchmark harness and deterministic price-candidate parser are implemented. A concrete OCR engine/model remains gated by issue #90.
+Production price tag reading shipped by owner decision (D-055); issue #90 now validates it after release.
 
-Before production OCR:
+For the post-release evidence:
 
 - test one named OCR adapter/engine on static fixtures before physical camera evidence;
 - include comma/dot decimals, split cents, unit price + product price, loyalty/regular prices, multi-buy, percentage discount and no-valid-price cases;

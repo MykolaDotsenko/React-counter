@@ -225,11 +225,22 @@ Acceptance:
 - camera permission, unsupported browsers, busy cameras and engine failures each explain the problem and offer typing the barcode or entering the price without scanning;
 - camera frames never leave the device and are never stored.
 
-### FR-028 — Future shelf OCR
+### FR-028 — Price tag reading
 
-**PLANNED / GATED.**
+**IMPLEMENTED.**
 
-OCR produces candidate price data requiring appropriate confirmation.
+The camera can read a shelf price tag on the device and offer candidate prices. A read price is never added without the shopper's confirmation.
+
+Acceptance:
+
+- the trip's scan action offers Barcode and Price tag modes that share one camera session, and price entry offers "Read price tag";
+- reading happens only on an explicit "Read price" tap, on the part of the picture inside the frame;
+- the largest printed amount is offered first, and superscript cents are read with the euros;
+- unit, member, regular and multi-buy prices are labelled, and the single-item price of a multi-buy tag comes before the offer;
+- choosing a candidate opens price entry pre-filled and marked as read from the tag; the item is added only by the shopper's Add;
+- the reader's first use shows its preparation progress; its files come from this site and are cached for offline use;
+- no readable price, a slow read, an unavailable reader, a camera without a picture and every camera failure each explain the problem and offer retaking or typing the price;
+- camera frames never leave the device and are never stored.
 
 ### FR-029 — Installable offline shell
 

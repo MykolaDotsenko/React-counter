@@ -66,12 +66,13 @@ Implemented:
 - timing QA and retention-beta evidence tooling;
 - installable offline PWA shell with prompt-based updates;
 - optional barcode identification (native detector, lazy self-hosted ZXing WASM fallback, local barcode names, tap-only online name lookup) behind build switches;
+- optional price tag reading (lazy self-hosted Tesseract.js, geometry-aware exact-money candidates, confirmation in price entry) in the same camera, behind a build switch;
 - Chromium / Firefox / WebKit browser and accessibility coverage.
 
 Gated / not implemented:
 
 - physical evidence for barcode scanning (issue #73, post-release);
-- production shelf-label OCR;
+- physical evidence for price tag reading (issue #90, post-release);
 - representative human one-hand/timing/bright-store validation;
 - real-shopper second-/third-trip retention validation.
 

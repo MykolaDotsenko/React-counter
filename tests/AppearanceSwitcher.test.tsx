@@ -18,14 +18,10 @@ describe("AppearanceSwitcher", () => {
     expect(screen.getByRole("button", { name: "Aurora" })).not.toBeNull();
   });
 
-  it("links to the static scanner and camera hub without replacing the shopping flow", () => {
+  it("keeps camera features inside the trip instead of linking out to separate tools", () => {
     render(<AppearanceSwitcher />);
 
-    const hub = screen.getByRole("link", { name: "Scanner & camera" });
-
-    expect(
-      hub.getAttribute("href")?.endsWith("/camera-tools/"),
-    ).toBe(true);
+    expect(screen.queryByRole("link")).toBeNull();
   });
 
   it("switches immediately and persists the preference without touching shopping state", async () => {

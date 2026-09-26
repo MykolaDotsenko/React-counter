@@ -27,6 +27,7 @@ The core Shopping Budget Companion engineering path is implemented:
 - privacy-safe timing QA and retention-beta evidence tooling
 - local-only retention cohort analyzer
 - production barcode identification: native `BarcodeDetector` with a lazy self-hosted ZXing WASM fallback, local barcode names and tap-only Open Food Facts name lookup (D-053)
+- production price-tag reading: on-device Tesseract.js from self-hosted files in the shared in-trip camera, pre-filling price entry for confirmation (D-055)
 - guarded native barcode interaction benchmark harness
 - local-only paired barcode/manual evidence analyzer for issue #73
 - guarded provider-neutral visual product recognition benchmark harness with a pinned local CLIP experimental adapter; physical evidence still pending
@@ -133,7 +134,7 @@ The active roadmap is intentionally narrow and local-first.
    - benchmark representative retail products and same-brand/similar-package confusions;
    - compare ranked accuracy, end-to-end human decision time, corrections and fallback against manual interaction.
 
-5. **Shelf-label OCR engine evidence — issue #90**
+5. **Shelf-label OCR engine evidence — issue #90 (post-release validation, D-055)**
    - keep OCR text/images transient and outside retained evidence;
    - use pinned Tesseract.js 7.0.0 with LSTM `fin+swe+eng` as the first explicit local-only baseline;
    - keep camera image bytes local; worker/core/language assets may download/cache separately;
@@ -153,7 +154,7 @@ These gates are not replaceable by automated fixtures or green CI.
 Shipped in these layers:
 
 1. product-identity domain contracts (GTIN parsing, check digits, store codes and coupons);
-2. provider-neutral `BarcodeScannerPort` application port;
+2. provider-neutral `BarcodeReaderPort` and shared `CameraPort` application ports;
 3. native `BarcodeDetector` adapter;
 4. lazy self-hosted ZXing WASM fallback (D-031);
 5. provider-neutral `ProductLookupPort`;
@@ -190,9 +191,21 @@ Production visual recognition, if approved, must preserve:
 
 Category-only recognition is not sufficient when the intended interaction needs SKU-level identity.
 
-### D. Shelf-label OCR — concrete engine evidence before production
+### D. Shelf-label OCR
 
-**Harness status: IMPLEMENTED. Concrete Tesseract experiment: IMPLEMENTED / FIELD EVIDENCE GATED. Production OCR: PLANNED / GATED.**
+**Production price-tag reading: IMPLEMENTED (owner promotion, D-055). Field evidence (issue #90): PLANNED / GATED as post-release validation. Guarded harness and Tesseract experiment: IMPLEMENTED.**
+
+Shipped in these layers:
+
+1. geometry-aware exact-money candidate ranking in `domain/shelf-price.ts`;
+2. provider-neutral `CameraPort` and `PriceTagReaderPort` application ports;
+3. a lazily imported Tesseract.js 7 adapter with a reusable worker, an idle release, cancellation and a 20 s timeout;
+4. self-hosted, versioned worker, core and Finnish language files, cached by the service worker on first use;
+5. a Price tag mode in the shared camera and "Read price tag" in price entry;
+6. candidate choice, then pre-filled price entry that the shopper confirms;
+7. release switch `VITE_SHOPPING_PRICE_OCR`, read by CI from a repository variable.
+
+If issue #90 concludes REMEDIATE or DEFER, switch price reading off rather than weakening manual entry: set the `VITE_SHOPPING_PRICE_OCR` repository variable to `0`, and the next push to `main` builds, tests and deploys the app without it.
 
 The guarded OCR benchmark now owns:
 
@@ -211,7 +224,7 @@ The first concrete engine baseline is Tesseract.js 7.0.0 in LSTM mode with `fin+
 
 Use issue #90 to evaluate this exact engine/configuration on representative static fixtures and physical shelf-label conditions.
 
-Only positive evidence may authorize production OCR. Production OCR must preserve:
+Production price reading preserves:
 
 - OCR output is untrusted transient text;
 - parsed prices are candidates, never canonical money;

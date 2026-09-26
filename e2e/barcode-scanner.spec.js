@@ -63,7 +63,7 @@ test("scans a product from the camera, names it once and recognises it next time
   expect((await scan(page)).violations).toEqual([]);
 
   await page.getByLabel("Name for next time (optional)").fill("Milk 1L");
-  await page.getByRole("button", { name: "Continue to price" }).click();
+  await page.getByRole("button", { name: /^(Type price|Continue to price)$/ }).click();
   await page.getByRole("textbox", { name: "Price" }).fill("1.29");
   await page.getByRole("button", { name: "Add · €1.29" }).click();
 

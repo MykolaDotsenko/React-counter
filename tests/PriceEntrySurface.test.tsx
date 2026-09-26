@@ -940,3 +940,86 @@ describe("PriceEntrySurface", () => {
     expect(screen.getByRole("button", { name: "Adding…" })).not.toBeNull();
   });
 });
+
+describe("PriceEntrySurface with a price tag reading", () => {
+  it("starts from the price read on the tag and says where it came from until the shopper changes it", async () => {
+    const user = userEvent.setup();
+    const onValidatedItem = vi.fn(() => true);
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        initialLabel="Milk 1L"
+        initialPrice={money(129)}
+        initialQuantity={2}
+        onCancel={vi.fn()}
+        onValidatedItem={onValidatedItem}
+      />,
+    );
+
+    const input = screen.getByLabelText("Price") as HTMLInputElement;
+
+    expect(input.value).toBe("1.29");
+    expect(screen.getByText(/Read from the price tag\. Check it matches the shelf\./)).not.toBeNull();
+    expect(screen.getByLabelText("Current quantity").textContent).toBe("2");
+
+    await user.click(screen.getByRole("button", { name: "Add · €2.58" }));
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 129,
+      quantity: 2,
+      label: "Milk 1L",
+    });
+  });
+
+  it("drops the price tag note once the amount is edited", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        initialPrice={money(129)}
+        onCancel={vi.fn()}
+        onValidatedItem={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "9");
+
+    expect(screen.queryByText(/Read from the price tag/)).toBeNull();
+  });
+
+  it("opens the price tag reader with the name and quantity typed so far", async () => {
+    const user = userEvent.setup();
+    const onReadPriceTag = vi.fn();
+    const { rerender } = render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={vi.fn()}
+        onReadPriceTag={onReadPriceTag}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Increase quantity" }));
+    await user.click(screen.getByRole("button", { name: "Read price tag" }));
+    expect(onReadPriceTag).toHaveBeenLastCalledWith({ quantity: 2 });
+
+    await user.click(screen.getByText(/Name for next time/));
+    await user.type(screen.getByLabelText("Item name"), " Bread ");
+    await user.click(screen.getByRole("button", { name: "Read price tag" }));
+    expect(onReadPriceTag).toHaveBeenLastCalledWith({ label: "Bread", quantity: 2 });
+
+    rerender(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Read price tag" })).toBeNull();
+  });
+});

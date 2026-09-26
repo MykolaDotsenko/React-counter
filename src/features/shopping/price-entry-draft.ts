@@ -31,6 +31,15 @@ export const initialPriceEntryDraft = (): PriceEntryDraft => ({
   mode: "decimal",
 });
 
+export const priceEntryDraftFor = (price: MinorUnits): PriceEntryDraft => {
+  const cents = Number(price);
+
+  return {
+    raw: `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`,
+    mode: "decimal",
+  };
+};
+
 export const classifyPriceEntryDraft = (
   draft: PriceEntryDraft,
 ): PriceEntryDraftState => {

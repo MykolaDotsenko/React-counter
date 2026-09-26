@@ -7,7 +7,7 @@ export const useShoppingShellFocus = () => {
   const addPriceButtonRef = useRef<HTMLButtonElement>(null);
   const finishTripButtonRef = useRef<HTMLButtonElement>(null);
   const adjustBudgetButtonRef = useRef<HTMLButtonElement>(null);
-  const scanBarcodeButtonRef = useRef<HTMLButtonElement>(null);
+  const scanButtonRef = useRef<HTMLButtonElement>(null);
 
   const focusAfterRender = (
     findTarget: () => HTMLButtonElement | null,
@@ -49,9 +49,9 @@ export const useShoppingShellFocus = () => {
     );
   };
 
-  const returnFocusToScanBarcode = (): void => {
+  const returnFocusToScan = (): void => {
     focusAfterRender(
-      () => scanBarcodeButtonRef.current,
+      () => scanButtonRef.current,
       () => addPriceButtonRef.current,
     );
   };
@@ -84,8 +84,8 @@ export const useShoppingShellFocus = () => {
     addPriceButtonRef,
     finishTripButtonRef,
     adjustBudgetButtonRef,
-    scanBarcodeButtonRef,
-    returnFocusToScanBarcode,
+    scanButtonRef,
+    returnFocusToScan,
     returnFocusToAddPrice,
     returnFocusToPriceTrigger,
     returnFocusToFinishTrip,

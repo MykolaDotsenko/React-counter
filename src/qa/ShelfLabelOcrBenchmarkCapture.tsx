@@ -18,7 +18,7 @@ import {
 import {
   parseShelfPriceCandidates,
   type ShelfPriceCandidate,
-} from "./shelf-label-price-parser";
+} from "../domain/shelf-price";
 import styles from "./BarcodeBenchmarkApp.module.css";
 
 const OCR_TIMEOUT_MS = 12_000;
