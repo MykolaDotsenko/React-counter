@@ -57,11 +57,12 @@ What a shopper can do today:
 ## Architecture
 
 ```text
-React features ──────▶ application (controller, use cases, contracts, ports) ──────▶ domain
-                                  ▲
-infrastructure adapters ──────────┘ implement the ports (storage, camera, barcode, price OCR, product lookup)
+features ─────────▶ application ─────────▶ domain
+                         ▲                    ▲
+        implements ports │                    │ uses
+                         └── infrastructure ──┘
 
-composition root: wires the adapters into the application
+composition root (src/app/composition-root.ts): wires the infrastructure adapters into the application
 ```
 
 | Layer | Owns |

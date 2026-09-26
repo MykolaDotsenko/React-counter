@@ -4,7 +4,7 @@
 
 **IMPLEMENTED current behavioural contract.**
 
-This file defines current application/persistence/interaction transitions. Planned OCR capability states are kept out of the current contract until they ship.
+This file defines current application/persistence/interaction states and transitions. Write ordering, startup reconciliation and recovery rules are owned by [../architecture/DATA-PERSISTENCE.md](../architecture/DATA-PERSISTENCE.md); this file links there instead of restating them.
 
 ## Principle
 
@@ -16,10 +16,13 @@ Do not encode dialogs, focus, animation or optional capability loading inside Sh
 
 ```text
 BOOTING
-  ├─ valid active trip ───────────────→ ACTIVE
+  ├─ valid active trip ──────────────→ ACTIVE
   ├─ no active trip ─────────────────→ IDLE
+  ├─ stale copy of a recorded trip ──→ IDLE (copy cleared)
   └─ unsafe persisted active state ──→ RECOVERY
 ```
+
+A stale copy is an active trip that is the same shopping as a trip history already records. If clearing it fails, the app still starts in IDLE, with completion cleanup pending and persistence DEGRADED. The startup reconciliation rules are owned by DATA-PERSISTENCE.
 
 ### IDLE
 
@@ -47,9 +50,11 @@ Transitions:
 - ADD_ITEM / EDIT_ITEM / REMOVE_ITEM / UNDO → ACTIVE;
 - SET_BUDGET / SET_BUFFER → ACTIVE;
 - FINISH_TRIP(success) → COMPLETED_SUMMARY;
+- FINISH_TRIP(history written, active-record clear fails) → COMPLETED_SUMMARY + persistence DEGRADED + completion cleanup pending;
 - FINISH_TRIP(history already records different shopping under this id) → save the open trip under a new id, then finish it under that id; if that save or the history write fails → ACTIVE under the new id (when saved) + persistence DEGRADED;
 - FINISH_TRIP(history-write failure) → ACTIVE + persistence DEGRADED;
-- FINISH_TRIP(stored history unreadable) → ACTIVE + history integrity DEGRADED; nothing is written and the active trip stays durable;
+- FINISH_TRIP(stored history unreadable) → ACTIVE + history integrity DAMAGED; nothing is written and the active trip stays durable;
+- RETRY_HISTORY_READ (the open trip is the same shopping as a recorded trip) → IDLE; the stale copy is cleared, or completion cleanup stays pending with persistence DEGRADED if that fails;
 - active-state write failure → ACTIVE + persistence DEGRADED.
 
 ### COMPLETED_SUMMARY
@@ -63,8 +68,10 @@ Transitions:
 
 - SET_ACTUAL_CHECKOUT → COMPLETED_SUMMARY;
 - SHOP_AGAIN(valid completed source, including the open summary's own trip) → ACTIVE with a new trip id and empty cart;
+- OPEN_HISTORY (View trip history) → COMPLETED_SUMMARY + history overlay state; Back returns to the summary;
+- DELETE_TRIP(the summary's own trip) / CLEAR_HISTORY → IDLE, with the history overlay still open; deleting any other trip stays in COMPLETED_SUMMARY;
 - SET_ASIDE_HISTORY / RETRY_HISTORY_READ → COMPLETED_SUMMARY; a set-aside saves the summary's trip into the new history;
-- DISMISS_SUMMARY → IDLE.
+- DISMISS_SUMMARY → IDLE; refused (`completion-not-saved`) while persistence is DEGRADED other than `session-only`, or completion cleanup is pending, until a save retry succeeds.
 
 Reopening the same completed trip is **PLANNED / GATED** and is not a current transition.
 
@@ -80,7 +87,7 @@ Allowed behaviour:
 
 - RETRY_READ → re-run bootstrap;
 - SET_ASIDE_ACTIVE (unreadable record with raw material only) → back up the exact raw record, remove it, re-run bootstrap;
-- CONTINUE_WITHOUT_SAVING → IDLE with persistence and Price Memory DEGRADED(`session-only`): every write is refused for the rest of the session, so unreadable stored data is never overwritten. Trips still finish into an in-memory summary, the summary can be dismissed and Shop again works; nothing survives a reload, which returns to RECOVERY;
+- CONTINUE_WITHOUT_SAVING → IDLE with persistence, Price Memory and barcode-name persistence DEGRADED(`session-only`): every write is refused for the rest of the session, so unreadable stored data is never overwritten. Trips still finish into an in-memory summary, the summary can be dismissed and Shop again works; nothing survives a reload, which returns to RECOVERY;
 - preserve raw recovery material where the persistence contract requires it.
 
 RECOVERY never invents prices/budgets from malformed data.
@@ -121,7 +128,8 @@ History integrity is orthogonal to lifecycle and to write health.
 
 ```text
 READABLE
-  └─ stored history unreadable (bootstrap, finish, checkout total, save retry) → DAMAGED
+  └─ stored history unreadable (bootstrap, finish, checkout total, save retry,
+     the re-read before deleting a trip or clearing history) → DAMAGED
 
 DAMAGED
   ├─ SET_ASIDE_HISTORY (backup, keep readable trips) → READABLE
@@ -136,10 +144,9 @@ While DAMAGED:
 - finishing, deleting a trip and clearing history are refused, because each would overwrite the unreadable record;
 - a successful active-trip write never hides the history warning;
 - the shown trips are exactly those a set-aside would keep;
-- if history becomes unreadable while a finished-trip summary is open, repair is offered in the summary itself; setting history aside there saves the finished trip (with any checkout total) into the new history;
-- a stale active copy is the last readable copy of a trip history cannot confirm, so a save retry only clears it when readable history holds that same shopping.
+- if history becomes unreadable while a finished-trip summary is open, repair is offered in the summary itself; setting history aside there saves the finished trip (with any checkout total) into the new history.
 
-Deleting a trip or clearing history always re-reads durable history first and never writes from a stale in-memory list, so trips this session never loaded cannot be dropped. After a successful re-read, an open copy that is the same shopping as a trip history already holds is reconciled exactly as at startup; an open copy edited since keeps its cart.
+The rules behind these transitions — re-reading durable history before every rewrite, reconciling an open trip after a successful re-read, and keeping a stale active copy until readable history confirms it — are owned by DATA-PERSISTENCE.
 
 ## Add-price interaction
 
@@ -177,38 +184,21 @@ Projection never mutates canonical trip state.
 
 ```text
 NO_UNDO
-  └─ undoable mutation → UNDO_AVAILABLE
+  └─ undoable mutation (add, edit, remove) → UNDO_AVAILABLE
 
 UNDO_AVAILABLE
   ├─ UNDO → NO_UNDO
   ├─ new undoable mutation → UNDO_AVAILABLE (replace snapshot)
-  ├─ finish trip → NO_UNDO
+  ├─ SET_BUDGET / SET_BUFFER → NO_UNDO
+  ├─ successful finish → NO_UNDO
   └─ reload → NO_UNDO
 ```
 
-Undo is intentionally bounded/ephemeral.
+Undo is intentionally bounded/ephemeral. Leaving ACTIVE by any route clears it; a finish that is not saved (history unreadable or history write failed) keeps it.
 
 ## Finish-trip orchestration
 
-```text
-ACTIVE
-  └─ FINISH_REQUEST
-       ↓
-CREATE_COMPLETED_DOMAIN_STATE
-       ↓
-WRITE_HISTORY
-  ├─ fail → ACTIVE + DEGRADED
-  └─ success
-       ↓
-CLEAR_ACTIVE_STORAGE
-  ├─ fail → COMPLETED_SUMMARY + DEGRADED + cleanup pending
-  └─ success → COMPLETED_SUMMARY
-```
-
-When WRITE_HISTORY finds the same id already recorded:
-
-- same shopping → the recorded completion stands; CLEAR_ACTIVE_STORAGE follows;
-- different shopping → nothing is written; the open trip is first saved under a new id, then the sequence above runs under that id.
+FINISH_TRIP outcomes are the ACTIVE transitions above. The write order behind them, including the conflict fork, is owned by DATA-PERSISTENCE (Completion transaction, Idempotent completion).
 
 Invariant:
 
@@ -237,7 +227,7 @@ persist fresh empty ACTIVE trip
 ACTIVE
 ```
 
-Reject the transition when persistence/recovery state makes the source unsafe.
+Reject the transition (`repeat-source-unavailable`) while persistence is DEGRADED other than `session-only` or completion cleanup is pending; it is also unavailable in BOOTING or RECOVERY and while a trip is open.
 
 The completed history record remains unchanged.
 
@@ -263,20 +253,23 @@ History UI is ephemeral presentation state over canonical completed history.
 
 Deleting one/all completed trips:
 
-- requires safe application state;
+- requires no open trip, healthy persistence (so never in a `session-only` session), readable history and no pending cleanup;
 - persists the new history snapshot;
+- returns COMPLETED_SUMMARY to IDLE when the summary's own trip is removed;
 - does not implicitly clear Price Memory.
 
 Clearing Price Memory:
 
+- requires no open trip;
 - is independent;
+- also clears remembered barcode names;
 - does not mutate completed history.
 
 ## Overlay state
 
 Avoid multiple unrelated booleans for mutually exclusive primary surfaces.
 
-Prefer one discriminated UI state, conceptually:
+The shell (`ShoppingAppShell.tsx`) keeps one discriminated UI state, conceptually:
 
 ```ts
 type OverlayState =
@@ -284,6 +277,7 @@ type OverlayState =
   | { kind: "history" }
   | ({ tripId: TripId } & (
       | { kind: "add-price" }
+      | { kind: "scan"; mode: "barcode" | "price"; context: { label?: string; barcode?: Gtin } }
       | { kind: "edit-item"; itemId: ItemId }
       | { kind: "budget-settings" }
       | { kind: "finish-trip" }
@@ -291,29 +285,6 @@ type OverlayState =
 ```
 
 Overlay state is UI state, not ShoppingTrip lifecycle. A trip overlay belongs to the trip it was opened for: when that trip stops being the active one by any route (finished, reconciled, set aside), the overlay is treated as closed and never reopens over the next trip.
-
-## Startup reconciliation
-
-Startup:
-
-1. restore active-trip state;
-2. restore history;
-3. validate envelopes/data/domain invariants;
-4. detect a stale active copy: the same shopping as an already completed trip;
-5. reconcile safely;
-6. derive application lifecycle;
-7. render.
-
-If stale active state is the same shopping (same id, plan and cart lines) as a completed history entry:
-
-- completed history is durability authority;
-- attempt to clear stale active storage;
-- do not duplicate history;
-- if clear fails, expose cleanup-pending/degraded state.
-
-Conflicting history is not guessed into one record.
-
-Malformed/unsupported history is not used as permission to delete active data.
 
 ## Forbidden states
 
@@ -331,21 +302,27 @@ Implementation should reject/prevent:
 
 ## Camera scan
 
-The scan overlay is ephemeral UI state, keyed to its trip like the other trip overlays. It has two modes, Barcode and Price tag, that share one camera session; switching modes while the camera runs does not reopen it.
+The scan overlay is ephemeral UI state, keyed to its trip like the other trip overlays. It has two modes, Barcode and Price tag, that share one camera session; switching modes while the camera runs does not reopen it, and switching from PAUSED or FAILED starts it again.
 
 ```text
 STARTING ── camera ready ─────────────→ LIVE
 STARTING ── camera fails ─────────────→ FAILED(reason)
 LIVE(barcode) ── same code read twice in 1.5 s → FOUND   (camera stops)
-LIVE(barcode) ── 5 detector errors / engine missing → FAILED(engine-failed)
+LIVE(barcode) ── 5 consecutive detector errors / engine missing → FAILED(engine-failed)
 LIVE(price) ── Read price ──→ READING   (frame captured, camera stops)
+LIVE(price) ── Read price, no frame ──→ PRICE-PROBLEM   (camera stops)
 READING ── candidates ──→ PRICES
-READING ── none / timeout / reader unavailable / no frame ──→ PRICE-PROBLEM
+READING ── none / timeout / reader unavailable ──→ PRICE-PROBLEM
 LIVE / STARTING ── page hidden ──→ PAUSED   (camera stops)
 PAUSED ── Resume ──→ STARTING
+PAUSED / FAILED ── switch mode ──→ STARTING
 FAILED ── Try again (when it can help) ──→ STARTING
 PRICES / PRICE-PROBLEM ── Retake / Try again ──→ STARTING
-any camera phase ── Type barcode ──→ TYPING ── valid digits ──→ FOUND
+STARTING / LIVE / FAILED (barcode mode) ── Type barcode ──→ TYPING
+TYPING ── valid digits ──→ FOUND   (invalid digits show an error)
+TYPING ── Use camera ──→ STARTING
+price mode: STARTING / LIVE / FAILED / PRICES / PRICE-PROBLEM ── Type price ──→ price entry with the product carried
+FAILED (barcode mode) ── Enter price without scanning ──→ price entry
 FOUND ── Read price tag ──→ STARTING in price mode with the product carried
 FOUND ── Scan another ──→ STARTING in barcode mode
 any ── Cancel / Escape ──→ overlay closed; back to price entry when opened from it, otherwise focus on the scan action
@@ -364,12 +341,23 @@ FOUND by product code:
 
 Online lookup: IDLE → LOADING → found | not-found | failed(offline, timeout, unavailable, invalid-response). A suggestion only fills the editable name field. Cancelling the overlay aborts a pending lookup.
 
+## PWA update
+
+The update prompt (`PwaUpdateNotice.tsx`) is ephemeral UI state outside the shopping lifecycle:
+
+```text
+NO_UPDATE ── new service worker installed and waiting ──→ UPDATE_WAITING
+UPDATE_WAITING ── Later ──→ NO_UPDATE   (prompt dismissed, nothing reloads)
+UPDATE_WAITING ── Update app ──→ new worker activates, page reloads
+```
+
+The prompt is shown only while the lifecycle is IDLE; in BOOTING, ACTIVE, COMPLETED_SUMMARY and RECOVERY it is withheld, so an update never reloads an open trip, a finished-trip summary or a recovery screen. Installing is the browser's own flow from the web manifest; the app keeps no install state.
+
 ## Planned transitions
 
 Not current behaviour:
 
 - reopen/continue the same completed trip;
-- PWA update/install lifecycle;
 - cloud/multi-device conflict resolution.
 
 Define and test these only when the roadmap approves the capability.

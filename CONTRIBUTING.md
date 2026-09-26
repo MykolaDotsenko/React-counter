@@ -29,11 +29,12 @@ npm run test:e2e -- --project=chromium
 The intended dependency direction is:
 
 ```text
-React features ──────▶ application (controller, use cases, contracts, ports) ──────▶ domain
-                                  ▲
-infrastructure adapters ──────────┘ implement the ports
+features ─────────▶ application ─────────▶ domain
+                         ▲                    ▲
+        implements ports │                    │ uses
+                         └── infrastructure ──┘
 
-composition root: wires the adapters into the application
+composition root (src/app/composition-root.ts): wires the infrastructure adapters into the application
 ```
 
 ESLint enforces the critical layer boundaries. Do not disable those rules to make a design fit.

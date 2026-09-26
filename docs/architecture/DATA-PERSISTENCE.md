@@ -4,7 +4,7 @@
 
 **IMPLEMENTED current persistence contract.**
 
-This document owns durability, recovery and transaction semantics.
+This document owns durability, recovery and transaction semantics: completion ordering, startup reconciliation, recovery, deletion and the advisory stores. Other documents link here instead of restating these rules.
 
 Storage shape/version detail lives in [../specs/STORAGE-SCHEMA.md](../specs/STORAGE-SCHEMA.md). Do not duplicate schema definitions here.
 
@@ -38,9 +38,10 @@ Current durable subsystems:
 
 1. active trip;
 2. completed history;
-3. Price Memory.
+3. Price Memory;
+4. barcode names (barcode links, D-054).
 
-QA/retention evidence uses separate storage and is never canonical shopping state.
+QA/retention evidence uses its own `budget-cart:qa:*` keys in the same browser storage (timing QA in tab-scoped `sessionStorage`) and is never canonical shopping state. The appearance preference is convenience state outside these rules.
 
 ## Active-trip durability
 
@@ -115,7 +116,7 @@ An unreadable record leaves its canonical key only through an explicit, clearly 
 2. read the backup back and compare it byte for byte;
 3. only then rewrite history with the readable trips (or remove the unreadable active record).
 
-If any step fails, the canonical record is left unchanged. A readable record is never set aside. The key format is defined in [STORAGE-SCHEMA](../specs/STORAGE-SCHEMA.md).
+If any step fails, the canonical record is left unchanged. A readable record is never set aside. Setting history aside keeps exactly the readable trips the app already showed (none when the record as a whole is unreadable). Backups are not read by the product; they remain on the device until site data is cleared. The key and value formats are defined in [STORAGE-SCHEMA](../specs/STORAGE-SCHEMA.md).
 
 ## Continuing without saving
 
@@ -134,10 +135,19 @@ Completion has the highest durability sensitivity.
 Required ordering:
 
 1. create a valid completed-domain trip;
-2. restore/validate current completed history;
+2. re-read and validate the stored completed history;
 3. append completed trip idempotently;
 4. persist updated history;
-5. only after history is durable, clear active-trip storage.
+5. only after history is durable, clear active-trip storage;
+6. then learn remembered prices from the completed trip (see Price Memory persistence).
+
+### History cannot be read
+
+Then:
+
+- nothing is written, and the active trip stays open and durable;
+- history integrity becomes damaged (see Completed history restore); write health is unchanged;
+- completion stays refused until the shopper sets the damaged record aside or a re-read succeeds.
 
 ### History write fails
 
@@ -155,7 +165,7 @@ Then:
 - completion is durable;
 - completed summary/history remain authoritative;
 - cleanup is marked pending/degraded;
-- startup reconciliation attempts to clear the stale active copy;
+- a save retry, or startup reconciliation, attempts to clear the stale active copy;
 - if history becomes unreadable before the copy is cleared, the copy is the last readable record of the trip: it is cleared only once readable history holds the same shopping, and setting history aside from the summary saves the trip into the new history first.
 
 Never reverse the write order.
@@ -174,15 +184,17 @@ If history contains the trip id with different shopping, the open trip was edite
 
 ## Startup reconciliation
 
-If an active snapshot is the same shopping as a completed trip in durable history:
+Bootstrap reads and validates the active-trip record, then completed history. An unreadable active record enters recovery and nothing is reconciled.
+
+If a readable active snapshot is the same shopping as a trip in readable history (the readable trips of a partly damaged record count):
 
 - history is completion authority;
-- active state is treated as stale cleanup;
+- active state is treated as stale cleanup, and the app starts idle;
 - attempt to clear active storage;
 - do not duplicate history;
-- expose cleanup failure if removal fails.
+- expose cleanup failure if removal fails: cleanup stays pending and persistence degraded until a save retry or a later startup clears the copy.
 
-An active snapshot that shares an id with a completed trip but holds different shopping is not stale: it stays open, and finishing it follows the conflict rule above. Re-reading history after a read failure ("Try again") applies the same rule in-session, so edits made while history was unreadable are never discarded.
+Only readable trips can confirm a copy, so unreadable history is never permission to remove the active record. An active snapshot that shares an id with a completed trip but holds different shopping is not stale: it stays open, and finishing it follows the conflict rule above. A successful re-read after a read failure ("Try again") applies the same rule in-session, so edits made while history was unreadable are never discarded.
 
 ## Checkout reconciliation
 
@@ -193,7 +205,7 @@ Updating optional actual checkout total:
 - does not create a new unrelated history entry;
 - does not alter item prices.
 
-Missing/conflicting history degrades rather than inventing state.
+Missing/conflicting history degrades rather than inventing state. Unreadable history is not written: history integrity becomes damaged and the new total stays in the open summary, which setting history aside then saves.
 
 ## Price Memory persistence
 
@@ -203,6 +215,7 @@ Rules:
 
 - completion durability does not depend on Price Memory;
 - Price Memory write failure does not invalidate a completed trip;
+- prices learned from a completed trip are written only after its history write, and never over an unreadable Price Memory record; clearing remembered prices is the explicit reset;
 - clearing Price Memory does not clear history;
 - clearing history does not implicitly clear Price Memory;
 - malformed Price Memory data cannot corrupt active/history state.
@@ -268,7 +281,7 @@ Do not add remote persistence without an explicit product/privacy decision.
 
 ## Service-worker boundary
 
-A future PWA service worker may cache application assets.
+The PWA service worker precaches the application shell and caches the self-hosted barcode and price-reader engine files on first use.
 
 It must never own canonical shopping state or financial mutation ordering.
 
@@ -314,12 +327,13 @@ At minimum:
 - write failure;
 - remove failure;
 - history conflict;
+- idempotent completion of the same shopping;
 - invalid history entry;
 - completion history-write failure;
 - completion active-clear failure;
 - startup stale-active reconciliation;
 - legacy key retirement failure;
-- Price Memory failure independence.
+- Price Memory and barcode-name failure independence.
 
 ## Review checklist
 

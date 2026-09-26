@@ -12,27 +12,45 @@ Use it when you need to locate code/contract ownership quickly.
 
 | Concern | Source |
 | --- | --- |
-| public application state/results/ports | `src/application/shopping-app-contracts.ts` |
+| public application state/results, controller interface, shopping persistence/clock/id ports | `src/application/shopping-app-contracts.ts` |
 | controller orchestration | `src/application/shopping-app-controller.ts` |
 | completion use cases | `src/application/shopping-app-completion.ts` |
 | controller helpers | `src/application/shopping-app-support.ts` |
 | Price Memory port | `src/application/price-memory-port.ts` |
 | session-only (write-refusing) ports | `src/application/session-only-persistence.ts` |
+| camera, barcode-reader, product-lookup, barcode-link and price-tag ports | `src/application/camera-ports.ts`, `src/application/barcode-ports.ts`, `src/application/price-tag-ports.ts` |
+| barcode reading stabilisation | `src/application/barcode-scan.ts` |
 | exact money | `src/domain/money.ts` + `MONEY-SPEC.md` |
 | trip public API | `src/domain/shopping-trip.ts` façade |
 | trip model/validation | `src/domain/shopping-trip-model.ts` |
 | trip selectors/projections | `src/domain/shopping-trip-selectors.ts` |
 | trip commands/reducer | `src/domain/shopping-trip-reducer.ts` + `STATE-MACHINES.md` |
 | Price Memory domain | `src/domain/price-memory.ts` |
+| product codes (GTIN, store codes, coupons) | `src/domain/product-code.ts` |
+| barcode links (remembered names) | `src/domain/barcode-link.ts` |
+| shelf-price candidates | `src/domain/shelf-price.ts` |
 | storage transactions | `src/infrastructure/storage/shopping-storage.ts` |
 | storage codec/reconstruction | `src/infrastructure/storage/shopping-storage-codec.ts` |
 | storage schemas | `src/infrastructure/storage/shopping-storage-schema.ts` + `STORAGE-SCHEMA.md` |
-| Price Memory storage | corresponding infrastructure storage modules |
+| shopping persistence port adapter | `src/infrastructure/storage/active-trip-persistence-port.ts` |
+| Price Memory storage | `src/infrastructure/storage/price-memory-storage.ts`, `src/infrastructure/storage/price-memory-storage-schema.ts`, `src/infrastructure/storage/price-memory-persistence-port.ts` |
+| barcode-link storage | `src/infrastructure/storage/barcode-link-storage.ts` |
+| system clock and id generator | `src/infrastructure/runtime/browser-boundaries.ts` |
+| camera build switches | `src/infrastructure/runtime/feature-flags.ts` |
+| camera adapter | `src/infrastructure/camera/` |
+| barcode readers (native detector, ZXing fallback) | `src/infrastructure/barcode/` |
+| price-tag reader (Tesseract) | `src/infrastructure/price-ocr/` |
+| product-name lookup (Open Food Facts) | `src/infrastructure/product-lookup/` |
 | browser composition | `src/app/composition-root.ts` |
-| deployed-surface storage scope | `src/infrastructure/runtime/deployment-surface.ts` + `src/infrastructure/storage/scoped-storage.ts` |
+| product shell and overlay routing | `src/app/ShoppingAppShell.tsx` + `src/app/use-shopping-shell-focus.ts` |
+| PWA update prompt | `src/app/PwaUpdateNotice.tsx` + `STATE-MACHINES.md` |
+| appearance preference | `src/app/appearance.ts` + `src/app/AppearanceSwitcher.tsx` |
+| deployed-surface storage scope | `src/infrastructure/runtime/deployment-surface.ts` + `src/infrastructure/storage/scoped-storage.ts`; evidence keys: `src/qa/evidence-storage.ts` |
 | React subscription bridge | `src/application/react/use-shopping-app-state.ts` |
 | price-entry interaction | `PRICE-ENTRY-CONTRACT.md` + feature tests |
+| camera scan overlay | `src/features/shopping/ScanSurface.tsx` + `ScanBarcodeResult.tsx`, `ScanPriceResult.tsx`, `scan-copy.ts`, `scan-targets.ts` + `STATE-MACHINES.md` |
 | recovery and damaged-history actions | `RecoveryScreen.tsx`, `HistoryIntegrityNotice.tsx` + `STATE-MACHINES.md` |
+| evidence adapter boundary (`#shopping-evidence`) | `src/qa/shopping-evidence-contract.ts`; alias targets `src/qa/use-shopping-evidence.tsx` (public NoOp) and `src/qa/use-shopping-evidence-enabled.tsx` (guarded builds) |
 
 ## Public application boundary
 
@@ -42,8 +60,9 @@ The application layer exposes:
 - subscription;
 - bootstrap;
 - start/repeat trip;
-- active-trip mutations;
-- completion;
+- active-trip mutations and Undo;
+- barcode identification (`identifyBarcode`);
+- completion and dismissing the completed summary;
 - checkout reconciliation;
 - history/local-data controls;
 - persistence retry;
@@ -60,7 +79,8 @@ Domain types/functions own:
 - projections/selectors;
 - lifecycle-safe trip commands;
 - provenance/confidence semantics;
-- Price Memory learning/ranking rules.
+- Price Memory learning/ranking rules;
+- product codes, barcode links and shelf-price candidates.
 
 Domain code must not depend on:
 
@@ -143,7 +163,7 @@ Do not construct storage/provider singletons inside feature components.
 
 ## Future capability rule
 
-A future OCR/backend contract is not current product behaviour merely because a type or extension point exists. Camera, barcode and price reading adapters live in `infrastructure/camera/`, `infrastructure/barcode/`, `infrastructure/price-ocr/` and `infrastructure/product-lookup/` and are composed in `app/composition-root.ts`.
+A future backend/provider contract is not current product behaviour merely because a type or extension point exists. Camera, barcode, price-reading and product-lookup adapters live in `infrastructure/camera/`, `infrastructure/barcode/`, `infrastructure/price-ocr/` and `infrastructure/product-lookup/` and are composed in `app/composition-root.ts`.
 
 Before adding an adapter:
 

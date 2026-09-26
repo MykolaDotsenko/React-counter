@@ -7,14 +7,17 @@
 - active trip;
 - completed history;
 - Price Memory;
+- barcode links;
+- set-aside backups;
 - versioned envelopes;
 - strict runtime validation;
 - domain reconstruction;
 - malformed/future-version handling;
-- historical non-shopping key retirement;
-- loss-safe completion and startup reconciliation.
+- historical non-shopping key retirement.
 
-Settings/meta records are not current product state and are not defined here until a real requirement exists.
+This document owns storage shapes and the validation order. Persistence rules — completion ordering, startup reconciliation, recovery, deletion and write failures — live in [../architecture/DATA-PERSISTENCE.md](../architecture/DATA-PERSISTENCE.md).
+
+The appearance preference is the only settings record. No other settings/meta records are defined until a real requirement exists.
 
 ## Goals
 
@@ -33,13 +36,21 @@ budget-cart:active-trip
 budget-cart:history
 budget-cart:price-memory
 budget-cart:barcode-links
+budget-cart:set-aside:<source>:<setAsideAt>[:<n>]
+shopping-budget:appearance
 ```
 
-Historical counter keys must never be interpreted as shopping money.
+Historical counter keys (`pulse-counter:state`, `counter`) must never be interpreted as shopping money.
+
+Evidence tooling uses its own `budget-cart:qa:*` keys; they are not shopping state and are not defined here.
+
+### Appearance preference
+
+`shopping-budget:appearance` holds the chosen appearance as a raw, unversioned string: `system`, `light`, `dark` or `aurora`. A missing, unreadable or unknown value reads as `system`. It is convenience state outside the shopping envelopes.
 
 ### Deployed-surface scope
 
-Every surface of this repository is served from one GitHub Pages origin, so they all share one `localStorage`. The public app uses the keys above unchanged. Guarded evidence builds (QA timing, retention beta, benchmarks) prefix every shopping and evidence key with the path they are served from:
+Every surface of this repository is served from one GitHub Pages origin, so they all share one `localStorage`. The public app uses the keys above unchanged. Guarded evidence builds prefix every shopping and evidence key with the path they are served from:
 
 ```text
 surface:<served path>|<key>
@@ -87,8 +98,9 @@ Canonical content includes:
 - item ids/prices/quantities;
 - optional labels;
 - price source/confidence;
-- item timestamps;
-- supported identity/store context where schema permits it.
+- item timestamps.
+
+Items are strict and carry no product identity such as a barcode; barcode names live in their own record (D-054). The only store context is the optional `storeId` on a remembered price's confidence.
 
 Must not contain derived authority such as:
 
@@ -106,7 +118,7 @@ Key:
 budget-cart:history
 ```
 
-Stores completed-trip snapshots in a versioned envelope.
+Stores completed-trip snapshots in a versioned envelope whose data is `{ trips: [...] }`.
 
 Each completed entry preserves canonical trip/item data plus:
 
@@ -117,9 +129,9 @@ Requirements:
 
 - trip ids are unique;
 - conflicting duplicate ids degrade rather than silently replace;
-- invalid entries do not become domain objects;
-- completion append is idempotent for the same shopping (trip identity, plan and cart lines; completion time, checkout total and line edit times aside), and the recorded entry is kept;
-- completion append of different shopping under a recorded id reports a history conflict and writes nothing; the application then records the trip under a new id.
+- invalid entries do not become domain objects.
+
+How completion appends an entry, including the same-shopping and conflict rules, is defined in [DATA-PERSISTENCE](../architecture/DATA-PERSISTENCE.md).
 
 ## Price Memory v1
 
@@ -129,20 +141,15 @@ Key:
 budget-cart:price-memory
 ```
 
-Independent from active/history persistence.
+Envelope data is `{ records: [{ id, productId, label, currency, unitPriceMinor, observedAt, storeId?, source }] }`:
 
-Records contain only fields required by the Price Memory domain contract, such as:
+- `productId` is the product identity derived from the item name (`label:<lower-cased name>`) and `label` is its display form;
+- `id` is derived from `productId` and the optional `storeId`; a record whose `id` does not match is invalid;
+- `unitPriceMinor` is a positive integer number of EUR cents and `observedAt` is a canonical timestamp;
+- `source` is `{ kind: "manual" }`, `{ kind: "shelf-scan", captureId? }` or `{ kind: "retailer-feed", provider }`;
+- duplicate ids are a conflict, not a merge.
 
-- memory id;
-- normalized identity/label context;
-- remembered minor-unit value;
-- provenance/currentness metadata;
-- observation timestamps;
-- optional store context supported by the schema.
-
-Price Memory is advisory.
-
-A Price Memory write failure must not invalidate completed-trip durability.
+Price Memory is advisory and independent from active/history persistence; its rules are in DATA-PERSISTENCE.
 
 ## Barcode links v1
 
@@ -159,7 +166,7 @@ Envelope data is `{ links: [{ gtin, label, linkedAt }] }`:
 - `linkedAt` is a canonical timestamp; the newest link per GTIN wins and a clock moving back never makes a rename older;
 - at most 500 links, most recent first; duplicate GTINs are a conflict, not a merge.
 
-Barcode links are advisory like Price Memory and independent of active/history durability (D-054). Unreadable or newer-version records are reported, never overwritten; "Clear remembered prices" is the explicit reset and clears barcode links with Price Memory.
+Barcode links are advisory like Price Memory (D-054); their rules are in DATA-PERSISTENCE.
 
 ## Validation order
 
@@ -174,23 +181,11 @@ For persisted input:
 
 Never cast untrusted JSON directly into branded domain types.
 
-## Unsupported future versions
-
-If an older build sees a newer unsupported schema:
-
-- do not guess compatibility;
-- do not overwrite the raw value;
-- surface degraded/recovery semantics according to the persistence contract.
-
-## Malformed data
-
-Malformed/invalid raw active-trip data must not be silently replaced during bootstrap.
-
-History may preserve valid entries while reporting invalid-entry degradation only where the contract explicitly allows that partial result.
+An active-trip record is either fully valid or unreadable. History, Price Memory and barcode links keep their valid entries and report the record as degraded when some entries are invalid; duplicate trip ids, memory ids or GTINs make the whole record unreadable. What follows a rejection — recovery, degraded health or setting the record aside — is defined in DATA-PERSISTENCE.
 
 ## Set-aside backups
 
-An unreadable record (malformed JSON, invalid envelope/data, unsupported version, invalid or conflicting history entries) leaves its canonical key only through an explicit user action. Before the canonical key is replaced or removed, the exact raw string is copied to a new backup key and read back:
+When the shopper sets an unreadable active-trip or history record aside, its exact raw string is first copied to a new backup key:
 
 ```text
 budget-cart:set-aside:<source>:<setAsideAt>[:<n>]
@@ -198,7 +193,7 @@ budget-cart:set-aside:<source>:<setAsideAt>[:<n>]
 
 - `<source>` is `active-trip` or `history`;
 - `<setAsideAt>` is the canonical ISO timestamp of the action;
-- `:<n>` is appended when a backup with the same timestamp already exists, so an earlier backup is never overwritten.
+- `:<n>` (`:2`, `:3`, …) is appended when a backup with the same timestamp already exists, so an earlier backup is never overwritten.
 
 Backup value:
 
@@ -212,120 +207,29 @@ Backup value:
 }
 ```
 
-If the backup cannot be written and read back, nothing else changes. A readable record is never set aside. Setting history aside rewrites it with exactly the readable trips the app already showed (none when the record could not be parsed). Backups are not read by the product; they remain on the device until site data is cleared.
-
-## Write semantics
-
-### Active trip
-
-Committed mutations attempt immediate snapshot persistence.
-
-A failed write produces degraded health while keeping the in-memory result explicit.
-
-### Completion
-
-Order is mandatory:
-
-1. restore/validate history;
-2. append completed trip safely;
-3. write durable history;
-4. only then clear active trip.
-
-If history write fails:
-
-- active trip remains;
-- completion is not represented as safely finished.
-
-If history succeeds but active clear fails:
-
-- completion is durable;
-- cleanup pending/degraded is exposed;
-- startup reconciliation handles stale active copy.
-
-### Completed update
-
-Checkout reconciliation updates the matching completed trip.
-
-Missing/conflicting history entry degrades rather than inventing a new relationship.
-
-## Startup reconciliation
-
-If the active trip is the same shopping as a durable completed history entry (same id, plan and cart lines):
-
-- treat history as completion authority;
-- attempt to clear stale active snapshot;
-- never duplicate the completed trip;
-- expose cleanup failure if clear fails.
-
-An active trip that only shares the id is kept open; it was edited after that completion was recorded.
-
-## Historical non-shopping keys
-
-Historical counter data:
-
-- is never interpreted as money;
-- is retired only after shopping bootstrap is safe enough to do so;
-- removal failure becomes explicit degradation where applicable.
-
-## Migration discipline
-
-A real schema version change requires in one coherent change:
-
-- schema/type update;
-- migration/compatibility logic;
-- reconstruction rules;
-- tests for old/current/future versions;
-- documentation update.
-
-Do not bump versions for code-only refactors.
-
-## Data deletion
-
-History deletion and Price Memory deletion are independent user actions. Clearing remembered prices also clears barcode names; it never touches history.
-
-Deletion must not silently affect the other subsystem.
-
-Active-trip deletion/reset behaviour must remain explicit and safe.
+`reason` is the issue that made the record unreadable: `malformed-json`, `invalid-envelope`, `unsupported-version` or `invalid-data`, and for history also `invalid-history-entry` or `history-conflict`.
 
 ## Privacy
 
-Shopping state remains local in the current product. The only network request the shopping app makes is an optional, tap-only Open Food Facts name lookup that sends a barcode number and nothing else.
+Shopping state remains local in the current product. The shopping app's only request that leaves this site is the optional, tap-only Open Food Facts name lookup: it sends the barcode number plus the app's name and version (and the list of product fields it wants back), never shopping content. Barcode and price-reader engine files load from this site.
 
 Storage schemas must not grow analytics/evidence fields.
 
 QA/retention evidence uses separate keys/contracts.
 
-## Multiple tabs
-
-No silent merge of concurrent financial edits.
-
-If cross-tab editing becomes a real feature, define conflict semantics before adding synchronization.
-
-## Storage quota
-
-Current records are small enough for localStorage.
-
-IndexedDB requires a demonstrated size/query/concurrency need, not architectural preference.
-
 ## Required tests
 
-Cover:
+Cover, for each versioned record:
 
 - fresh start;
 - valid restore;
-- reload after mutation;
+- reload after a write;
 - malformed JSON;
-- invalid DTO/business value;
+- invalid envelope, DTO or business value;
 - unsupported future version;
-- storage unavailable;
-- read/write/remove failure;
-- history conflicts;
-- idempotent completion;
-- history-write failure;
-- active-clear failure after durable completion;
-- startup reconciliation;
-- legacy retirement;
-- Price Memory independence.
+- invalid entries and duplicate ids or GTINs where a record keeps its valid entries.
+
+Durability and transaction failure tests are listed in DATA-PERSISTENCE.
 
 ## Review checklist
 

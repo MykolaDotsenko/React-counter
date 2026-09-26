@@ -111,11 +111,12 @@ MUST NOT:
 Dependency direction:
 
 ```text
-React features ──────▶ application (controller, use cases, contracts, ports) ──────▶ domain
-                                  ▲
-infrastructure adapters ──────────┘ implement the ports
+features ─────────▶ application ─────────▶ domain
+                         ▲                    ▲
+        implements ports │                    │ uses
+                         └── infrastructure ──┘
 
-composition root: wires the adapters into the application
+composition root (src/app/composition-root.ts): wires the infrastructure adapters into the application
 ```
 
 Rules:
