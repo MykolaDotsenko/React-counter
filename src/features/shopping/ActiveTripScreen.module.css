@@ -102,6 +102,33 @@
   text-align: center;
 }
 
+.stickyRemaining {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 5;
+  margin: 0;
+  padding: max(8px, env(safe-area-inset-top)) 16px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shopping-panel-shadow);
+  color: var(--accent);
+  font-weight: 800;
+  text-align: center;
+}
+
+.stickyRemaining strong {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stickyRemaining[data-status="reserve"] {
+  color: var(--warning);
+}
+
+.stickyRemaining[data-status="over"] {
+  color: var(--danger);
+}
+
 .heroAmount {
   margin: 0;
   font-size: clamp(3rem, 15vw, 5.8rem);

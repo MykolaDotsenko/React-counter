@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode, Ref } from "react";
+import { useCallback, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import { needsSaveAttention } from "../../application/session-only-persistence";
@@ -126,6 +126,21 @@ export function ActiveTripScreen({
   locale = SHOPPING_LOCALE,
 }: ActiveTripScreenProps) {
   const state = useShoppingAppState(controller);
+  const [heroVisible, setHeroVisible] = useState(true);
+  const observeHero = useCallback((hero: HTMLElement | null) => {
+    if (hero === null || typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setHeroVisible(entry?.isIntersecting ?? true);
+    });
+    observer.observe(hero);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
   const trip = state.activeTrip;
   if (state.lifecycle !== "active" || trip === null) {
     return null;
@@ -195,6 +210,11 @@ export function ActiveTripScreen({
 
   return (
     <main className={styles.screen}>
+      {heroVisible ? null : (
+        <p className={styles.stickyRemaining} data-status={status} aria-hidden="true">
+          <strong>{formatSignedAmount(heroAmount, locale)}</strong> {heroLabel}
+        </p>
+      )}
       <section className={styles.shell} aria-labelledby="active-trip-title">
         <header className={styles.header}>
           <div>
@@ -211,6 +231,7 @@ export function ActiveTripScreen({
         </header>
 
         <section
+          ref={observeHero}
           className={styles.hero}
           aria-label="Current spending status"
           data-status={status}

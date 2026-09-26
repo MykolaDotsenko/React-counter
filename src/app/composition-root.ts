@@ -23,6 +23,7 @@ import {
   priceOcrEnabled,
   productLookupEnabled,
 } from "../infrastructure/runtime/feature-flags";
+import { requestPersistentStorage } from "../infrastructure/runtime/persistent-storage";
 import { subscribeToStorageChangesFromOtherTabs } from "../infrastructure/runtime/storage-change-events";
 import { createActiveTripPersistencePort } from "../infrastructure/storage/active-trip-persistence-port";
 import { createBarcodeLinkPersistencePort } from "../infrastructure/storage/barcode-link-storage";
@@ -81,6 +82,22 @@ export const bootstrapBrowserShoppingAppController = (
   const controller = createBrowserShoppingAppController(dependencies);
   controller.bootstrap();
   return controller;
+};
+
+export const keepHistoryFromEviction = (
+  controller: ShoppingAppController,
+): (() => void) => {
+  let requested = false;
+
+  const check = (): void => {
+    if (!requested && controller.getSnapshot().completedTrips.length > 0) {
+      requested = true;
+      void requestPersistentStorage();
+    }
+  };
+
+  check();
+  return controller.subscribe(check);
 };
 
 export const followStorageChangesFromOtherTabs = (

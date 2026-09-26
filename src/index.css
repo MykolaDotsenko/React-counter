@@ -20,6 +20,10 @@ body,
   min-height: 100%;
 }
 
+html {
+  scroll-padding-top: 64px;
+}
+
 body {
   min-height: 100dvh;
   margin: 0;

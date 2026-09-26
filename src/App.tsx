@@ -7,10 +7,12 @@ import {
   createBrowserPriceTagReader,
   createBrowserProductLookup,
   followStorageChangesFromOtherTabs,
+  keepHistoryFromEviction,
 } from "./app/composition-root";
 
 const shoppingController = bootstrapBrowserShoppingAppController();
 followStorageChangesFromOtherTabs(shoppingController);
+keepHistoryFromEviction(shoppingController);
 const camera = createBrowserCameraPort();
 const barcodeReader = createBrowserBarcodeReaderPort();
 const priceReader = createBrowserPriceTagReader();

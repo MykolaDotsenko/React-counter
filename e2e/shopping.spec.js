@@ -1902,3 +1902,22 @@ test("reduced motion keeps the shopping flow functional and removes capacity tra
     page.getByRole("button", { name: "Add price" }),
   ).toBeVisible();
 });
+
+test("keeps what is left in view while scrolling a long cart", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  for (const price of ["1.29", "2.49", "7.95", "5.49", "3.30", "4.10"]) {
+    await page.getByRole("button", { name: "Add price" }).click();
+    await page.getByRole("textbox", { name: "Price" }).fill(price);
+    await page.getByRole("button", { name: `Add · €${price}` }).click();
+  }
+
+  const pinned = page.locator("main > p[aria-hidden='true']");
+  await expect(pinned).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Remove" }).last().scrollIntoViewIfNeeded();
+
+  await expect(pinned).toHaveText("€25.38 left");
+});
