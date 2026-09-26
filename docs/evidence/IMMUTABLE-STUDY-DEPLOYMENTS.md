@@ -2,7 +2,7 @@
 
 ## Status
 
-**IMPLEMENTED deployment contract once this change is merged.**
+**IMPLEMENTED.** One baseline is published: `evidence-baseline-2026-09-25-r10`.
 
 Real-world retention, barcode, visual-recognition and OCR studies must not depend on the moving GitHub Pages routes that follow every `main` deployment.
 
@@ -150,7 +150,7 @@ Do not combine evidence from different `buildRevision` values into one interpret
 
 ## Storage isolation
 
-All baselines share the GitHub Pages origin with the public app and the moving guarded routes. Guarded builds scope every storage key by the path they are served from, so each published baseline keeps its own shopping state and evidence even though its files are byte-identical to the tested artifact. Baselines published before scoping shipped use unscoped keys shared with the public app; they still cannot be locked out by newer data (D-051), but analyse them knowing a participant's public-app trips may appear in their history.
+All baselines share the GitHub Pages origin with the public app and the moving guarded routes. Guarded builds scope their shopping and evidence keys by the path they are served from, so each published baseline keeps its own shopping state and evidence even though its files are byte-identical to the tested artifact; only the appearance preference is shared. Baselines published before scoping shipped use unscoped keys shared with the public app; they still cannot be locked out by newer data (D-051), but analyse them knowing a participant's public-app trips may appear in their history.
 
 ## Relationship to `study/*` Git refs
 
