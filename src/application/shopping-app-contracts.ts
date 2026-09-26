@@ -29,6 +29,7 @@ export interface PersistenceProblem {
 }
 
 export interface ShoppingPersistencePort {
+  isCurrent?(): boolean;
   bootstrap(): ActiveTripBootstrapResult;
   readCompletedHistory(): CompletedHistoryReadResult;
   setAsideDamagedHistory(setAsideAt: IsoTimestamp): HistorySetAsideResult;
@@ -253,6 +254,7 @@ export interface ShoppingAppController {
   readonly getSnapshot: () => ShoppingAppState;
   readonly subscribe: (listener: () => void) => () => void;
   readonly bootstrap: () => ShoppingAppState;
+  readonly refreshFromStorage: () => AppCommandResult;
   readonly startTrip: (input: StartTripInput) => AppCommandResult;
   readonly startTripFromCompleted: (tripId: TripId) => AppCommandResult;
   readonly addManualItem: (input: AddManualItemInput) => AppCommandResult;

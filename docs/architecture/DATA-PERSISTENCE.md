@@ -287,9 +287,15 @@ It must never own canonical shopping state or financial mutation ordering.
 
 ## Multiple tabs
 
-Current product does not silently merge concurrent financial edits.
+The stored records are the source of truth; a tab's in-memory copy is a cache of them.
 
-If multi-tab synchronization becomes a feature, define conflict ownership first.
+- Each storage port remembers the raw records it last read or wrote and reports when another tab has changed them.
+- Before any command that writes, a tab whose own saves are healthy reloads the stored records and applies the command to them: an item added in each of two tabs keeps both, and a trip another tab finished or started is never reopened or overwritten.
+- A `storage` event, returning to a hidden tab and restoring a page from the back/forward cache reload the same way, so an idle tab shows what another tab did.
+- A tab whose own saves are failing keeps its unsaved view instead of reloading, so retrying saves what the shopper sees.
+- A finished-trip summary stays open when the reloaded history does not contain it, unless another tab has started a trip.
+
+Concurrent edits are never merged below the command level; the second tab's command runs on the first tab's result.
 
 ## Write strategy
 

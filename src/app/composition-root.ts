@@ -23,6 +23,7 @@ import {
   priceOcrEnabled,
   productLookupEnabled,
 } from "../infrastructure/runtime/feature-flags";
+import { subscribeToStorageChangesFromOtherTabs } from "../infrastructure/runtime/storage-change-events";
 import { createActiveTripPersistencePort } from "../infrastructure/storage/active-trip-persistence-port";
 import { createBarcodeLinkPersistencePort } from "../infrastructure/storage/barcode-link-storage";
 import { surfaceStorageScope } from "../infrastructure/runtime/deployment-surface";
@@ -81,6 +82,13 @@ export const bootstrapBrowserShoppingAppController = (
   controller.bootstrap();
   return controller;
 };
+
+export const followStorageChangesFromOtherTabs = (
+  controller: ShoppingAppController,
+): (() => void) =>
+  subscribeToStorageChangesFromOtherTabs(() => {
+    controller.refreshFromStorage();
+  });
 
 export const createBrowserCameraPort = (): CameraPort | null =>
   barcodeScannerEnabled || priceOcrEnabled ? createBrowserCamera() : null;

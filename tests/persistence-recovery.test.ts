@@ -698,7 +698,7 @@ describe("independent review regressions", () => {
 
     expect(controller.deleteCompletedTrip("trip-a" as never)).toMatchObject({
       ok: false,
-      error: { code: "history-write-unavailable" },
+      error: { code: "completed-trip-not-found" },
     });
     expect(storage.values.get(HISTORY_STORAGE_KEY)).toBe("{corrupted later");
     expect(controller.getSnapshot()).toMatchObject({

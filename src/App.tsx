@@ -6,9 +6,11 @@ import {
   createBrowserCameraPort,
   createBrowserPriceTagReader,
   createBrowserProductLookup,
+  followStorageChangesFromOtherTabs,
 } from "./app/composition-root";
 
 const shoppingController = bootstrapBrowserShoppingAppController();
+followStorageChangesFromOtherTabs(shoppingController);
 const camera = createBrowserCameraPort();
 const barcodeReader = createBrowserBarcodeReaderPort();
 const priceReader = createBrowserPriceTagReader();
