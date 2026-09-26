@@ -5,6 +5,7 @@ import { writeFakeBarcodeCamera } from "./support/fake-barcode-camera.js";
 
 const MILK = "6414893386303";
 const cameraFile = writeFakeBarcodeCamera(MILK);
+const scannerSwitchedOff = process.env.VITE_SHOPPING_BARCODE_SCANNER === "0";
 
 const test = base.extend({
   launchOptions: [
@@ -27,20 +28,19 @@ const test = base.extend({
   ],
 });
 
-test.skip(
-  ({ browserName }) => browserName !== "chromium",
-  "Fake camera capture from a video file is Chromium-only.",
-);
-
 const scan = (page) =>
   new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();
 
 test("scans a product from the camera, names it once and recognises it next time", async ({
+  browserName,
   context,
   page,
 }) => {
+  test.skip(browserName !== "chromium", "Fake camera capture from a video file is Chromium-only.");
+  test.skip(scannerSwitchedOff, "This build switches the barcode scanner off.");
+
   await context.grantPermissions(["camera"]);
   const requests = [];
   page.on("request", (request) => {
@@ -83,4 +83,14 @@ test("scans a product from the camera, names it once and recognises it next time
 
   await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: "Scan barcode" })).toBeFocused();
+});
+
+test("leaves only manual price entry when the build switches the scanner off", async ({ page }) => {
+  test.skip(!scannerSwitchedOff, "This build ships the barcode scanner.");
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+
+  await expect(page.getByRole("button", { name: "Add price" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Scan barcode" })).toHaveCount(0);
 });

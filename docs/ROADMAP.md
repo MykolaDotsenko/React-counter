@@ -160,9 +160,9 @@ Shipped in these layers:
 6. runtime-validated Open Food Facts adapter, used only on tap (D-032);
 7. scan → identity candidate → explicit user confirmation;
 8. permission/error/manual-fallback UX;
-9. release switches `VITE_SHOPPING_BARCODE_SCANNER` and `VITE_SHOPPING_PRODUCT_LOOKUP`.
+9. release switches `VITE_SHOPPING_BARCODE_SCANNER` and `VITE_SHOPPING_PRODUCT_LOOKUP`, which CI reads from repository variables of the same name.
 
-If issue #73 concludes REMEDIATE or DEFER, switch scanning off rather than weakening manual entry.
+If issue #73 concludes REMEDIATE or DEFER, switch scanning off rather than weakening manual entry: set the `VITE_SHOPPING_BARCODE_SCANNER` repository variable to `0`; the next push to `main`, such as the commit recording that outcome here, builds, tests and deploys the app without scanning.
 
 Barcode identifies **product identity only**. It never supplies authoritative current shelf price. Manual current-price entry remains complete and always available.
 
