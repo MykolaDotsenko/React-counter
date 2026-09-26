@@ -409,7 +409,7 @@
 .addAnywayButton {
   border: 1px solid transparent;
   background: var(--danger);
-  color: #ffffff;
+  color: var(--panel);
 }
 
 .addAnywayButton:disabled {

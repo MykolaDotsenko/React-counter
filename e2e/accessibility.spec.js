@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 const scan = async (page) =>
   new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .analyze();
 
 test("has no detectable WCAG A/AA violations on the start screen", async ({
@@ -45,6 +45,15 @@ test("has no detectable WCAG A/AA violations through the explicit Dark core flow
 
   results = await scan(page);
   expect(results.violations).toEqual([]);
+
+  await page.getByRole("textbox", { name: "Price" }).fill("53.41");
+  await page.getByRole("button", { name: "Add · €53.41" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Add this price anyway?" }),
+  ).toBeVisible();
+
+  results = await scan(page);
+  expect(results.violations).toEqual([]);
 });
 
 test("has no detectable WCAG A/AA violations through the explicit Aurora core flow", async ({
@@ -70,6 +79,15 @@ test("has no detectable WCAG A/AA violations through the explicit Aurora core fl
   await page.getByRole("button", { name: "Add price" }).click();
   await expect(
     page.getByRole("heading", { name: "What does this item cost?" }),
+  ).toBeVisible();
+
+  results = await scan(page);
+  expect(results.violations).toEqual([]);
+
+  await page.getByRole("textbox", { name: "Price" }).fill("53.41");
+  await page.getByRole("button", { name: "Add · €53.41" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Add this price anyway?" }),
   ).toBeVisible();
 
   results = await scan(page);

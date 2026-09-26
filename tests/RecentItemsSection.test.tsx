@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -61,6 +61,40 @@ const memory = ({
   );
 
 describe("RecentItemsSection", () => {
+  it("adds a remembered price once for an accidental double tap, and again on a later tap", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(NOW));
+
+    try {
+      const onUseRemembered = vi.fn(() => true);
+
+      render(
+        <RecentItemsSection
+          trip={createTrip()}
+          records={[memory()]}
+          now={time(NOW)}
+          onUseRemembered={onUseRemembered}
+          onEnterCurrentPrice={vi.fn()}
+          locale="en-IE"
+        />,
+      );
+
+      const use = screen.getByRole("button", {
+        name: "Use remembered price for Milk 1L",
+      });
+
+      fireEvent.click(use);
+      fireEvent.click(use);
+      expect(onUseRemembered).toHaveBeenCalledTimes(1);
+
+      vi.setSystemTime(new Date(Date.parse(NOW) + 1_000));
+      fireEvent.click(use);
+      expect(onUseRemembered).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("labels remembered prices as stale context with visible age", () => {
     render(
       <RecentItemsSection

@@ -61,6 +61,8 @@ const absoluteMoney = (
   return formatEur(amount.value, locale);
 };
 
+const REPEAT_TAP_WINDOW_MS = 800;
+
 const currentTimestamp = (): IsoTimestamp => {
   const parsed = isoTimestamp(new Date().toISOString());
 
@@ -90,6 +92,34 @@ export function RecentItemsSection({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
+  const lastUseRef = useRef<{ readonly id: string; readonly at: number } | null>(
+    null,
+  );
+
+  const addRemembered = (record: PriceMemoryRecord, now: number): boolean => {
+    const last = lastUseRef.current;
+
+    if (
+      last !== null &&
+      last.id === record.id &&
+      now - last.at < REPEAT_TAP_WINDOW_MS
+    ) {
+      return true;
+    }
+
+    setErrorMessage("");
+    const accepted = onUseRemembered(record);
+
+    if (accepted === false) {
+      setErrorMessage(
+        `Could not add ${record.label}. Try again or enter the current price.`,
+      );
+      return false;
+    }
+
+    lastUseRef.current = { id: record.id, at: now };
+    return true;
+  };
 
   const restoreRememberedTrigger = (memoryId: string): void => {
     queueMicrotask(() => {
@@ -207,14 +237,8 @@ export function RecentItemsSection({
                     <button
                       type="button"
                       className={styles.dangerButton}
-                      onClick={() => {
-                        setErrorMessage("");
-                        const accepted = onUseRemembered(record);
-
-                        if (accepted === false) {
-                          setErrorMessage(
-                            `Could not add ${record.label}. Try again or enter the current price.`,
-                          );
+                      onClick={(event) => {
+                        if (!addRemembered(record, event.timeStamp)) {
                           return;
                         }
 
@@ -233,21 +257,14 @@ export function RecentItemsSection({
                     className={styles.rememberedButton}
                     aria-label={`Use remembered price for ${record.label}`}
                     data-use-remembered-memory-id={record.id}
-                    onClick={() => {
-                      setErrorMessage("");
-
+                    onClick={(event) => {
                       if (crossesNominalBudget) {
+                        setErrorMessage("");
                         setPendingId(record.id);
                         return;
                       }
 
-                      const accepted = onUseRemembered(record);
-
-                      if (accepted === false) {
-                        setErrorMessage(
-                          `Could not add ${record.label}. Try again or enter the current price.`,
-                        );
-                      }
+                      addRemembered(record, event.timeStamp);
                     }}
                   >
                     Use remembered price
