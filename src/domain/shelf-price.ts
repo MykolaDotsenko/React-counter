@@ -40,51 +40,61 @@ const overlaps = (
   right: Pick<RawCandidate, "start" | "end">,
 ): boolean => left.start < right.end && right.start < left.end;
 
+const CONTEXT_WINDOW = 32;
+
 const surroundingWindow = (
   text: string,
   start: number,
   end: number,
 ): {
-  readonly before: string;
   readonly around: string;
   readonly after: string;
 } => ({
-  before: text.slice(Math.max(0, start - 32), start).toLowerCase(),
   around: text
-    .slice(Math.max(0, start - 32), Math.min(text.length, end + 32))
+    .slice(
+      Math.max(0, start - CONTEXT_WINDOW),
+      Math.min(text.length, end + CONTEXT_WINDOW),
+    )
     .toLowerCase(),
   after: text.slice(end, Math.min(text.length, end + 24)).toLowerCase(),
 });
 
+const labelsStart = (
+  candidates: readonly RawCandidate[],
+  candidate: RawCandidate,
+): number =>
+  candidates.reduce(
+    (latest, other) =>
+      other.end <= candidate.start && other.end > latest ? other.end : latest,
+    Math.max(0, candidate.start - CONTEXT_WINDOW),
+  );
+
 const classifyContext = (
   text: string,
   candidate: RawCandidate,
+  candidates: readonly RawCandidate[],
 ): ShelfPriceCandidateContext => {
-  const window = surroundingWindow(text, candidate.start, candidate.end);
+  const before = text
+    .slice(labelsStart(candidates, candidate), candidate.start)
+    .toLowerCase();
+  const { after } = surroundingWindow(text, candidate.start, candidate.end);
 
   const unitPrice =
-    /^\s*(?:€\s*)?\/\s*(?:kg|g|100\s*g|l|cl|ml|kpl|pcs|st)\b/i.test(
-      window.after,
-    ) || /^\s*(?:€\s*)?\/\s*[|I](?![a-z])/.test(window.after);
+    /^\s*(?:€\s*)?\/\s*(?:kg|g|100\s*g|l|cl|ml|kpl|pcs|st)\b/i.test(after) ||
+    /^\s*(?:€\s*)?\/\s*[|I](?![a-z])/.test(after);
 
-  const singleUnit = /\b(?:yks|kpl-hinta|st-pris|each)\.?\s*$/i.test(
-    window.before,
-  );
+  const singleUnit = /\b(?:yks|kpl-hinta|st-pris|each)\.?\s*$/i.test(before);
 
   const multiBuy =
     !singleUnit &&
-    (/\b\d+\s*(?:kpl|pcs|st|pkt|pack)\b/i.test(window.before) ||
-      /\b\d+\s*[x×]\s*$/i.test(window.before));
+    (/\b\d+\s*(?:kpl|pcs|st|pkt|pack)\b/i.test(before) ||
+      /\b\d+\s*[x×]\s*$/i.test(before));
 
   const regularPrice =
-    /\b(?:norm\.?|normaali(?:hinta)?|regular|ennen|was)\b/i.test(
-      window.before,
-    );
+    /\b(?:norm\.?|normaali(?:hinta)?|regular|ennen|was)\b/i.test(before);
 
   const loyaltyPrice =
-    /\b(?:jäsen|plussa|k-plussa|s-etukortti|member|club)\b/i.test(
-      window.before,
-    );
+    /\b(?:jäsen|plussa|k-plussa|s-etukortti|member|club)/i.test(before);
 
   return Object.freeze({
     unitPrice,
@@ -290,8 +300,9 @@ export const parseShelfPriceCandidates = (
 
   const text = rawText.replace(/\u00a0/g, " ");
   const ranked: RankedCandidate<ShelfPriceCandidate>[] = [];
+  const rawCandidates = collectRawCandidates(text);
 
-  for (const rawCandidate of collectRawCandidates(text)) {
+  for (const rawCandidate of rawCandidates) {
     if (
       !rawCandidate.explicitEuro &&
       !hasImplicitPriceContext(text, rawCandidate)
@@ -308,7 +319,7 @@ export const parseShelfPriceCandidates = (
       continue;
     }
 
-    const context = classifyContext(text, rawCandidate);
+    const context = classifyContext(text, rawCandidate, rawCandidates);
     const score = contextualScore(rawCandidate, context);
 
     ranked.push({
@@ -419,8 +430,9 @@ export const rankPriceTagCandidates = (
       ? null
       : Number(`${superscript.euros}${String(superscript.cents).padStart(2, "0")}`) * 100;
   const ranked: RankedCandidate<PriceTagCandidate>[] = [];
+  const rawCandidates = collectRawCandidates(text);
 
-  for (const rawCandidate of collectRawCandidates(text)) {
+  for (const rawCandidate of rawCandidates) {
     const lineIndex = lineIndexAt(rawCandidate.start);
     const prominence = prominenceOf(lineIndex);
     const prominent = prominence >= PROMINENT_PRICE_RATIO;
@@ -451,7 +463,7 @@ export const rankPriceTagCandidates = (
       continue;
     }
 
-    const context = classifyContext(text, rawCandidate);
+    const context = classifyContext(text, rawCandidate, rawCandidates);
 
     ranked.push({
       start: rawCandidate.start,
@@ -481,7 +493,7 @@ export const rankPriceTagCandidates = (
         kind: "split-cents",
         explicitEuro: true,
       };
-      const context = classifyContext(text, rawCandidate);
+      const context = classifyContext(text, rawCandidate, rawCandidates);
       const prominence = prominenceOf(superscript.lineIndex);
 
       ranked.push({
