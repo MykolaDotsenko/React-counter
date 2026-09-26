@@ -18,7 +18,7 @@ import {
 } from "./shopping-storage-schema";
 
 export const BARCODE_LINK_STORAGE_KEY = "budget-cart:barcode-links";
-export const CURRENT_BARCODE_LINK_SCHEMA_VERSION = 1;
+const CURRENT_BARCODE_LINK_SCHEMA_VERSION = 1;
 
 export type BarcodeLinkIssueCode =
   | "storage-unavailable"
@@ -170,7 +170,7 @@ export const encodeBarcodeLinks = (
   };
 };
 
-export const restoreBarcodeLinks = (
+const restoreBarcodeLinks = (
   storage: StorageLike | null | undefined,
 ):
   | { readonly health: "healthy"; readonly links: readonly BarcodeLink[] }
@@ -210,7 +210,7 @@ export const restoreBarcodeLinks = (
     : { health: "healthy", links: decoded.links };
 };
 
-export const writeBarcodeLinks = (
+const writeBarcodeLinks = (
   storage: StorageLike | null | undefined,
   links: readonly BarcodeLink[],
   savedAt: IsoTimestamp,

@@ -299,8 +299,8 @@ export const parseShelfPriceCandidates = (
   return rankAndDeduplicate(ranked);
 };
 
-export const PROMINENT_PRICE_RATIO = 0.6;
-export const MAX_PRICE_TAG_LINES = 80;
+const PROMINENT_PRICE_RATIO = 0.6;
+const MAX_PRICE_TAG_LINES = 80;
 
 const PROMINENCE_BONUS = 40;
 

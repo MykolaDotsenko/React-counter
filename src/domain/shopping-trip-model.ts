@@ -112,14 +112,6 @@ export interface CreateCartItemInput {
   readonly updatedAt?: string;
 }
 
-export interface AddItemDraft {
-  readonly unitPriceMinor: MinorUnits;
-  readonly quantity: number;
-  readonly label?: string | null;
-  readonly priceSource: PriceSource;
-  readonly priceConfidence: PriceConfidence;
-}
-
 export interface AddItemProjectionDraft {
   readonly unitPriceMinor: MinorUnits;
   readonly quantity: number;

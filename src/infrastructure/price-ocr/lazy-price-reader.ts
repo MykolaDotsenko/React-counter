@@ -7,7 +7,7 @@ import type {
   TesseractAssets,
 } from "./tesseract-price-reader";
 
-export const PRICE_READER_IDLE_MS = 120_000;
+const PRICE_READER_IDLE_MS = 120_000;
 
 export type PriceTagEngineLoader = (
   onProgress: (progress: PriceTagReaderProgress) => void,

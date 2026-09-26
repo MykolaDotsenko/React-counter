@@ -42,8 +42,6 @@ export interface StorageLike {
   removeItem(key: string): void;
 }
 
-export type PersistenceHealth = "healthy" | "degraded";
-
 export type RestoreHistoryResult =
   | {
       readonly health: "healthy";
@@ -276,7 +274,7 @@ export const restoreHistory = (
   };
 };
 
-export const writeHistory = (
+const writeHistory = (
   storage: StorageLike | null | undefined,
   trips: readonly CompletedTrip[],
   savedAt: string,

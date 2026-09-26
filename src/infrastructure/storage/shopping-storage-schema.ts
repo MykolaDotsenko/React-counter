@@ -108,7 +108,7 @@ export const priceConfidenceV1Schema = z.discriminatedUnion("kind", [
   estimatedPriceConfidenceSchema,
 ]);
 
-export const cartItemV1Schema = z.strictObject({
+const cartItemV1Schema = z.strictObject({
   id: canonicalIdentifierSchema,
   unitPriceMinor: positiveMvpMoneySchema,
   quantity: quantitySchema,
@@ -163,7 +163,6 @@ export const historyStorageEnvelopeV1Schema = z.strictObject({
 
 export type PriceSourceV1 = z.infer<typeof priceSourceV1Schema>;
 export type PriceConfidenceV1 = z.infer<typeof priceConfidenceV1Schema>;
-export type CartItemV1 = z.infer<typeof cartItemV1Schema>;
 export type ActiveTripDataV1 = z.infer<typeof activeTripDataV1Schema>;
 
 export type CompletedTripDataV1 = z.infer<typeof completedTripDataV1Schema>;

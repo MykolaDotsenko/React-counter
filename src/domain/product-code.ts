@@ -4,13 +4,6 @@ export type Gtin = Brand<string, "Gtin">;
 
 export type BarcodeSymbology = "ean-13" | "ean-8" | "upc-a" | "upc-e";
 
-export const BARCODE_SYMBOLOGIES: readonly BarcodeSymbology[] = [
-  "ean-13",
-  "ean-8",
-  "upc-a",
-  "upc-e",
-];
-
 export type ProductCode =
   | {
       readonly kind: "trade-item";
