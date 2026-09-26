@@ -151,6 +151,7 @@ export function StartTripScreen({
   const [customOpen, setCustomOpen] = useState(false);
   const [customBudget, setCustomBudget] = useState("");
   const [reserveRaw, setReserveRaw] = useState("");
+  const [bufferOpen, setBufferOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const customInputRef = useRef<HTMLInputElement>(null);
 
@@ -186,6 +187,11 @@ export function StartTripScreen({
     };
   };
 
+  const bufferPreview = parseBuffer();
+  const bufferSummary = bufferPreview.ok
+    ? formatEur(bufferPreview.value, locale)
+    : "needs a valid amount";
+
   const start = (budgetMinor: MinorUnits): void => {
     setErrorMessage("");
 
@@ -195,6 +201,10 @@ export function StartTripScreen({
       setErrorMessage(
         `Safety buffer: ${buffer.message}`,
       );
+      setBufferOpen(true);
+      queueMicrotask(() => {
+        document.getElementById(reserveInputId)?.focus();
+      });
       return;
     }
 
@@ -329,9 +339,17 @@ export function StartTripScreen({
             Custom amount
           </button>
 
-          <details className={styles.reserveDetails}>
+          <details
+            className={styles.reserveDetails}
+            open={bufferOpen}
+            onToggle={(event) => {
+              setBufferOpen(event.currentTarget.open);
+            }}
+          >
             <summary className={styles.reserveSummary}>
-              Add a safety buffer
+              {bufferOpen || reserveRaw.trim() === ""
+                ? "Add a safety buffer"
+                : `Safety buffer ${bufferSummary}`}
             </summary>
             <div className={styles.reserveField}>
               <label

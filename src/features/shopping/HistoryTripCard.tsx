@@ -15,6 +15,7 @@ export interface HistoryTripCardProps {
   readonly trip: CompletedTrip;
   readonly locale: string;
   readonly canChangeHistory: boolean;
+  readonly canRepeat: boolean;
   readonly deleting: boolean;
   readonly confirmationCancelRef: RefObject<HTMLButtonElement | null>;
   readonly onStartSimilar: (trip: CompletedTrip) => void;
@@ -62,6 +63,7 @@ export function HistoryTripCard({
   trip,
   locale,
   canChangeHistory,
+  canRepeat,
   deleting,
   confirmationCancelRef,
   onStartSimilar,
@@ -143,7 +145,7 @@ export function HistoryTripCard({
         <button
           type="button"
           className={styles.repeatTripButton}
-          disabled={!canChangeHistory}
+          disabled={!canRepeat}
           onClick={() => {
             onStartSimilar(trip);
           }}

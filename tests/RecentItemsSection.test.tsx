@@ -95,6 +95,21 @@ describe("RecentItemsSection", () => {
     }
   });
 
+  it("counts a price's age in calendar days, not 24-hour blocks", () => {
+    render(
+      <RecentItemsSection
+        trip={createTrip()}
+        records={[memory({ observedAt: "2026-09-21T20:00:00.000Z" })]}
+        now={time("2026-09-22T09:30:00.000Z")}
+        onUseRemembered={vi.fn()}
+        onEnterCurrentPrice={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    expect(screen.getByText("Remembered · Seen 1 day ago")).not.toBeNull();
+  });
+
   it("labels remembered prices as stale context with visible age", () => {
     render(
       <RecentItemsSection

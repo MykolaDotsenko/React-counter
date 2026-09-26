@@ -22,6 +22,7 @@ import {
 } from "./price-entry-draft";
 import {
   canIncreaseQuantity,
+  canDecreaseQuantity,
   decreaseQuantity,
   increaseQuantity,
 } from "./quantity-draft";
@@ -108,7 +109,7 @@ export function ItemEditSurface({
   }));
   const [quantity, setQuantity] = useState(item.quantity);
   const [label, setLabel] = useState(item.label ?? "");
-  const [labelError, setLabelError] = useState("");
+  const [labelNotice, setLabelNotice] = useState("");
   const [submissionError, setSubmissionError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -148,12 +149,7 @@ export function ItemEditSurface({
       canonicalLabel !== item.label);
 
   const submit = (): void => {
-    if (
-      validPrice === null ||
-      !changed ||
-      submitted ||
-      labelError !== ""
-    ) {
+    if (validPrice === null || !changed || submitted) {
       return;
     }
 
@@ -264,25 +260,22 @@ export function ItemEditSurface({
             value={label}
             autoComplete="off"
             spellCheck={false}
-            placeholder="Milk 1L"
-            aria-invalid={Boolean(labelError)}
+            placeholder="e.g. Milk 1L"
             onChange={(event) => {
-              const next = event.currentTarget.value;
+              const characters = [...event.currentTarget.value];
+              const tooLong = characters.length > MAX_ITEM_LABEL_CODE_POINTS;
 
-              if ([...next].length > MAX_ITEM_LABEL_CODE_POINTS) {
-                setLabelError(
-                  `Keep the name within ${MAX_ITEM_LABEL_CODE_POINTS} characters.`,
-                );
-                return;
-              }
-
-              setLabel(next);
-              setLabelError("");
+              setLabel(characters.slice(0, MAX_ITEM_LABEL_CODE_POINTS).join(""));
+              setLabelNotice(
+                tooLong
+                  ? `Names stop at ${MAX_ITEM_LABEL_CODE_POINTS} characters; the rest was left out.`
+                  : "",
+              );
             }}
           />
-          {labelError ? (
-            <small className={styles.error} role="alert">
-              {labelError}
+          {labelNotice ? (
+            <small className={styles.error} role="status">
+              {labelNotice}
             </small>
           ) : null}
         </label>
@@ -331,17 +324,9 @@ export function ItemEditSurface({
           <div className={styles.stepper}>
             <button
               type="button"
-              aria-label={
-                quantity === 1
-                  ? "Remove item by decreasing quantity"
-                  : "Decrease edited quantity"
-              }
+              aria-label="Decrease edited quantity"
+              disabled={!canDecreaseQuantity(quantity)}
               onClick={() => {
-                if (quantity === 1) {
-                  onRemove();
-                  return;
-                }
-
                 setQuantity((current) => decreaseQuantity(current));
               }}
             >
@@ -377,15 +362,18 @@ export function ItemEditSurface({
         <button
           type="button"
           className={styles.saveButton}
-          disabled={
-            !changed ||
-            validPrice === null ||
-            submitted ||
-            labelError !== ""
-          }
+          disabled={!changed || validPrice === null || submitted}
           onClick={submit}
         >
           {submitted ? "Saving…" : "Save changes"}
+        </button>
+
+        <button
+          type="button"
+          className={styles.removeButton}
+          onClick={onRemove}
+        >
+          Remove item
         </button>
       </section>
     </main>

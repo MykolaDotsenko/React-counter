@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { mvpMinorUnits, type Result } from "../src/domain/money";
 import {
   createPriceMemoryRecord,
-  priceMemoryAgeDays,
   priceMemoryIdFor,
   priceMemoryRecordsFromCompletedTrip,
   productIdFromLabel,
@@ -180,6 +179,24 @@ describe("price memory domain", () => {
 
     expect(kept).toEqual([newer]);
     expect(kept).not.toContain(older);
+  });
+
+  it("lets a fresh observation replace one dated in the future by a fast clock", () => {
+    const fromFastClock = memory({
+      label: "Milk",
+      price: 139,
+      observedAt: "2027-04-09T10:00:00.000Z",
+    });
+    const fresh = memory({
+      label: "Milk",
+      price: 149,
+      observedAt: "2026-09-21T10:00:00.000Z",
+    });
+
+    expect(upsertPriceMemory([fromFastClock], fresh)).toEqual([fromFastClock]);
+    expect(
+      upsertPriceMemory([fromFastClock], fresh, time("2026-09-21T10:00:00.000Z")),
+    ).toEqual([fresh]);
   });
 
   it("keeps the newest same-product observation regardless of incoming order", () => {
@@ -362,26 +379,5 @@ describe("price memory domain", () => {
         source: { kind: "manual" },
       }),
     ]);
-  });
-
-  it("derives conservative whole-day age from canonical timestamps", () => {
-    const record = memory({
-      label: "Milk",
-      price: 139,
-      observedAt: "2026-09-20T08:00:00.000Z",
-    });
-
-    expect(
-      priceMemoryAgeDays(
-        record,
-        time("2026-09-22T07:59:59.999Z"),
-      ),
-    ).toBe(1);
-    expect(
-      priceMemoryAgeDays(
-        record,
-        time("2026-09-22T08:00:00.000Z"),
-      ),
-    ).toBe(2);
   });
 });

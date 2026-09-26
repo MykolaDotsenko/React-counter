@@ -173,7 +173,7 @@ describe("ItemEditSurface", () => {
     });
   });
 
-  it("rejects an overlong Recent Items label before application commit", async () => {
+  it("keeps the first 120 characters of a pasted name and says the rest was left out", async () => {
     const user = userEvent.setup();
     const item = createItem();
     const onSave = vi.fn(() => true);
@@ -189,20 +189,20 @@ describe("ItemEditSurface", () => {
       />,
     );
 
-    await user.type(
-      screen.getByRole("textbox", { name: /Item name/i }),
-      "x".repeat(121),
-    );
+    const name = screen.getByRole("textbox", { name: /Item name/i });
+    await user.click(name);
+    await user.paste(`${"x".repeat(119)}yz`);
 
+    expect((name as HTMLInputElement).value).toBe(`${"x".repeat(119)}y`);
     expect(
-      screen.getByText(/Keep the name within 120 characters/i),
+      screen.getByText("Names stop at 120 characters; the rest was left out."),
     ).not.toBeNull();
-    expect(
-      (screen.getByRole("button", {
-        name: "Save changes",
-      }) as HTMLButtonElement).disabled,
-    ).toBe(true);
-    expect(onSave).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ label: `${"x".repeat(119)}y` }),
+    );
   });
 
   it("allows a truthful correction that reveals a nominal overage without a destructive modal", async () => {
@@ -243,9 +243,9 @@ describe("ItemEditSurface", () => {
     });
   });
 
-  it("treats quantity one decremented to zero as an explicit reversible removal intent", async () => {
+  it("never removes the item from the quantity stepper, only from Remove item", async () => {
     const user = userEvent.setup();
-    const item = createItem(479, 1);
+    const item = createItem(479, 2);
     const onRemove = vi.fn(() => true);
 
     render(
@@ -259,11 +259,14 @@ describe("ItemEditSurface", () => {
       />,
     );
 
-    await user.click(
-      screen.getByRole("button", {
-        name: "Remove item by decreasing quantity",
-      }),
-    );
+    const decrease = screen.getByRole("button", { name: "Decrease edited quantity" });
+    await user.dblClick(decrease);
+
+    expect(screen.getByLabelText("Edited quantity").textContent).toBe("1");
+    expect((decrease as HTMLButtonElement).disabled).toBe(true);
+    expect(onRemove).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Remove item" }));
 
     expect(onRemove).toHaveBeenCalledTimes(1);
   });

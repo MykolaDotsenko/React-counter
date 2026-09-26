@@ -251,6 +251,7 @@ const sameMemoryRecord = (
 export const upsertPriceMemory = (
   records: readonly PriceMemoryRecord[],
   record: PriceMemoryRecord,
+  now?: IsoTimestamp,
 ): readonly PriceMemoryRecord[] => {
   const index = records.findIndex((candidate) => candidate.id === record.id);
 
@@ -268,7 +269,10 @@ export const upsertPriceMemory = (
     return records;
   }
 
-  if (observedAtMs(record) <= observedAtMs(current)) {
+  const currentIsFromTheFuture =
+    now !== undefined && observedAtMs(current) > Date.parse(now);
+
+  if (!currentIsFromTheFuture && observedAtMs(record) <= observedAtMs(current)) {
     return records;
   }
 
@@ -282,11 +286,12 @@ export const upsertPriceMemory = (
 export const mergePriceMemories = (
   records: readonly PriceMemoryRecord[],
   incoming: readonly PriceMemoryRecord[],
+  now?: IsoTimestamp,
 ): readonly PriceMemoryRecord[] => {
   let next = records;
 
   for (const record of incoming) {
-    next = upsertPriceMemory(next, record);
+    next = upsertPriceMemory(next, record, now);
   }
 
   return next;
@@ -410,16 +415,4 @@ export const recentPriceMemories = (
       .sort((left, right) => observedAtMs(right) - observedAtMs(left))
       .slice(0, limit),
   );
-};
-
-export const priceMemoryAgeDays = (
-  record: PriceMemoryRecord,
-  now: IsoTimestamp,
-): number => {
-  const elapsedMs = Math.max(
-    0,
-    Date.parse(now) - Date.parse(record.observedAt),
-  );
-
-  return Math.floor(elapsedMs / 86_400_000);
 };

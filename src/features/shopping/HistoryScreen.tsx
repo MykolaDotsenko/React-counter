@@ -51,6 +51,10 @@ export function HistoryScreen({
   const [errorMessage, setErrorMessage] = useState("");
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const canRepeat =
+    (state.persistence.status === "healthy" ||
+      isSessionOnly(state.persistence)) &&
+    !state.completionCleanupPending;
   const canChangeHistory =
     state.persistence.status === "healthy" &&
     state.historyIntegrity.status === "healthy" &&
@@ -232,6 +236,7 @@ export function HistoryScreen({
                 trip={trip}
                 locale={locale}
                 canChangeHistory={canChangeHistory}
+                canRepeat={canRepeat}
                 deleting={
                   confirmation.kind === "delete-trip" &&
                   confirmation.tripId === trip.id

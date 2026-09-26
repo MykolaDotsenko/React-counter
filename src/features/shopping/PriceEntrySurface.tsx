@@ -106,7 +106,7 @@ export function PriceEntrySurface({
     () => initialQuantity ?? defaultQuantity(),
   );
   const [label, setLabel] = useState(initialLabel ?? "");
-  const [labelError, setLabelError] = useState("");
+  const [labelNotice, setLabelNotice] = useState("");
 
   useEffect(() => {
     if (prefersCustomKeypad()) {
@@ -264,7 +264,7 @@ export function PriceEntrySurface({
 
   const invalidCopy =
     state.kind === "invalid"
-      ? errorMessage(state.reason)
+      ? errorMessage(state.reason, draft.mode)
       : "";
 
   return (
@@ -455,19 +455,16 @@ export function PriceEntrySurface({
                 spellCheck={false}
                 enterKeyHint="done"
                 placeholder="e.g. Milk 1L"
-                aria-invalid={Boolean(labelError)}
                 onChange={(event) => {
-                  const next = event.currentTarget.value;
+                  const characters = [...event.currentTarget.value];
+                  const tooLong = characters.length > MAX_ITEM_LABEL_CODE_POINTS;
 
-                  if ([...next].length > MAX_ITEM_LABEL_CODE_POINTS) {
-                    setLabelError(
-                      `Keep the name within ${MAX_ITEM_LABEL_CODE_POINTS} characters.`,
-                    );
-                    return;
-                  }
-
-                  setLabel(next);
-                  setLabelError("");
+                  setLabel(characters.slice(0, MAX_ITEM_LABEL_CODE_POINTS).join(""));
+                  setLabelNotice(
+                    tooLong
+                      ? `Names stop at ${MAX_ITEM_LABEL_CODE_POINTS} characters; the rest was left out.`
+                      : "",
+                  );
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
@@ -480,9 +477,9 @@ export function PriceEntrySurface({
             <p className={styles.labelHint}>
               Named items show up in Recent Items next time.
             </p>
-            {labelError ? (
-              <p className={styles.labelError} role="alert">
-                {labelError}
+            {labelNotice ? (
+              <p className={styles.labelError} role="status">
+                {labelNotice}
               </p>
             ) : null}
           </details>

@@ -371,6 +371,27 @@ describe("PriceEntrySurface", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it("explains a decimal typed in cents mode in cents-mode terms", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Cents mode" }));
+    await user.type(screen.getByLabelText("Price"), "4.79");
+
+    expect(
+      screen.getByText("Cents mode takes digits only: 479 for €4.79."),
+    ).not.toBeNull();
+    expect(screen.queryByText("Use a price like 4.79 or 4,79.")).toBeNull();
+  });
+
   it("guards Add anyway from rapid duplicate submission", async () => {
     const user = userEvent.setup();
     const onValidatedItem = vi.fn();

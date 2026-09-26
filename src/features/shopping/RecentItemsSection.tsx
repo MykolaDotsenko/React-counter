@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { formatEur, signedMinorUnits } from "../../domain/money";
 import {
-  priceMemoryAgeDays,
   recentPriceMemories,
   type PriceMemoryRecord,
 } from "../../domain/price-memory";
@@ -31,11 +30,18 @@ export interface RecentItemsSectionProps {
   readonly activeTripSaving?: boolean;
 }
 
+const localDay = (timestamp: string): number => {
+  const date = new Date(timestamp);
+  return Math.floor(
+    (date.getTime() - date.getTimezoneOffset() * 60_000) / 86_400_000,
+  );
+};
+
 const ageLabel = (
   record: PriceMemoryRecord,
   now: IsoTimestamp,
 ): string => {
-  const days = priceMemoryAgeDays(record, now);
+  const days = Math.max(0, localDay(now) - localDay(record.observedAt));
 
   if (days === 0) {
     return "Seen today";

@@ -780,6 +780,30 @@ describe("PersistenceHealthNotice after a successful retry", () => {
   });
 });
 
+describe("history with a damaged entry", () => {
+  it("still lets the shopper shop again from a readable trip", async () => {
+    const user = userEvent.setup();
+    const { storage } = memoryStorage({
+      [HISTORY_STORAGE_KEY]: partlyDamagedHistory(),
+    });
+    const controller = boot(storage);
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    await user.click(screen.getByRole("button", { name: /View trip history/ }));
+    const shopAgain = await screen.findByRole("button", { name: "Shop again" });
+
+    expect((shopAgain as HTMLButtonElement).disabled).toBe(false);
+
+    await user.click(shopAgain);
+
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "active",
+      historyIntegrity: { status: "degraded" },
+    });
+  });
+});
+
 describe("shell flow with damaged history", () => {
   it("lets the shopper set history aside from the finish surface and finish", async () => {
     const user = userEvent.setup();

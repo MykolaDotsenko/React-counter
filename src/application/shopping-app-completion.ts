@@ -207,6 +207,7 @@ export const createCompletionUseCases = ({
     const mergedMemories = mergePriceMemories(
       nextState.priceMemories,
       observedMemories,
+      clock.now(),
     );
 
     if (mergedMemories !== nextState.priceMemories) {
