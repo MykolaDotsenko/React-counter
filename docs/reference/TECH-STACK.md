@@ -10,10 +10,12 @@ This file records current stack intent and dependency admission rules. It does n
 
 ## Current core stack
 
+`package.json` pins every dependency to an exact version; runtime dependencies below carry those versions.
+
 ### Runtime / UI
 
-- React 19
-- React DOM 19
+- React 19.3.0
+- React DOM 19.3.0
 - Vite 8
 - strict TypeScript 6
 - native semantic HTML
@@ -21,7 +23,7 @@ This file records current stack intent and dependency admission rules. It does n
 
 ### Validation
 
-- Zod 4 at untrusted/runtime boundaries, through the tree-shakeable `zod/mini` API so the public bundle pays only for the validators it uses
+- Zod 4.6.5 at untrusted/runtime boundaries, through the tree-shakeable `zod/mini` API so the public bundle pays only for the validators it uses
 
 ### Persistence
 
@@ -102,21 +104,22 @@ Retention/timing evidence remains local/content-minimized under the current cont
 
 The current release uses:
 
-- `vite-plugin-pwa` 1.3.x;
+- `vite-plugin-pwa` 1.3.0;
 - Workbox `generateSW`;
 - application-shell precaching;
 - prompt-based updates;
 - GitHub Pages-aware base/scope;
 - no canonical business state in Cache Storage/service worker.
 
-The generated service worker is disabled for guarded `/qa/` and `/beta/` builds so those evidence surfaces cannot create competing registrations. Update UI is lifecycle-aware and only becomes actionable when the shopping application is idle.
+The generated service worker is disabled for every guarded evidence build so those evidence surfaces cannot create competing registrations. Update UI is lifecycle-aware and only becomes actionable when the shopping application is idle.
+
 ## Barcode
 
 **IMPLEMENTED.**
 
 - native `BarcodeDetector` when it supports EAN-13, EAN-8, UPC-A and UPC-E;
 - otherwise `barcode-detector` 3.2.2 with `zxing-wasm` 3.1.3 (ZXing-C++ reader), imported on demand, WASM self-hosted and cached by the service worker (D-031);
-- build budgets keep the engine out of the initial bundle and cap it at 60 kB JS / 1.2 MB WASM, and the build verifies the WASM hash against the bundled reader.
+- the build keeps the engine out of the initial bundle, holds it to the [public bundle budget](../TESTING.md#public-bundle-budget) and verifies the WASM hash against the bundled reader.
 
 Barcode remains identity, not price authority.
 
@@ -127,9 +130,13 @@ Barcode remains identity, not price authority.
 - `tesseract.js` 7.0.0 with `tesseract.js-core` 7.0.0 in LSTM mode and the Finnish `4.0.0_best_int` model from `@tesseract.js-data/fin` 1.0.0 (D-055);
 - the worker, the SIMD and plain LSTM cores and the language file are emitted into a versioned `assets/ocr/` directory and served by this site; the build fails unless each emitted file is byte-identical to its pinned package file;
 - the service worker caches those files on first use and never precaches them;
-- build budgets keep the engine out of the initial bundle and cap it at 40 kB JS and 10.5 MB of engine files, of which a device downloads one core and the language file.
+- the build keeps the engine out of the initial bundle and holds it to the [public bundle budget](../TESTING.md#public-bundle-budget); a device downloads the worker, one of the two cores and the language file.
 
 Read prices are candidates, not price authority.
+
+## Guarded evidence experiments
+
+- `@huggingface/transformers` 4.3.0 runs the pinned adapter in the guarded visual-recognition benchmark only; the public app never imports it.
 
 ## Dependency admission rule
 
@@ -155,7 +162,7 @@ Current architecture intentionally does not require:
 - IndexedDB/Dexie;
 - backend/auth;
 - remote analytics SDK;
-- scanner/OCR SDK;
+- commercial or cloud scanner/OCR SDKs (the self-hosted `barcode-detector`/`zxing-wasm` and Tesseract.js engines are admitted by D-031, D-053 and D-055).
 
 These are not banned forever; they are simply unjustified today.
 

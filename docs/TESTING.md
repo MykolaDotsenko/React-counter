@@ -48,34 +48,70 @@ npm run check
 npm run test:e2e
 ```
 
-`npm run check` covers lint, typecheck, coverage-aware unit/component tests and production build.
+`npm run check` runs these steps in order and stops at the first failure:
+
+1. `docs:check` — documentation structure (`scripts/validate-docs.mjs`): required contract paths, retired paths, repository-root and docs-root file placement, relative Markdown links and reachability from `docs/README.md`;
+2. `lint` — ESLint with no warnings allowed, including the architectural layer-boundary import rules;
+3. `typecheck` — strict TypeScript (`tsc --noEmit`);
+4. `test:coverage` — every Vitest unit and component test, with the coverage floors below;
+5. `build` — the public production build;
+6. `build:check` — the public build validator (`scripts/validate-build.mjs`): install manifest, icons and service worker, the [public bundle budget](#public-bundle-budget), engine isolation and the guarded-evidence marker scan.
+
+`npm run test:e2e` builds the public app and runs the public Playwright suite in Chromium, Firefox and WebKit. Tests tagged for a guarded evidence surface run only with `PLAYWRIGHT_GUARDED_SURFACE=1`, which CI sets while it serves that surface.
 
 ### Critical-layer coverage floor
 
-Coverage is a regression guard for code where arithmetic, lifecycle or durability defects can change user outcomes. It is intentionally scoped to:
+Coverage is a regression guard for code where arithmetic, lifecycle, durability or device-boundary defects can change user outcomes. `vitest.config.js` measures:
 
 - `src/domain/**`;
 - `src/application/**`;
-- `src/infrastructure/storage/**`.
+- `src/infrastructure/storage/**`;
+- the camera, scanning and lookup adapters: `src/infrastructure/barcode/browser-barcode-reader.ts`, `src/infrastructure/camera/browser-camera.ts`, `src/infrastructure/price-ocr/tesseract-layout.ts`, `src/infrastructure/price-ocr/lazy-price-reader.ts` and `src/infrastructure/product-lookup/**`.
 
-The current baseline measured on 2026-09-25 was:
+The baseline measured on 2026-09-26, with each scope aggregating every file it covers, was:
 
 | Scope | Statements | Branches | Functions | Lines |
 | --- | ---: | ---: | ---: | ---: |
-| Critical aggregate | 86.61% | 77.22% | 98.61% | 86.51% |
-| Domain | 86.57% | 77.47% | 100% | 86.42% |
-| Application | 89.09% | 80.22% | 96.96% | 89.03% |
-| Storage infrastructure | 84.94% | 74.46% | 98.43% | 84.86% |
+| All measured files | 90.63% | 83.69% | 98.42% | 90.54% |
+| Domain | 89.67% | 82.83% | 100% | 89.50% |
+| Application | 91.09% | 84.41% | 95.45% | 90.98% |
+| Storage infrastructure | 88.18% | 78.45% | 100% | 88.11% |
+| Camera, scanning and lookup adapters | 96.88% | 94.36% | 97.59% | 97.09% |
+
+CI enforces these floors from `vitest.config.js`, set below the measured baseline instead of claiming an arbitrary 100% target:
+
+| Scope | Statements | Branches | Functions | Lines |
+| --- | ---: | ---: | ---: | ---: |
+| All measured files | 84% | 74% | 96% | 84% |
+| Domain | 85% | 75% | 100% | 85% |
+| Each domain file | 70% | 55% | 90% | 70% |
+| Application | 86% | 77% | 95% | 86% |
+| Each application file | 60% | 60% | 50% | 60% |
+| Storage infrastructure | 82% | 71% | 95% | 82% |
+| Each storage file | 45% | 45% | 50% | 45% |
+
+The per-file floors prevent a newly added domain, application or storage module from silently entering the repository with no meaningful tests. The camera, scanning and lookup adapters count towards the all-files floor but have no floor of their own.
 
 Persistence recovery is additionally exercised by an exhaustive scenario matrix (`tests/persistence-scenarios.test.ts`): every combination of stored active record, history, Price Memory and storage failure mode is booted through the real composition root and must leave the shopper able to shop without losing any unreadable record.
 
-CI enforces floors slightly below that measured baseline instead of claiming an arbitrary 100% target. Domain has the strongest aggregate floor; application and storage retain their own risk-based floors. Per-file minimums also prevent a newly added critical module from silently entering the repository with no meaningful tests.
+Coverage does **not** replace browser, accessibility, persistence-failure, real-device or human-evidence gates. Presentation and QA evidence code remain primarily protected by behaviour-focused tests rather than the same numeric threshold.
 
-Coverage does **not** replace browser, accessibility, persistence-failure, real-device or human-evidence gates. Presentation and QA evidence code remain primarily protected by behavior-focused tests rather than the same numeric threshold.
+### Continuous integration
 
-Pull requests also run a least-privilege Dependency Review workflow. It fails when a changed runtime, development or unknown-scope dependency introduces a high/critical known vulnerability, while showing patched-version guidance when GitHub Advisory data provides it. The action is pinned to an immutable commit SHA and does not receive pull-request write permission.
+The Quality workflow runs on every pull request and every push to `main`, and tests the exact artifact it deploys:
 
-CI builds one immutable site artifact containing the public app plus guarded QA/beta variants, the local cohort analyzer, the isolated barcode benchmark, the local paired barcode/manual analyzer, the local paired OCR/manual analyzer, the isolated visual-product-recognition benchmark harness, the provider-neutral shelf-label OCR benchmark and the concrete Tesseract OCR experiment. Guarded evidence builds use a relative asset base so the exact tested directories are relocatable without rebuilding. A separate manual **Publish Study Baseline** workflow may copy those already-tested guarded directories into an immutable `/study/<baseline>/` Pages path after verifying the selected successful main Quality run and exact source SHA. Existing study directories are preserved tree-for-tree by later production deployments, and reusing an existing baseline slug fails closed. See [Immutable Study Deployments](./evidence/IMMUTABLE-STUDY-DEPLOYMENTS.md). Production browser tests run against the exact public build artifact; QA-, beta-, cohort-, barcode-benchmark-, paired-barcode-, paired-OCR-, visual-benchmark-, OCR-benchmark- and concrete-Tesseract-specific browser tests run separately against their guarded artifacts. Guarded evidence builds are stamped with the exact Git commit SHA and their downloaded JSON must expose that revision. Deployment may promote the artifact only after all browser gates succeed, the same tested revision has produced a validated production CycloneDX SBOM, and the exact uploaded `pages-site` artifact digest has both signed build-provenance and SBOM attestations. The scanner is commit-pinned, its Syft version is pinned, JavaScript devDependencies are omitted and Syft's GitHub Actions catalogers are explicitly disabled so workflow metadata nested inside installed packages cannot contaminate the product inventory. The SBOM is retained as CI evidence with a SHA-256 digest while remaining outside the public Pages site.
+- **quality** — installs with `npm ci`; generates a production CycloneDX SBOM and validates its envelope, product identity and runtime dependency inventory; runs `npm audit --omit=dev --audit-level=high`; runs `npm run check`; builds and validates a build with `VITE_SHOPPING_BARCODE_SCANNER=0` and `VITE_SHOPPING_PRICE_OCR=0`; then builds and validates the public release build, builds every guarded evidence build, checks that each guarded build is relocatable and has no manifest or service worker, and uploads the combined site as one immutable `pages-site` artifact;
+- **provenance** — on pushes and same-repository pull requests, verifies the SBOM digest and attaches signed build-provenance and SBOM attestations to the exact uploaded `pages-site` digest;
+- **artifact-integrity** — checks that the artifact holds the public install files, that every guarded surface has its page but no manifest or service worker, and that no source, package, `study/`, build-directory or SBOM file entered it;
+- **browser** (Chromium, Firefox and WebKit) — runs the public Playwright suite against the exact public build; its axe scans run in the Chromium leg;
+- **guarded-browser** — in Chromium, serves each guarded surface in turn from the same artifact and runs its tagged tests with `PLAYWRIGHT_GUARDED_SURFACE=1`; it continues past a failed surface, names every failed surface and then fails;
+- **deploy** — on pushes to `main` only, and only after artifact-integrity, provenance, browser and guarded-browser succeed, publishes the exact tested artifact to GitHub Pages.
+
+Pull requests also run a least-privilege Dependency Review workflow. It fails when a changed runtime, development or unknown-scope dependency introduces a high/critical known vulnerability, while showing patched-version guidance when GitHub Advisory data provides it. The action is pinned to an immutable commit SHA and does not receive pull-request write permission. A CodeQL workflow analyses the JavaScript and TypeScript code on pushes and pull requests to `main` and once a week.
+
+Guarded evidence builds use a relative asset base so the exact tested directories are relocatable without rebuilding. They are stamped with the exact Git commit SHA, and their downloaded JSON must expose that revision. A separate manual **Publish Study Baseline** workflow may copy those already-tested guarded directories into an immutable `/study/<baseline>/` Pages path after verifying the selected successful main Quality run and exact source SHA. Existing study directories are preserved tree-for-tree by later production deployments, and reusing an existing baseline slug fails closed. See [Immutable Study Deployments](./evidence/IMMUTABLE-STUDY-DEPLOYMENTS.md).
+
+The SBOM scanner is commit-pinned, its Syft version is pinned, JavaScript devDependencies are omitted and Syft's GitHub Actions catalogers are explicitly disabled so workflow metadata nested inside installed packages cannot contaminate the product inventory. The SBOM is retained as CI evidence with a SHA-256 digest while remaining outside the public Pages site.
 
 ## Test layers
 
@@ -177,14 +213,16 @@ At minimum cover:
 Automation must prove:
 
 - the public release artifact contains a valid install manifest, install icons and generated service worker;
-- guarded QA/beta/cohort/barcode-benchmark/paired-barcode/paired-OCR/visual-benchmark/OCR-benchmark/Tesseract-OCR builds do not create competing service workers;
+- guarded evidence builds do not create competing service workers;
 - after one successful online install/cache pass, the shell opens when network requests are unavailable;
 - an active trip restores offline with exact canonical values;
 - completion/history persistence continues offline;
 - history restores after a subsequent offline reload;
 - Cache Storage/service-worker behaviour never becomes shopping-state authority.
 
-Service-worker updates must remain prompt-based. Automated or runtime update logic must never force an active shopping trip to reload.\n\nCI runs the full browser-offline reload journey in Chromium and Firefox. WebKit CI verifies the manifest, service-worker registration and precached application entry; Playwright WebKit offline navigation is not treated as Safari/device evidence because its Web Inspector harness cannot reliably navigate once offline.
+Service-worker updates must remain prompt-based. Automated or runtime update logic must never force an active shopping trip to reload.
+
+CI runs the full browser-offline reload journey in Chromium and Firefox. WebKit CI verifies the manifest, service-worker registration and precached application entry; Playwright WebKit offline navigation is not treated as Safari/device evidence because its Web Inspector harness cannot reliably navigate once offline.
 
 ## Exact-money contract
 
@@ -226,30 +264,7 @@ Tests must prove:
 
 ## Accessibility
 
-Automation:
-
-- axe A/AA checks where applicable;
-- landmarks;
-- accessible names;
-- semantic controls;
-- no obvious ARIA/contrast failures.
-
-Interaction:
-
-- keyboard start → add → edit → finish;
-- focus restoration after overlays;
-- committed remaining-value announcements;
-- disabled state semantics;
-- no colour-only reserve/over-budget meaning.
-
-Manual/visual release checks when relevant:
-
-- 200% / large text;
-- reduced motion;
-- forced colours;
-- 320–390px compact widths;
-- touch target sizing;
-- bright-store readability.
+The automated and manual accessibility checks are owned by [Automated checks](./quality/ACCESSIBILITY.md#automated-checks) and [Manual checks](./quality/ACCESSIBILITY.md#manual-checks) in quality/ACCESSIBILITY.md.
 
 ## Motion / premium interaction quality
 
@@ -337,7 +352,6 @@ Tests must prove:
 
 Real-store retention evidence remains a human/product-validation gate.
 
-
 ### Barcode interaction benchmark
 
 Automation may verify benchmark evidence integrity and route isolation. It may not claim scanner value without representative physical-device data.
@@ -345,7 +359,7 @@ Automation may verify benchmark evidence integrity and route isolation. It may n
 Tests must prove:
 
 - the benchmark is a standalone guarded build with no shopping-state access or PWA/service worker;
-- public production JavaScript contains no benchmark markers/storage key;
+- the public build's marker scan finds no benchmark markers or storage key;
 - raw barcode values never enter persisted/exported evidence;
 - confirmed/rejected/timeout/manual-fallback/detector-error outcomes remain distinct;
 - confirmed latency reports median/P75/P90 deterministically;
@@ -361,8 +375,9 @@ Tests must prove:
 - evidence copy/download/reset is unavailable while a timed attempt is still in flight;
 - local benchmark download uses a non-identifying timestamp filename and contains no raw barcode value;
 - barcode export schema carries a validated `buildRevision`, and guarded-browser E2E verifies it matches the exact tested Git SHA;
-- export/clock failure remains inside the evidence UI instead of crashing the benchmark;
-- production barcode was promoted ahead of this evidence (D-053); representative mobile evidence plus a paired quantitative manual baseline now validates it after release.
+- export/clock failure remains inside the evidence UI instead of crashing the benchmark.
+
+Production barcode shipped ahead of this evidence (D-053); issue #73 remains an open post-release gate.
 
 The benchmark intentionally tests native `BarcodeDetector` only; the production scanner's WASM fallback is not part of the benchmark.
 
@@ -378,18 +393,18 @@ Tests must prove:
 - the barcode reader picks the native detector only when it reads every retail format, falls back to the lazy engine otherwise, prefetches the fallback once and never detects before the preview has a frame (`tests/barcode-reader-adapter.test.ts`);
 - the Open Food Facts adapter requests only the shown fields, omits credentials and referrer, treats not-found as normal, reports failures without guessing, times out, respects cancellation and never runs while offline or before a tap (`tests/open-food-facts.test.ts`);
 - the scan surface handles every barcode and price tag result and failure state, mode switching on one camera session, preparation progress, focus, Escape, the light toggle, background pause and cancelling an unfinished read (`tests/ScanSurface.test.tsx`); the shell flows name a product once and recognise it on the next scan, read a price tag and add it only after confirmation, return from the camera to price entry with its name and quantity, and show the scan action only for what the device can do (`tests/ScanFlow.test.tsx`);
-- the release switches remove barcode reading, online lookup, price reading or the whole camera independently (`tests/camera-switches.test.ts`);
-- in Chromium, a fake camera streaming a generated EAN-13 decodes through the self-hosted WASM engine with no request leaving the origin, and the result screen passes axe (`e2e/barcode-scanner.spec.js`). The fake-camera test runs in Chromium only; Firefox and WebKit cover the rest of the product flow. When a build switches the scanner off, the same spec instead checks in every browser that the trip offers only manual price entry.
+- `VITE_SHOPPING_BARCODE_SCANNER=0` removes barcode reading and the online lookup but keeps the camera for price tags, `VITE_SHOPPING_PRODUCT_LOOKUP=0` removes only the lookup, `VITE_SHOPPING_PRICE_OCR=0` removes price reading, and the camera disappears only when barcode scanning and price reading are both off (`tests/camera-switches.test.ts`); CI also builds and validates a build with both camera switches at `0` (see [Public bundle budget](#public-bundle-budget));
+- in Chromium, a fake camera streaming a generated EAN-13 decodes through the self-hosted WASM engine with no request leaving the origin, and the result screen passes axe (`e2e/barcode-scanner.spec.js`). The fake-camera test runs in Chromium only; Firefox and WebKit cover the rest of the product flow. When a build switches the scanner off, the same spec instead checks in every browser that the trip offers no barcode scanning.
 
 ### Production price tag reading
 
 Tests must prove:
 
-- candidate ranking accepts the headline number without a euro sign, keeps unit/regular/member/multi-buy context, puts a multi-buy tag's per-item price first, joins superscript and split cents, never turns quantities, bare digits or codes into prices, and always returns a bounded, duplicate-free, score-ordered list (`tests/shelf-price.test.ts`, including a property test);
+- candidate ranking accepts the headline number without a euro sign, keeps unit/regular/member/multi-buy context from only the words printed since the previous amount, puts a multi-buy tag's per-item price first, joins superscript and split cents, never turns quantities, bare digits, codes or dotted dates such as "24.09.2026" and "24.09.–30.09." into prices, and always returns a bounded, duplicate-free, score-ordered list (`tests/shelf-price.test.ts`, including a property test);
 - Tesseract layout mapping reads nested blocks defensively, measures lines by their tallest number, finds the headline number, recognises raised cents and targets the second digits-only read (`tests/price-ocr.test.ts`);
 - the engine reads in one pass when it can, adds the second pass only for whole-euro headlines, replaces a failed worker, times out, stops at once on cancel and refuses reads after dispose; the lazy reader loads the engine once, shares progress, retries a failed load, releases the engine when idle and points it at this site's own files (`tests/price-ocr.test.ts`);
 - price entry starts from a read price, says it came from the tag until the amount changes, and opens the reader with the name and quantity typed so far (`tests/PriceEntrySurface.test.tsx`);
-- in Chromium, a fake camera showing `e2e/fixtures/price-tag-1-29.mjpeg` is read by the self-hosted Tesseract files with no request leaving the origin, the candidate screen passes axe, and the chosen price is added only after confirmation (`e2e/price-tag-scanner.spec.js`). When a build switches price reading off, the same spec checks that price entry offers no reader. `e2e/support/render-price-tag-fixture.mjs` regenerates the fixture.
+- in Chromium, a fake camera showing `e2e/fixtures/price-tag-1-29.mjpeg` is read by the self-hosted Tesseract files with no request leaving the origin, the candidate screen passes axe, and the chosen price is added only after confirmation (`e2e/price-tag-scanner.spec.js`). When a build switches price reading off, the same spec instead checks in every browser that price entry offers no "Read price tag" action. `e2e/support/render-price-tag-fixture.mjs` regenerates the fixture.
 
 ### Paired barcode/manual analyzer
 
@@ -417,7 +432,7 @@ Automation may verify harness isolation, candidate-decision state, privacy and e
 Tests must prove:
 
 - the harness is a standalone guarded build with no ShoppingTrip/cart access and no PWA/service worker;
-- the public production JavaScript contains no visual benchmark markers/storage key;
+- the public build's marker scan finds no visual benchmark markers or storage key;
 - raw image bytes and candidate labels never enter retained/exported evidence;
 - the adapter declares a stable identity and `local-only` or `remote-image` data boundary;
 - capture → recognition → human rank confirmation is timed as one interaction;
@@ -436,7 +451,7 @@ Tests must prove:
 - WebGPU initialization may fall back to WASM without changing the local-only image boundary;
 - candidate output is restricted to the facilitator-provided closed set and is runtime-validated before the benchmark UI sees it;
 - AbortSignal cancellation wins over late model completion;
-- public production JavaScript contains no Transformers.js, CLIP model ID or zero-shot pipeline marker;
+- the public build's marker scan finds no Transformers.js, CLIP model ID or zero-shot pipeline marker;
 - physical retail quality remains evidence-gated by issue #88 even when automated adapter tests are green.
 
 ### Shelf-label OCR benchmark
@@ -446,7 +461,7 @@ Automation may verify OCR harness isolation, deterministic price parsing, candid
 Tests must prove:
 
 - the OCR harness is a standalone guarded build with no ShoppingTrip/cart access and no PWA/service worker;
-- the public production JavaScript contains no OCR benchmark markers/storage key;
+- the public build's marker scan finds no OCR benchmark markers or storage key;
 - camera image bytes, raw OCR text and parsed price values never enter retained/exported evidence;
 - the OCR adapter declares a stable engine identity and `local-only` or `remote-image` data boundary;
 - OCR output is bounded and runtime-validated before parsing;
@@ -477,7 +492,7 @@ Tests must prove:
 - explicit dispose is idempotent and post-dispose inference is rejected;
 - Tesseract 0–100 confidence is normalized to the harness 0–1 contract;
 - concrete browser smoke verifies route isolation without preparing/downloading OCR assets in CI;
-- public production JavaScript contains no Tesseract concrete experiment markers;
+- the public build's marker scan, which covers every public JavaScript chunk except the two lazy engine chunks, finds no concrete Tesseract experiment markers;
 - physical OCR quality remains evidence-gated by issue #90 even when automated adapter tests are green.
 
 ### Paired OCR/manual analyzer
@@ -506,13 +521,13 @@ Tests must prove:
 
 ### Public bundle budget
 
-The production build has separate total, initial-load and on-demand engine budgets. The baseline measured on 2026-09-26 with barcode scanning and price tag reading shipped is approximately:
+The production build has separate total, initial-load and on-demand engine budgets. The baseline measured on 2026-09-26 for the release build, with barcode scanning and price tag reading shipped, is approximately:
 
-- initial application JavaScript: 391,319 raw bytes / 113,160 gzip bytes;
-- total public JavaScript (without the barcode and price engines): 421,440 raw bytes / 123,657 gzip bytes, including the lazy scan surface, the lazy camera implementation, the lazy Open Food Facts adapter and Workbox;
-- barcode engine JavaScript (`zxing-fallback-detector-*`): 43,541 raw bytes / 14,964 gzip bytes; barcode engine WASM: 1,093,289 bytes;
-- price reader JavaScript (`tesseract-price-reader-*`): 26,482 raw bytes / 10,753 gzip bytes; price reader files: 9,798,124 bytes, of which a device downloads one 2.9 MB core and the 3.8 MB language file;
-- initial CSS: 68,130 raw bytes / 11,001 gzip bytes; total CSS with the lazy scan surface: 74,153 raw / 12,736 gzip bytes.
+- initial application JavaScript: 391,205 raw bytes / 113,172 gzip bytes;
+- total public JavaScript (without the barcode and price engines): 421,333 raw bytes / 123,676 gzip bytes, including the lazy scan surface, the lazy camera implementation, the lazy Open Food Facts adapter and `workbox-window`;
+- barcode engine JavaScript (`zxing-fallback-detector-*`): 43,515 raw bytes / 14,944 gzip bytes; barcode engine WASM: 1,093,289 bytes;
+- price reader JavaScript (`tesseract-price-reader-*`): 26,661 raw bytes / 10,830 gzip bytes; price reader files: 9,798,124 bytes, of which a device downloads one 2.9 MB core and the 3.8 MB language file;
+- initial CSS: 68,130 raw bytes / 11,001 gzip bytes; total CSS with the lazy scan surface: 74,164 raw / 12,739 gzip bytes.
 
 CI currently enforces:
 
@@ -526,16 +541,18 @@ CI currently enforces:
 - total public CSS: <= 80,000 raw / 13,000 gzip bytes;
 - initial CSS referenced by the public HTML: <= 70,000 raw / 11,100 gzip bytes.
 
-The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a camera capability can be code-split without silently joining the startup path. The total budgets were raised explicitly for the lazy scan surface (D-053, D-055), and the initial CSS gzip budget by 100 bytes for the price entry "Read price tag" control (D-055).
+The engine budgets apply only to a feature the build ships. With `VITE_SHOPPING_BARCODE_SCANNER=0` the validator skips the barcode engine chunk and WASM checks and reports "barcode scanning switched off"; with `VITE_SHOPPING_PRICE_OCR=0` it skips the price reader chunk and file checks, reports "price tag reading switched off" and fails if the build still ships the price reader files. CI builds and validates one build with both switches at `0`.
+
+The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a camera capability can be code-split without silently joining the startup path. Its guarded-evidence marker scan reads every public JavaScript chunk except the two lazy engine chunks. The total budgets were raised explicitly for the lazy scan surface (D-053, D-055), and the initial CSS gzip budget by 100 bytes for the price entry "Read price tag" control (D-055).
 
 Protect:
 
 - fast initial product load;
 - immediate local add/edit/undo response;
 - stable bundle trend;
-- no QA/beta/cohort/barcode-benchmark/paired-barcode/paired-OCR/visual-benchmark/OCR-benchmark/Tesseract-OCR evidence markers in the public JavaScript bundle;
+- no guarded evidence markers in the public JavaScript the marker scan covers (every chunk except the two lazy engine chunks);
 - public JS/CSS remain within the enforced bundle budgets;
-- optional future capability isolation.
+- optional capability isolation.
 
 Do not accept a premium visual effect that materially slows the core aisle interaction.
 
