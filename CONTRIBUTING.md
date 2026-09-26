@@ -2,8 +2,8 @@
 
 ## Toolchain
 
-- Node.js 24
-- npm with the committed `package-lock.json`
+- Node.js 24 (see `.node-version`)
+- npm 11 with the committed `package-lock.json`
 
 Start with:
 
@@ -12,6 +12,8 @@ npm ci
 npm run check
 npm run test:e2e -- --project=chromium
 ```
+
+`docs/TESTING.md` defines what each gate covers and what CI adds.
 
 ## Workflow
 
@@ -27,17 +29,11 @@ npm run test:e2e -- --project=chromium
 The intended dependency direction is:
 
 ```text
-React/features
-    ↓
-application
-    ↓
-domain
+React features ──────▶ application (controller, use cases, contracts, ports) ──────▶ domain
+                                  ▲
+infrastructure adapters ──────────┘ implement the ports
 
-composition root
-    ↓
-application ports
-    ↓
-infrastructure adapters
+composition root: wires the adapters into the application
 ```
 
 ESLint enforces the critical layer boundaries. Do not disable those rules to make a design fit.

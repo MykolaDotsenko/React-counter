@@ -6,46 +6,17 @@ This file describes **current validation gates and future sequencing**.
 
 It is not a chronological implementation diary. The detailed phase-by-phase plan through repeat-trip engineering is preserved in [archive/ROADMAP-THROUGH-PHASE-8.md](./archive/ROADMAP-THROUGH-PHASE-8.md).
 
-## Current status — 2026-09-24
+## Current status — 2026-09-26
 
-The core Shopping Budget Companion engineering path is implemented:
-
-- exact EUR money
-- ShoppingTrip / CartItem domain
-- local-first active-trip persistence and recovery
-- remaining-first mobile UI
-- fast manual price entry and projections
-- Undo, edit/remove and budget/buffer correction
-- loss-safe trip completion
-- optional checkout reconciliation
-- completed-trip history
-- Shop again
-- Recent Items
-- Price Memory
-- local-data controls
-- installable offline PWA shell
-- privacy-safe timing QA and retention-beta evidence tooling
-- local-only retention cohort analyzer
-- production barcode identification: native `BarcodeDetector` with a lazy self-hosted ZXing WASM fallback, local barcode names and tap-only Open Food Facts name lookup (D-053)
-- production price-tag reading: on-device Tesseract.js from self-hosted files in the shared in-trip camera, pre-filling price entry for confirmation (D-055)
-- guarded native barcode interaction benchmark harness
-- local-only paired barcode/manual evidence analyzer for issue #73
-- guarded provider-neutral visual product recognition benchmark harness with a pinned local CLIP experimental adapter; physical evidence still pending
-- guarded provider-neutral shelf-label OCR benchmark harness with deterministic exact-money price parser
-- guarded pinned Tesseract.js 7 multilingual OCR experiment for issue #90 (not production OCR)
-- local-only OCR/manual paired evidence analyzer for issue #90
-- Chromium / Firefox / WebKit quality coverage
-- immutable versioned study deployment contract for evidence surfaces
+The core Shopping Budget Companion engineering path is implemented: exact money, the trip domain, local-first persistence and recovery, the remaining-first UI, fast price entry, history, Shop again, Recent Items, Price Memory, data controls and the installable offline shell. Production barcode identification (D-053) and price-tag reading (D-055) ship in the shared in-trip camera behind build kill switches. Guarded evidence builds cover timing QA, the retention beta and cohort analysis, and camera benchmarks with paired analyzers. [specs/RELEASE-SPEC.md](./specs/RELEASE-SPEC.md) owns the per-capability status.
 
 The representative physical-phone interaction gate was accepted by explicit repository-owner/user attestation on 2026-09-24. The check was reported as responsibly completed with no blocking usability problem.
 
 That attestation closes the manual physical-usability blocker for this validation cycle, but no machine-verifiable timing JSON was retained. Therefore the repository must **not** quote an exact human median/P75/max or claim the <=2.5 s KPI from this cycle.
 
-One product-evidence gate remains open:
+The core-flow product gate still open is real-shopper retention validation, including second- and third-trip behaviour. Post-release field evidence for the camera features and repository governance are tracked as the other validation gates in section A.
 
-1. real-shopper retention validation, including second- and third-trip behaviour
-
-This gate is intentionally stronger than “CI is green”.
+These gates are intentionally stronger than “CI is green”.
 
 ## Current priority
 
