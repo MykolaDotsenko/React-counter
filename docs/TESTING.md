@@ -72,11 +72,11 @@ The baseline measured on 2026-09-26, with each scope aggregating every file it c
 
 | Scope | Statements | Branches | Functions | Lines |
 | --- | ---: | ---: | ---: | ---: |
-| All measured files | 90.63% | 83.69% | 98.42% | 90.54% |
-| Domain | 89.67% | 82.83% | 100% | 89.50% |
-| Application | 91.09% | 84.41% | 95.45% | 90.98% |
-| Storage infrastructure | 88.18% | 78.45% | 100% | 88.11% |
-| Camera, scanning and lookup adapters | 96.88% | 94.36% | 97.59% | 97.09% |
+| All measured files | 90.66% | 83.74% | 98.43% | 90.57% |
+| Domain | 89.75% | 82.93% | 100% | 89.59% |
+| Application | 91.09% | 84.42% | 95.45% | 90.98% |
+| Storage infrastructure | 88.19% | 78.46% | 100% | 88.11% |
+| Camera, scanning and lookup adapters | 96.88% | 94.37% | 97.59% | 97.09% |
 
 CI enforces these floors from `vitest.config.js`, set below the measured baseline instead of claiming an arbitrary 100% target:
 
