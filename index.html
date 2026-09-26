@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f1eb" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="application-name" content="Shopping Budget Companion" />
+    <meta
+      name="description"
+      content="A mobile-first shopping budget companion with exact money, local-first persistence, fast price entry, and repeat-trip price memory."
+    />
+    <script>
+      (() => {
+        const key = "shopping-budget:appearance";
+        const allowed = ["system", "light", "dark", "aurora"];
+        let mode = "system";
+
+        try {
+          const stored = localStorage.getItem(key);
+
+          if (allowed.includes(stored)) {
+            mode = stored;
+          }
+        } catch {
+          // Appearance persistence is convenience-only. Rendering must continue.
+        }
+
+        document.documentElement.dataset.appearance = mode;
+
+        const prefersDark =
+          typeof matchMedia === "function" &&
+          matchMedia("(prefers-color-scheme: dark)").matches;
+        const resolved =
+          mode === "system" ? (prefersDark ? "dark" : "light") : mode;
+
+        document.documentElement.dataset.theme = resolved;
+
+        const colors = {
+          light: "#f4f1eb",
+          dark: "#0f1210",
+          aurora: "#070912",
+        };
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+        themeMeta?.setAttribute("content", colors[resolved] ?? colors.light);
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/shopping-budget-companion/favicon.svg" />
+    <title>Shopping Budget Companion</title>
+    <script type="module" crossorigin src="/shopping-budget-companion/assets/index-DlCQi0XE.js"></script>
+    <link rel="stylesheet" crossorigin href="/shopping-budget-companion/assets/index-CriC82Ty.css">
+  <link rel="manifest" href="/shopping-budget-companion/manifest.webmanifest"></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
