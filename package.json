@@ -16,18 +16,11 @@
     "docs:check": "node scripts/validate-docs.mjs",
     "build:check": "node scripts/validate-build.mjs",
     "check": "npm run docs:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run build:check",
-    "barcode-paired:prepare-index": "node scripts/prepare-barcode-paired-index.mjs",
-    "barcode:prepare-index": "node scripts/prepare-barcode-index.mjs",
     "beta:prepare-index": "node scripts/prepare-beta-index.mjs",
     "cohort:prepare-index": "node scripts/prepare-cohort-index.mjs",
-    "ocr-paired:prepare-index": "node scripts/prepare-ocr-paired-index.mjs",
-    "ocr-tesseract:prepare-index": "node scripts/prepare-ocr-tesseract-index.mjs",
-    "ocr:prepare-index": "node scripts/prepare-ocr-index.mjs",
-    "qa:prepare-index": "node scripts/prepare-qa-index.mjs",
-    "visual:prepare-index": "node scripts/prepare-visual-index.mjs"
+    "qa:prepare-index": "node scripts/prepare-qa-index.mjs"
   },
   "dependencies": {
-    "@huggingface/transformers": "4.3.0",
     "@tesseract.js-data/fin": "1.0.0",
     "barcode-detector": "3.2.2",
     "react": "19.3.0",

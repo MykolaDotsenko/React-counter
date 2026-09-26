@@ -80,21 +80,6 @@ const forbiddenMarkers = [
   "budget-cart:qa:retention-v1",
   "Retention cohort analyzer",
   "retention-cohort-summary",
-  "Barcode interaction benchmark",
-  "budget-cart:qa:barcode-benchmark-v1",
-  "Visual product recognition benchmark",
-  "budget-cart:qa:visual-product-benchmark-v1",
-  "@huggingface/transformers",
-  "Xenova/clip-vit-base-patch32",
-  "zero-shot-image-classification",
-  "Shelf-label OCR benchmark",
-  "budget-cart:qa:shelf-label-ocr-benchmark-v1",
-  "Tesseract.js shelf-label OCR benchmark",
-  "tesseractjs:7.0.0:lstm:fin+swe+eng:4.0.0_best_int",
-  "Barcode paired evidence analyzer",
-  "barcode-paired-analysis",
-  "OCR paired evidence analyzer",
-  "ocr-paired-analysis",
 ];
 
 const files = await readdir(assets);

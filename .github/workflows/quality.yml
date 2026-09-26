@@ -148,68 +148,11 @@ jobs:
           npm run build -- --base=./ --outDir=dist-cohort
           npm run cohort:prepare-index
 
-      - name: Build experimental barcode benchmark
-        env:
-          VITE_SHOPPING_BARCODE_BENCHMARK: "1"
-          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
-        run: |
-          npm run build -- --base=./ --outDir=dist-barcode
-          npm run barcode:prepare-index
-
-      - name: Build local paired barcode analyzer
-        env:
-          VITE_SHOPPING_BARCODE_PAIRED_ANALYZER: "1"
-          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
-        run: |
-          npm run build -- --base=./ --outDir=dist-barcode-paired
-          npm run barcode-paired:prepare-index
-
-      - name: Build local OCR paired analyzer
-        env:
-          VITE_SHOPPING_OCR_PAIRED_ANALYZER: "1"
-          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
-        run: |
-          npm run build -- --base=./ --outDir=dist-ocr-paired
-          npm run ocr-paired:prepare-index
-
-      - name: Build experimental visual product benchmark
-        env:
-          VITE_SHOPPING_VISUAL_BENCHMARK: "1"
-          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
-        run: |
-          npm run build -- --base=./ --outDir=dist-visual
-          npm run visual:prepare-index
-
-      - name: Build experimental shelf-label OCR benchmark
-        env:
-          VITE_SHOPPING_OCR_BENCHMARK: "1"
-          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
-        run: |
-          npm run build -- --base=./ --outDir=dist-ocr
-          npm run ocr:prepare-index
-
-      - name: Build concrete Tesseract shelf-label OCR benchmark
-        env:
-          VITE_SHOPPING_OCR_TESSERACT_BENCHMARK: "1"
-          VITE_EVIDENCE_BUILD_REVISION: ${{ github.sha }}
-        run: |
-          npm run build -- --base=./ --outDir=dist-ocr-tesseract
-          npm run ocr-tesseract:prepare-index
-
       - name: Validate guarded builds are relocatable
         shell: bash
         run: |
           set -euo pipefail
-          for dir in \
-            dist-qa \
-            dist-beta \
-            dist-cohort \
-            dist-barcode \
-            dist-barcode-paired \
-            dist-ocr-paired \
-            dist-visual \
-            dist-ocr \
-            dist-ocr-tesseract; do
+          for dir in dist-qa dist-beta dist-cohort; do
             test -f "${dir}/index.html"
             test ! -e "${dir}/manifest.webmanifest"
             test ! -e "${dir}/sw.js"
@@ -221,17 +164,11 @@ jobs:
 
       - name: Stage immutable site artifact
         run: |
-          mkdir -p site/qa site/beta site/cohort site/barcode-benchmark site/barcode-paired-analyzer site/ocr-paired-analyzer site/visual-recognition-benchmark site/shelf-label-ocr-benchmark site/shelf-label-ocr-tesseract-benchmark
+          mkdir -p site/qa site/beta site/cohort
           cp -R dist/. site/
           cp -R dist-qa/. site/qa/
           cp -R dist-beta/. site/beta/
           cp -R dist-cohort/. site/cohort/
-          cp -R dist-barcode/. site/barcode-benchmark/
-          cp -R dist-barcode-paired/. site/barcode-paired-analyzer/
-          cp -R dist-ocr-paired/. site/ocr-paired-analyzer/
-          cp -R dist-visual/. site/visual-recognition-benchmark/
-          cp -R dist-ocr/. site/shelf-label-ocr-benchmark/
-          cp -R dist-ocr-tesseract/. site/shelf-label-ocr-tesseract-benchmark/
           touch site/.nojekyll
           test ! -e site/node_modules
           test ! -e site/package.json
@@ -322,16 +259,7 @@ jobs:
             test -f "${site}/${file}"
           done
 
-          for surface in \
-            qa \
-            beta \
-            cohort \
-            barcode-benchmark \
-            barcode-paired-analyzer \
-            ocr-paired-analyzer \
-            visual-recognition-benchmark \
-            shelf-label-ocr-benchmark \
-            shelf-label-ocr-tesseract-benchmark; do
+          for surface in qa beta cohort; do
             test -f "${site}/${surface}/index.html"
             test ! -e "${site}/${surface}/manifest.webmanifest"
             test ! -e "${site}/${surface}/sw.js"
@@ -433,12 +361,6 @@ jobs:
             "qa @qa"
             "beta @beta"
             "cohort @cohort"
-            "barcode-benchmark @barcode-benchmark"
-            "barcode-paired-analyzer @barcode-paired"
-            "ocr-paired-analyzer @ocr-paired"
-            "visual-recognition-benchmark @visual-benchmark"
-            "shelf-label-ocr-benchmark @ocr-benchmark"
-            "shelf-label-ocr-tesseract-benchmark @ocr-tesseract"
           )
           failed=()
 

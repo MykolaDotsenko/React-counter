@@ -3,8 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const stagedSite = process.env.PLAYWRIGHT_STAGED_SITE === "1";
 const guardedSurface = process.env.PLAYWRIGHT_GUARDED_SURFACE === "1";
 const serverUrl = "http://127.0.0.1:4173";
-const guardedSurfaceTags =
-  /@(?:qa|beta|cohort|barcode-benchmark|barcode-paired|ocr-paired|visual-benchmark|ocr-benchmark|ocr-tesseract)\b/;
+const guardedSurfaceTags = /@(?:qa|beta|cohort)\b/;
 
 export default defineConfig({
   testDir: "./e2e",

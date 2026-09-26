@@ -62,40 +62,12 @@ const selfHostedPriceReader = (enabled) => ({
 export default defineConfig(() => {
   const cohortAnalysisEnabled =
     process.env.VITE_SHOPPING_COHORT_ANALYSIS === "1";
-  const barcodeBenchmarkEnabled =
-    process.env.VITE_SHOPPING_BARCODE_BENCHMARK === "1";
-  const visualBenchmarkEnabled =
-    process.env.VITE_SHOPPING_VISUAL_BENCHMARK === "1";
-  const ocrBenchmarkEnabled =
-    process.env.VITE_SHOPPING_OCR_BENCHMARK === "1";
-  const ocrTesseractBenchmarkEnabled =
-    process.env.VITE_SHOPPING_OCR_TESSERACT_BENCHMARK === "1";
-  const barcodePairedAnalyzerEnabled =
-    process.env.VITE_SHOPPING_BARCODE_PAIRED_ANALYZER === "1";
-  const ocrPairedAnalyzerEnabled =
-    process.env.VITE_SHOPPING_OCR_PAIRED_ANALYZER === "1";
   const evidenceEnabled =
     process.env.VITE_SHOPPING_QA_TIMING === "1" ||
     process.env.VITE_SHOPPING_BETA_EVIDENCE === "1" ||
-    cohortAnalysisEnabled ||
-    barcodeBenchmarkEnabled ||
-    visualBenchmarkEnabled ||
-    ocrBenchmarkEnabled ||
-    ocrTesseractBenchmarkEnabled ||
-    barcodePairedAnalyzerEnabled ||
-    ocrPairedAnalyzerEnabled;
-
-  const shoppingAppBuild = !(
-    cohortAnalysisEnabled ||
-    barcodeBenchmarkEnabled ||
-    visualBenchmarkEnabled ||
-    ocrBenchmarkEnabled ||
-    ocrTesseractBenchmarkEnabled ||
-    barcodePairedAnalyzerEnabled ||
-    ocrPairedAnalyzerEnabled
-  );
+    cohortAnalysisEnabled;
   const priceOcrBuild =
-    shoppingAppBuild && process.env.VITE_SHOPPING_PRICE_OCR !== "0";
+    !cohortAnalysisEnabled && process.env.VITE_SHOPPING_PRICE_OCR !== "0";
 
   return {
     define: {
@@ -150,12 +122,6 @@ export default defineConfig(() => {
             /\/qa(?:\/|$)/,
             /\/beta(?:\/|$)/,
             /\/cohort(?:\/|$)/,
-            /\/barcode-benchmark(?:\/|$)/,
-            /\/visual-recognition-benchmark(?:\/|$)/,
-            /\/shelf-label-ocr-benchmark(?:\/|$)/,
-            /\/shelf-label-ocr-tesseract-benchmark(?:\/|$)/,
-            /\/barcode-paired-analyzer(?:\/|$)/,
-            /\/ocr-paired-analyzer(?:\/|$)/,
             /\/camera-tools(?:\/|$)/,
             /\/study(?:\/|$)/,
           ],
@@ -190,21 +156,9 @@ export default defineConfig(() => {
       alias: {
         "#app-entry": path.resolve(
           rootDir,
-          barcodeBenchmarkEnabled
-            ? "src/qa/BarcodeBenchmarkApp.tsx"
-            : visualBenchmarkEnabled
-              ? "src/qa/VisualProductBenchmarkApp.tsx"
-              : ocrTesseractBenchmarkEnabled
-                ? "src/qa/ShelfLabelTesseractBenchmarkApp.tsx"
-                : ocrBenchmarkEnabled
-                  ? "src/qa/ShelfLabelOcrBenchmarkApp.tsx"
-                  : barcodePairedAnalyzerEnabled
-                    ? "src/qa/BarcodePairedAnalyzerApp.tsx"
-                    : ocrPairedAnalyzerEnabled
-                      ? "src/qa/OcrPairedAnalyzerApp.tsx"
-                      : cohortAnalysisEnabled
-                        ? "src/qa/RetentionCohortAnalyzerApp.tsx"
-                        : "src/App.tsx",
+          cohortAnalysisEnabled
+            ? "src/qa/RetentionCohortAnalyzerApp.tsx"
+            : "src/App.tsx",
         ),
         "#shopping-evidence": path.resolve(
           rootDir,
