@@ -10,9 +10,7 @@ lerna-debug.log*
 # Dependencies and build output
 node_modules/
 dist/
-dist-ssr/
-dist-qa/
-dist-beta/
+dist-*/
 site/
 coverage/
 playwright-report/
