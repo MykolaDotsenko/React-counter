@@ -395,9 +395,12 @@ describe("StartTripScreen", () => {
     );
 
     expect(controller.getSnapshot().lifecycle).toBe("idle");
-    expect(screen.getByRole("alert").textContent).toContain(
-      "Use no more than two decimal places.",
-    );
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("Use no more than two decimal places.");
+    expect(alert.closest("form")).not.toBeNull();
+    expect(
+      screen.getByRole("textbox", { name: "Custom budget" }).getAttribute("aria-invalid"),
+    ).toBe("true");
   });
 
   it("lets the domain reject a zero custom budget without duplicating the rule", async () => {

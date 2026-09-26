@@ -174,4 +174,35 @@ describe("two tabs sharing one device store", () => {
       "Bread",
     ]);
   });
+
+  it("keeps and saves again an open trip whose saved copy was wiped from the device", () => {
+    const storage = sharedStorage();
+    const tab = openTab(storage, "a");
+    tab.startTrip({ budgetMinor: money(5_000) });
+    tab.addManualItem({ unitPriceMinor: money(250), quantity: 1, label: "Bread" });
+
+    storage.values.clear();
+
+    expect(tab.refreshFromStorage()).toMatchObject({ ok: true, durability: "persisted" });
+    expect(tab.getSnapshot()).toMatchObject({ lifecycle: "active" });
+    expect(storedLabels(storage)).toEqual(["Bread"]);
+  });
+
+  it("follows another tab that finished the trip instead of saving it again", () => {
+    const storage = sharedStorage();
+    const first = openTab(storage, "a");
+    first.startTrip({ budgetMinor: money(5_000) });
+    first.addManualItem({ unitPriceMinor: money(250), quantity: 1, label: "Bread" });
+    const second = openTab(storage, "b");
+
+    second.completeTrip();
+    second.dismissCompletedSummary();
+
+    first.refreshFromStorage();
+
+    expect(first.getSnapshot()).toMatchObject({ lifecycle: "idle", activeTrip: null });
+    expect(restoreActiveTrip(storage).trip).toBeNull();
+    expect(restoreHistory(storage).trips).toHaveLength(1);
+  });
 });
+

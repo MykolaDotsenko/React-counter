@@ -1,4 +1,8 @@
-import { formatEur, signedMinorUnits } from "../../domain/money";
+import {
+  formatEur,
+  signedMinorUnits,
+  type MoneyInputErrorCode,
+} from "../../domain/money";
 import {
   lineTotal,
   remaining,
@@ -72,3 +76,25 @@ export const addedFeedback = (
   locale: string,
 ): string =>
   `${formatEur(lineTotal(item), locale)} added. ${remainingFeedback(trip, locale)}`;
+
+export const moneyInputErrorMessage = (code: MoneyInputErrorCode): string => {
+  switch (code) {
+    case "empty":
+      return "Enter an amount.";
+    case "incomplete":
+      return "Finish the amount.";
+    case "invalid-format":
+      return "Use a euro amount like 50.00.";
+    case "negative-not-allowed":
+      return "Use zero or a positive amount.";
+    case "too-many-fraction-digits":
+      return "Use no more than two decimal places.";
+    case "above-product-limit":
+    case "unsafe-integer":
+      return "That amount is too large.";
+    default: {
+      const exhaustive: never = code;
+      return exhaustive;
+    }
+  }
+};

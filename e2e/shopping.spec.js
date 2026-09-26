@@ -739,6 +739,46 @@ test("keeps the complete price-entry fast path inside compact phone viewports", 
   }
 });
 
+test("never hides a keypad key behind the Add bar, even with a buffer and a quantity", async ({
+  page,
+}) => {
+  for (const viewport of [
+    { width: 360, height: 640 },
+    { width: 375, height: 667 },
+    { width: 412, height: 915 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await page.getByText("Add a safety buffer", { exact: true }).click();
+    await page.getByLabel("Safety buffer").fill("5");
+    await page.getByRole("button", { name: "€25", exact: true }).click();
+    await page.getByRole("button", { name: "Add price" }).click();
+    await page.getByRole("button", { name: "Increase quantity" }).click();
+
+    for (const key of ["Digit 1", "Digit 2", "Decimal separator", "Digit 4", "Digit 9"]) {
+      await page.getByRole("button", { name: key, exact: true }).click();
+    }
+
+    await expect(page.getByRole("textbox", { name: "Price" })).toHaveValue("12.49");
+    await expect(page.getByRole("button", { name: "Add · €24.98" })).toBeVisible();
+
+    const coveredKeys = await page.getByLabel("Price keypad").evaluate((keypad) =>
+      [...keypad.querySelectorAll("button")]
+        .filter((key) => {
+          const box = key.getBoundingClientRect();
+          const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+
+          return !(hit === key || key.contains(hit)) || box.bottom > window.innerHeight;
+        })
+        .map((key) => key.getAttribute("aria-label")),
+    );
+
+    expect(coveredKeys).toEqual([]);
+  }
+});
+
 test("keeps price entry and over-budget correction usable at 200 percent text", async ({
   page,
 }) => {
@@ -1969,4 +2009,19 @@ test("keeps what is left in view while scrolling a long cart", async ({ page }) 
   await page.getByRole("button", { name: "Remove" }).last().scrollIntoViewIfNeeded();
 
   await expect(pinned).toHaveText("€25.38 left");
+});
+
+test("removes only one item when Remove is double-tapped", async ({ page }) => {
+  await page.goto("/");
+  await startQuickBudget(page);
+
+  for (const price of ["1.29", "2.49", "7.95"]) {
+    await page.getByRole("button", { name: "Add price" }).click();
+    await page.getByRole("textbox", { name: "Price" }).fill(price);
+    await page.getByRole("button", { name: `Add · €${price}` }).click();
+  }
+
+  await page.getByRole("button", { name: "Remove" }).first().dblclick();
+
+  await expect(page.getByRole("button", { name: "Remove" })).toHaveCount(2);
 });

@@ -908,6 +908,37 @@ describe("PriceEntrySurface", () => {
     });
   });
 
+  it("reads back what the keypad has entered for screen reader users", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={vi.fn()}
+      />,
+    );
+
+    const echo = (): string => {
+      const region = screen.getByLabelText("Price keypad").nextElementSibling;
+      expect(region?.getAttribute("aria-live")).toBe("polite");
+      return region?.textContent ?? "";
+    };
+
+    expect(echo()).toBe("");
+
+    await user.click(screen.getByRole("button", { name: "Digit 4" }));
+    await user.click(screen.getByRole("button", { name: "Decimal separator" }));
+    await user.click(screen.getByRole("button", { name: "Digit 7" }));
+
+    expect(echo()).toBe("Price 4.7");
+
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+
+    expect(echo()).toBe("Price cleared");
+  });
+
   it("opens in the mode the shopper chose last and reports a change of mode", async () => {
     const user = userEvent.setup();
     const onModeChange = vi.fn();

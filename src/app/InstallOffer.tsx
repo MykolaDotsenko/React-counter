@@ -43,6 +43,7 @@ export function InstallOffer({ source, hasSavedShopping }: InstallOfferProps) {
 
   const dismiss = (): void => {
     setDismissed(true);
+    document.getElementById("start-trip-title")?.focus();
 
     try {
       window.localStorage.setItem(INSTALL_OFFER_STORAGE_KEY, "dismissed");

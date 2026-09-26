@@ -12,7 +12,11 @@ import {
 import { HistoryIntegrityNotice } from "./HistoryIntegrityNotice";
 import { PersistenceHealthNotice } from "./PersistenceHealthNotice";
 import styles from "./CompletedSummaryScreen.module.css";
-import { budgetOutcome, formatAbsoluteEur } from "./shopping-feedback";
+import {
+  budgetOutcome,
+  formatAbsoluteEur,
+  moneyInputErrorMessage,
+} from "./shopping-feedback";
 import { SHOPPING_LOCALE } from "./shopping-locale";
 
 export interface CompletedSummaryScreenProps {
@@ -99,16 +103,19 @@ export function CompletedSummaryScreen({
     }
 
     if (!parsedCheckout.ok) {
-      setInputError(
-        "Enter a valid euro total with no more than two decimals.",
-      );
+      setInputError(moneyInputErrorMessage(parsedCheckout.error.code));
       return;
     }
 
     const result = controller.setActualCheckout(parsedCheckout.value);
 
     if (!result.ok) {
-      setInputError("Could not save that receipt total.");
+      setInputError(
+        result.error.kind === "application" &&
+          result.error.code === "completed-trip-not-found"
+          ? "This trip was deleted from history, so its receipt total can’t be saved."
+          : "Could not save that receipt total.",
+      );
       return;
     }
 

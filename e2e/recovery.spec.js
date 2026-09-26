@@ -303,12 +303,12 @@ test("makes room when browser storage is full and saves the open trip again", as
   });
   await expect(notice).toBeVisible();
   await notice.getByRole("button", { name: "Make room…" }).click();
-  await notice.getByRole("button", { name: "Remove 10 oldest trips" }).click();
+  await notice.getByRole("button", { name: "Remove 3 oldest trips" }).click();
 
   await expect(page.getByText("Saved on this device")).toBeVisible();
 
   const stored = await storedEntries(page);
-  expect(JSON.parse(stored[HISTORY_KEY]).data.trips).toHaveLength(20);
-  expect(JSON.parse(stored[HISTORY_KEY]).data.trips[0].id).toBe("trip-10");
+  expect(JSON.parse(stored[HISTORY_KEY]).data.trips).toHaveLength(27);
+  expect(JSON.parse(stored[HISTORY_KEY]).data.trips[0].id).toBe("trip-3");
   expect(JSON.parse(stored[ACTIVE_TRIP_KEY]).data.budgetMinor).toBe(5000);
 });

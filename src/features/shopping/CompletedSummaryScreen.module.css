@@ -154,7 +154,7 @@
 .inputShell {
   min-height: 52px;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 7px;
   padding: 0 14px;
   border: 1px solid var(--shopping-field-border);
@@ -163,6 +163,7 @@
 }
 
 .inputShell > span {
+  align-self: center;
   color: var(--shopping-muted-strong);
   font-weight: 800;
 }
@@ -170,6 +171,7 @@
 .inputShell input {
   width: 100%;
   min-width: 0;
+  min-height: 50px;
   border: 0;
   outline: 0;
   background: transparent;

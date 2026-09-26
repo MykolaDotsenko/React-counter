@@ -50,6 +50,7 @@ export function HistoryScreen({
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
+  const statusRef = useRef<HTMLParagraphElement>(null);
   const canRepeat =
     (state.persistence.status === "healthy" ||
       isSessionOnly(state.persistence)) &&
@@ -139,6 +140,9 @@ export function HistoryScreen({
 
     setConfirmation({ kind: "none" });
     setStatusMessage("Trip deleted from this device.");
+    queueMicrotask(() => {
+      statusRef.current?.focus();
+    });
   };
 
   const clearHistory = (): void => {
@@ -154,6 +158,9 @@ export function HistoryScreen({
 
     setConfirmation({ kind: "none" });
     setStatusMessage("Trip history cleared from this device.");
+    queueMicrotask(() => {
+      statusRef.current?.focus();
+    });
   };
 
   const clearPriceMemory = (): void => {
@@ -169,6 +176,9 @@ export function HistoryScreen({
 
     setConfirmation({ kind: "none" });
     setStatusMessage("Remembered item prices cleared from this device.");
+    queueMicrotask(() => {
+      statusRef.current?.focus();
+    });
   };
 
   const dataConfirmation: HistoryDataConfirmation =
@@ -207,7 +217,13 @@ export function HistoryScreen({
         <HistoryIntegrityNotice controller={controller} />
 
         {statusMessage ? (
-          <p className={styles.status} role="status" aria-live="polite">
+          <p
+            ref={statusRef}
+            className={styles.status}
+            role="status"
+            aria-live="polite"
+            tabIndex={-1}
+          >
             {statusMessage}
           </p>
         ) : null}

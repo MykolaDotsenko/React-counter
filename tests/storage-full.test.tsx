@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -97,15 +97,23 @@ describe("when browser storage is full", () => {
 
     await user.click(within(notice).getByRole("button", { name: "Make room…" }));
     expect(notice.textContent).toContain(
-      "Your 10 oldest trips will be removed from this device; remembered prices stay.",
+      "Your 2 oldest trips will be removed from this device; remembered prices stay.",
     );
-    await user.click(within(notice).getByRole("button", { name: "Remove 10 oldest trips" }));
+    await user.click(within(notice).getByRole("button", { name: "Remove 2 oldest trips" }));
 
     expect(screen.getByText("Saved on this device")).not.toBeNull();
     expect(controller.getSnapshot()).toMatchObject({
       persistence: { status: "healthy" },
     });
     expect(controller.getSnapshot().completedTrips.map((trip) => trip.id)).toEqual([
+      "trip-5",
+      "trip-7",
+      "trip-9",
+      "trip-11",
+      "trip-13",
+      "trip-15",
+      "trip-17",
+      "trip-19",
       "trip-21",
       "trip-23",
     ]);
@@ -137,12 +145,12 @@ describe("when browser storage is full", () => {
 
     const notice = screen.getByRole("complementary", { name: "Storage for this app is full" });
     await user.click(within(notice).getByRole("button", { name: "Make room…" }));
-    await user.click(within(notice).getByRole("button", { name: "Remove 2 oldest trips" }));
+    await user.click(within(notice).getByRole("button", { name: "Remove the oldest trip" }));
 
     expect(within(notice).getByRole("status").textContent).toBe(
       "There still isn’t enough room. You can remove more trips.",
     );
-    expect(controller.getSnapshot().completedTrips).toHaveLength(0);
+    expect(controller.getSnapshot().completedTrips).toHaveLength(1);
     expect(controller.getSnapshot().persistence.status).toBe("degraded");
   });
 
@@ -157,7 +165,7 @@ describe("when browser storage is full", () => {
 
     const notice = screen.getByRole("complementary", { name: "Storage for this app is full" });
     await user.click(within(notice).getByRole("button", { name: "Make room…" }));
-    await user.click(within(notice).getByRole("button", { name: "Remove 2 oldest trips" }));
+    await user.click(within(notice).getByRole("button", { name: "Remove the oldest trip" }));
 
     expect(within(notice).getByRole("status").textContent).toBe(
       "Trips could not be removed, so nothing was changed.",
@@ -178,6 +186,50 @@ describe("when browser storage is full", () => {
     );
     expect(within(notice).queryByRole("button", { name: "Make room…" })).toBeNull();
     expect(within(notice).getByRole("button", { name: "Retry" })).not.toBeNull();
+  });
+
+  it("tells screen reader users when saving stops", async () => {
+    const user = userEvent.setup();
+    const { controller, fullKeys } = bootWithHistory(0);
+    controller.startTrip({ budgetMinor: money(5_000) });
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    fullKeys.add(ACTIVE_TRIP_STORAGE_KEY);
+    await user.click(screen.getByRole("button", { name: "Add price" }));
+    await user.type(screen.getByRole("textbox", { name: "Price" }), "2.50");
+    await user.click(screen.getByRole("button", { name: "Add · €2.50" }));
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("status")[0]?.textContent).toBe(
+        "€2.50 added. €47.50 left. Changes aren’t being saved: storage for this app is full.",
+      );
+    });
+  });
+
+  it("lets Done leave a finished trip whose receipt total could not be saved", async () => {
+    const user = userEvent.setup();
+    const { controller, fullKeys } = bootWithHistory(0);
+    controller.startTrip({ budgetMinor: money(5_000) });
+    controller.addManualItem({ unitPriceMinor: money(250), quantity: 1 });
+    controller.completeTrip();
+    fullKeys.add(HISTORY_STORAGE_KEY);
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    await user.type(screen.getByRole("textbox", { name: "Receipt total" }), "2.60");
+    await user.click(screen.getByRole("button", { name: "Save receipt total" }));
+
+    const notice = screen.getByRole("complementary", { name: "Storage for this app is full" });
+    expect(notice.textContent).toContain("Done keeps the trip as it was last saved.");
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "How much can you spend today?" }),
+    ).not.toBeNull();
+    expect(controller.getSnapshot().completedTrips).toHaveLength(1);
+    expect(controller.getSnapshot().completedTrips[0]?.actualCheckoutMinor).toBeUndefined();
   });
 
   it("explains why finishing failed and keeps the trip open", async () => {

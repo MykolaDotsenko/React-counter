@@ -1999,6 +1999,86 @@ describe("ShoppingAppController receipt total for a past trip", () => {
   });
 });
 
+describe("ShoppingAppController leaving a summary whose receipt was not saved", () => {
+  it("closes the summary and keeps the trip as it was last saved", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    controller.completeTrip();
+    persistence.queueCompletedSaveResult({ ok: false, issue: historyWriteFailure });
+    controller.setActualCheckout(money(4_672));
+    expect(controller.getSnapshot().persistence.status).toBe("degraded");
+
+    const result = controller.dismissCompletedSummary();
+
+    expect(result).toMatchObject({
+      ok: true,
+      state: {
+        lifecycle: "idle",
+        completedSummary: null,
+        persistence: { status: "healthy" },
+      },
+    });
+    expect(result.state.completedTrips).toHaveLength(1);
+    expect(result.state.completedTrips[0]?.actualCheckoutMinor).toBeUndefined();
+  });
+
+  it("keeps the summary open while its trip is not in history", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    controller.completeTrip();
+    persistence.queueCompletedSaveResult({ ok: false, issue: historyWriteFailure });
+    controller.setActualCheckout(money(4_672));
+    persistence.queueHistoryReadResult({ ok: true, completedTrips: [] });
+
+    expect(controller.dismissCompletedSummary()).toMatchObject({
+      ok: false,
+      error: { kind: "application", code: "completion-not-saved" },
+      state: { lifecycle: "completed-summary" },
+    });
+  });
+
+  it("says the trip is gone when it was deleted from history elsewhere, without blocking Done", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    controller.completeTrip();
+    persistence.queueCompletedSaveResult({
+      ok: false,
+      issue: { code: "history-conflict", storageKey: "budget-cart:history" },
+    });
+
+    expect(controller.setActualCheckout(money(4_672))).toMatchObject({
+      ok: false,
+      error: { kind: "application", code: "completed-trip-not-found" },
+      state: { persistence: { status: "healthy" } },
+    });
+    expect(controller.dismissCompletedSummary()).toMatchObject({ ok: true });
+  });
+});
+
 describe("ShoppingAppController making room in history", () => {
   it("removes the oldest trips first and never the trip in the open summary", () => {
     const oldest = createCompletedTrip("trip-oldest", "2026-09-21T09:01:00.000Z");

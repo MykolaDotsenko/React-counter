@@ -1,4 +1,11 @@
-import { useCallback, useState, type CSSProperties, type ReactNode, type Ref } from "react";
+import {
+  useCallback,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type Ref,
+} from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import { needsSaveAttention } from "../../application/session-only-persistence";
@@ -105,6 +112,14 @@ const formatSignedAmount = (
   return formatEur(amount.value, locale);
 };
 
+const GHOST_TAP_MS = 600;
+
+const UNDO_LABELS = {
+  add: "Undo last add",
+  edit: "Undo last edit",
+  remove: "Undo last removal",
+} as const;
+
 export function ActiveTripScreen({
   controller,
   onAddPrice,
@@ -125,6 +140,7 @@ export function ActiveTripScreen({
   utilityControl,
   locale = SHOPPING_LOCALE,
 }: ActiveTripScreenProps) {
+  const lastRemovalAt = useRef(Number.NEGATIVE_INFINITY);
   const state = useShoppingAppState(controller);
   const [heroVisible, setHeroVisible] = useState(true);
   const observeHero = useCallback((hero: HTMLElement | null) => {
@@ -306,7 +322,7 @@ export function ActiveTripScreen({
                 className={styles.undoButton}
                 onClick={onUndo}
               >
-                Undo
+                {feedbackMessage ? "Undo" : UNDO_LABELS[state.undo.description]}
               </button>
             ) : null}
           </div>
@@ -427,7 +443,11 @@ export function ActiveTripScreen({
                               type="button"
                               className={styles.itemActionButton}
                               data-edit-item-id={item.id}
-                              onClick={() => {
+                              onClick={(event) => {
+                                if (event.timeStamp - lastRemovalAt.current < GHOST_TAP_MS) {
+                                  return;
+                                }
+
                                 onEditItem(item);
                               }}
                             >
@@ -438,7 +458,12 @@ export function ActiveTripScreen({
                             <button
                               type="button"
                               className={styles.removeButton}
-                              onClick={() => {
+                              onClick={(event) => {
+                                if (event.timeStamp - lastRemovalAt.current < GHOST_TAP_MS) {
+                                  return;
+                                }
+
+                                lastRemovalAt.current = event.timeStamp;
                                 onRemoveItem(item);
                               }}
                             >

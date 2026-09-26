@@ -110,6 +110,7 @@ export function PriceEntrySurface({
     () => initialQuantity ?? defaultQuantity(),
   );
   const [label, setLabel] = useState(initialLabel ?? "");
+  const [keypadPresses, setKeypadPresses] = useState(0);
   const [labelNotice, setLabelNotice] = useState("");
 
   useEffect(() => {
@@ -252,6 +253,7 @@ export function PriceEntrySurface({
   };
 
   const pressKey = (key: string): void => {
+    setKeypadPresses((count) => count + 1);
     setDraft((current) => {
       if (key === "backspace") {
         return backspacePriceEntry(current);
@@ -291,276 +293,285 @@ export function PriceEntrySurface({
       }}
     >
       <div className={styles.sheet}>
-        <header className={styles.header}>
-          <div>
-            <p className={styles.eyebrow}>Add price</p>
-            <h1
-              ref={titleRef}
-              id="price-entry-title"
-              tabIndex={-1}
-            >
-              What does this item cost?
-            </h1>
-          </div>
-          <button
-            type="button"
-            className={styles.cancelButton}
-            onClick={onCancel}
-          >
-            Cancel
-          </button>
-        </header>
-
-        {initialLabel !== undefined ? (
-          <p className={styles.currentPriceContext}>
-            Current price for <strong>{initialLabel}</strong>
-          </p>
-        ) : null}
-
-        <div className={styles.modeGroup}>
-          <div
-            className={styles.segmented}
-            role="group"
-            aria-label="Price entry mode"
-            aria-describedby={modeHintId}
-          >
+        <div className={styles.sheetBody}>
+          <header className={styles.header}>
+            <div>
+              <p className={styles.eyebrow}>Add price</p>
+              <h1
+                ref={titleRef}
+                id="price-entry-title"
+                tabIndex={-1}
+              >
+                What does this item cost?
+              </h1>
+            </div>
             <button
               type="button"
-              className={styles.modeButton}
-              aria-pressed={draft.mode === "decimal"}
-              disabled={draft.raw !== "" || activeConfirmation !== null}
-              onClick={() => {
-                updateMode("decimal");
-              }}
+              className={styles.cancelButton}
+              onClick={onCancel}
             >
-              Euros
+              Cancel
             </button>
-            <button
-              type="button"
-              className={styles.modeButton}
-              aria-pressed={draft.mode === "auto-cents"}
-              disabled={draft.raw !== "" || activeConfirmation !== null}
-              onClick={() => {
-                updateMode("auto-cents");
-              }}
-            >
-              Cents mode
-            </button>
-          </div>
-          <p id={modeHintId} className={styles.modeHint}>
-            {draft.raw === ""
-              ? "Cents mode needs no decimal point."
-              : draft.mode === "decimal"
-                ? "Clear the price to switch to cents."
-                : "Clear the price to switch to euros."}
-          </p>
-        </div>
+          </header>
 
-        <div className={styles.amountBlock}>
-          <div className={styles.amountLabelRow}>
-            <label htmlFor={amountInputId} className={styles.amountLabel}>
-              Price
-            </label>
-            {onReadPriceTag !== undefined && activeConfirmation === null ? (
+          {initialLabel !== undefined ? (
+            <p className={styles.currentPriceContext}>
+              Current price for <strong>{initialLabel}</strong>
+            </p>
+          ) : null}
+
+          <div className={styles.modeGroup}>
+            <div
+              className={styles.segmented}
+              role="group"
+              aria-label="Price entry mode"
+              aria-describedby={modeHintId}
+            >
               <button
                 type="button"
-                className={styles.cancelButton}
+                className={styles.modeButton}
+                aria-pressed={draft.mode === "decimal"}
+                disabled={draft.raw !== "" || activeConfirmation !== null}
                 onClick={() => {
-                  const normalized = label.trim();
-                  onReadPriceTag(
-                    normalized === ""
-                      ? { quantity }
-                      : { label: normalized, quantity },
-                  );
+                  updateMode("decimal");
                 }}
               >
-                Read price tag
+                Euros
               </button>
-            ) : null}
-          </div>
-          <div className={styles.amountShell}>
-            <span aria-hidden="true">€</span>
-            <input
-              ref={inputRef}
-              id={amountInputId}
-              className={styles.amountInput}
-              value={draft.raw}
-              inputMode={
-                draft.mode === "decimal"
-                  ? "decimal"
-                  : "numeric"
-              }
-              readOnly={activeConfirmation !== null}
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              enterKeyHint="done"
-              aria-describedby={statusId}
-              placeholder={
-                draft.mode === "decimal" ? "0.00" : "0"
-              }
-              onChange={(event) => {
-                const nextRaw = event.currentTarget.value;
-
-                setDraft((current) =>
-                  replacePriceEntryRaw(current, nextRaw),
-                );
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-
-                  if (activeConfirmation === null) {
-                    commit();
-                  }
-                }
-              }}
-            />
+              <button
+                type="button"
+                className={styles.modeButton}
+                aria-pressed={draft.mode === "auto-cents"}
+                disabled={draft.raw !== "" || activeConfirmation !== null}
+                onClick={() => {
+                  updateMode("auto-cents");
+                }}
+              >
+                Cents mode
+              </button>
+            </div>
+            <p id={modeHintId} className={styles.modeHint}>
+              {draft.raw === ""
+                ? "Cents mode needs no decimal point."
+                : draft.mode === "decimal"
+                  ? "Clear the price to switch to cents."
+                  : "Clear the price to switch to euros."}
+            </p>
           </div>
 
-          <div
-            id={statusId}
-            className={styles.status}
-            aria-live={
-              submissionError || invalidCopy ? "polite" : undefined
-            }
-          >
-            {submissionError ? (
-              <span className={styles.error}>{submissionError}</span>
-            ) : state.kind === "valid" ? (
-              <span className={styles.validPreview}>
-                {formatEur(state.value, locale)}
-                {priceFromTag ? (
-                  <span className={styles.tagSource}>
-                    {" "}
-                    Read from the price tag. Check it matches the shelf.
-                  </span>
-                ) : null}
-              </span>
-            ) : invalidCopy ? (
-              <span className={styles.error}>{invalidCopy}</span>
-            ) : state.kind === "incomplete" ? (
-              <span>Finish the amount.</span>
-            ) : draft.mode === "auto-cents" ? (
-              <span>Cents mode: type 249 for €2.49.</span>
-            ) : (
-              <span>Type the price, like 2.49. A name is optional.</span>
-            )}
-          </div>
-        </div>
-
-        {activeConfirmation === null ? (
-          <details className={styles.labelDetails}>
-            <summary>Name for next time <span>Optional</span></summary>
-            <label className={styles.labelField}>
-              <span>Item name</span>
+          <div className={styles.amountBlock}>
+            <div className={styles.amountLabelRow}>
+              <label htmlFor={amountInputId} className={styles.amountLabel}>
+                Price
+              </label>
+              {onReadPriceTag !== undefined && activeConfirmation === null ? (
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={() => {
+                    const normalized = label.trim();
+                    onReadPriceTag(
+                      normalized === ""
+                        ? { quantity }
+                        : { label: normalized, quantity },
+                    );
+                  }}
+                >
+                  Read price tag
+                </button>
+              ) : null}
+            </div>
+            <div className={styles.amountShell}>
+              <span aria-hidden="true">€</span>
               <input
-                value={label}
+                ref={inputRef}
+                id={amountInputId}
+                className={styles.amountInput}
+                value={draft.raw}
+                inputMode={
+                  draft.mode === "decimal"
+                    ? "decimal"
+                    : "numeric"
+                }
+                readOnly={activeConfirmation !== null}
                 autoComplete="off"
+                autoCorrect="off"
                 spellCheck={false}
                 enterKeyHint="done"
-                placeholder="e.g. Milk 1L"
+                aria-describedby={statusId}
+                placeholder={
+                  draft.mode === "decimal" ? "0.00" : "0"
+                }
                 onChange={(event) => {
-                  const characters = [...event.currentTarget.value];
-                  const tooLong = characters.length > MAX_ITEM_LABEL_CODE_POINTS;
+                  const nextRaw = event.currentTarget.value;
 
-                  setLabel(characters.slice(0, MAX_ITEM_LABEL_CODE_POINTS).join(""));
-                  setLabelNotice(
-                    tooLong
-                      ? `Names stop at ${MAX_ITEM_LABEL_CODE_POINTS} characters; the rest was left out.`
-                      : "",
+                  setDraft((current) =>
+                    replacePriceEntryRaw(current, nextRaw),
                   );
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
-                    commit();
+
+                    if (activeConfirmation === null) {
+                      commit();
+                    }
                   }
                 }}
               />
-            </label>
-            <p className={styles.labelHint}>
-              Named items show up in Recent Items next time.
-            </p>
-            {labelNotice ? (
-              <p className={styles.labelError} role="status">
-                {labelNotice}
+            </div>
+
+            <div
+              id={statusId}
+              className={styles.status}
+              aria-live={
+                submissionError || invalidCopy ? "polite" : undefined
+              }
+            >
+              {submissionError ? (
+                <span className={styles.error}>{submissionError}</span>
+              ) : state.kind === "valid" ? (
+                <span className={styles.validPreview}>
+                  {formatEur(state.value, locale)}
+                  {priceFromTag ? (
+                    <span className={styles.tagSource}>
+                      {" "}
+                      Read from the price tag. Check it matches the shelf.
+                    </span>
+                  ) : null}
+                </span>
+              ) : invalidCopy ? (
+                <span className={styles.error}>{invalidCopy}</span>
+              ) : state.kind === "incomplete" ? (
+                <span>Finish the amount.</span>
+              ) : draft.mode === "auto-cents" ? (
+                <span>Cents mode: type 249 for €2.49.</span>
+              ) : (
+                <span>Type the price, like 2.49. A name is optional.</span>
+              )}
+            </div>
+          </div>
+
+          {consequence && activeConfirmation === null ? (
+            <section
+              id={projectionId}
+              className={styles.projection}
+              data-status={consequence.status}
+              aria-label="Projected cart result"
+            >
+              <strong>{consequence.primary}</strong>
+              {consequence.secondary ? (
+                <span>{consequence.secondary}</span>
+              ) : null}
+            </section>
+          ) : null}
+
+          {activeConfirmation === null ? (
+            <details className={styles.labelDetails}>
+              <summary>Name for next time <span>Optional</span></summary>
+              <label className={styles.labelField}>
+                <span>Item name</span>
+                <input
+                  value={label}
+                  autoComplete="off"
+                  spellCheck={false}
+                  enterKeyHint="done"
+                  placeholder="e.g. Milk 1L"
+                  onChange={(event) => {
+                    const characters = [...event.currentTarget.value];
+                    const tooLong = characters.length > MAX_ITEM_LABEL_CODE_POINTS;
+
+                    setLabel(characters.slice(0, MAX_ITEM_LABEL_CODE_POINTS).join(""));
+                    setLabelNotice(
+                      tooLong
+                        ? `Names stop at ${MAX_ITEM_LABEL_CODE_POINTS} characters; the rest was left out.`
+                        : "",
+                    );
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commit();
+                    }
+                  }}
+                />
+              </label>
+              <p className={styles.labelHint}>
+                Named items show up in Recent Items next time.
               </p>
-            ) : null}
-          </details>
-        ) : null}
+              {labelNotice ? (
+                <p className={styles.labelError} role="status">
+                  {labelNotice}
+                </p>
+              ) : null}
+            </details>
+          ) : null}
 
-        <section
-          className={styles.quantitySection}
-          aria-labelledby="quantity-title"
-        >
-          <div className={styles.quantityCopy}>
-            <span id="quantity-title">Quantity</span>
-          </div>
-
-          <div className={styles.quantityStepper}>
-            <button
-              type="button"
-              className={styles.quantityButton}
-              aria-label="Decrease quantity"
-              disabled={
-                activeConfirmation !== null ||
-                !canDecreaseQuantity(quantity)
-              }
-              onClick={() => {
-                setQuantity((current) => decreaseQuantity(current));
-              }}
-            >
-              −
-            </button>
-            <output
-              className={styles.quantityValue}
-              aria-label="Current quantity"
-              aria-live="polite"
-            >
-              {quantity}
-            </output>
-            <button
-              type="button"
-              className={styles.quantityButton}
-              aria-label="Increase quantity"
-              disabled={
-                activeConfirmation !== null ||
-                !canIncreaseQuantity(quantity)
-              }
-              onClick={() => {
-                setQuantity((current) => increaseQuantity(current));
-              }}
-            >
-              +
-            </button>
-          </div>
-        </section>
-
-        {projection !== null && validPrice !== null && quantity > 1 ? (
-          <p className={styles.lineTotal}>
-            {formatEur(validPrice, locale)} × {quantity} ={" "}
-            {formatAbsoluteSigned(projection.lineTotalMinor, locale)}
-          </p>
-        ) : null}
-
-        {consequence && activeConfirmation === null ? (
           <section
-            id={projectionId}
-            className={styles.projection}
-            data-status={consequence.status}
-            aria-label="Projected cart result"
+            className={styles.quantitySection}
+            aria-labelledby="quantity-title"
           >
-            <strong>{consequence.primary}</strong>
-            {consequence.secondary ? (
-              <span>{consequence.secondary}</span>
-            ) : null}
+            <div className={styles.quantityCopy}>
+              <span id="quantity-title">Quantity</span>
+            </div>
+
+            <div className={styles.quantityStepper}>
+              <button
+                type="button"
+                className={styles.quantityButton}
+                aria-label="Decrease quantity"
+                disabled={
+                  activeConfirmation !== null ||
+                  !canDecreaseQuantity(quantity)
+                }
+                onClick={() => {
+                  setQuantity((current) => decreaseQuantity(current));
+                }}
+              >
+                −
+              </button>
+              <output
+                className={styles.quantityValue}
+                aria-label="Current quantity"
+                aria-live="polite"
+              >
+                {quantity}
+              </output>
+              <button
+                type="button"
+                className={styles.quantityButton}
+                aria-label="Increase quantity"
+                disabled={
+                  activeConfirmation !== null ||
+                  !canIncreaseQuantity(quantity)
+                }
+                onClick={() => {
+                  setQuantity((current) => increaseQuantity(current));
+                }}
+              >
+                +
+              </button>
+            </div>
           </section>
-        ) : null}
+
+          {projection !== null && validPrice !== null && quantity > 1 ? (
+            <p className={styles.lineTotal}>
+              {formatEur(validPrice, locale)} × {quantity} ={" "}
+              {formatAbsoluteSigned(projection.lineTotalMinor, locale)}
+            </p>
+          ) : null}
+        </div>
 
         {activeConfirmation === null ? (
           <>
           <PriceKeypad mode={draft.mode} onPress={pressKey} />
+          <p className={styles.keypadEcho} aria-live="polite">
+            {keypadPresses === 0
+              ? ""
+              : draft.raw === ""
+                ? "Price cleared"
+                : `Price ${draft.raw}`}
+          </p>
 
           <div className={styles.footer}>
             <button

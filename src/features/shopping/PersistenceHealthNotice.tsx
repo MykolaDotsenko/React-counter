@@ -28,7 +28,22 @@ const retryIsMeaningful = (issue: PersistenceProblem): boolean =>
   ].includes(issue.code);
 
 const tripsToRemove = (removable: number): number =>
-  Math.min(removable, Math.max(10, Math.ceil(removable / 4)));
+  Math.min(removable, Math.max(1, Math.ceil(removable / 10)));
+
+const removalCopy = (
+  removing: number,
+  removable: number,
+): { readonly action: string; readonly detail: string } => {
+  if (removing === removable) {
+    return removing === 1
+      ? { action: "Remove the only trip", detail: "Your only trip in history" }
+      : { action: `Remove all ${removing} trips`, detail: `All ${removing} trips in history` };
+  }
+
+  return removing === 1
+    ? { action: "Remove the oldest trip", detail: "Your oldest trip" }
+    : { action: `Remove ${removing} oldest trips`, detail: `Your ${removing} oldest trips` };
+};
 
 const noticeCopy = (
   issue: PersistenceProblem,
@@ -44,7 +59,9 @@ const noticeCopy = (
       body:
         context === "active"
           ? "This trip can’t be saved until there is room. Your totals still work in this tab."
-          : "Changes can’t be saved until there is room.",
+          : context === "completed"
+            ? "The latest change to this trip can’t be saved until there is room. Done keeps the trip as it was last saved."
+            : "Changes can’t be saved until there is room.",
       risk: "trip",
     };
   }
@@ -66,7 +83,7 @@ const noticeCopy = (
       return {
         title: "Trip history is not fully saved",
         body:
-          "This completed trip is still visible here, but the latest history change could not be stored safely. Retry before leaving this summary.",
+          "The latest change to this trip could not be stored safely. Retry, or choose Done to keep the trip as it was last saved.",
         risk: "trip",
       };
     }
@@ -198,6 +215,7 @@ export function PersistenceHealthNotice({
       : 0;
   const removing = tripsToRemove(removable);
   const canMakeRoom = removing > 0;
+  const removal = removalCopy(removing, removable);
   const canRetry = !canMakeRoom && retryIsMeaningful(health.issue);
 
   const makeRoom = (): void => {
@@ -263,13 +281,13 @@ export function PersistenceHealthNotice({
               : " Free up storage this browser keeps for this site, then retry."}
           <span aria-live="polite">
             {confirmingRoom && canMakeRoom
-              ? ` Your ${removing} oldest ${removing === 1 ? "trip" : "trips"} will be removed from this device; remembered prices stay.`
+              ? ` ${removal.detail} will be removed from this device; remembered prices stay.`
               : ""}
           </span>
         </p>
         {confirmingRoom && canMakeRoom ? (
           <button type="button" className={styles.retryButton} onClick={makeRoom}>
-            {`Remove ${removing} oldest ${removing === 1 ? "trip" : "trips"}`}
+            {removal.action}
           </button>
         ) : null}
         {retryMessage ? (

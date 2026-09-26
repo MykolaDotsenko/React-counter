@@ -12,6 +12,15 @@
     <link rel="canonical" href="https://mykoladotsenko.github.io/shopping-budget-companion/privacy/" />
     <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
     <title>Privacy — Shopping Budget Companion</title>
+    <script>
+      try {
+        const mode = localStorage.getItem("shopping-budget:appearance");
+
+        if (mode === "light" || mode === "dark" || mode === "aurora") {
+          document.documentElement.dataset.theme = mode === "light" ? "light" : "dark";
+        }
+      } catch {}
+    </script>
     <style>
       :root {
         --page: #f4f1eb;
@@ -26,7 +35,7 @@
       }
 
       @media (prefers-color-scheme: dark) {
-        :root {
+        :root:not([data-theme="light"]) {
           --page: #0f1210;
           --panel: #181d19;
           --text: #f3f5f1;
@@ -36,6 +45,17 @@
           --focus: #a6c6ff;
           color-scheme: dark;
         }
+      }
+
+      :root[data-theme="dark"] {
+        --page: #0f1210;
+        --panel: #181d19;
+        --text: #f3f5f1;
+        --muted: #c5cdc6;
+        --border: #333c35;
+        --accent: #8fd4b7;
+        --focus: #a6c6ff;
+        color-scheme: dark;
       }
 
       * {
@@ -67,8 +87,10 @@
       }
 
       .back {
-        display: inline-block;
-        margin-bottom: 24px;
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        margin-bottom: 16px;
       }
 
       h1 {

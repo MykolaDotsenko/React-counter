@@ -280,6 +280,36 @@ export const createShoppingAppController = ({
       return success(publish(loaded), true, "persisted");
     }
 
+    const open = previous.activeTrip;
+
+    if (
+      open !== null &&
+      open.items.length > 0 &&
+      loaded.activeTrip === null &&
+      !loaded.completedTrips.some(
+        (trip) => trip.id === open.id || sameTripContents(trip, open),
+      )
+    ) {
+      const now = clock.now();
+      const saveResult = ports.persistence.save(open, now);
+      const nextState = publish({
+        ...loaded,
+        lifecycle: "active",
+        activeTrip: open,
+        completedSummary: null,
+        persistence: saveResult.ok
+          ? HEALTHY_PERSISTENCE
+          : degradedPersistence(saveResult.issue, now),
+        undo: previous.undo,
+      });
+
+      return success(
+        nextState,
+        true,
+        saveResult.ok ? "persisted" : "memory-only",
+      );
+    }
+
     const summary =
       loaded.activeTrip === null && previous.completedSummary !== null
         ? (loaded.completedTrips.find(

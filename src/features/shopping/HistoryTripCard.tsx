@@ -14,7 +14,11 @@ import {
   type CompletedTrip,
 } from "../../domain/shopping-trip";
 import styles from "./HistoryScreen.module.css";
-import { budgetOutcome, formatAbsoluteEur } from "./shopping-feedback";
+import {
+  budgetOutcome,
+  formatAbsoluteEur,
+  moneyInputErrorMessage,
+} from "./shopping-feedback";
 
 export interface HistoryTripCardProps {
   readonly trip: CompletedTrip;
@@ -121,7 +125,7 @@ export function HistoryTripCard({
     }
 
     if (!parsed.ok) {
-      setCheckoutError("Enter a valid euro total with no more than two decimals.");
+      setCheckoutError(moneyInputErrorMessage(parsed.error.code));
       return;
     }
 
@@ -289,6 +293,23 @@ export function HistoryTripCard({
           Shop again
         </button>
 
+        <button
+          type="button"
+          className={styles.deleteTripButton}
+          data-delete-trip-id={trip.id}
+          aria-expanded={deleting}
+          disabled={!canChangeHistory}
+          onClick={() => {
+            if (deleting) {
+              onCancelDelete();
+            } else {
+              onRequestDelete(trip);
+            }
+          }}
+        >
+          Delete trip
+        </button>
+
         {deleting ? (
           <section
             className={styles.confirmation}
@@ -323,23 +344,11 @@ export function HistoryTripCard({
                   onConfirmDelete(trip);
                 }}
               >
-                Delete trip
+                Yes, delete
               </button>
             </div>
           </section>
-        ) : (
-          <button
-            type="button"
-            className={styles.deleteTripButton}
-            data-delete-trip-id={trip.id}
-            disabled={!canChangeHistory}
-            onClick={() => {
-              onRequestDelete(trip);
-            }}
-          >
-            Delete trip
-          </button>
-        )}
+        ) : null}
       </div>
     </li>
   );

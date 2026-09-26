@@ -373,12 +373,21 @@ export function StartTripScreen({
                   autoComplete="off"
                   value={customBudget}
                   placeholder="50.00"
+                  aria-invalid={errorMessage !== ""}
                   aria-describedby={errorMessage ? errorId : undefined}
                   onChange={(event) => {
                     setCustomBudget(event.currentTarget.value);
                     setErrorMessage("");
                   }}
                 />
+              </div>
+              <div
+                id={errorId}
+                className={styles.fieldError}
+                role={errorMessage ? "alert" : undefined}
+                aria-live="polite"
+              >
+                {errorMessage}
               </div>
               <button
                 type="submit"
@@ -435,15 +444,16 @@ export function StartTripScreen({
           </details>
         </div>
 
-
-        <div
-          id={errorId}
-          className={styles.error}
-          role={errorMessage ? "alert" : undefined}
-          aria-live="polite"
-        >
-          {errorMessage}
-        </div>
+        {customOpen ? null : (
+          <div
+            id={errorId}
+            className={styles.error}
+            role={errorMessage ? "alert" : undefined}
+            aria-live="polite"
+          >
+            {errorMessage}
+          </div>
+        )}
 
         {(completedTripCount > 0 ||
           rememberedPriceCount > 0 ||

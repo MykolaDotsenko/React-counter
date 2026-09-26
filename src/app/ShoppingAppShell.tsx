@@ -1,4 +1,12 @@
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
 import type {
   BarcodeReaderPort,
@@ -71,7 +79,7 @@ export interface ShoppingAppShellProps {
 
 interface ShoppingAppScreensProps extends ShoppingAppShellProps {
   readonly lastAddedMessage: string;
-  readonly setLastAddedMessage: (message: string) => void;
+  readonly setLastAddedMessage: Dispatch<SetStateAction<string>>;
 }
 
 const ScanSurface = lazy(() => import("../features/shopping/ScanSurface"));
@@ -247,6 +255,32 @@ function ShoppingAppScreens({
     window.scrollTo(0, 0);
     focusNextScreen(SCREEN_HEADINGS[screenName]);
   }, [screenName]);
+  const saveProblem = needsSaveAttention(state.persistence)
+    ? state.persistence
+    : null;
+  const announcedSaveProblem = useRef(
+    saveProblem?.status === "degraded" ? saveProblem.since : null,
+  );
+  useEffect(() => {
+    const since = saveProblem?.status === "degraded" ? saveProblem.since : null;
+
+    if (since === announcedSaveProblem.current) {
+      return;
+    }
+
+    announcedSaveProblem.current = since;
+
+    if (saveProblem?.status !== "degraded") {
+      return;
+    }
+
+    const warning =
+      saveProblem.issue.code === "storage-full"
+        ? "Changes aren’t being saved: storage for this app is full."
+        : "Changes aren’t being saved right now.";
+
+    setLastAddedMessage((current) => (current === "" ? warning : `${current} ${warning}`));
+  }, [saveProblem, setLastAddedMessage]);
   const hasHistory = state.completedTrips.length > 0;
   useEffect(() => {
     if (!hasHistory) {

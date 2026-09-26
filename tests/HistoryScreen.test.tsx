@@ -184,8 +184,9 @@ describe("HistoryScreen", () => {
     const confirmation = screen.getByRole("region", {
       name: "Confirm trip deletion",
     });
+    expect(deleteButtons[1]!.getAttribute("aria-expanded")).toBe("true");
     await user.click(
-      within(confirmation).getByRole("button", { name: "Delete trip" }),
+      within(confirmation).getByRole("button", { name: "Yes, delete" }),
     );
 
     expect(controller.getSnapshot().completedTrips).toEqual([newer]);
@@ -292,7 +293,7 @@ describe("HistoryScreen", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(screen.getByRole("alert").textContent).toBe(
-      "Enter a valid euro total with no more than two decimals.",
+      "Use no more than two decimal places.",
     );
     expect(input.getAttribute("aria-invalid")).toBe("true");
     expect(controller.getSnapshot().completedTrips[0]?.actualCheckoutMinor).toBeUndefined();

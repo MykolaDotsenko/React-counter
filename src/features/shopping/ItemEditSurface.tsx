@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   formatEur,
@@ -94,6 +94,8 @@ const sourceLabel = (item: CartItem): string => {
   }
 };
 
+const GHOST_TAP_MS = 500;
+
 export function ItemEditSurface({
   trip,
   item,
@@ -103,6 +105,12 @@ export function ItemEditSurface({
   locale = SHOPPING_LOCALE,
 }: ItemEditSurfaceProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const openedAt = useRef(Number.POSITIVE_INFINITY);
+
+  useEffect(() => {
+    openedAt.current = performance.now();
+  }, []);
+
   const [draft, setDraft] = useState<PriceEntryDraft>(() => ({
     raw: rawPrice(item.unitPriceMinor),
     mode: "decimal",
@@ -371,7 +379,11 @@ export function ItemEditSurface({
         <button
           type="button"
           className={styles.removeButton}
-          onClick={onRemove}
+          onClick={(event) => {
+            if (event.timeStamp - openedAt.current >= GHOST_TAP_MS) {
+              onRemove();
+            }
+          }}
         >
           Remove item
         </button>

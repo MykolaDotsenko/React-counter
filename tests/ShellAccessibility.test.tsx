@@ -72,6 +72,23 @@ describe("shopping shell accessibility", () => {
     expect(screen.queryByRole("heading", { name: "Install the app" })).toBeNull();
   });
 
+  it("says what Undo will undo once the added message is gone", async () => {
+    const user = userEvent.setup();
+
+    render(<ShoppingAppShell controller={boot()} />);
+
+    await user.click(screen.getByRole("button", { name: "€50" }));
+    await user.click(screen.getByRole("button", { name: "Add price" }));
+    await user.type(screen.getByRole("textbox", { name: "Price" }), "4.79");
+    await user.click(screen.getByRole("button", { name: "Add · €4.79" }));
+    expect(screen.getByRole("button", { name: "Undo" })).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Finish trip" }));
+    await user.click(await screen.findByRole("button", { name: "Keep shopping" }));
+
+    expect(await screen.findByRole("button", { name: "Undo last add" })).not.toBeNull();
+  });
+
   it("opens price entry in the mode the shopper chose last time", async () => {
     const user = userEvent.setup();
 

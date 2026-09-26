@@ -130,7 +130,7 @@ Every rewrite of completed history (append on completion, checkout update, delet
 
 ## Full storage
 
-A write refused by the browser's storage quota is reported as `storage-full`, apart from other write failures, and nothing is deleted to make room without the shopper's confirmation. Browser storage is shared by every site on the origin, and a trip takes roughly 10 KB of history, so a long history can fill it. The notice then offers to remove the oldest trips from history (a quarter of them, at least ten, never the trip on an open summary; remembered prices stay) and retries the save that failed. This works during a trip too, because removing old trips cannot touch the open trip. A finish refused for lack of room keeps the trip open and says how to make room.
+A write refused by the browser's storage quota is reported as `storage-full`, apart from other write failures, and nothing is deleted to make room without the shopper's confirmation. Browser storage is shared by every site on the origin, and a trip takes roughly 10 KB of history, so a long history can fill it. The notice then offers to remove the oldest trips from history (a tenth of them, at least one, never the trip on an open summary; remembered prices stay), retries the save that failed, and can be used again if that was not enough. On an open summary whose trip is already in history, Done keeps the trip as it was last saved when a later receipt total could not be saved; a receipt total for a trip deleted in another tab is refused with that reason instead of blocking Done. This works during a trip too, because removing old trips cannot touch the open trip. A finish refused for lack of room keeps the trip open and says how to make room.
 
 ## Completion transaction
 
