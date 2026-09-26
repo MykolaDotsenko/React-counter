@@ -124,6 +124,14 @@ type OverlayState =
 
 const NO_OVERLAY: OverlayState = { kind: "none" };
 
+const SCREEN_HEADINGS: Readonly<Record<string, string>> = {
+  idle: "start-trip-title",
+  active: "active-trip-title",
+  "completed-summary": "completed-title",
+  history: "history-title",
+  recovery: "recovery-title",
+};
+
 function LiveStatus({ message }: { readonly message: string }) {
   const [spoken, setSpoken] = useState("");
 
@@ -227,7 +235,7 @@ function ShoppingAppScreens({
 
     shownScreen.current = screenName;
     window.scrollTo(0, 0);
-    focusNextScreen();
+    focusNextScreen(SCREEN_HEADINGS[screenName]);
   }, [screenName]);
   const hasHistory = state.completedTrips.length > 0;
   useEffect(() => {

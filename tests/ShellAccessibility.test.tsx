@@ -68,7 +68,7 @@ describe("shopping shell accessibility", () => {
     expect(scrollTo).toHaveBeenCalledWith(0, 0);
 
     await user.click(screen.getByRole("button", { name: "Finish trip" }));
-    const finish = screen.getByRole("main", { name: "Ready to finish this trip?" });
+    const finish = await screen.findByRole("main", { name: "Ready to finish this trip?" });
     await user.click(within(finish).getByRole("button", { name: "Finish trip" }));
     await waitFor(() => {
       expect(document.activeElement).toBe(

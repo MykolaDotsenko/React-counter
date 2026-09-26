@@ -644,7 +644,7 @@ describe("trip overlays belong to their trip", () => {
     render(<ShoppingAppShell controller={controller} />);
 
     await user.click(screen.getByRole("button", { name: /Finish trip/ }));
-    const finish = screen.getByRole("main", { name: "Ready to finish this trip?" });
+    const finish = await screen.findByRole("main", { name: "Ready to finish this trip?" });
 
     control.failHistoryRead = false;
     await user.click(within(finish).getByRole("button", { name: "Retry" }));
@@ -719,7 +719,7 @@ describe("finishing a trip edited after its completion was recorded", () => {
     render(<ShoppingAppShell controller={controller} />);
 
     await user.click(screen.getByRole("button", { name: /Finish trip/ }));
-    const finish = screen.getByRole("main", { name: "Ready to finish this trip?" });
+    const finish = await screen.findByRole("main", { name: "Ready to finish this trip?" });
     const confirm = within(finish).getByRole("button", { name: "Finish trip" });
     await user.click(confirm);
 
@@ -728,7 +728,7 @@ describe("finishing a trip edited after its completion was recorded", () => {
       activeTrip: { id: "trip-1", budgetMinor: 3_500 },
     });
     expect(
-      screen.getByRole("main", { name: "Ready to finish this trip?" }),
+      await screen.findByRole("main", { name: "Ready to finish this trip?" }),
     ).toBe(finish);
     expect(within(finish).getByRole("alert")).not.toBeNull();
     expect(document.activeElement).not.toBe(document.body);
@@ -815,7 +815,7 @@ describe("shell flow with damaged history", () => {
     render(<ShoppingAppShell controller={controller} />);
 
     await user.click(screen.getByRole("button", { name: /Finish trip/ }));
-    const finish = screen.getByRole("main", { name: "Ready to finish this trip?" });
+    const finish = await screen.findByRole("main", { name: "Ready to finish this trip?" });
     await user.click(within(finish).getByRole("button", { name: "Finish trip" }));
 
     expect(within(finish).getByRole("alert").textContent).toMatch(

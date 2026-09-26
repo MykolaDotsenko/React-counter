@@ -402,12 +402,12 @@ CI currently enforces:
 - exactly one barcode engine WASM file: <= 1,200,000 bytes, whose SHA-256 must equal the bundled `zxing-wasm` reader build;
 - exactly one price reader chunk: <= 40,000 raw / 14,000 gzip bytes, outside the initial bundle;
 - every self-hosted price reader file present, within its own budget, byte-identical to its pinned package file, <= 10,500,000 bytes together, and absent from the service worker precache;
-- total public CSS: <= 80,000 raw / 15,000 gzip bytes;
-- initial CSS referenced by the public HTML: <= 61,000 raw / 10,300 gzip bytes.
+- total public CSS: <= 80,000 raw / 15,300 gzip bytes;
+- initial CSS referenced by the public HTML: <= 61,000 raw / 10,600 gzip bytes.
 
 The engine budgets apply only to a feature the build ships. With `VITE_SHOPPING_BARCODE_SCANNER=0` the validator skips the barcode engine chunk and WASM checks and reports "barcode scanning switched off"; with `VITE_SHOPPING_PRICE_OCR=0` it skips the price reader chunk and file checks, reports "price tag reading switched off" and fails if the build still ships the price reader files. CI builds and validates one build with both switches at `0`.
 
-The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a camera capability can be code-split without silently joining the startup path. Its guarded-evidence marker scan reads every public JavaScript chunk except the two lazy engine chunks. The total budgets were raised explicitly for the lazy scan surface (D-053, D-055), and the initial CSS gzip budget by 100 bytes for the price entry "Read price tag" control (D-055). The 2026-09-26 release audit moved trip history and the recovery screen out of the startup bundle (history is fetched in the background once a trip has been finished), tightened the initial budgets to what remains, and raised the total gzip budgets because those screens now compress as separate files.
+The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a camera capability can be code-split without silently joining the startup path. Its guarded-evidence marker scan reads every public JavaScript chunk except the two lazy engine chunks. The total budgets were raised explicitly for the lazy scan surface (D-053, D-055), and the initial CSS gzip budget by 100 bytes for the price entry "Read price tag" control (D-055). The 2026-09-26 release audit moved trip history and the recovery screen out of the startup bundle (history is fetched in the background once a trip has been finished), tightened the initial budgets to what remains, and raised the total gzip budgets because those screens now compress as separate files. Field borders of at least 3:1, state colours, the pinned remaining amount and the privacy footer then raised both CSS gzip budgets by 300 bytes.
 
 Protect:
 

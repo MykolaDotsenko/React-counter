@@ -117,7 +117,9 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
 
         <div className={styles.intro}>
           <p className={styles.eyebrow}>Recovery mode</p>
-          <h1 id="recovery-title">{copy.title}</h1>
+          <h1 id="recovery-title" tabIndex={-1}>
+            {copy.title}
+          </h1>
           <p>{copy.body}</p>
         </div>
 
