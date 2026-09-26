@@ -377,7 +377,7 @@ Tests must prove:
 - the camera adapter picks the native detector only when it reads every retail format, falls back to the lazy engine otherwise, maps camera errors, retries without constraints, releases the camera on every failure and exposes the torch only when present (`tests/barcode-scanner-adapter.test.ts`);
 - the Open Food Facts adapter requests only the shown fields, omits credentials and referrer, treats not-found as normal, reports failures without guessing, times out, respects cancellation and never runs while offline or before a tap (`tests/open-food-facts.test.ts`);
 - the scan surface handles every result and failure state, focus, Escape, the light toggle and background pause (`tests/BarcodeScanSurface.test.tsx`), and the shell flow names a product once and recognises it on the next scan (`tests/BarcodeScanFlow.test.tsx`);
-- in Chromium, a fake camera streaming a generated EAN-13 decodes through the self-hosted WASM engine with no request leaving the origin, and the result screen passes axe (`e2e/barcode-scanner.spec.js`). The fake-camera test runs in Chromium only; Firefox and WebKit cover the rest of the product flow.
+- in Chromium, a fake camera streaming a generated EAN-13 decodes through the self-hosted WASM engine with no request leaving the origin, and the result screen passes axe (`e2e/barcode-scanner.spec.js`). The fake-camera test runs in Chromium only; Firefox and WebKit cover the rest of the product flow. When a build switches the scanner off, the same spec instead checks in every browser that the trip offers only manual price entry.
 
 ### Paired barcode/manual analyzer
 

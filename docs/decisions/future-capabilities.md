@@ -206,7 +206,7 @@ The owner promotes production barcode identification into the public app before 
 It ships as an optional accelerator:
 
 - a "Scan barcode" action appears only where a secure context and camera access exist;
-- `VITE_SHOPPING_BARCODE_SCANNER=0` removes scanning from a build, and `VITE_SHOPPING_PRODUCT_LOOKUP=0` removes only the online lookup;
+- `VITE_SHOPPING_BARCODE_SCANNER=0` removes scanning from a build, and `VITE_SHOPPING_PRODUCT_LOOKUP=0` removes only the online lookup; CI reads both from repository variables, so switching off needs no code change;
 - manual price entry stays complete and one tap away in every state.
 
 ### Rationale
