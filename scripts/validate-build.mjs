@@ -16,6 +16,12 @@ const requiredPwaFiles = [
   "sw.js",
   "pwa-icon-192.png",
   "pwa-icon-512.png",
+  "pwa-maskable-512.png",
+  "apple-touch-icon.png",
+  "favicon-32.png",
+  "og-image.jpg",
+  "404.html",
+  "privacy/index.html",
 ];
 
 for (const file of requiredPwaFiles) {
@@ -48,10 +54,25 @@ for (const requiredSize of ["192x192", "512x512"]) {
   }
 }
 
+if (!(manifest.icons ?? []).some((icon) => icon.purpose === "maskable")) {
+  throw new Error("Public PWA manifest is missing a maskable icon.");
+}
+
 const indexHtml = await readFile(path.join(dist, "index.html"), "utf8");
 
 if (!indexHtml.includes('rel="manifest"')) {
   throw new Error("Public build does not link its web app manifest.");
+}
+
+for (const marker of [
+  'rel="apple-touch-icon"',
+  'property="og:image" content="https://',
+  'name="twitter:card"',
+  'rel="canonical"',
+]) {
+  if (!indexHtml.includes(marker)) {
+    throw new Error(`Public build is missing its share metadata: ${marker}`);
+  }
 }
 
 const MAX_PUBLIC_JS_BYTES = 430_000;

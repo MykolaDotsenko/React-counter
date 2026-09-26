@@ -45,6 +45,7 @@ import type {
 import { StartTripScreen } from "../features/shopping/StartTripScreen";
 import { useShoppingEvidence } from "#shopping-evidence";
 import { addedFeedback, remainingFeedback } from "../features/shopping/shopping-feedback";
+import { AppFooter } from "./AppFooter";
 import { AppearanceSwitcher } from "./AppearanceSwitcher";
 import { SHOPPING_LOCALE } from "../features/shopping/shopping-locale";
 import { focusNextScreen } from "../features/shopping/focus-next-screen";
@@ -323,6 +324,7 @@ function ShoppingAppScreens({
             setOverlay({ kind: "history" });
           }}
           utilityControl={<AppearanceSwitcher />}
+          footer={<AppFooter />}
         />
         {qaPanel}
       </>

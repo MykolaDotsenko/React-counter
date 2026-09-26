@@ -42,8 +42,16 @@ test("exposes an installable shell and precaches the application entry", async (
     expect.arrayContaining([
       expect.objectContaining({ sizes: "192x192" }),
       expect.objectContaining({ sizes: "512x512" }),
+      expect.objectContaining({ sizes: "512x512", purpose: "maskable" }),
     ]),
   );
+  expect(manifest.theme_color).toBe(
+    await page.locator('meta[name="theme-color"]').getAttribute("content"),
+  );
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
+  expect(
+    await page.locator('meta[property="og:image"]').getAttribute("content"),
+  ).toMatch(/^https:\/\/.+\/og-image\.jpg$/);
 
   await waitForInstalledShell(page);
 
@@ -176,4 +184,28 @@ test("restores active and completed shopping state with the browser offline", as
   } finally {
     await context.setOffline(false);
   }
+});
+
+test("links a readable privacy page from the start screen", async ({ page }) => {
+  await page.goto(appPath);
+
+  const privacy = page.getByRole("link", { name: "Privacy" });
+  await expect(privacy).toHaveAttribute("href", `${appPath}privacy/`);
+  await expect(page.getByRole("link", { name: "Feedback" })).toHaveAttribute(
+    "href",
+    /github\.com\/MykolaDotsenko\/shopping-budget-companion\/issues\/new/,
+  );
+
+  await privacy.click();
+
+  await expect(page.getByRole("heading", { level: 1, name: "Privacy" })).toBeVisible();
+  await expect(
+    page.getByText("never sent to us or to anyone else", { exact: false }),
+  ).toBeVisible();
+
+  await page.getByRole("link", { name: "← Back to the app" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "How much can you spend today?" }),
+  ).toBeVisible();
 });

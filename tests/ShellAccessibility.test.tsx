@@ -41,6 +41,18 @@ afterEach(() => {
 });
 
 describe("shopping shell accessibility", () => {
+  it("shows privacy, feedback and the app version at the foot of the start screen", () => {
+    render(<ShoppingAppShell controller={boot()} />);
+
+    expect(screen.getByRole("link", { name: "Privacy" }).getAttribute("href")).toBe(
+      "/privacy/",
+    );
+    expect(
+      screen.getByRole("link", { name: "Feedback" }).getAttribute("href"),
+    ).toContain("/issues/new?template=feedback.yml");
+    expect(screen.getByText("vtest")).not.toBeNull();
+  });
+
   it("moves focus to each new screen's heading and back to the top of the page", async () => {
     const user = userEvent.setup();
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});

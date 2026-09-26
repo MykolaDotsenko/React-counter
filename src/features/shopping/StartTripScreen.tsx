@@ -129,6 +129,7 @@ export interface StartTripScreenProps {
   readonly onOpenHistory?: () => void;
   readonly locale?: string;
   readonly utilityControl?: ReactNode;
+  readonly footer?: ReactNode;
 }
 
 export function StartTripScreen({
@@ -142,6 +143,7 @@ export function StartTripScreen({
   onOpenHistory,
   locale = SHOPPING_LOCALE,
   utilityControl,
+  footer,
 }: StartTripScreenProps) {
   const customRegionId = useId();
   const reserveInputId = useId();
@@ -459,6 +461,7 @@ export function StartTripScreen({
         </p>
 
         {utilityControl ?? null}
+        {footer ?? null}
       </section>
     </main>
   );
