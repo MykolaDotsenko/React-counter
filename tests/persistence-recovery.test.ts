@@ -585,6 +585,32 @@ describe("the shopping app never locks the shopper out", () => {
     expect(storage.values).toEqual(snapshot);
   });
 
+  it("cancels an empty trip without touching a preserved record after continuing without saving", () => {
+    const future = JSON.stringify({
+      schemaVersion: 7,
+      savedAt: DONE_TIME,
+      data: {},
+    });
+    const storage = memoryStorage({ [ACTIVE_TRIP_STORAGE_KEY]: future });
+    const controller = boot(storage);
+    const snapshot = new Map(storage.values);
+
+    controller.continueWithoutSaving();
+    controller.startTrip({ budgetMinor: money(4_000) });
+    const result = controller.discardEmptyTrip();
+
+    expect(result).toMatchObject({
+      ok: true,
+      durability: "memory-only",
+      state: {
+        lifecycle: "idle",
+        activeTrip: null,
+        persistence: { status: "degraded", issue: { code: "session-only" } },
+      },
+    });
+    expect(storage.values).toEqual(snapshot);
+  });
+
   it("re-reads history after a transient read failure", () => {
     const readable = historyRaw([completedTrip("trip-ok")]);
     const failing = { current: true };

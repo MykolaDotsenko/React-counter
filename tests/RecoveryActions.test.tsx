@@ -10,6 +10,7 @@ import { mvpMinorUnits, type MinorUnits } from "../src/domain/money";
 import { createPriceMemoryRecord } from "../src/domain/price-memory";
 import {
   createActiveTrip,
+  createCartItem,
   isoTimestamp,
   reduceTrip,
   type ActiveTrip,
@@ -46,6 +47,26 @@ const must = <T,>(result: { ok: true; value: T } | { ok: false }): T => {
 
 const money = (value: number): MinorUnits => must(mvpMinorUnits(value));
 const time = (value: string): IsoTimestamp => must(isoTimestamp(value));
+
+const withItem = (trip: ActiveTrip): ActiveTrip => {
+  const item = must(
+    createCartItem({
+      id: `${trip.id}-item`,
+      unitPriceMinor: money(250),
+      quantity: 1,
+      priceSource: { kind: "manual" },
+      priceConfidence: { kind: "confirmed", confirmedAt: time(START) },
+      createdAt: START,
+    }),
+  );
+  const next = must(reduceTrip(trip, { type: "add-item", item }));
+
+  if (next.status !== "active") {
+    throw new Error("Expected active trip");
+  }
+
+  return next;
+};
 
 const completedTrip = (id: string): CompletedTrip => {
   const trip: ActiveTrip = must(
@@ -601,8 +622,8 @@ describe("PersistenceHealthNotice session-only copy", () => {
 describe("trip overlays belong to their trip", () => {
   it("never reopens a finish surface over the next trip once its trip is gone", async () => {
     const user = userEvent.setup();
-    const open = must(
-      createActiveTrip({ id: "trip-open", budgetMinor: money(3_000), startedAt: START }),
+    const open = withItem(
+      must(createActiveTrip({ id: "trip-open", budgetMinor: money(3_000), startedAt: START })),
     );
     const completed = must(
       reduceTrip(open, { type: "complete-trip", completedAt: time(START) }),
@@ -671,8 +692,8 @@ describe("trip overlays belong to their trip", () => {
 describe("finishing a trip edited after its completion was recorded", () => {
   it("keeps the finish surface and its failure in view when the new id cannot be recorded", async () => {
     const user = userEvent.setup();
-    const recorded = must(
-      createActiveTrip({ id: "trip-open", budgetMinor: money(3_000), startedAt: START }),
+    const recorded = withItem(
+      must(createActiveTrip({ id: "trip-open", budgetMinor: money(3_000), startedAt: START })),
     );
     const completed = must(
       reduceTrip(recorded, { type: "complete-trip", completedAt: time(START) }),

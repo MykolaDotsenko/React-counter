@@ -935,6 +935,122 @@ describe("ShoppingAppController repeat trip", () => {
   });
 });
 
+describe("ShoppingAppController cancelling an empty trip", () => {
+  it("returns to the start without a history entry and removes the saved trip", () => {
+    const persistence = createPersistence();
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(START, NEXT),
+      ids,
+    });
+
+    controller.bootstrap();
+    controller.startTrip({ budgetMinor: money(5_000) });
+
+    const result = controller.discardEmptyTrip();
+
+    expect(result).toMatchObject({
+      ok: true,
+      changed: true,
+      durability: "persisted",
+      state: {
+        lifecycle: "idle",
+        activeTrip: null,
+        completedSummary: null,
+        completedTrips: [],
+        persistence: { status: "healthy" },
+        undo: null,
+      },
+    });
+    expect(persistence.clearCompletedActiveCalls).toBe(1);
+    expect(persistence.completeCalls).toHaveLength(0);
+  });
+
+  it("refuses a trip that has items and leaves it untouched", () => {
+    const persistence = createPersistence();
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(START, NEXT),
+      ids,
+    });
+
+    controller.bootstrap();
+    controller.startTrip({ budgetMinor: money(5_000) });
+    controller.addManualItem({ unitPriceMinor: money(250), quantity: 1 });
+    const before = controller.getSnapshot();
+
+    const result = controller.discardEmptyTrip();
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { kind: "application", code: "trip-not-empty" },
+    });
+    expect(controller.getSnapshot()).toBe(before);
+    expect(persistence.clearCompletedActiveCalls).toBe(0);
+  });
+
+  it("keeps the trip open when its saved copy cannot be removed", () => {
+    const persistence = createPersistence();
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(START, NEXT),
+      ids,
+    });
+
+    controller.bootstrap();
+    controller.startTrip({ budgetMinor: money(5_000) });
+    persistence.queueClearResult({ ok: false, issue: writeFailure });
+    const before = controller.getSnapshot();
+
+    const result = controller.discardEmptyTrip();
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { kind: "application", code: "discard-not-saved" },
+    });
+    expect(controller.getSnapshot()).toBe(before);
+    expect(before.lifecycle).toBe("active");
+  });
+
+  it("clears the saving warning once the unsaved empty trip is gone", () => {
+    const persistence = createPersistence();
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(START, NEXT),
+      ids,
+    });
+
+    controller.bootstrap();
+    persistence.queueSaveResult({ ok: false, issue: writeFailure });
+    controller.startTrip({ budgetMinor: money(5_000) });
+    expect(controller.getSnapshot().persistence.status).toBe("degraded");
+
+    const result = controller.discardEmptyTrip();
+
+    expect(result.state).toMatchObject({
+      lifecycle: "idle",
+      persistence: { status: "healthy" },
+    });
+  });
+
+  it("needs an open trip", () => {
+    const persistence = createPersistence();
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(START),
+      ids,
+    });
+
+    controller.bootstrap();
+
+    expect(controller.discardEmptyTrip()).toMatchObject({
+      ok: false,
+      error: { kind: "application", code: "no-active-trip" },
+    });
+    expect(persistence.clearCompletedActiveCalls).toBe(0);
+  });
+});
+
 describe("ShoppingAppController addManualItem", () => {
   it("creates one canonical confirmed manual item and persists the exact committed trip", () => {
     const persistence = createPersistence({

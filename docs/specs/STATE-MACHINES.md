@@ -54,6 +54,8 @@ Transitions:
 - FINISH_TRIP(history already records different shopping under this id) → save the open trip under a new id, then finish it under that id; if that save or the history write fails → ACTIVE under the new id (when saved) + persistence DEGRADED;
 - FINISH_TRIP(history-write failure) → ACTIVE + persistence DEGRADED;
 - FINISH_TRIP(stored history unreadable) → ACTIVE + history integrity DAMAGED; nothing is written and the active trip stays durable;
+- CANCEL_EMPTY_TRIP(no items) → IDLE with no history entry; the saved active record is removed and persistence is HEALTHY (session-only writes nothing and stays DEGRADED(`session-only`)); if the record cannot be removed → ACTIVE, unchanged;
+- CANCEL_EMPTY_TRIP(trip has items) → refused, ACTIVE unchanged;
 - RETRY_HISTORY_READ (the open trip is the same shopping as a recorded trip) → IDLE; the stale copy is cleared, or completion cleanup stays pending with persistence DEGRADED if that fails;
 - active-state write failure → ACTIVE + persistence DEGRADED.
 

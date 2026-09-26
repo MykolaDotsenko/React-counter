@@ -102,6 +102,9 @@ test("has no detectable WCAG A/AA violations with the recent-budget shortcut", a
 
   await page.goto("/");
   await page.getByRole("button", { name: "€50", exact: true }).click();
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
   await page.getByRole("button", { name: "Finish trip" }).click();
   await page.getByRole("button", { name: "Finish trip" }).click();
   await page.getByRole("button", { name: "Done" }).click();
@@ -315,6 +318,9 @@ test("keeps history data confirmations accessible and restores trigger focus", a
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "€50", exact: true }).click();
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
   await page.getByRole("button", { name: "Finish trip" }).click();
   await page.getByRole("button", { name: "Finish trip" }).click();
   await page
@@ -341,6 +347,28 @@ test("keeps history data confirmations accessible and restores trigger focus", a
 
   await page.keyboard.press("Escape");
   await expect(clearHistory).toBeFocused();
+});
+
+test("has no detectable WCAG A/AA violations when cancelling an empty trip", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "axe scan runs once in Chromium");
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Nothing to finish yet" }),
+  ).toBeVisible();
+  const results = await scan(page);
+  expect(results.violations).toEqual([]);
+
+  await page.getByRole("button", { name: "Cancel trip" }).click();
+  await expect(
+    page.getByRole("heading", { name: "How much can you spend today?" }),
+  ).toBeFocused();
 });
 
 test("returns focus to Finish trip when finish review is cancelled with Escape", async ({

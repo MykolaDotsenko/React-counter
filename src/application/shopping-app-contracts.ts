@@ -231,7 +231,9 @@ export type ApplicationError =
         | "history-unreadable"
         | "nothing-to-set-aside"
         | "set-aside-failed"
-        | "recovery-not-open";
+        | "recovery-not-open"
+        | "trip-not-empty"
+        | "discard-not-saved";
     }
   | DomainError;
 
@@ -257,6 +259,7 @@ export interface ShoppingAppController {
   readonly refreshFromStorage: () => AppCommandResult;
   readonly startTrip: (input: StartTripInput) => AppCommandResult;
   readonly startTripFromCompleted: (tripId: TripId) => AppCommandResult;
+  readonly discardEmptyTrip: () => AppCommandResult;
   readonly addManualItem: (input: AddManualItemInput) => AppCommandResult;
   readonly addRememberedItem: (
     input: AddRememberedItemInput,

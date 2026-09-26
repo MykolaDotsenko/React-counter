@@ -322,7 +322,10 @@ function ShoppingAppScreens({
       <>
         <StartTripScreen
           controller={controller}
-          onTripStarted={evidence.recordTripStarted}
+          onTripStarted={(source) => {
+            setLastAddedMessage("");
+            evidence.recordTripStarted(source);
+          }}
           completedTripCount={state.completedTrips.length}
           rememberedPriceCount={state.priceMemories.length}
           priceMemoryNeedsAttention={
@@ -628,6 +631,17 @@ function ShoppingAppScreens({
               result.error.code === "history-unreadable"
               ? "history-unreadable"
               : "not-saved";
+          }}
+          onDiscard={() => {
+            const result = controller.discardEmptyTrip();
+
+            if (!result.ok) {
+              return false;
+            }
+
+            setOverlay(NO_OVERLAY);
+            setLastAddedMessage("Trip cancelled. Nothing was saved.");
+            return true;
           }}
           historyNotice={<HistoryIntegrityNotice controller={controller} />}
           historyNeedsAttention={state.historyIntegrity.status === "degraded"}

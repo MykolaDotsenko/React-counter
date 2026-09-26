@@ -415,6 +415,34 @@ export const createShoppingAppController = ({
     });
   };
 
+  const discardEmptyTrip = (): AppCommandResult => {
+    const active = requireActiveTrip(state);
+
+    if (!active.ok) {
+      return failure(state, active.error);
+    }
+
+    if (active.trip.items.length > 0) {
+      return failure(state, applicationError("trip-not-empty"));
+    }
+
+    const keepsStorage = sessionOnly();
+
+    if (!keepsStorage && !ports.persistence.clearCompletedActive().ok) {
+      return failure(state, applicationError("discard-not-saved"));
+    }
+
+    const nextState = publish({
+      ...state,
+      lifecycle: "idle",
+      activeTrip: null,
+      persistence: keepsStorage ? state.persistence : HEALTHY_PERSISTENCE,
+      undo: null,
+    });
+
+    return success(nextState, true, keepsStorage ? "memory-only" : "persisted");
+  };
+
   const addManualItem = (
     input: AddManualItemInput,
   ): AppCommandResult => {
@@ -1202,6 +1230,7 @@ export const createShoppingAppController = ({
     refreshFromStorage,
     startTrip: synced(startTrip),
     startTripFromCompleted: synced(startTripFromCompleted),
+    discardEmptyTrip: synced(discardEmptyTrip),
     addManualItem: synced(addManualItem),
     addRememberedItem: synced(addRememberedItem),
     updateSpendingPlan: synced(updateSpendingPlan),

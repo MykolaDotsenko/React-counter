@@ -15,6 +15,7 @@ export interface FinishTripSurfaceProps {
   readonly trip: ActiveTrip;
   readonly onCancel: () => void;
   readonly onConfirm: () => boolean | void | FinishTripFailure;
+  readonly onDiscard?: () => boolean;
   readonly locale?: string;
   readonly historyNotice?: ReactNode;
   readonly historyNeedsAttention?: boolean;
@@ -37,6 +38,7 @@ export function FinishTripSurface({
   trip,
   onCancel,
   onConfirm,
+  onDiscard,
   locale = SHOPPING_LOCALE,
   historyNotice,
   historyNeedsAttention = false,
@@ -44,6 +46,7 @@ export function FinishTripSurface({
   const cancelRef = useRef<HTMLButtonElement>(null);
   const [failure, setFailure] = useState<FinishTripFailure | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [discardFailed, setDiscardFailed] = useState(false);
   const visibleFailure =
     failure === "history-unreadable" && !historyNeedsAttention
       ? null
@@ -55,6 +58,8 @@ export function FinishTripSurface({
 
   const total = cartTotal(trip);
   const quantity = itemCount(trip);
+  const discard =
+    onDiscard !== undefined && trip.items.length === 0 ? onDiscard : null;
 
   const finish = (): void => {
     if (submitting) {
@@ -73,6 +78,17 @@ export function FinishTripSurface({
     setFailure(outcome === false ? "not-saved" : outcome);
   };
 
+  const keepShopping = (
+    <button
+      ref={cancelRef}
+      type="button"
+      className={styles.cancelButton}
+      onClick={onCancel}
+    >
+      Keep shopping
+    </button>
+  );
+
   return (
     <main
       className={styles.screen}
@@ -84,63 +100,88 @@ export function FinishTripSurface({
         }
       }}
     >
-      <section className={styles.panel}>
-        <header className={styles.header}>
-          <p className={styles.eyebrow}>Finish shopping</p>
-          <h1 id="finish-trip-title">Ready to finish this trip?</h1>
-          <p>
-            Your trip will be saved to History on this device. You can add
-            the receipt total next.
-          </p>
-        </header>
+      {discard !== null ? (
+        <section className={styles.panel}>
+          <header className={styles.header}>
+            <p className={styles.eyebrow}>Finish shopping</p>
+            <h1 id="finish-trip-title">Nothing to finish yet</h1>
+            <p>
+              This trip has no items, so there is nothing to save. Cancel it
+              to go back to the start.
+            </p>
+          </header>
 
-        <section className={styles.summary} aria-label="Trip review">
-          <div>
-            <span>Cart total</span>
-            <strong>{formatEur(total, locale)}</strong>
-          </div>
-          <div>
-            <span>Budget</span>
-            <strong>{formatEur(trip.budgetMinor, locale)}</strong>
-          </div>
-          <div>
-            <span>Items</span>
-            <strong>{quantity}</strong>
+          {discardFailed ? (
+            <p className={styles.error} role="alert">
+              The trip could not be cancelled. Try again.
+            </p>
+          ) : null}
+
+          <div className={styles.actions}>
+            {keepShopping}
+            <button
+              type="button"
+              className={styles.finishButton}
+              onClick={() => {
+                setDiscardFailed(!discard());
+              }}
+            >
+              Cancel trip
+            </button>
           </div>
         </section>
+      ) : (
+        <section className={styles.panel}>
+          <header className={styles.header}>
+            <p className={styles.eyebrow}>Finish shopping</p>
+            <h1 id="finish-trip-title">Ready to finish this trip?</h1>
+            <p>
+              Your trip will be saved to History on this device. You can add
+              the receipt total next.
+            </p>
+          </header>
 
-        <p className={styles.safety}>
-          Items can’t be changed after finishing. If saving fails, the trip
-          stays open.
-        </p>
+          <section className={styles.summary} aria-label="Trip review">
+            <div>
+              <span>Cart total</span>
+              <strong>{formatEur(total, locale)}</strong>
+            </div>
+            <div>
+              <span>Budget</span>
+              <strong>{formatEur(trip.budgetMinor, locale)}</strong>
+            </div>
+            <div>
+              <span>Items</span>
+              <strong>{quantity}</strong>
+            </div>
+          </section>
 
-        {visibleFailure !== null ? (
-          <p className={styles.error} role="alert">
-            {failureMessage(visibleFailure)}
+          <p className={styles.safety}>
+            Items can’t be changed after finishing. If saving fails, the trip
+            stays open.
           </p>
-        ) : null}
 
-        {historyNotice}
+          {visibleFailure !== null ? (
+            <p className={styles.error} role="alert">
+              {failureMessage(visibleFailure)}
+            </p>
+          ) : null}
 
-        <div className={styles.actions}>
-          <button
-            ref={cancelRef}
-            type="button"
-            className={styles.cancelButton}
-            onClick={onCancel}
-          >
-            Keep shopping
-          </button>
-          <button
-            type="button"
-            className={styles.finishButton}
-            disabled={submitting}
-            onClick={finish}
-          >
-            {submitting ? "Finishing…" : "Finish trip"}
-          </button>
-        </div>
-      </section>
+          {historyNotice}
+
+          <div className={styles.actions}>
+            {keepShopping}
+            <button
+              type="button"
+              className={styles.finishButton}
+              disabled={submitting}
+              onClick={finish}
+            >
+              {submitting ? "Finishing…" : "Finish trip"}
+            </button>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

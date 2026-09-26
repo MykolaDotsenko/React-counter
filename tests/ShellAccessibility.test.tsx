@@ -67,6 +67,9 @@ describe("shopping shell accessibility", () => {
     });
     expect(scrollTo).toHaveBeenCalledWith(0, 0);
 
+    await user.click(screen.getByRole("button", { name: "Add price" }));
+    await user.type(screen.getByRole("textbox", { name: "Price" }), "4.79");
+    await user.click(screen.getByRole("button", { name: "Add · €4.79" }));
     await user.click(screen.getByRole("button", { name: "Finish trip" }));
     const finish = await screen.findByRole("main", { name: "Ready to finish this trip?" });
     await user.click(within(finish).getByRole("button", { name: "Finish trip" }));
@@ -81,6 +84,40 @@ describe("shopping shell accessibility", () => {
     await waitFor(() => {
       expect(document.activeElement).toBe(history);
     });
+  });
+
+  it("cancels an empty trip back to the start without adding it to history", async () => {
+    const user = userEvent.setup();
+    const controller = boot();
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    await user.click(screen.getByRole("button", { name: "€50" }));
+    await user.click(screen.getByRole("button", { name: "Finish trip" }));
+    const finish = await screen.findByRole("main", { name: "Nothing to finish yet" });
+    await user.click(within(finish).getByRole("button", { name: "Cancel trip" }));
+
+    const start = await screen.findByRole("heading", {
+      name: "How much can you spend today?",
+    });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(start);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("status").textContent).toBe(
+        "Trip cancelled. Nothing was saved.",
+      );
+    });
+    expect(controller.getSnapshot()).toMatchObject({
+      lifecycle: "idle",
+      activeTrip: null,
+      completedTrips: [],
+    });
+
+    await user.click(screen.getByRole("button", { name: "€50" }));
+    await screen.findByRole("heading", { name: "Know what’s left" });
+
+    expect(screen.queryByText("Trip cancelled. Nothing was saved.")).toBeNull();
   });
 
   it("announces a change through one live region that outlives the screens", async () => {

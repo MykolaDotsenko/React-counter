@@ -1192,10 +1192,20 @@ test("repeats the last spending plan immediately and after a later reload", asyn
   expect(repeated.history.data.trips).toHaveLength(1);
 
   await page.getByRole("button", { name: "Finish trip" }).click();
-  await page.getByRole("button", { name: "Finish trip" }).click();
-  await page.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Cancel trip" }).click();
 
   await page.reload();
+
+  const cancelled = await page.evaluate(
+    ({ activeKey, historyKey }) => ({
+      active: localStorage.getItem(activeKey),
+      history: JSON.parse(localStorage.getItem(historyKey)),
+    }),
+    { activeKey: ACTIVE_TRIP_KEY, historyKey: HISTORY_KEY },
+  );
+
+  expect(cancelled.active).toBeNull();
+  expect(cancelled.history.data.trips).toHaveLength(1);
 
   const repeatShortcut = page.getByRole("button", { name: /Shop again/i });
   await expect(repeatShortcut).toContainText("€50.00 budget");
