@@ -36,7 +36,8 @@ Transitions:
 - START_TRIP(valid) → ACTIVE;
 - START_TRIP(invalid) → IDLE + validation error;
 - SHOP_AGAIN(valid completed source + safe persistence) → ACTIVE with a fresh empty trip;
-- OPEN_HISTORY → IDLE + history overlay state.
+- OPEN_HISTORY → IDLE + history overlay state;
+- SET_PAST_TRIP_CHECKOUT (from a history card) → IDLE with the receipt total saved on that trip in history; refused and nothing changes while history cannot be changed (unreadable, persistence DEGRADED, completion cleanup pending or `session-only`).
 
 ### ACTIVE
 
@@ -72,6 +73,7 @@ Transitions:
 - SHOP_AGAIN(valid completed source, including the open summary's own trip) → ACTIVE with a new trip id and empty cart;
 - OPEN_HISTORY (View trip history) → COMPLETED_SUMMARY + history overlay state; Back returns to the summary;
 - DELETE_TRIP(the summary's own trip) / CLEAR_HISTORY → IDLE, with the history overlay still open; deleting any other trip stays in COMPLETED_SUMMARY;
+- SET_PAST_TRIP_CHECKOUT → COMPLETED_SUMMARY; when it is the summary's own trip, the summary shows the new receipt total too;
 - SET_ASIDE_HISTORY / RETRY_HISTORY_READ → COMPLETED_SUMMARY; a set-aside saves the summary's trip into the new history;
 - DISMISS_SUMMARY → IDLE; refused (`completion-not-saved`) while persistence is DEGRADED other than `session-only`, or completion cleanup is pending, until a save retry succeeds.
 

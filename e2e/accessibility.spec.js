@@ -328,6 +328,14 @@ test("has no detectable WCAG A/AA violations on finish, completed-summary, and h
 
   results = await scan(page);
   expect(results.violations).toEqual([]);
+
+  await page.getByRole("button", { name: "Add receipt total" }).click();
+  await expect(page.getByRole("textbox", { name: "Receipt total" })).toBeFocused();
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByRole("alert")).toHaveText("Enter the receipt total first.");
+
+  results = await scan(page);
+  expect(results.violations).toEqual([]);
 });
 
 test("keeps history data confirmations accessible and restores trigger focus", async ({

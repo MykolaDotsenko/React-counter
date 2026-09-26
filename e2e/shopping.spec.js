@@ -1037,6 +1037,45 @@ test("finishes a trip loss-safely, reconciles checkout, persists history, and re
   ).toBeVisible();
 });
 
+test("adds a forgotten receipt total from trip history and keeps it after reload", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await startQuickBudget(page);
+  await page.getByRole("button", { name: "Add price" }).click();
+  await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+  await page.getByRole("button", { name: "Add · €4.79" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Finish trip" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
+
+  await page.getByRole("button", { name: /View trip history/ }).click();
+  await expect(page.getByText("Not added", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Add receipt total" }).click();
+  await page.getByRole("textbox", { name: "Receipt total" }).fill("4.99");
+  await page.keyboard.press("Enter");
+
+  await expect(page.getByRole("main").getByRole("status")).toHaveText(
+    "Receipt total saved.",
+  );
+  await expect(page.getByText("Paid €0.20 more", { exact: true })).toBeVisible();
+
+  await page.reload();
+
+  const saved = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    HISTORY_KEY,
+  );
+  expect(saved.data.trips[0].actualCheckoutMinor).toBe(499);
+
+  await page.getByRole("button", { name: /View trip history/ }).click();
+  await expect(page.getByText("€4.99", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Change receipt total" }),
+  ).toBeVisible();
+});
+
 test("keeps trip-history deletion independent from remembered prices", async ({
   page,
 }) => {

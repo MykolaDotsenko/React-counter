@@ -1877,6 +1877,128 @@ describe("ShoppingAppController trip completion", () => {
   });
 });
 
+describe("ShoppingAppController receipt total for a past trip", () => {
+  it("adds the receipt total to a trip in history and saves it", () => {
+    const past = createCompletedTrip("trip-past", NEXT);
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: null,
+      completedTrips: [past],
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.setCompletedTripCheckout(past.id, money(4_812));
+
+    expect(result).toMatchObject({ ok: true, changed: true, durability: "persisted" });
+    expect(result.state.completedTrips[0]?.actualCheckoutMinor).toBe(4_812);
+    expect(persistence.replaceCompletedHistoryCalls).toHaveLength(1);
+    expect(persistence.replaceCompletedHistoryCalls[0]?.trips).toEqual([
+      { ...past, actualCheckoutMinor: 4_812 },
+    ]);
+  });
+
+  it("writes nothing when the receipt total is already saved", () => {
+    const past = {
+      ...createCompletedTrip("trip-past", NEXT),
+      actualCheckoutMinor: money(4_812),
+    };
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: null,
+      completedTrips: [past],
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.setCompletedTripCheckout(past.id, money(4_812));
+
+    expect(result).toMatchObject({ ok: true, changed: false, durability: "unchanged" });
+    expect(persistence.replaceCompletedHistoryCalls).toHaveLength(0);
+  });
+
+  it("refuses a trip that is no longer in history", () => {
+    const persistence = createPersistence();
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+
+    const result = controller.setCompletedTripCheckout(
+      createCompletedTrip("trip-gone", NEXT).id,
+      money(1_000),
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { kind: "application", code: "completed-trip-not-found" },
+    });
+    expect(persistence.replaceCompletedHistoryCalls).toHaveLength(0);
+  });
+
+  it("keeps history as it was when the change cannot be saved", () => {
+    const past = createCompletedTrip("trip-past", NEXT);
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: null,
+      completedTrips: [past],
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(LATER),
+      ids,
+    });
+    controller.bootstrap();
+    persistence.queueHistoryReplaceResult({ ok: false, issue: historyWriteFailure });
+    const before = controller.getSnapshot();
+
+    const result = controller.setCompletedTripCheckout(past.id, money(4_812));
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { kind: "application", code: "history-write-unavailable" },
+    });
+    expect(controller.getSnapshot()).toBe(before);
+    expect(before.completedTrips[0]?.actualCheckoutMinor).toBeUndefined();
+  });
+
+  it("updates the open summary when its trip gets a receipt total from history", () => {
+    const persistence = createPersistence({
+      ok: true,
+      activeTrip: createTrip(5_000, 0),
+    });
+    const controller = createShoppingAppController({
+      persistence,
+      clock: createClock(NEXT, LATER),
+      ids,
+    });
+    controller.bootstrap();
+    const finished = controller.completeTrip();
+    const summaryId = finished.state.completedSummary?.id;
+
+    if (summaryId === undefined) {
+      throw new Error("Expected an open summary");
+    }
+
+    const result = controller.setCompletedTripCheckout(summaryId, money(4_672));
+
+    expect(result).toMatchObject({ ok: true, durability: "persisted" });
+    expect(result.state.completedSummary?.actualCheckoutMinor).toBe(4_672);
+    expect(result.state.completedTrips[0]?.actualCheckoutMinor).toBe(4_672);
+    expect(result.state.lifecycle).toBe("completed-summary");
+  });
+});
+
 describe("ShoppingAppController device clock moving backwards", () => {
   const AHEAD = "2026-09-21T10:00:00.000Z";
   const BEHIND = "2026-09-21T09:30:00.000Z";

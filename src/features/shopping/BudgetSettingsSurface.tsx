@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import {
   formatEur,
+  moneyInputValue,
   parseEurDraft,
   type MinorUnits,
   type MoneyInputErrorCode,
@@ -26,12 +27,6 @@ export interface BudgetSettingsSurfaceProps {
   readonly onSave: (intent: SpendingPlanIntent) => boolean | void;
   readonly locale?: string;
 }
-
-const rawMoney = (minor: number): string => {
-  const euros = Math.floor(minor / 100);
-  const cents = minor % 100;
-  return `${euros}.${String(cents).padStart(2, "0")}`;
-};
 
 const inputErrorMessage = (code: MoneyInputErrorCode): string => {
   switch (code) {
@@ -66,9 +61,9 @@ export function BudgetSettingsSurface({
   const messageId = useId();
   const budgetRef = useRef<HTMLInputElement>(null);
   const bufferRef = useRef<HTMLInputElement>(null);
-  const [budgetRaw, setBudgetRaw] = useState(() => rawMoney(trip.budgetMinor));
+  const [budgetRaw, setBudgetRaw] = useState(() => moneyInputValue(trip.budgetMinor));
   const [bufferRaw, setBufferRaw] = useState(() =>
-    trip.safetyBufferMinor === 0 ? "" : rawMoney(trip.safetyBufferMinor),
+    trip.safetyBufferMinor === 0 ? "" : moneyInputValue(trip.safetyBufferMinor),
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);

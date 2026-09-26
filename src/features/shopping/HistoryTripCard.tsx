@@ -1,6 +1,11 @@
-import type { RefObject } from "react";
+import { useEffect, useId, useRef, useState, type RefObject } from "react";
 
-import { formatEur } from "../../domain/money";
+import {
+  formatEur,
+  moneyInputValue,
+  parseEurDraft,
+  type MinorUnits,
+} from "../../domain/money";
 import {
   cartTotal,
   checkoutDifference,
@@ -22,6 +27,10 @@ export interface HistoryTripCardProps {
   readonly onRequestDelete: (trip: CompletedTrip) => void;
   readonly onCancelDelete: () => void;
   readonly onConfirmDelete: (trip: CompletedTrip) => void;
+  readonly onSaveCheckout: (
+    trip: CompletedTrip,
+    actualCheckoutMinor: MinorUnits,
+  ) => boolean;
 }
 
 const differenceLabel = (
@@ -70,11 +79,60 @@ export function HistoryTripCard({
   onRequestDelete,
   onCancelDelete,
   onConfirmDelete,
+  onSaveCheckout,
 }: HistoryTripCardProps) {
   const tracked = cartTotal(trip);
   const quantity = itemCount(trip);
   const difference = differenceLabel(trip, locale);
   const outcome = budgetOutcome(trip, locale);
+  const checkoutErrorId = useId();
+  const [checkoutRaw, setCheckoutRaw] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [checkoutSaved, setCheckoutSaved] = useState(false);
+  const checkoutInputRef = useRef<HTMLInputElement>(null);
+  const checkoutToggleRef = useRef<HTMLButtonElement>(null);
+  const editingCheckout = checkoutRaw !== null;
+  const wasEditingCheckout = useRef(false);
+
+  useEffect(() => {
+    if (editingCheckout) {
+      checkoutInputRef.current?.focus();
+    } else if (wasEditingCheckout.current) {
+      checkoutToggleRef.current?.focus();
+    }
+
+    wasEditingCheckout.current = editingCheckout;
+  }, [editingCheckout]);
+
+  const closeCheckout = (): void => {
+    setCheckoutRaw(null);
+    setCheckoutError("");
+  };
+
+  const saveCheckout = (): void => {
+    const parsed =
+      checkoutRaw === null || checkoutRaw.trim() === ""
+        ? null
+        : parseEurDraft({ raw: checkoutRaw, mode: "decimal" });
+
+    if (parsed === null) {
+      setCheckoutError("Enter the receipt total first.");
+      return;
+    }
+
+    if (!parsed.ok) {
+      setCheckoutError("Enter a valid euro total with no more than two decimals.");
+      return;
+    }
+
+    if (!onSaveCheckout(trip, parsed.value)) {
+      setCheckoutError("The receipt total could not be saved. Nothing was changed.");
+      return;
+    }
+
+    closeCheckout();
+    setCheckoutSaved(true);
+  };
 
   return (
     <li className={styles.trip}>
@@ -115,6 +173,84 @@ export function HistoryTripCard({
           data-direction={(checkoutDifference(trip) ?? 0) > 0 ? "more" : "within"}
         >
           {difference}
+        </p>
+      ) : null}
+
+      {editingCheckout ? (
+        <form
+          className={styles.checkoutForm}
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            saveCheckout();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              closeCheckout();
+            }
+          }}
+        >
+          <label className={styles.checkoutField}>
+            <span>Receipt total</span>
+            <span className={styles.checkoutInput}>
+              <span aria-hidden="true">€</span>
+              <input
+                ref={checkoutInputRef}
+                value={checkoutRaw}
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="0.00"
+                aria-invalid={checkoutError !== ""}
+                aria-describedby={checkoutError === "" ? undefined : checkoutErrorId}
+                onChange={(event) => {
+                  setCheckoutRaw(event.currentTarget.value);
+                  setCheckoutError("");
+                }}
+              />
+            </span>
+          </label>
+          <div className={styles.confirmationActions}>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={closeCheckout}
+            >
+              Cancel
+            </button>
+            <button type="submit" className={styles.saveCheckoutButton}>
+              Save
+            </button>
+          </div>
+          {checkoutError === "" ? null : (
+            <p id={checkoutErrorId} className={styles.error} role="alert">
+              {checkoutError}
+            </p>
+          )}
+        </form>
+      ) : canChangeHistory ? (
+        <button
+          ref={checkoutToggleRef}
+          type="button"
+          className={styles.checkoutToggle}
+          onClick={() => {
+            setCheckoutSaved(false);
+            setCheckoutRaw(
+              trip.actualCheckoutMinor === undefined
+                ? ""
+                : moneyInputValue(trip.actualCheckoutMinor),
+            );
+          }}
+        >
+          {trip.actualCheckoutMinor === undefined
+            ? "Add receipt total"
+            : "Change receipt total"}
+        </button>
+      ) : null}
+
+      {checkoutSaved ? (
+        <p className={styles.status} role="status">
+          Receipt total saved.
         </p>
       ) : null}
 

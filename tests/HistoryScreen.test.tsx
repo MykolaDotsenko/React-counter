@@ -244,4 +244,121 @@ describe("HistoryScreen", () => {
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
+
+  it("adds a receipt total to a past trip from its card", async () => {
+    const user = userEvent.setup();
+    const controller = createController([
+      completedTrip("one", FIRST_COMPLETE, 5_000),
+    ]);
+
+    render(
+      <HistoryScreen controller={controller} onBack={vi.fn()} locale="en-IE" />,
+    );
+
+    expect(screen.getByText("Not added")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Add receipt total" }));
+
+    const input = screen.getByRole("textbox", { name: "Receipt total" });
+    expect(document.activeElement).toBe(input);
+
+    await user.type(input, "4.72{Enter}");
+
+    expect(screen.getByRole("status").textContent).toBe("Receipt total saved.");
+    expect(screen.getByText("€4.72")).not.toBeNull();
+    expect(screen.getByText("Paid €4.72 more")).not.toBeNull();
+    expect(controller.getSnapshot().completedTrips[0]?.actualCheckoutMinor).toBe(472);
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Change receipt total" }),
+    );
+  });
+
+  it("keeps the receipt form open and explains an amount it cannot read", async () => {
+    const user = userEvent.setup();
+    const controller = createController([
+      completedTrip("one", FIRST_COMPLETE, 5_000),
+    ]);
+
+    render(
+      <HistoryScreen controller={controller} onBack={vi.fn()} locale="en-IE" />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Add receipt total" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(screen.getByRole("alert").textContent).toBe("Enter the receipt total first.");
+
+    const input = screen.getByRole("textbox", { name: "Receipt total" });
+    await user.type(input, "4.725");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Enter a valid euro total with no more than two decimals.",
+    );
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+    expect(controller.getSnapshot().completedTrips[0]?.actualCheckoutMinor).toBeUndefined();
+  });
+
+  it("closes the receipt form with Escape and returns to its button", async () => {
+    const user = userEvent.setup();
+    const controller = createController([
+      completedTrip("one", FIRST_COMPLETE, 5_000, 4_800),
+    ]);
+
+    render(
+      <HistoryScreen controller={controller} onBack={vi.fn()} locale="en-IE" />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Change receipt total" }));
+    const input = screen.getByRole("textbox", { name: "Receipt total" });
+    expect((input as HTMLInputElement).value).toBe("48.00");
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("textbox", { name: "Receipt total" })).toBeNull();
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Change receipt total" }),
+    );
+  });
+
+  it("says so when the receipt total cannot be saved", async () => {
+    const user = userEvent.setup();
+    const trips = [completedTrip("one", FIRST_COMPLETE, 5_000)];
+    const controller = createShoppingAppController({
+      persistence: {
+        bootstrap: () => ({
+          ok: true,
+          activeTrip: null,
+          completedTrips: trips,
+          completionCleanupPending: false,
+        }),
+        save: () => ({ ok: true }),
+        complete: () => ({ ok: true }),
+        saveCompleted: () => ({ ok: true }),
+        replaceCompletedHistory: () => ({
+          ok: false,
+          issue: { code: "write-failed", storageKey: "budget-cart:history" },
+        }),
+        clearCompletedActive: () => ({ ok: true }),
+        readCompletedHistory: () => ({ ok: true, completedTrips: trips }),
+        setAsideDamagedHistory: () => ({ ok: true, completedTrips: [] }),
+        setAsideUnreadableActiveTrip: () => ({ ok: true }),
+      },
+      clock,
+      ids,
+    });
+    controller.bootstrap();
+
+    render(
+      <HistoryScreen controller={controller} onBack={vi.fn()} locale="en-IE" />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Add receipt total" }));
+    await user.type(screen.getByRole("textbox", { name: "Receipt total" }), "47.20");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(screen.getByRole("alert").textContent).toBe(
+      "The receipt total could not be saved. Nothing was changed.",
+    );
+    expect(screen.getByText("Not added")).not.toBeNull();
+  });
 });

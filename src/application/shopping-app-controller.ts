@@ -4,6 +4,7 @@ import {
   rememberedPriceForLabel,
   upsertBarcodeLink,
 } from "../domain/barcode-link";
+import type { MinorUnits } from "../domain/money";
 import {
   parseProductCode,
   type BarcodeSymbology,
@@ -798,6 +799,50 @@ export const createShoppingAppController = ({
     );
   };
 
+  const setCompletedTripCheckout = (
+    tripId: TripId,
+    actualCheckoutMinor: MinorUnits,
+  ): AppCommandResult => {
+    const existing = state.completedTrips.find(
+      (trip) => trip.id === tripId,
+    );
+
+    if (existing === undefined) {
+      return failure(
+        state,
+        applicationError("completed-trip-not-found"),
+      );
+    }
+
+    if (existing.actualCheckoutMinor === actualCheckoutMinor) {
+      return success(state, false, "unchanged");
+    }
+
+    const updated = reduceTrip(existing, {
+      type: "set-actual-checkout",
+      actualCheckoutMinor,
+    });
+
+    if (!updated.ok) {
+      return failure(state, updated.error);
+    }
+
+    const trip: CompletedTrip = { ...existing, actualCheckoutMinor };
+    const result = replaceCompletedHistory((durable) =>
+      durable.map((candidate) => (candidate.id === tripId ? trip : candidate)),
+    );
+
+    if (!result.ok || state.completedSummary?.id !== tripId) {
+      return result;
+    }
+
+    return success(
+      publish({ ...state, completedSummary: trip }),
+      true,
+      result.durability,
+    );
+  };
+
   const clearCompletedHistory = (): AppCommandResult => {
     if (state.completedTrips.length === 0) {
       return success(state, false, "unchanged");
@@ -1241,6 +1286,7 @@ export const createShoppingAppController = ({
     setActualCheckout: synced(setActualCheckout),
     dismissCompletedSummary: synced(dismissCompletedSummary),
     deleteCompletedTrip: synced(deleteCompletedTrip),
+    setCompletedTripCheckout: synced(setCompletedTripCheckout),
     clearCompletedHistory: synced(clearCompletedHistory),
     clearPriceMemory: synced(clearPriceMemory),
     retryPersistence,

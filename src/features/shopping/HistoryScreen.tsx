@@ -247,6 +247,13 @@ export function HistoryScreen({
                 }}
                 onCancelDelete={cancelConfirmation}
                 onConfirmDelete={deleteTrip}
+                onSaveCheckout={(candidate, actualCheckoutMinor) => {
+                  resetMessages();
+                  return controller.setCompletedTripCheckout(
+                    candidate.id,
+                    actualCheckoutMinor,
+                  ).ok;
+                }}
               />
             ))}
           </ol>

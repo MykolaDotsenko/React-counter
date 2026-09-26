@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { useShoppingAppState } from "../../application/react/use-shopping-app-state";
 import type { ShoppingAppController } from "../../application/shopping-app-controller";
-import { formatEur, parseEurDraft } from "../../domain/money";
+import { formatEur, moneyInputValue, parseEurDraft } from "../../domain/money";
 import {
   cartTotal,
   checkoutDifference,
@@ -23,12 +23,6 @@ export interface CompletedSummaryScreenProps {
   readonly onViewHistory: () => void;
   readonly locale?: string;
 }
-
-const rawMoney = (minor: number): string => {
-  const euros = Math.floor(minor / 100);
-  const cents = minor % 100;
-  return `${euros}.${String(cents).padStart(2, "0")}`;
-};
 
 const reconciliationCopy = (
   trip: CompletedTrip,
@@ -69,7 +63,7 @@ export function CompletedSummaryScreen({
   const [checkoutRaw, setCheckoutRaw] = useState(() =>
     trip.actualCheckoutMinor === undefined
       ? ""
-      : rawMoney(trip.actualCheckoutMinor),
+      : moneyInputValue(trip.actualCheckoutMinor),
   );
   const [inputError, setInputError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
