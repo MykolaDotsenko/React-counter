@@ -63,6 +63,8 @@ const MAX_PUBLIC_CSS_BYTES = 80_000;
 const MAX_INITIAL_CSS_BYTES = 70_000;
 const MAX_PUBLIC_CSS_GZIP_BYTES = 13_000;
 const MAX_INITIAL_CSS_GZIP_BYTES = 11_100;
+const barcodeScannerEnabled = process.env.VITE_SHOPPING_BARCODE_SCANNER !== "0";
+const priceOcrEnabled = process.env.VITE_SHOPPING_PRICE_OCR !== "0";
 const BARCODE_ENGINE_CHUNK_PREFIX = "zxing-fallback-detector-";
 const MAX_BARCODE_ENGINE_JS_BYTES = 60_000;
 const MAX_BARCODE_ENGINE_JS_GZIP_BYTES = 20_000;
@@ -225,101 +227,132 @@ if (initialCssGzipBytes > MAX_INITIAL_CSS_GZIP_BYTES) {
   );
 }
 
-if (engineJsFiles.length !== 1 || wasmFiles.length !== 1) {
-  throw new Error(
-    `Public build must emit exactly one lazy barcode engine chunk and one WASM asset (found ${engineJsFiles.length} and ${wasmFiles.length}).`,
-  );
-}
-
-if (initialJsSet.has(engineJsFiles[0])) {
-  throw new Error("The barcode engine must stay out of the initial bundle.");
-}
-
-const engineJsBytes = await assetSize(engineJsFiles[0]);
-const engineJsGzipBytes = await assetGzipSize(engineJsFiles[0]);
-const wasmBytes = await assetSize(wasmFiles[0]);
-const wasmSha256 = createHash("sha256")
-  .update(await readFile(path.join(assets, wasmFiles[0])))
-  .digest("hex");
-
-if (engineJsBytes > MAX_BARCODE_ENGINE_JS_BYTES) {
-  throw new Error(
-    `Barcode engine JavaScript budget exceeded: ${engineJsBytes} > ${MAX_BARCODE_ENGINE_JS_BYTES} bytes.`,
-  );
-}
-
-if (engineJsGzipBytes > MAX_BARCODE_ENGINE_JS_GZIP_BYTES) {
-  throw new Error(
-    `Barcode engine gzipped JavaScript budget exceeded: ${engineJsGzipBytes} > ${MAX_BARCODE_ENGINE_JS_GZIP_BYTES} bytes.`,
-  );
-}
-
-if (wasmBytes > MAX_BARCODE_ENGINE_WASM_BYTES) {
-  throw new Error(
-    `Barcode engine WASM budget exceeded: ${wasmBytes} > ${MAX_BARCODE_ENGINE_WASM_BYTES} bytes.`,
-  );
-}
-
-if (wasmSha256 !== ZXING_WASM_SHA256) {
-  throw new Error(
-    "Self-hosted barcode WASM does not match the bundled ZXing reader build.",
-  );
-}
-
-if (priceReaderJsFiles.length !== 1) {
-  throw new Error(
-    `Public build must emit exactly one lazy price reader chunk (found ${priceReaderJsFiles.length}).`,
-  );
-}
-
-if (initialJsSet.has(priceReaderJsFiles[0])) {
-  throw new Error("The price reader must stay out of the initial bundle.");
-}
-
-const priceReaderJsBytes = await assetSize(priceReaderJsFiles[0]);
-const priceReaderJsGzipBytes = await assetGzipSize(priceReaderJsFiles[0]);
-
-if (priceReaderJsBytes > MAX_PRICE_READER_JS_BYTES) {
-  throw new Error(
-    `Price reader JavaScript budget exceeded: ${priceReaderJsBytes} > ${MAX_PRICE_READER_JS_BYTES} bytes.`,
-  );
-}
-
-if (priceReaderJsGzipBytes > MAX_PRICE_READER_JS_GZIP_BYTES) {
-  throw new Error(
-    `Price reader gzipped JavaScript budget exceeded: ${priceReaderJsGzipBytes} > ${MAX_PRICE_READER_JS_GZIP_BYTES} bytes.`,
-  );
-}
-
-let priceReaderAssetBytes = 0;
-
-for (const asset of priceOcrAssets(root)) {
-  const emitted = await readFile(path.join(dist, asset.fileName)).catch(() => null);
-
-  if (emitted === null) {
-    throw new Error(`Self-hosted price reader file ${asset.fileName} is missing.`);
+const validateBarcodeEngine = async () => {
+  if (!barcodeScannerEnabled) {
+    return ["barcode scanning switched off"];
   }
 
-  if (emitted.byteLength > asset.maxBytes) {
+  if (engineJsFiles.length !== 1 || wasmFiles.length !== 1) {
     throw new Error(
-      `Price reader file ${asset.fileName} is over budget: ${emitted.byteLength} > ${asset.maxBytes} bytes.`,
+      `Public build must emit exactly one lazy barcode engine chunk and one WASM asset (found ${engineJsFiles.length} and ${wasmFiles.length}).`,
     );
   }
 
-  if (!emitted.equals(await readFile(asset.source))) {
+  if (initialJsSet.has(engineJsFiles[0])) {
+    throw new Error("The barcode engine must stay out of the initial bundle.");
+  }
+
+  const engineJsBytes = await assetSize(engineJsFiles[0]);
+  const engineJsGzipBytes = await assetGzipSize(engineJsFiles[0]);
+  const wasmBytes = await assetSize(wasmFiles[0]);
+  const wasmSha256 = createHash("sha256")
+    .update(await readFile(path.join(assets, wasmFiles[0])))
+    .digest("hex");
+
+  if (engineJsBytes > MAX_BARCODE_ENGINE_JS_BYTES) {
     throw new Error(
-      `Self-hosted price reader file ${asset.fileName} does not match its pinned package.`,
+      `Barcode engine JavaScript budget exceeded: ${engineJsBytes} > ${MAX_BARCODE_ENGINE_JS_BYTES} bytes.`,
     );
   }
 
-  priceReaderAssetBytes += emitted.byteLength;
-}
+  if (engineJsGzipBytes > MAX_BARCODE_ENGINE_JS_GZIP_BYTES) {
+    throw new Error(
+      `Barcode engine gzipped JavaScript budget exceeded: ${engineJsGzipBytes} > ${MAX_BARCODE_ENGINE_JS_GZIP_BYTES} bytes.`,
+    );
+  }
 
-if (priceReaderAssetBytes > MAX_PRICE_READER_ASSET_BYTES) {
-  throw new Error(
-    `Price reader files are over budget: ${priceReaderAssetBytes} > ${MAX_PRICE_READER_ASSET_BYTES} bytes.`,
-  );
-}
+  if (wasmBytes > MAX_BARCODE_ENGINE_WASM_BYTES) {
+    throw new Error(
+      `Barcode engine WASM budget exceeded: ${wasmBytes} > ${MAX_BARCODE_ENGINE_WASM_BYTES} bytes.`,
+    );
+  }
+
+  if (wasmSha256 !== ZXING_WASM_SHA256) {
+    throw new Error(
+      "Self-hosted barcode WASM does not match the bundled ZXing reader build.",
+    );
+  }
+
+  return [
+    `barcode engine JS ${engineJsBytes} bytes / ${engineJsGzipBytes} gzip`,
+    `barcode engine WASM ${wasmBytes} bytes`,
+  ];
+};
+
+const validatePriceReader = async () => {
+  if (!priceOcrEnabled) {
+    if ((await readdir(path.join(assets, "ocr")).catch(() => [])).length > 0) {
+      throw new Error(
+        "A build with price tag reading switched off must not ship the price reader files.",
+      );
+    }
+
+    return ["price tag reading switched off"];
+  }
+
+  if (priceReaderJsFiles.length !== 1) {
+    throw new Error(
+      `Public build must emit exactly one lazy price reader chunk (found ${priceReaderJsFiles.length}).`,
+    );
+  }
+
+  if (initialJsSet.has(priceReaderJsFiles[0])) {
+    throw new Error("The price reader must stay out of the initial bundle.");
+  }
+
+  const priceReaderJsBytes = await assetSize(priceReaderJsFiles[0]);
+  const priceReaderJsGzipBytes = await assetGzipSize(priceReaderJsFiles[0]);
+
+  if (priceReaderJsBytes > MAX_PRICE_READER_JS_BYTES) {
+    throw new Error(
+      `Price reader JavaScript budget exceeded: ${priceReaderJsBytes} > ${MAX_PRICE_READER_JS_BYTES} bytes.`,
+    );
+  }
+
+  if (priceReaderJsGzipBytes > MAX_PRICE_READER_JS_GZIP_BYTES) {
+    throw new Error(
+      `Price reader gzipped JavaScript budget exceeded: ${priceReaderJsGzipBytes} > ${MAX_PRICE_READER_JS_GZIP_BYTES} bytes.`,
+    );
+  }
+
+  let priceReaderAssetBytes = 0;
+
+  for (const asset of priceOcrAssets(root)) {
+    const emitted = await readFile(path.join(dist, asset.fileName)).catch(() => null);
+
+    if (emitted === null) {
+      throw new Error(`Self-hosted price reader file ${asset.fileName} is missing.`);
+    }
+
+    if (emitted.byteLength > asset.maxBytes) {
+      throw new Error(
+        `Price reader file ${asset.fileName} is over budget: ${emitted.byteLength} > ${asset.maxBytes} bytes.`,
+      );
+    }
+
+    if (!emitted.equals(await readFile(asset.source))) {
+      throw new Error(
+        `Self-hosted price reader file ${asset.fileName} does not match its pinned package.`,
+      );
+    }
+
+    priceReaderAssetBytes += emitted.byteLength;
+  }
+
+  if (priceReaderAssetBytes > MAX_PRICE_READER_ASSET_BYTES) {
+    throw new Error(
+      `Price reader files are over budget: ${priceReaderAssetBytes} > ${MAX_PRICE_READER_ASSET_BYTES} bytes.`,
+    );
+  }
+
+  return [
+    `price reader JS ${priceReaderJsBytes} bytes / ${priceReaderJsGzipBytes} gzip`,
+    `price reader files ${priceReaderAssetBytes} bytes`,
+  ];
+};
+
+const barcodeEngineSummary = await validateBarcodeEngine();
+const priceReaderSummary = await validatePriceReader();
 
 const serviceWorker = await readFile(path.join(dist, "sw.js"), "utf8");
 
@@ -361,10 +394,8 @@ console.log(
     `total JS ${totalJsBytes} bytes / ${totalJsGzipBytes} gzip`,
     `largest JS chunk ${largestJsChunkBytes} bytes`,
     `lazy JS ${lazyJsFiles.length} chunk(s) / ${lazyJsBytes} bytes`,
-    `barcode engine JS ${engineJsBytes} bytes / ${engineJsGzipBytes} gzip`,
-    `barcode engine WASM ${wasmBytes} bytes`,
-    `price reader JS ${priceReaderJsBytes} bytes / ${priceReaderJsGzipBytes} gzip`,
-    `price reader files ${priceReaderAssetBytes} bytes`,
+    ...barcodeEngineSummary,
+    ...priceReaderSummary,
     `initial CSS ${initialCssBytes} bytes / ${initialCssGzipBytes} gzip`,
     `total CSS ${totalCssBytes} bytes / ${totalCssGzipBytes} gzip`,
     "installable offline shell present",

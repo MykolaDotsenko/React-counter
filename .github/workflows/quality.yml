@@ -101,6 +101,14 @@ jobs:
       - name: Run static, unit and component quality gates
         run: npm run check
 
+      - name: Verify a build with the camera features switched off
+        env:
+          VITE_SHOPPING_BARCODE_SCANNER: "0"
+          VITE_SHOPPING_PRICE_OCR: "0"
+        run: |
+          npm run build
+          npm run build:check
+
       - name: Build public release artifact
         run: |
           rm -rf dist dist-qa dist-beta dist-cohort dist-barcode dist-visual dist-ocr dist-ocr-tesseract dist-barcode-paired dist-ocr-paired site
