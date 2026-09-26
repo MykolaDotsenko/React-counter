@@ -6,7 +6,7 @@ This is the executable contract for the current shopping-budget release.
 
 The original core MVP is implemented. Several post-core capabilities are also implemented and are explicitly listed below.
 
-The installable offline PWA shell and optional barcode identification are **IMPLEMENTED**. OCR remains **PLANNED / GATED**.
+The installable offline PWA shell, optional barcode identification and optional price-tag reading are **IMPLEMENTED**.
 
 ## Core job
 
@@ -43,21 +43,27 @@ A shopper can:
 - Recent Items;
 - local Price Memory;
 - local history deletion;
-- independent Price Memory deletion;
+- independent Price Memory deletion, which also clears remembered barcode names;
 - retention/timing evidence tooling that does not own shopping state;
 - installable offline application shell with prompt-based updates;
-- optional barcode identification with local barcode names and tap-only online name lookup.
+- optional barcode identification with local barcode names and tap-only online name lookup;
+- optional price-tag reading that pre-fills price entry for confirmation (D-055).
 
 ### PLANNED / GATED
-- shelf-label OCR;
+
 - weighted goods;
 - discount engine;
+- reopening completed trip into active state.
+
+### Not planned (ROADMAP non-goals)
+
 - tax-exclusive pricing mode;
 - voice input;
 - receipt scan;
-- reopening completed trip into active state;
 - cloud sharing/sync;
 - backend/authentication.
+
+[ROADMAP.md](../ROADMAP.md) keeps these outside the active roadmap.
 
 ## Functional requirements
 
@@ -183,6 +189,8 @@ Remembered price remains explicitly remembered and does not become authoritative
 
 Completed history and Price Memory can be cleared independently according to their persistence contracts.
 
+Clearing Price Memory also clears remembered barcode names; completed history stays.
+
 ### FR-023 — No mandatory external service
 
 Current release does not require:
@@ -212,16 +220,16 @@ Historical reopen requires an explicit loss-safe history ↔ active-state transa
 
 **IMPLEMENTED.**
 
-Barcode may identify product context but cannot be treated as authoritative current shelf price by default.
+Barcode may identify product context but cannot be treated as authoritative current shelf price by default. Validation and classification rules: [DOMAIN.md](../DOMAIN.md#barcode-identity).
 
 Acceptance:
 
-- EAN-13, EAN-8, UPC-A and UPC-E codes are normalised to GTIN-14 and rejected when the check digit fails;
+- a code that fails validation never counts: the camera ignores it, and a typed code gets an explanation of what to fix;
 - a code must be read twice within 1.5 s before it counts, and the camera stops as soon as it does;
 - a known barcode shows its remembered name and last confirmed price as context; the current price is entered or the remembered price reused by explicit choice;
 - an unknown barcode can be named once; the name is remembered on the device for the next scan;
-- store-printed codes (for example weighed items) and coupons go to manual price entry and are never remembered;
-- online name lookup runs only on tap and sends only the barcode number;
+- a store-printed code (for example a weighed item) offers "Read price tag" when price reading is available, "Enter price" or "Scan another"; a coupon or receipt code offers "Scan another" or "Enter price without scanning"; neither is remembered;
+- online name lookup runs only on tap and sends the barcode number with the app's name and version, never shopping data;
 - camera permission, unsupported browsers, busy cameras and engine failures each explain the problem and offer typing the barcode or entering the price without scanning;
 - camera frames never leave the device and are never stored.
 
@@ -229,14 +237,14 @@ Acceptance:
 
 **IMPLEMENTED.**
 
-The camera can read a shelf price tag on the device and offer candidate prices. A read price is never added without the shopper's confirmation.
+The camera can read a shelf price tag on the device and offer candidate prices. A read price is never added without the shopper's confirmation. Candidate and ranking rules: [DOMAIN.md](../DOMAIN.md#shelf-price-reading).
 
 Acceptance:
 
 - the trip's scan action offers Barcode and Price tag modes that share one camera session, and price entry offers "Read price tag";
 - reading happens only on an explicit "Read price" tap, on the part of the picture inside the frame;
-- the largest printed amount is offered first, and superscript cents are read with the euros;
-- unit, member, regular and multi-buy prices are labelled, and the single-item price of a multi-buy tag comes before the offer;
+- up to four candidate prices are offered, best first;
+- unit, member, regular and multi-buy prices are labelled;
 - choosing a candidate opens price entry pre-filled and marked as read from the tag; the item is added only by the shopper's Add;
 - the reader's first use shows its preparation progress; its files come from this site and are cached for offline use;
 - no readable price, a slow read, an unavailable reader, a camera without a picture and every camera failure each explain the problem and offer retaking or typing the price;
@@ -275,7 +283,7 @@ Detailed parser/arithmetic contract: `specs/MONEY-SPEC.md`.
 
 Source and confidence remain separate dimensions.
 
-A value can be remembered/scanned in origin while independently carrying a confidence/currentness state.
+A price reused from Price Memory keeps source `price-memory` and confidence `remembered`. A typed price, and a tag price once the shopper confirms it in price entry, are `manual` + `confirmed`. Detailed rules: [DOMAIN.md](../DOMAIN.md#price-provenance).
 
 ## Non-functional requirements
 
@@ -305,7 +313,7 @@ The primary flow is usable one-handed on compact phone widths.
 
 ### NFR-007 — Bundle discipline
 
-The shipped PWA shell must remain small and asset-only; gated future scanner/OCR dependencies must not penalise the current critical path before they ship.
+The shipped PWA shell must remain small and asset-only. Scanner and price-reader code stay lazily loaded outside the initial bundle; OCR engine files are cached at runtime on first use, never precached.
 
 ### NFR-008 — Privacy
 

@@ -53,7 +53,7 @@ Do not load every decision file for a narrow task. Use the category links or tab
 | D-030 | No router until URLs have real product value | [Architecture and Technology](./decisions/architecture-technology.md) |
 | D-031 | Barcode scanning uses progressive native + lazy WASM detection | [Future Capability](./decisions/future-capabilities.md) |
 | D-032 | Open Food Facts is an optional product-identity provider, not a price provider | [Future Capability](./decisions/future-capabilities.md) |
-| D-033 | Shelf OCR provider remains benchmark-gated | [Future Capability](./decisions/future-capabilities.md) |
+| D-033 | Shelf OCR provider remains benchmark-gated (superseded for production by D-055) | [Future Capability](./decisions/future-capabilities.md) |
 | D-034 | localStorage remains MVP persistence despite adding runtime validation | [Persistence and Data Integrity](./decisions/persistence-data-integrity.md) |
 | D-035 | Repeat-trip acceleration precedes scanner breadth | [Product, Scope and Competition](./decisions/product-scope-competition.md) |
 | D-036 | Second-trip rate is the primary early product-validation signal | [Product, Scope and Competition](./decisions/product-scope-competition.md) |

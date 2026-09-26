@@ -4,7 +4,7 @@
 
 **IMPLEMENTED current business contract.**
 
-This document owns shopping-domain concepts and invariants. Parsing detail lives in `specs/MONEY-SPEC.md`; lifecycle detail lives in `specs/STATE-MACHINES.md`.
+This document owns shopping-domain concepts and invariants, including the barcode and price-tag rules. Parsing detail, money formulas and over-budget derivation live in `specs/MONEY-SPEC.md`; lifecycle detail lives in `specs/STATE-MACHINES.md`.
 
 ## Goals
 
@@ -34,8 +34,7 @@ Canonical fields include:
 - items;
 - status;
 - timestamps;
-- optional actual checkout total;
-- optional store context.
+- optional actual checkout total.
 
 Current product supports one active trip.
 
@@ -57,9 +56,7 @@ Rules:
 - >= 0;
 - <= budget.
 
-```text
-safe limit = budget - buffer
-```
+The buffer sets the safe limit; formulas live in [MONEY-SPEC.md](./specs/MONEY-SPEC.md#derived-values).
 
 ### CartItem
 
@@ -74,10 +71,11 @@ Canonical item fields:
 
 Optional:
 
-- label;
-- product/store identity where supported by the model.
+- label.
 
 A label is not required for a valid item.
+
+Items carry no product or store identity. A scanned barcode links to an item label through a separate advisory record (`domain/barcode-link.ts`, D-054).
 
 ## Money
 
@@ -89,11 +87,7 @@ Derived totals are recalculated from canonical state.
 
 ## Quantity
 
-Quantity is a positive bounded integer.
-
-```text
-line total = unit price × quantity
-```
+Quantity is a positive bounded integer. Line totals follow [MONEY-SPEC.md](./specs/MONEY-SPEC.md#quantity-multiplication).
 
 Multiplication must remain within safe/product limits.
 
@@ -110,11 +104,7 @@ Never persist as authority:
 - over-budget flags;
 - checkout difference.
 
-```text
-cart total = sum(line totals)
-remaining = budget - cart total
-safe remaining = budget - buffer - cart total
-```
+Formulas: [MONEY-SPEC.md](./specs/MONEY-SPEC.md#derived-values).
 
 Negative remaining values are valid and represent overage.
 
@@ -181,12 +171,7 @@ Do not reject user intent merely because it creates overage.
 
 ## Over-budget semantics
 
-```text
-nominal over-budget: cartTotal > budget
-safe over-budget: cartTotal > safeLimit
-```
-
-Over-budget is a valid state, not a domain error.
+Over-budget is a valid state, not a domain error. Nominal and safe-limit overage are derived as [MONEY-SPEC.md](./specs/MONEY-SPEC.md#over-budget-semantics) defines.
 
 ## Price provenance
 
@@ -194,24 +179,26 @@ Source and confidence are independent dimensions.
 
 ### Implemented sources
 
-- manual;
-- price-memory.
+- manual — a typed or corrected price, including a price read from a tag once the shopper confirms it in price entry;
+- price-memory — a remembered price reused as-is.
 
 ### Reserved/gated sources supported by the model
 
-- shelf-scan;
-- encoded-barcode / external identity;
-- retailer/external feed where a future provider contract justifies it.
+- shelf-scan — no current flow writes it, because a confirmed tag price is recorded as manual;
+- encoded-barcode — a price embedded in a store-printed code, which is never read;
+- retailer-feed — only where a future provider contract justifies it.
 
 Presence in the type model does not mean the feature is shipped.
 
 ## Price confidence
 
-Examples include:
+The model has three confidence kinds:
 
-- confirmed current observation;
-- remembered/stale observation;
-- candidate/estimated states where future capabilities need them.
+- confirmed — a current observation, stamped when the shopper commits it;
+- remembered — a historical observation reused from Price Memory, keeping its original observation time;
+- estimated — reserved; no current flow writes it.
+
+There is no candidate confidence: a price read from a tag is a candidate only until the shopper confirms it in price entry, and it never reaches the model before then.
 
 The model must not collapse “where the number came from” and “how trustworthy/current it is” into one enum.
 
@@ -225,7 +212,8 @@ Rules:
 - remembers historical observation, not authoritative current price;
 - reuse preserves remembered provenance;
 - old memory does not become “fresh” merely because it was reused;
-- store/freshness context may affect ranking;
+- the latest observation per product is the one offered;
+- a Price Memory record, and a remembered item's confidence, can carry an optional store, but no current flow records one;
 - deletion is independent from completed history.
 
 Price Memory failure must never invalidate a durably completed trip.
@@ -247,11 +235,13 @@ Manual current-price entry stays available in every barcode state.
 
 **IMPLEMENTED (D-055).**
 
-OCR output is candidate data. `domain/shelf-price.ts` turns it into ranked exact-money candidates:
+OCR output is candidate data. `rankPriceTagCandidates` in `domain/shelf-price.ts` turns it into ranked exact-money candidates:
 
 - every accepted amount goes through `parseEurDraft`; bare digits never gain an invented decimal separator, and percentages, dates, weights, volumes and barcodes are not money;
+- a date is a dotted day.month without a euro sign (day 1–31, month 1–12) followed by another dot and then a digit, whitespace, a dash or the end of the text: "24.09.2026", "24.09.–30.09." and "30.9. asti" offer no price, while "4.29." stays a price because 29 is not a month;
 - an amount needs a euro sign, a price word nearby or headline prominence: printed at least 60 % as tall as the tallest line on the tag;
-- taller printing ranks higher; unit prices, regular prices and multi-buy offers rank lower and carry their context, and a per-item ("yks.") price is not treated as a multi-buy offer;
+- taller printing ranks higher; unit prices, regular prices and multi-buy offers rank lower and carry their context, member prices (including compounds such as "Jäsenhinta" and "Plussahinta") carry theirs without ranking lower, and a per-item ("yks.") price is not treated as a multi-buy offer;
+- a price takes its labels only from the words printed since the previous amount, so a "Norm. 2,99 €" line above a member price labels only its own price;
 - superscript cents read separately join their euros, and cents split into single digits by OCR are rejoined;
 - candidates are de-duplicated by amount and capped at eight.
 
@@ -259,7 +249,7 @@ No candidate becomes committed money until the shopper confirms it in price entr
 
 ## Discounts / weighted goods / tax mechanics
 
-**PLANNED / GATED.**
+**PLANNED / GATED** for weighted goods and discounts. Tax-exclusive pricing is not planned ([ROADMAP.md](./ROADMAP.md)).
 
 Do not implement percentage/weight mechanics without an explicit exact-money/rounding contract.
 
@@ -267,11 +257,7 @@ Do not implement percentage/weight mechanics without an explicit exact-money/rou
 
 **IMPLEMENTED.**
 
-A completed trip may store an optional actual checkout total.
-
-```text
-difference = actual checkout - estimated cart total
-```
+A completed trip may store an optional actual checkout total. The derived difference follows [MONEY-SPEC.md](./specs/MONEY-SPEC.md#derived-values).
 
 Reconciliation does not retroactively rewrite item prices.
 

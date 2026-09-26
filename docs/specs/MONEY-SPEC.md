@@ -215,7 +215,7 @@ Do not show an aggressive error for a normal intermediate keystroke.
 
 ## Values below one euro
 
-Recommended MVP behaviour:
+MVP behaviour:
 
 ~~~text
 .79 → 79
@@ -254,7 +254,7 @@ Do not use:
 Math.round(parseFloat(raw) * 100)
 ~~~
 
-Recommended algorithm:
+Algorithm:
 
 1. trim whitespace
 2. strip one known euro symbol when present
@@ -298,7 +298,7 @@ Prefer clarity over a clever single regex.
 
 ## Auto-cents mode
 
-Auto-cents is optional and should be off by default until usability testing proves it improves speed.
+Auto-cents is optional and off by default.
 
 Digits represent minor units:
 
@@ -497,40 +497,57 @@ type MoneyInputErrorCode =
   | 'invalid-format'
   | 'negative-not-allowed'
   | 'too-many-fraction-digits'
-  | 'unsupported-currency'
   | 'above-product-limit'
   | 'unsafe-integer'
 ~~~
+
+The parser has no currency error code: non-euro symbols and currency words such as "$4.79" and "EUR 4.79" fail as `invalid-format`.
 
 Presentation maps error codes to contextual copy.
 
 Do not leak parser implementation messages directly to users.
 
-## Error copy examples
+## Error copy
 
-Budget zero:
+Each surface maps codes to its own copy. Current price-entry / start-screen copy:
 
-> Enter an amount greater than €0.
+Zero price / budget:
+
+> Enter a price above €0. / Set a budget above €0.
 
 Too many decimals:
 
-> Use no more than 2 decimal places.
-
-Wrong currency:
-
-> This version supports euros only.
+> Use no more than two decimal places.
 
 Above maximum:
 
-> Enter an amount below €1,000,000.
+> That price is too large. / That amount is too large.
+
+There is no separate wrong-currency message. "$4.79" fails as `invalid-format`, and price entry shows:
+
+> Use a price like 4.79 or 4,79.
 
 Avoid generic messages such as:
 
 > Invalid value.
 
-## Domain API proposal
+## Domain API
+
+Exported by `src/domain/money.ts`:
 
 ~~~ts
+type MoneyAmount = MinorUnits | SignedMinorUnits
+
+type MoneyErrorCode =
+  | 'negative-not-allowed'
+  | 'unsafe-integer'
+  | 'above-product-limit'
+  | 'invalid-quantity'
+
+function ok<T>(
+  value: T,
+): Result<T, never>
+
 function parseEurDraft(
   draft: MoneyDraft,
 ): Result<MinorUnits, MoneyInputError>
@@ -539,18 +556,22 @@ function minorUnits(
   value: number,
 ): Result<MinorUnits, MoneyError>
 
+function mvpMinorUnits(
+  value: number,
+): Result<MinorUnits, MoneyError>
+
 function signedMinorUnits(
   value: number,
 ): Result<SignedMinorUnits, MoneyError>
 
 function addMoney(
-  a: SignedMinorUnits,
-  b: SignedMinorUnits,
+  left: MoneyAmount,
+  right: MoneyAmount,
 ): Result<SignedMinorUnits, MoneyError>
 
 function subtractMoney(
-  a: SignedMinorUnits,
-  b: SignedMinorUnits,
+  left: MoneyAmount,
+  right: MoneyAmount,
 ): Result<SignedMinorUnits, MoneyError>
 
 function multiplyMoney(
@@ -559,12 +580,12 @@ function multiplyMoney(
 ): Result<MinorUnits, MoneyError>
 
 function formatEur(
-  amount: SignedMinorUnits | MinorUnits,
+  amount: MoneyAmount,
   locale: string,
 ): string
 ~~~
 
-Exact signatures may simplify if TypeScript ceremony exceeds value, but the invariants cannot.
+`mvpMinorUnits` is `minorUnits` plus the product maximum. `multiplyMoney` returns `invalid-quantity` outside the quantity bound. The module also exports `EUR_SPEC`, `MAX_MVP_MONEY_MINOR`, `MIN_MVP_QUANTITY` and `MAX_MVP_QUANTITY`.
 
 ## Parser test matrix
 

@@ -4,7 +4,7 @@
 
 **IMPLEMENTED product direction.**
 
-This document owns the current product job, principles, competitive strategy and decision criteria. Implementation status of individual capabilities is listed only where it materially affects product scope.
+This document owns the current product job, principles, competitive strategy and decision criteria. Per-capability implementation status lives only in [specs/RELEASE-SPEC.md](./specs/RELEASE-SPEC.md#current-release-capabilities).
 
 ## Product thesis
 
@@ -108,52 +108,22 @@ Among equally correct and usable solutions, prefer the one with better hierarchy
 
 Never trade obviousness or speed for visual spectacle.
 
-## Current product capabilities
-
-**IMPLEMENTED**
-
-- start one EUR shopping trip;
-- optional safety buffer;
-- remaining-first active state;
-- exact manual price entry;
-- quantity and projected consequences;
-- over-budget preview/intentional overage;
-- edit/remove/Undo;
-- active-trip persistence and recovery;
-- finish trip and completed history;
-- optional actual checkout reconciliation;
-- Shop again;
-- Recent Items;
-- local Price Memory;
-- independent local-data controls;
-- installable offline PWA shell with user-controlled updates;
-- optional barcode identification that recalls the product's name and last price, with manual entry always available;
-- optional price tag reading that pre-fills the price for confirmation, with manual entry always available.
-
-**PLANNED / GATED**
-- advanced price mechanics only after evidence.
-
 ## Safety buffer
 
-The optional buffer protects uncertainty inside the nominal budget.
-
-```text
-safe limit = budget - safety buffer
-safe remaining = safe limit - cart total
-```
+The optional buffer protects uncertainty inside the nominal budget. Safe-limit and over-budget formulas live in [specs/MONEY-SPEC.md](./specs/MONEY-SPEC.md#derived-values).
 
 The UI must distinguish normal, reserve-using and nominal over-budget states without shame.
 
 ## Price trust
 
-Price provenance and confidence are separate concepts.
+Price provenance and confidence are separate concepts ([DOMAIN.md](./DOMAIN.md#price-provenance)).
 
-Examples:
+Current combinations:
 
-- manual + confirmed;
-- price-memory + remembered;
-- shelf-scan + candidate;
-- external identity + no authoritative current price.
+- manual + confirmed: a typed price, or a price read from a tag once the shopper confirms it in price entry;
+- price-memory + remembered: a remembered price reused without re-entry.
+
+Barcode or online product identity names the product but never supplies an authoritative current price.
 
 The product must never imply more certainty than it has.
 
@@ -230,7 +200,7 @@ Retention interpretation remains a heuristic, not an external benchmark. See `re
 
 ### Input fatigue
 
-Mitigation: price-first entry, auto-cents, repeat-trip acceleration, Price Memory and only evidence-backed capture accelerators.
+Mitigation: price-first entry, auto-cents, repeat-trip acceleration, Price Memory, and optional barcode and price-tag reading, which shipped ahead of evidence behind kill switches (D-053, D-055) and are judged by post-release evidence (issues #73, #90).
 
 ### Scanner theatre
 
