@@ -150,9 +150,9 @@ CI additionally validates the exact release artifact before it can be deployed:
 - ⏳ maturity-aware second-/third-trip evidence
 - ⏳ representative physical barcode benchmark + paired quantitative manual baseline (now post-release validation of the shipped scanner)
 - ⏳ physical retail evidence for the pinned local CLIP visual recognizer
-- ⏳ physical shelf-label evidence for a concrete OCR engine
+- ⏳ physical shelf-label evidence for the shipped price tag reader (post-release validation)
 
-Visual recognition and OCR remain evidence-gated. Barcode scanning ships ahead of its physical evidence and can be switched off per build (D-053).
+Visual recognition remains evidence-gated. Barcode scanning (D-053) and price tag reading (D-055) ship ahead of their physical evidence and can each be switched off per build.
 
 Public guarded evidence builds (validation surfaces, not private/security boundaries) follow the latest deployed `main`. Real multi-day/week field studies use immutable versioned `/study/<baseline>/...` copies of the exact tested artifact instead:
 

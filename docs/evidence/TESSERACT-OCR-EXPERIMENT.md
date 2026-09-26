@@ -6,7 +6,7 @@
 
 This document owns the first named OCR-engine experiment under issue #90.
 
-It does **not** authorize production OCR.
+Production price tag reading was promoted ahead of this evidence (D-055) with its own single-language configuration. This protocol now validates reading tags after release, and a REMEDIATE or DEFER outcome means switching production reading off.
 
 ## Hypothesis
 

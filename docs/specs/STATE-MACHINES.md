@@ -329,28 +329,37 @@ Implementation should reject/prevent:
 - remembered/candidate price silently represented as confirmed current price;
 - completed history cleared as a side effect of Price Memory deletion.
 
-## Barcode scan
+## Camera scan
 
-The scan overlay is ephemeral UI state, keyed to its trip like the other trip overlays.
+The scan overlay is ephemeral UI state, keyed to its trip like the other trip overlays. It has two modes, Barcode and Price tag, that share one camera session; switching modes while the camera runs does not reopen it.
 
 ```text
-STARTING ── camera + detector ready ──→ SCANNING
-STARTING ── start fails ─────────────→ FAILED(reason)
-SCANNING ── same code read twice in 1.5 s → FOUND   (camera stops)
-SCANNING ── 5 detector errors in a row ──→ FAILED(engine-failed)
-SCANNING / STARTING ── page hidden ──────→ PAUSED   (camera stops)
+STARTING ── camera ready ─────────────→ LIVE
+STARTING ── camera fails ─────────────→ FAILED(reason)
+LIVE(barcode) ── same code read twice in 1.5 s → FOUND   (camera stops)
+LIVE(barcode) ── 5 detector errors / engine missing → FAILED(engine-failed)
+LIVE(price) ── Read price ──→ READING   (frame captured, camera stops)
+READING ── candidates ──→ PRICES
+READING ── none / timeout / reader unavailable / no frame ──→ PRICE-PROBLEM
+LIVE / STARTING ── page hidden ──→ PAUSED   (camera stops)
 PAUSED ── Resume ──→ STARTING
 FAILED ── Try again (when it can help) ──→ STARTING
-any ── Type barcode ──→ TYPING ── valid digits ──→ FOUND
-FOUND ── Scan another ──→ STARTING
-any ── Cancel / Escape ──→ overlay closed, focus back on "Scan barcode"
+PRICES / PRICE-PROBLEM ── Retake / Try again ──→ STARTING
+any camera phase ── Type barcode ──→ TYPING ── valid digits ──→ FOUND
+FOUND ── Read price tag ──→ STARTING in price mode with the product carried
+FOUND ── Scan another ──→ STARTING in barcode mode
+any ── Cancel / Escape ──→ overlay closed; back to price entry when opened from it, otherwise focus on the scan action
 ```
+
+PRICES → a chosen candidate opens price entry with the price pre-filled and marked as read from the tag. Nothing is added until the shopper confirms there.
+
+Price reader preparation runs when price mode opens: IDLE → PREPARING(progress) → READY | FAILED. A failed preparation is retried by the next Read price.
 
 FOUND by product code:
 
-- known trade item → Enter current price (price entry with the name and barcode) or Use the remembered price again;
-- unknown trade item → optional name, optional tap-only online lookup, then price entry with the barcode;
-- store code → price entry without a barcode;
+- known trade item → Read price tag (when available), enter the current price (price entry with the name and barcode) or Use the remembered price again;
+- unknown trade item → optional name, optional tap-only online lookup, then Read price tag or price entry with the barcode;
+- store code → Read price tag or price entry without a barcode;
 - coupon → scan another or price entry without a barcode.
 
 Online lookup: IDLE → LOADING → found | not-found | failed(offline, timeout, unavailable, invalid-response). A suggestion only fills the editable name field. Cancelling the overlay aborts a pending lookup.
@@ -360,7 +369,6 @@ Online lookup: IDLE → LOADING → found | not-found | failed(offline, timeout,
 Not current behaviour:
 
 - reopen/continue the same completed trip;
-- shelf-OCR candidate review;
 - PWA update/install lifecycle;
 - cloud/multi-device conflict resolution.
 

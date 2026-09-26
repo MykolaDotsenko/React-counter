@@ -120,21 +120,16 @@ The generated service worker is disabled for guarded `/qa/` and `/beta/` builds 
 
 Barcode remains identity, not price authority.
 
-## Future OCR
+## Price tag reading
 
-**PLANNED / GATED.**
+**IMPLEMENTED.**
 
-Provider choice remains benchmark-driven.
+- `tesseract.js` 7.0.0 with `tesseract.js-core` 7.0.0 in LSTM mode and the Finnish `4.0.0_best_int` model from `@tesseract.js-data/fin` 1.0.0 (D-055);
+- the worker, the SIMD and plain LSTM cores and the language file are emitted into a versioned `assets/ocr/` directory and served by this site; the build fails unless each emitted file is byte-identical to its pinned package file;
+- the service worker caches those files on first use and never precaches them;
+- build budgets keep the engine out of the initial bundle and cap it at 40 kB JS and 10.5 MB of engine files, of which a device downloads one core and the language file.
 
-Measure:
-
-- fixture accuracy;
-- mobile latency;
-- bundle/network cost;
-- permission/camera friction;
-- correction burden.
-
-Do not lock a provider based on popularity alone.
+Read prices are candidates, not price authority.
 
 ## Dependency admission rule
 

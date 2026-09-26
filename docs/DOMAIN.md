@@ -243,13 +243,19 @@ Barcode identifies a product, not a guaranteed current shelf price.
 
 Manual current-price entry stays available in every barcode state.
 
-## Shelf-price scanning
+## Shelf-price reading
 
-**PLANNED / GATED.**
+**IMPLEMENTED (D-055).**
 
-OCR output is candidate data.
+OCR output is candidate data. `domain/shelf-price.ts` turns it into ranked exact-money candidates:
 
-No candidate becomes committed money without explicit confirmation where ambiguity/currentness requires it.
+- every accepted amount goes through `parseEurDraft`; bare digits never gain an invented decimal separator, and percentages, dates, weights, volumes and barcodes are not money;
+- an amount needs a euro sign, a price word nearby or headline prominence: printed at least 60 % as tall as the tallest line on the tag;
+- taller printing ranks higher; unit prices, regular prices and multi-buy offers rank lower and carry their context, and a per-item ("yks.") price is not treated as a multi-buy offer;
+- superscript cents read separately join their euros, and cents split into single digits by OCR are rejoined;
+- candidates are de-duplicated by amount and capped at eight.
+
+No candidate becomes committed money until the shopper confirms it in price entry.
 
 ## Discounts / weighted goods / tax mechanics
 

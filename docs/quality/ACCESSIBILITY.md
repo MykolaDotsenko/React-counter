@@ -265,13 +265,16 @@ where that data exists.
 
 Do not imply currentness through iconography alone.
 
-## Barcode scanning
+## Camera scanning
 
 Scanning is optional; "Add price" stays the primary action and manual entry is reachable from every scan state.
 
-- every control is a text-labelled button; the light toggle exposes `aria-pressed`;
-- the scan status is an always-present polite live region ("Point the camera at the barcode", then hints after 8 s);
-- the surface focuses its heading on open, the result or failure heading when one appears, and the digit field when typing a barcode; closing returns focus to "Scan barcode";
+- every control is a text-labelled button; the Barcode / Price tag mode switch and the light toggle expose `aria-pressed`;
+- the scan status is an always-present polite live region (what to point at, hints after 8 s, first-time preparation progress, how many prices were found);
+- a determinate progress bar reports price reader preparation, and an indeterminate one reports reading;
+- price candidates are large buttons whose names include the amount and, where it applies, "Unit price", "Member price", "Regular price" or "Multi-buy";
+- a price read from a tag stays marked as such in price entry until the shopper changes it;
+- the surface focuses its heading on open, the result or failure heading when one appears, and the digit field when typing a barcode; closing returns focus to the scan action, or to price entry when the camera was opened from there;
 - Escape closes the surface from anywhere in it;
 - a blocked, missing or busy camera explains the cause and offers typing the digits and entering the price without scanning;
 - a successful read vibrates briefly where supported and is announced; the scanning line does not animate with reduced motion, and the frame keeps a visible border in forced colours;

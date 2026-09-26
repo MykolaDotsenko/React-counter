@@ -75,6 +75,7 @@ Do not load every decision file for a narrow task. Use the category links or tab
 | D-052 | Each deployed evidence surface keeps its own storage | [Persistence and Data Integrity](./decisions/persistence-data-integrity.md) |
 | D-053 | Production barcode ships ahead of physical evidence, behind kill switches | [Future Capability](./decisions/future-capabilities.md) |
 | D-054 | Barcode names are remembered in their own advisory record | [Persistence and Data Integrity](./decisions/persistence-data-integrity.md) |
+| D-055 | Production price-tag reading ships ahead of field evidence, behind a kill switch | [Future Capability](./decisions/future-capabilities.md) |
 
 ## Usage rule
 

@@ -374,10 +374,22 @@ Tests must prove:
 - barcode links: normalisation, newest-wins with clock rollback, the 500-link bound, versioned storage, damaged/newer/conflicting records reported rather than guessed (`tests/barcode-links.test.ts`);
 - the scan stabiliser needs two agreeing reads in its window and ignores misreads;
 - the controller links a barcode only after a named item is added, recalls the name and the last remembered price, never writes over an unreadable record, clears links with remembered prices and keeps them in memory only in session-only mode (`tests/shopping-app-barcode.test.ts`);
-- the camera adapter picks the native detector only when it reads every retail format, falls back to the lazy engine otherwise, maps camera errors, retries without constraints, releases the camera on every failure and exposes the torch only when present (`tests/barcode-scanner-adapter.test.ts`);
+- the camera adapter maps camera errors, retries without constraints, releases the camera on every failure, exposes the torch only when present, captures exactly the framed part of a cover-fitted preview and loads its implementation only when opened (`tests/browser-camera.test.ts`);
+- the barcode reader picks the native detector only when it reads every retail format, falls back to the lazy engine otherwise, prefetches the fallback once and never detects before the preview has a frame (`tests/barcode-reader-adapter.test.ts`);
 - the Open Food Facts adapter requests only the shown fields, omits credentials and referrer, treats not-found as normal, reports failures without guessing, times out, respects cancellation and never runs while offline or before a tap (`tests/open-food-facts.test.ts`);
-- the scan surface handles every result and failure state, focus, Escape, the light toggle and background pause (`tests/BarcodeScanSurface.test.tsx`), and the shell flow names a product once and recognises it on the next scan (`tests/BarcodeScanFlow.test.tsx`);
+- the scan surface handles every barcode and price tag result and failure state, mode switching on one camera session, preparation progress, focus, Escape, the light toggle, background pause and cancelling an unfinished read (`tests/ScanSurface.test.tsx`); the shell flows name a product once and recognise it on the next scan, read a price tag and add it only after confirmation, return from the camera to price entry with its name and quantity, and show the scan action only for what the device can do (`tests/ScanFlow.test.tsx`);
+- the release switches remove barcode reading, online lookup, price reading or the whole camera independently (`tests/camera-switches.test.ts`);
 - in Chromium, a fake camera streaming a generated EAN-13 decodes through the self-hosted WASM engine with no request leaving the origin, and the result screen passes axe (`e2e/barcode-scanner.spec.js`). The fake-camera test runs in Chromium only; Firefox and WebKit cover the rest of the product flow. When a build switches the scanner off, the same spec instead checks in every browser that the trip offers only manual price entry.
+
+### Production price tag reading
+
+Tests must prove:
+
+- candidate ranking accepts the headline number without a euro sign, keeps unit/regular/member/multi-buy context, puts a multi-buy tag's per-item price first, joins superscript and split cents, never turns quantities, bare digits or codes into prices, and always returns a bounded, duplicate-free, score-ordered list (`tests/shelf-price.test.ts`, including a property test);
+- Tesseract layout mapping reads nested blocks defensively, measures lines by their tallest number, finds the headline number, recognises raised cents and targets the second digits-only read (`tests/price-ocr.test.ts`);
+- the engine reads in one pass when it can, adds the second pass only for whole-euro headlines, replaces a failed worker, times out, stops at once on cancel and refuses reads after dispose; the lazy reader loads the engine once, shares progress, retries a failed load, releases the engine when idle and points it at this site's own files (`tests/price-ocr.test.ts`);
+- price entry starts from a read price, says it came from the tag until the amount changes, and opens the reader with the name and quantity typed so far (`tests/PriceEntrySurface.test.tsx`);
+- in Chromium, a fake camera showing `e2e/fixtures/price-tag-1-29.mjpeg` is read by the self-hosted Tesseract files with no request leaving the origin, the candidate screen passes axe, and the chosen price is added only after confirmation (`e2e/price-tag-scanner.spec.js`). When a build switches price reading off, the same spec checks that price entry offers no reader. `e2e/support/render-price-tag-fixture.mjs` regenerates the fixture.
 
 ### Paired barcode/manual analyzer
 
@@ -494,25 +506,27 @@ Tests must prove:
 
 ### Public bundle budget
 
-The production build has separate total, initial-load and on-demand barcode-engine budgets. The baseline measured on 2026-09-25 with barcode scanning shipped is approximately:
+The production build has separate total, initial-load and on-demand engine budgets. The baseline measured on 2026-09-26 with barcode scanning and price tag reading shipped is approximately:
 
-- initial application JavaScript: 388,001 raw bytes / 111,979 gzip bytes;
-- total public JavaScript (without the barcode engine): 407,660 raw bytes / 119,018 gzip bytes, including the lazy scan surface, the lazy Open Food Facts adapter and Workbox;
-- barcode engine JavaScript (`zxing-fallback-detector-*`): 43,515 raw bytes / 14,943 gzip bytes;
-- barcode engine WASM: 1,093,289 bytes;
-- initial CSS: 68,081 raw bytes / 10,986 gzip bytes; total CSS with the lazy scan surface: 71,479 raw / 12,247 gzip bytes.
+- initial application JavaScript: 391,319 raw bytes / 113,160 gzip bytes;
+- total public JavaScript (without the barcode and price engines): 421,440 raw bytes / 123,657 gzip bytes, including the lazy scan surface, the lazy camera implementation, the lazy Open Food Facts adapter and Workbox;
+- barcode engine JavaScript (`zxing-fallback-detector-*`): 43,541 raw bytes / 14,964 gzip bytes; barcode engine WASM: 1,093,289 bytes;
+- price reader JavaScript (`tesseract-price-reader-*`): 26,482 raw bytes / 10,753 gzip bytes; price reader files: 9,798,124 bytes, of which a device downloads one 2.9 MB core and the 3.8 MB language file;
+- initial CSS: 68,130 raw bytes / 11,001 gzip bytes; total CSS with the lazy scan surface: 74,153 raw / 12,736 gzip bytes.
 
 CI currently enforces:
 
-- total public JavaScript without the barcode engine: <= 420,000 raw / 124,000 gzip bytes;
-- initial JavaScript referenced by the public HTML: <= 395,000 raw / 115,000 gzip bytes, and it must not contain the barcode engine;
+- total public JavaScript without the engines: <= 430,000 raw / 128,000 gzip bytes;
+- initial JavaScript referenced by the public HTML: <= 395,000 raw / 115,000 gzip bytes, and it must contain neither engine;
 - any single JavaScript chunk: <= 395,000 raw bytes;
 - exactly one barcode engine chunk: <= 60,000 raw / 20,000 gzip bytes, outside the initial bundle;
 - exactly one barcode engine WASM file: <= 1,200,000 bytes, whose SHA-256 must equal the bundled `zxing-wasm` reader build;
+- exactly one price reader chunk: <= 40,000 raw / 14,000 gzip bytes, outside the initial bundle;
+- every self-hosted price reader file present, within its own budget, byte-identical to its pinned package file, <= 10,500,000 bytes together, and absent from the service worker precache;
 - total public CSS: <= 80,000 raw / 13,000 gzip bytes;
-- initial CSS referenced by the public HTML: <= 70,000 raw / 11,000 gzip bytes.
+- initial CSS referenced by the public HTML: <= 70,000 raw / 11,100 gzip bytes.
 
-The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a camera capability can be code-split without silently joining the startup path. The total budgets were raised explicitly for the lazy barcode surface (D-053); the initial-load budgets did not change.
+The build validator classifies module scripts, module-preload links and stylesheets from generated HTML, so a camera capability can be code-split without silently joining the startup path. The total budgets were raised explicitly for the lazy scan surface (D-053, D-055), and the initial CSS gzip budget by 100 bytes for the price entry "Read price tag" control (D-055).
 
 Protect:
 
