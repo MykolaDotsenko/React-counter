@@ -89,15 +89,14 @@ export function FinishTripSurface({
           <p className={styles.eyebrow}>Finish shopping</p>
           <h1 id="finish-trip-title">Ready to finish this trip?</h1>
           <p>
-            We’ll keep this trip in local history. You can add the actual
-            checkout total afterwards if you want to compare it with what
-            you tracked.
+            Your trip will be saved to History on this device. You can add
+            the receipt total next.
           </p>
         </header>
 
         <section className={styles.summary} aria-label="Trip review">
           <div>
-            <span>Tracked cart</span>
+            <span>Cart total</span>
             <strong>{formatEur(total, locale)}</strong>
           </div>
           <div>
@@ -111,9 +110,8 @@ export function FinishTripSurface({
         </section>
 
         <p className={styles.safety}>
-          Finishing locks this trip against ordinary cart edits. If history
-          cannot be written safely, the active trip will stay open instead
-          of being discarded.
+          Items can’t be changed after finishing. If saving fails, the trip
+          stays open.
         </p>
 
         {visibleFailure !== null ? (

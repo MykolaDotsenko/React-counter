@@ -768,7 +768,7 @@ export default function ScanSurface({
             ) : null}
             <div className={styles.row}>
               <button type="submit" className={styles.primary}>
-                Look up barcode
+                Use barcode
               </button>
               {camera.isAvailable() ? (
                 <button type="button" className={styles.secondary} onClick={restartCamera}>

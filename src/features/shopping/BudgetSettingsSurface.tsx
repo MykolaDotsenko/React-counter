@@ -252,7 +252,7 @@ export function BudgetSettingsSurface({
         </header>
 
         <p className={styles.context}>
-          Your cart stays unchanged. Current tracked total:{" "}
+          Your cart stays as it is. Cart total:{" "}
           <strong>{formatEur(cartTotal(trip), locale)}</strong>.
         </p>
 

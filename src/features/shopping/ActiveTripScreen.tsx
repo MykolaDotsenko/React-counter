@@ -77,6 +77,12 @@ const sourceLabel = (item: CartItem): string => {
   }
 };
 
+const trustLabel = (item: CartItem): string =>
+  item.priceSource.kind === "price-memory" &&
+  item.priceConfidence.kind === "remembered"
+    ? "Remembered price"
+    : `${confidenceLabel(item)} · ${sourceLabel(item)}`;
+
 const clampPercentage = (value: number): number =>
   Math.min(100, Math.max(0, value));
 
@@ -387,7 +393,7 @@ export function ActiveTripScreen({
                           className={styles.itemTrust}
                           data-confidence={item.priceConfidence.kind}
                         >
-                          {confidenceLabel(item)} · {sourceLabel(item)}
+                          {trustLabel(item)}
                         </small>
                       ) : null}
                     </div>

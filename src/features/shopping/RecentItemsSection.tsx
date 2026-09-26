@@ -132,8 +132,7 @@ export function RecentItemsSection({
       </div>
 
       <p className={styles.intro}>
-        These are old observed prices, not live store prices. Use one only
-        when it still looks right, or enter the current price instead.
+        Prices from past trips. Check the shelf, or enter today’s price.
       </p>
 
       {persistenceDegraded ? (

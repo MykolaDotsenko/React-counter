@@ -34,12 +34,12 @@ const differenceLabel = (
   }
 
   if (difference === 0) {
-    return "Checkout matched";
+    return "Receipt matched";
   }
 
   return difference > 0
-    ? `${formatAbsoluteEur(difference, locale)} more at checkout`
-    : `${formatAbsoluteEur(difference, locale)} less at checkout`;
+    ? `Paid ${formatAbsoluteEur(difference, locale)} more`
+    : `Paid ${formatAbsoluteEur(difference, locale)} less`;
 };
 
 const completedLabel = (
@@ -80,7 +80,7 @@ export function HistoryTripCard({
           <span className={styles.completedAt}>
             {completedLabel(trip, locale)}
           </span>
-          <strong>{formatEur(tracked, locale)} tracked</strong>
+          <strong>{formatEur(tracked, locale)} cart total</strong>
         </div>
         <span className={styles.itemCount}>
           {quantity} {quantity === 1 ? "item" : "items"}
@@ -93,7 +93,7 @@ export function HistoryTripCard({
           <dd>{formatEur(trip.budgetMinor, locale)}</dd>
         </div>
         <div>
-          <dt>Checkout</dt>
+          <dt>Receipt</dt>
           <dd>
             {trip.actualCheckoutMinor === undefined
               ? "Not added"

@@ -116,7 +116,7 @@ describe("HistoryScreen", () => {
       />,
     );
 
-    const tracked = screen.getAllByText("€0.00 tracked");
+    const tracked = screen.getAllByText("€0.00 cart total");
     expect(tracked).toHaveLength(2);
     expect(screen.getByText("€25.00")).not.toBeNull();
     expect(screen.getByText("€50.00")).not.toBeNull();
@@ -124,7 +124,7 @@ describe("HistoryScreen", () => {
     expect(screen.getByText("€25.00 under budget")).not.toBeNull();
     expect(screen.getByText("€50.00 under budget")).not.toBeNull();
     expect(
-      screen.getByText("€24.00 more at checkout"),
+      screen.getByText("Paid €24.00 more"),
     ).not.toBeNull();
     expect(trips[0]).toBe(older);
     expect(trips[1]).toBe(newer);

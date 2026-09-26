@@ -58,7 +58,7 @@ export const remainingFeedback = (
     )} safety buffer left.`;
   }
 
-  return `${formatEur(nominalRemaining, locale)} remaining.`;
+  return `${formatEur(nominalRemaining, locale)} left.`;
 };
 
 export const addedFeedback = (

@@ -119,7 +119,7 @@ const noticeCopy = (
         body:
           context === "active"
             ? "Keep this page open until checkout. Your totals still work in this tab, and you can retry saving without changing the cart."
-            : "Keep this page open while you retry saving. The app will not claim durability until storage succeeds.",
+            : "Keep this page open while you retry saving. We’ll confirm as soon as it’s saved.",
         risk: "trip",
       };
   }

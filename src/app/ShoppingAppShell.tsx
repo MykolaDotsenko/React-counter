@@ -438,7 +438,7 @@ export function ShoppingAppShell({
               }
 
               setLastAddedMessage(
-                `${record.label} added from a remembered price. ${remainingFeedback(
+                `${record.label} added at its remembered price. ${remainingFeedback(
                   result.state.activeTrip,
                   SHOPPING_LOCALE,
                 )}`,
@@ -592,7 +592,7 @@ export function ShoppingAppShell({
               }
 
               setLastAddedMessage(
-                `Item corrected. ${remainingFeedback(
+                `Item updated. ${remainingFeedback(
                   result.state.activeTrip,
                   SHOPPING_LOCALE,
                 )}`,
@@ -690,7 +690,7 @@ export function ShoppingAppShell({
           }
 
           setLastAddedMessage(
-            `${record.label} added from a remembered price. ${remainingFeedback(
+            `${record.label} added at its remembered price. ${remainingFeedback(
               result.state.activeTrip,
               SHOPPING_LOCALE,
             )}`,

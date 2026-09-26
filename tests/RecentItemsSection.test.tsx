@@ -80,7 +80,7 @@ describe("RecentItemsSection", () => {
       screen.getByText("Remembered · Seen 2 days ago"),
     ).not.toBeNull();
     expect(
-      screen.getByText(/old observed prices, not live store prices/i),
+      screen.getByText(/Prices from past trips\. Check the shelf/i),
     ).not.toBeNull();
   });
 

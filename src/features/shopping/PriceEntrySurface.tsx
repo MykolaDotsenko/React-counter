@@ -1,8 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import {
-  MAX_MVP_QUANTITY,
-  MIN_MVP_QUANTITY,
   formatEur,
   type MinorUnits,
   type MoneyDraftMode,
@@ -443,9 +441,6 @@ export function PriceEntrySurface({
         >
           <div className={styles.quantityCopy}>
             <span id="quantity-title">Quantity</span>
-            <small>
-              {MIN_MVP_QUANTITY}–{MAX_MVP_QUANTITY}
-            </small>
           </div>
 
           <div className={styles.quantityStepper}>
@@ -494,7 +489,7 @@ export function PriceEntrySurface({
           </p>
         ) : null}
 
-        {consequence ? (
+        {consequence && activeConfirmation === null ? (
           <section
             id={projectionId}
             className={styles.projection}
@@ -527,7 +522,9 @@ export function PriceEntrySurface({
             <p>
               {draft.raw === ""
                 ? "Start with the price."
-                : "Mode is locked until you clear the draft."}
+                : draft.mode === "decimal"
+                  ? "Clear the price to switch to cents."
+                  : "Clear the price to switch to euros."}
             </p>
           </div>
   
@@ -551,7 +548,7 @@ export function PriceEntrySurface({
                 value={label}
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="Milk 1L"
+                placeholder="e.g. Milk 1L"
                 aria-invalid={Boolean(labelError)}
                 onChange={(event) => {
                   const next = event.currentTarget.value;
@@ -569,7 +566,7 @@ export function PriceEntrySurface({
               />
             </label>
             <p className={styles.labelHint}>
-              Named confirmed items can appear in Recent Items after this trip is finished.
+              Named items show up in Recent Items next time.
             </p>
             {labelError ? (
               <p className={styles.labelError} role="alert">
@@ -603,7 +600,13 @@ export function PriceEntrySurface({
                     locale,
                   )}
                 </strong>{" "}
-                over your limit. Your current trip has not changed.
+                over your limit. The cart would be{" "}
+                {formatAbsoluteSigned(
+                  activeConfirmation.projection.cartTotalMinor,
+                  locale,
+                )}{" "}
+                of {formatEur(trip.budgetMinor, locale)}. Nothing has been
+                added yet.
               </p>
             </div>
 
@@ -614,7 +617,7 @@ export function PriceEntrySurface({
                 className={styles.confirmationCancel}
                 onClick={cancelOverBudgetConfirmation}
               >
-                Cancel
+                Change price
               </button>
               <button
                 type="button"
@@ -624,10 +627,10 @@ export function PriceEntrySurface({
               >
                 {submitted
                   ? "Adding…"
-                  : `Add anyway · ${formatAbsoluteSigned(
+                  : `Add ${formatAbsoluteSigned(
                       activeConfirmation.projection.lineTotalMinor,
                       locale,
-                    )}`}
+                    )} anyway`}
               </button>
             </div>
           </section>

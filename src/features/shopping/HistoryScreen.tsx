@@ -188,8 +188,7 @@ export function HistoryScreen({
             <p className={styles.eyebrow}>Trip history</p>
             <h1 id="history-title">Past shopping trips</h1>
             <p>
-              A simple record of what you tracked and, when provided,
-              what checkout actually cost.
+              Your past trips and, when you added one, the receipt total.
             </p>
           </div>
         </header>

@@ -358,7 +358,7 @@ test("has no detectable WCAG A/AA violations on nominal over-budget review", asy
   await page.getByRole("textbox", { name: "Price" }).fill("53.41");
   await page.getByRole("button", { name: "Add · €53.41" }).click();
 
-  const cancel = page.getByRole("button", { name: "Cancel" }).last();
+  const cancel = page.getByRole("button", { name: "Change price" });
   await expect(cancel).toBeFocused();
   await expect(
     page.getByRole("heading", { name: "Add this price anyway?" }),
@@ -412,7 +412,7 @@ test("returns keyboard focus to the edited item after cancel and save", async ({
   await page.keyboard.press("Enter");
 
   await expect(
-    page.getByText("Item corrected. €44.71 remaining.", {
+    page.getByText("Item updated. €44.71 left.", {
       exact: true,
     }),
   ).toBeVisible();

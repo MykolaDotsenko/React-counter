@@ -240,11 +240,6 @@
   font-weight: 800;
 }
 
-.quantityCopy small {
-  color: var(--muted);
-  font-size: 0.74rem;
-}
-
 .quantityStepper {
   flex: 0 0 auto;
   display: grid;

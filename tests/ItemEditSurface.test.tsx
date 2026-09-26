@@ -109,7 +109,7 @@ describe("ItemEditSurface", () => {
     ).not.toBeNull();
 
     await user.click(
-      screen.getByRole("button", { name: "Save correction" }),
+      screen.getByRole("button", { name: "Save changes" }),
     );
 
     expect(onSave).toHaveBeenCalledTimes(1);
@@ -141,7 +141,7 @@ describe("ItemEditSurface", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "Save correction" }),
+      screen.getByRole("button", { name: "Save changes" }),
     );
 
     expect(onSave).toHaveBeenCalledWith({
@@ -177,7 +177,7 @@ describe("ItemEditSurface", () => {
     ).not.toBeNull();
     expect(
       (screen.getByRole("button", {
-        name: "Save correction",
+        name: "Save changes",
       }) as HTMLButtonElement).disabled,
     ).toBe(true);
     expect(onSave).not.toHaveBeenCalled();
@@ -213,7 +213,7 @@ describe("ItemEditSurface", () => {
     ).toBeNull();
 
     await user.click(
-      screen.getByRole("button", { name: "Save correction" }),
+      screen.getByRole("button", { name: "Save changes" }),
     );
     expect(onSave).toHaveBeenCalledWith({
       unitPriceMinor: 600,
@@ -263,7 +263,7 @@ describe("ItemEditSurface", () => {
     expect(
       (
         screen.getByRole("button", {
-          name: "Save correction",
+          name: "Save changes",
         }) as HTMLButtonElement
       ).disabled,
     ).toBe(true);

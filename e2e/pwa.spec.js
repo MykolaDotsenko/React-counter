@@ -172,7 +172,7 @@ test("restores active and completed shopping state with the browser offline", as
       .getByRole("button", { name: "View trip history · 1" })
       .click();
 
-    await expect(page.getByText("€4.79 tracked")).toBeVisible();
+    await expect(page.getByText("€4.79 cart total")).toBeVisible();
   } finally {
     await context.setOffline(false);
   }

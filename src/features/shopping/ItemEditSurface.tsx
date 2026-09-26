@@ -167,7 +167,7 @@ export function ItemEditSurface({
     });
 
     if (accepted === false) {
-      setSubmissionError("Could not save this correction. Try again.");
+      setSubmissionError("Could not save these changes. Try again.");
       return;
     }
 
@@ -231,7 +231,7 @@ export function ItemEditSurface({
       <section className={styles.sheet}>
         <header className={styles.header}>
           <div>
-            <p className={styles.eyebrow}>Correct item</p>
+            <p className={styles.eyebrow}>Edit item</p>
             <h1 id="edit-item-title">
               {item.label ?? "Edit price and quantity"}
             </h1>
@@ -323,7 +323,6 @@ export function ItemEditSurface({
         >
           <div>
             <span id="edit-quantity-title">Quantity</span>
-            <small>Changes apply immediately when you save.</small>
           </div>
           <div className={styles.stepper}>
             <button
@@ -365,11 +364,6 @@ export function ItemEditSurface({
           </section>
         ) : null}
 
-        <p className={styles.guidance}>
-          Correcting a price records your manual value as confirmed.
-          Quantity-only changes keep the existing price provenance.
-        </p>
-
         {submissionError ? (
           <p className={styles.error} role="alert">
             {submissionError}
@@ -387,7 +381,7 @@ export function ItemEditSurface({
           }
           onClick={submit}
         >
-          {submitted ? "Saving…" : "Save correction"}
+          {submitted ? "Saving…" : "Save changes"}
         </button>
       </section>
     </main>

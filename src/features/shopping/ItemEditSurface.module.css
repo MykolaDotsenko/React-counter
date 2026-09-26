@@ -149,13 +149,6 @@
   gap: 4px;
 }
 
-.quantitySection small,
-.guidance {
-  color: var(--shopping-muted);
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
 .stepper {
   flex: 0 0 auto;
   display: grid;
@@ -199,10 +192,6 @@
   color: var(--shopping-muted-strong);
   font-size: 0.84rem;
   line-height: 1.4;
-}
-
-.guidance {
-  margin: 0;
 }
 
 .error {

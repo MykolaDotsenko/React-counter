@@ -256,9 +256,17 @@ describe("PriceEntrySurface", () => {
     ).not.toBeNull();
     expect(input.readOnly).toBe(true);
     expect(trip.items).toHaveLength(0);
+    expect(screen.queryByLabelText("Projected cart result")).toBeNull();
+    expect(screen.getAllByText(/over your limit/)).toHaveLength(1);
+    expect(
+      screen.getByRole("region", { name: "Add this price anyway?" })
+        .textContent,
+    ).toContain(
+      "This puts you €3.41 over your limit. The cart would be €53.41 of €50.00. Nothing has been added yet.",
+    );
 
     await user.click(
-      screen.getByRole("button", { name: "Add anyway · €53.41" }),
+      screen.getByRole("button", { name: "Add €53.41 anyway" }),
     );
 
     expect(onValidatedItem).toHaveBeenCalledTimes(1);
@@ -291,7 +299,7 @@ describe("PriceEntrySurface", () => {
     );
 
     await user.click(
-      screen.getAllByRole("button", { name: "Cancel" }).at(-1)!,
+      screen.getByRole("button", { name: "Change price" }),
     );
 
     expect(onValidatedItem).not.toHaveBeenCalled();
@@ -353,7 +361,7 @@ describe("PriceEntrySurface", () => {
     );
 
     const addAnyway = screen.getByRole("button", {
-      name: "Add anyway · €53.41",
+      name: "Add €53.41 anyway",
     });
 
     await user.dblClick(addAnyway);
@@ -537,7 +545,7 @@ describe("PriceEntrySurface", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Add anyway · €60.00",
+        name: "Add €60.00 anyway",
       }),
     );
 
