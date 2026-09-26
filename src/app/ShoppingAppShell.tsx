@@ -44,8 +44,10 @@ import type {
 } from "../features/shopping/scan-targets";
 import { StartTripScreen } from "../features/shopping/StartTripScreen";
 import { useShoppingEvidence } from "#shopping-evidence";
+import type { InstallPromptSource } from "../infrastructure/runtime/install-prompt";
 import { addedFeedback, remainingFeedback } from "../features/shopping/shopping-feedback";
 import { AppFooter } from "./AppFooter";
+import { InstallOffer } from "./InstallOffer";
 import {
   readScanModePreference,
   writeScanModePreference,
@@ -62,6 +64,7 @@ export interface ShoppingAppShellProps {
   readonly barcodeReader?: BarcodeReaderPort | null;
   readonly priceReader?: PriceTagReaderPort | null;
   readonly productLookup?: ProductLookupPort | null;
+  readonly installPrompt?: InstallPromptSource;
 }
 
 interface ShoppingAppScreensProps extends ShoppingAppShellProps {
@@ -177,6 +180,7 @@ function ShoppingAppScreens({
   barcodeReader = null,
   priceReader = null,
   productLookup = null,
+  installPrompt,
   lastAddedMessage,
   setLastAddedMessage,
 }: ShoppingAppScreensProps) {
@@ -339,6 +343,18 @@ function ShoppingAppScreens({
             setOverlay({ kind: "history" });
           }}
           utilityControl={<AppearanceSwitcher />}
+          notice={
+            installPrompt === undefined ? null : (
+              <InstallOffer
+                source={installPrompt}
+                hasSavedShopping={
+                  state.completedTrips.length > 0 ||
+                  state.priceMemories.length > 0 ||
+                  state.barcodeLinks.length > 0
+                }
+              />
+            )
+          }
           footer={<AppFooter />}
         />
         {qaPanel}

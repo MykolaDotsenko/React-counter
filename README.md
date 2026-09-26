@@ -26,7 +26,7 @@
 - **Finish and compare:** finish the trip, add the receipt total and see how close you were.
 - **Shop again with less typing:** reuse your last budget, and remembered prices from past trips — always with an explicit way to enter today’s price.
 - **Use the camera if you like:** scan a barcode to recall a product and its last price, or read a shelf price tag; the camera picture never leaves the phone.
-- **Private and offline:** no account and no bank connection; everything stays on your device, and the app works offline once opened. Install it from the browser’s menu to keep it on your home screen.
+- **Private and offline:** no account and no bank connection; everything stays on your device, and the app works offline once opened. Install it to keep it on your home screen; the app offers this on the start screen where the browser allows it, and on iPhone it explains Add to Home Screen before your first trip.
 
 This is deliberately narrower than a generic expense tracker:
 

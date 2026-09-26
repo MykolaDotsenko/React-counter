@@ -129,6 +129,7 @@ export interface StartTripScreenProps {
   readonly onOpenHistory?: () => void;
   readonly locale?: string;
   readonly utilityControl?: ReactNode;
+  readonly notice?: ReactNode;
   readonly footer?: ReactNode;
 }
 
@@ -143,6 +144,7 @@ export function StartTripScreen({
   onOpenHistory,
   locale = SHOPPING_LOCALE,
   utilityControl,
+  notice,
   footer,
 }: StartTripScreenProps) {
   const customRegionId = useId();
@@ -464,6 +466,7 @@ export function StartTripScreen({
           No account. Your shopping data stays on this device.
         </p>
 
+        {notice ?? null}
         {utilityControl ?? null}
         {footer ?? null}
       </section>

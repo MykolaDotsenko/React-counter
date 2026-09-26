@@ -53,6 +53,25 @@ describe("shopping shell accessibility", () => {
     expect(screen.getByText("vtest")).not.toBeNull();
   });
 
+  it("offers installing the app on the start screen and never inside a trip", async () => {
+    const user = userEvent.setup();
+    const prompt = { install: vi.fn() };
+
+    render(
+      <ShoppingAppShell
+        controller={boot()}
+        installPrompt={{ current: () => prompt, subscribe: () => () => {} }}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Install the app" })).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "€50" }));
+    await screen.findByRole("heading", { name: "Know what’s left" });
+
+    expect(screen.queryByRole("heading", { name: "Install the app" })).toBeNull();
+  });
+
   it("moves focus to each new screen's heading and back to the top of the page", async () => {
     const user = userEvent.setup();
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});

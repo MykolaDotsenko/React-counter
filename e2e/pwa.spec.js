@@ -209,3 +209,69 @@ test("links a readable privacy page from the start screen", async ({ page }) => 
     page.getByRole("heading", { name: "How much can you spend today?" }),
   ).toBeVisible();
 });
+
+test("offers the browser's install prompt on the start screen and remembers the answer", async ({
+  page,
+}) => {
+  await page.goto(appPath);
+
+  await page.evaluate(() => {
+    window.installPromptCalls = 0;
+    const event = new Event("beforeinstallprompt", { cancelable: true });
+    event.prompt = () => {
+      window.installPromptCalls += 1;
+      return Promise.resolve();
+    };
+    window.dispatchEvent(event);
+  });
+
+  await expect(page.getByRole("heading", { name: "Install the app" })).toBeVisible();
+  await page.getByRole("button", { name: "Install", exact: true }).click();
+
+  await expect(page.getByRole("heading", { name: "Install the app" })).toHaveCount(0);
+  expect(await page.evaluate(() => window.installPromptCalls)).toBe(1);
+
+  await page.reload();
+  await page.evaluate(() => {
+    const event = new Event("beforeinstallprompt", { cancelable: true });
+    event.prompt = () => Promise.resolve();
+    window.dispatchEvent(event);
+  });
+
+  await expect(
+    page.getByRole("heading", { name: "How much can you spend today?" }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Install the app" })).toHaveCount(0);
+});
+
+test.describe("on Safari for iPhone", () => {
+  test.use({
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1",
+  });
+
+  test("suggests Add to Home Screen before the first trip and not once trips are saved", async ({
+    page,
+  }) => {
+    await page.goto(appPath);
+
+    await expect(
+      page.getByRole("heading", { name: "Add it to your Home Screen first" }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "€50", exact: true }).click();
+    await page.getByRole("button", { name: "Add price" }).click();
+    await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+    await page.getByRole("button", { name: "Add · €4.79" }).click();
+    await page.getByRole("button", { name: "Finish trip" }).click();
+    await page.getByRole("button", { name: "Finish trip" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "How much can you spend today?" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Add it to your Home Screen first" }),
+    ).toHaveCount(0);
+  });
+});

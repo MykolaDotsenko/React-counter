@@ -23,6 +23,10 @@ import {
   priceOcrEnabled,
   productLookupEnabled,
 } from "../infrastructure/runtime/feature-flags";
+import {
+  listenForInstallPrompt,
+  type InstallPromptSource,
+} from "../infrastructure/runtime/install-prompt";
 import { requestPersistentStorage } from "../infrastructure/runtime/persistent-storage";
 import { subscribeToStorageChangesFromOtherTabs } from "../infrastructure/runtime/storage-change-events";
 import { createActiveTripPersistencePort } from "../infrastructure/storage/active-trip-persistence-port";
@@ -99,6 +103,9 @@ export const keepHistoryFromEviction = (
   check();
   return controller.subscribe(check);
 };
+
+export const listenForAppInstallPrompt = (): InstallPromptSource =>
+  listenForInstallPrompt();
 
 export const followStorageChangesFromOtherTabs = (
   controller: ShoppingAppController,

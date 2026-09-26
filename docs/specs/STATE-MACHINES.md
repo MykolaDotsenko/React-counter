@@ -353,7 +353,7 @@ UPDATE_WAITING ── Later ──→ NO_UPDATE   (prompt dismissed, nothing rel
 UPDATE_WAITING ── Update app ──→ new worker activates, page reloads
 ```
 
-The prompt is shown only while the lifecycle is IDLE; in BOOTING, ACTIVE, COMPLETED_SUMMARY and RECOVERY it is withheld, so an update never reloads an open trip, a finished-trip summary or a recovery screen. Installing is the browser's own flow from the web manifest; the app keeps no install state.
+The prompt is shown only while the lifecycle is IDLE; in BOOTING, ACTIVE, COMPLETED_SUMMARY and RECOVERY it is withheld, so an update never reloads an open trip, a finished-trip summary or a recovery screen. Installing is the browser's own flow from the web manifest. The start screen (IDLE only) offers the browser's install prompt when the browser provides one; on Safari for iPhone and iPad it instead explains Add to Home Screen, but only while nothing is saved there, because a Home Screen app starts with its own empty storage and earlier trips would look lost. Dismissing the offer is remembered as a convenience preference.
 
 ## Planned transitions
 

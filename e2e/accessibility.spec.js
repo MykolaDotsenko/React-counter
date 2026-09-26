@@ -18,6 +18,24 @@ test("has no detectable WCAG A/AA violations on the start screen", async ({
   expect(results.violations).toEqual([]);
 });
 
+test("has no detectable WCAG A/AA violations with the install offer on the start screen", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "axe scan runs once in Chromium");
+
+  await page.goto("/");
+  await page.evaluate(() => {
+    const event = new Event("beforeinstallprompt", { cancelable: true });
+    event.prompt = () => Promise.resolve();
+    window.dispatchEvent(event);
+  });
+  await expect(page.getByRole("heading", { name: "Install the app" })).toBeVisible();
+
+  const results = await scan(page);
+  expect(results.violations).toEqual([]);
+});
+
 test("has no detectable WCAG A/AA violations through the explicit Dark core flow", async ({
   page,
   browserName,
