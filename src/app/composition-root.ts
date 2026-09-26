@@ -1,7 +1,9 @@
 import type {
-  BarcodeScannerPort,
+  BarcodeReaderPort,
   ProductLookupPort,
 } from "../application/barcode-ports";
+import type { CameraPort } from "../application/camera-ports";
+import type { PriceTagReaderPort } from "../application/price-tag-ports";
 import {
   createShoppingAppController,
   type Clock,
@@ -12,10 +14,13 @@ import {
   cryptoIdGenerator,
   systemClock,
 } from "../infrastructure/runtime/browser-boundaries";
-import { createBrowserBarcodeScanner } from "../infrastructure/barcode/browser-scanner-environment";
+import { createBrowserBarcodeReader } from "../infrastructure/barcode/browser-barcode-environment";
+import { createBrowserCamera } from "../infrastructure/camera/browser-camera-environment";
+import { createLazyTesseractPriceReader } from "../infrastructure/price-ocr/lazy-price-reader";
 import { createLazyOpenFoodFactsLookup } from "../infrastructure/product-lookup/lazy-product-lookup";
 import {
   barcodeScannerEnabled,
+  priceOcrEnabled,
   productLookupEnabled,
 } from "../infrastructure/runtime/feature-flags";
 import { createActiveTripPersistencePort } from "../infrastructure/storage/active-trip-persistence-port";
@@ -77,8 +82,16 @@ export const bootstrapBrowserShoppingAppController = (
   return controller;
 };
 
-export const createBrowserScanner = (): BarcodeScannerPort | null =>
-  barcodeScannerEnabled ? createBrowserBarcodeScanner() : null;
+export const createBrowserCameraPort = (): CameraPort | null =>
+  barcodeScannerEnabled || priceOcrEnabled ? createBrowserCamera() : null;
+
+export const createBrowserBarcodeReaderPort = (): BarcodeReaderPort | null =>
+  barcodeScannerEnabled ? createBrowserBarcodeReader() : null;
+
+export const createBrowserPriceTagReader = (): PriceTagReaderPort | null =>
+  priceOcrEnabled && typeof window !== "undefined"
+    ? createLazyTesseractPriceReader()
+    : null;
 
 export const createBrowserProductLookup = (): ProductLookupPort | null =>
   productLookupEnabled && typeof fetch === "function"

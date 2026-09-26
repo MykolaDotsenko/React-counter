@@ -148,6 +148,18 @@
   font-weight: 800;
 }
 
+.amountLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tagSource {
+  color: var(--muted);
+  font-weight: 650;
+}
+
 .amountShell {
   min-height: 78px;
   display: grid;

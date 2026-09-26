@@ -1,12 +1,15 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 
 import type {
-  BarcodeScannerPort,
+  BarcodeReaderPort,
   ProductLookupPort,
 } from "../application/barcode-ports";
+import type { CameraPort } from "../application/camera-ports";
+import type { PriceTagReaderPort } from "../application/price-tag-ports";
 import { useShoppingAppState } from "../application/react/use-shopping-app-state";
 import { needsSaveAttention } from "../application/session-only-persistence";
 import type { ShoppingAppController } from "../application/shopping-app-controller";
+import type { MinorUnits } from "../domain/money";
 import type {
   PriceMemoryId,
   PriceMemoryRecord,
@@ -36,6 +39,11 @@ import {
   type ValidatedItemIntent,
 } from "../features/shopping/PriceEntrySurface";
 import { RecoveryScreen } from "../features/shopping/RecoveryScreen";
+import type {
+  PriceEntryTarget,
+  ScanContext,
+  ScanMode,
+} from "../features/shopping/scan-targets";
 import { StartTripScreen } from "../features/shopping/StartTripScreen";
 import { useShoppingEvidence } from "#shopping-evidence";
 import { addedFeedback, remainingFeedback } from "../features/shopping/shopping-feedback";
@@ -46,22 +54,51 @@ import styles from "./ShoppingAppShell.module.css";
 
 export interface ShoppingAppShellProps {
   readonly controller: ShoppingAppController;
-  readonly scanner?: BarcodeScannerPort | null;
+  readonly camera?: CameraPort | null;
+  readonly barcodeReader?: BarcodeReaderPort | null;
+  readonly priceReader?: PriceTagReaderPort | null;
   readonly productLookup?: ProductLookupPort | null;
 }
 
-const BarcodeScanSurface = lazy(
-  () => import("../features/shopping/BarcodeScanSurface"),
-);
+const ScanSurface = lazy(() => import("../features/shopping/ScanSurface"));
+
+type FocusReturn = "scan" | "price-trigger";
+
+interface AddPriceOverlay {
+  readonly kind: "add-price";
+  readonly initialLabel?: string;
+  readonly sourceMemoryId?: PriceMemoryId;
+  readonly barcode?: Gtin;
+  readonly initialPrice?: MinorUnits;
+  readonly initialQuantity?: number;
+  readonly returnTo: FocusReturn;
+}
+
+interface ScanOverlay {
+  readonly kind: "scan";
+  readonly mode: ScanMode;
+  readonly context: ScanContext;
+  readonly entry?: {
+    readonly quantity: number;
+    readonly sourceMemoryId?: PriceMemoryId;
+    readonly returnTo: FocusReturn;
+  };
+}
+
+const entryOverlay = (
+  target: PriceEntryTarget,
+  extra: Omit<AddPriceOverlay, "kind" | "initialLabel" | "barcode" | "initialPrice">,
+): AddPriceOverlay => ({
+  kind: "add-price",
+  ...(target.label === undefined ? {} : { initialLabel: target.label }),
+  ...(target.barcode === undefined ? {} : { barcode: target.barcode }),
+  ...(target.price === undefined ? {} : { initialPrice: target.price }),
+  ...extra,
+});
 
 type TripOverlay =
-  | {
-      readonly kind: "add-price";
-      readonly initialLabel?: string;
-      readonly sourceMemoryId?: PriceMemoryId;
-      readonly barcode?: Gtin;
-    }
-  | { readonly kind: "barcode-scan" }
+  | AddPriceOverlay
+  | ScanOverlay
   | { readonly kind: "budget-settings" }
   | { readonly kind: "edit-item"; readonly itemId: ItemId }
   | { readonly kind: "finish-trip" };
@@ -75,7 +112,9 @@ const NO_OVERLAY: OverlayState = { kind: "none" };
 
 export function ShoppingAppShell({
   controller,
-  scanner = null,
+  camera = null,
+  barcodeReader = null,
+  priceReader = null,
   productLookup = null,
 }: ShoppingAppShellProps) {
   const state = useShoppingAppState(controller);
@@ -83,8 +122,8 @@ export function ShoppingAppShell({
     addPriceButtonRef,
     finishTripButtonRef,
     adjustBudgetButtonRef,
-    scanBarcodeButtonRef,
-    returnFocusToScanBarcode,
+    scanButtonRef,
+    returnFocusToScan,
     returnFocusToAddPrice,
     returnFocusToPriceTrigger,
     returnFocusToFinishTrip,
@@ -103,13 +142,28 @@ export function ShoppingAppShell({
     }
   };
   const [lastAddedMessage, setLastAddedMessage] = useState("");
-  const scanning = scanner !== null && scanner.isAvailable() ? scanner : null;
+  const cameraReady = camera !== null && camera.isAvailable() ? camera : null;
+  const scanBarcode = cameraReady === null ? null : barcodeReader;
+  const scanPrice = cameraReady === null ? null : priceReader;
+  const scanLabel =
+    scanBarcode !== null && scanPrice !== null
+      ? "Scan barcode or price tag"
+      : scanBarcode !== null
+        ? "Scan barcode"
+        : "Read price tag";
+  const returnFocus = (target: FocusReturn, sourceMemoryId?: PriceMemoryId): void => {
+    if (target === "scan") {
+      returnFocusToScan();
+    } else {
+      returnFocusToPriceTrigger(sourceMemoryId);
+    }
+  };
 
   useEffect(() => {
     if (state.lifecycle === "active") {
-      scanning?.prepare();
+      scanBarcode?.prepare();
     }
-  }, [scanning, state.lifecycle]);
+  }, [scanBarcode, state.lifecycle]);
   const recentCompletedTrip = mostRecentCompletedTrip(
     state.completedTrips,
   );
@@ -228,19 +282,42 @@ export function ShoppingAppShell({
           {...(overlay.initialLabel === undefined
             ? {}
             : { initialLabel: overlay.initialLabel })}
+          {...(overlay.initialPrice === undefined
+            ? {}
+            : { initialPrice: overlay.initialPrice })}
+          {...(overlay.initialQuantity === undefined
+            ? {}
+            : { initialQuantity: overlay.initialQuantity })}
+          {...(scanPrice === null
+            ? {}
+            : {
+                onReadPriceTag: (draft: { readonly label?: string; readonly quantity: number }) => {
+                  evidence.resetQaTiming();
+                  openTripOverlay({
+                    kind: "scan",
+                    mode: "price",
+                    context: {
+                      ...(draft.label === undefined ? {} : { label: draft.label }),
+                      ...(overlay.barcode === undefined ? {} : { barcode: overlay.barcode }),
+                    },
+                    entry: {
+                      quantity: draft.quantity,
+                      returnTo: overlay.returnTo,
+                      ...(overlay.sourceMemoryId === undefined
+                        ? {}
+                        : { sourceMemoryId: overlay.sourceMemoryId }),
+                    },
+                  });
+                },
+              })}
           locale={SHOPPING_LOCALE}
           onCancel={() => {
             evidence.abandonManualEntry();
 
             const sourceMemoryId = overlay.sourceMemoryId;
-            const fromScan = overlay.barcode !== undefined;
+            const returnTo = overlay.returnTo;
             setOverlay(NO_OVERLAY);
-
-            if (fromScan) {
-              returnFocusToScanBarcode();
-            } else {
-              returnFocusToPriceTrigger(sourceMemoryId);
-            }
+            returnFocus(returnTo, sourceMemoryId);
           }}
           onValidatedItem={(intent: ValidatedItemIntent) => {
             const beforeCount =
@@ -277,14 +354,9 @@ export function ShoppingAppShell({
             );
 
             const sourceMemoryId = overlay.sourceMemoryId;
-            const fromScan = overlay.barcode !== undefined;
+            const returnTo = overlay.returnTo;
             setOverlay(NO_OVERLAY);
-
-            if (fromScan) {
-              returnFocusToScanBarcode();
-            } else {
-              returnFocusToPriceTrigger(sourceMemoryId);
-            }
+            returnFocus(returnTo, sourceMemoryId);
 
             return true;
           }}
@@ -295,39 +367,61 @@ export function ShoppingAppShell({
   }
 
   if (
-    overlay.kind === "barcode-scan" &&
+    overlay.kind === "scan" &&
     state.activeTrip !== null &&
-    scanning !== null
+    cameraReady !== null &&
+    (scanBarcode !== null || scanPrice !== null)
   ) {
+    const entry = overlay.entry;
+
     return (
       <>
         <Suspense
           fallback={
             <main className={styles.loading} aria-busy="true">
-              <p>Opening the scanner…</p>
+              <p>Opening the camera…</p>
             </main>
           }
         >
-          <BarcodeScanSurface
+          <ScanSurface
             controller={controller}
-            scanner={scanning}
+            camera={cameraReady}
+            barcodeReader={scanBarcode}
+            priceReader={scanPrice}
             productLookup={productLookup}
+            initialMode={overlay.mode}
+            context={overlay.context}
             locale={SHOPPING_LOCALE}
             onCancel={() => {
+              if (entry !== undefined) {
+                openTripOverlay(
+                  entryOverlay(overlay.context, {
+                    initialQuantity: entry.quantity,
+                    returnTo: entry.returnTo,
+                    ...(entry.sourceMemoryId === undefined
+                      ? {}
+                      : { sourceMemoryId: entry.sourceMemoryId }),
+                  }),
+                );
+                return;
+              }
+
               setOverlay(NO_OVERLAY);
-              returnFocusToScanBarcode();
+              returnFocusToScan();
             }}
             onEnterPrice={(target) => {
               evidence.resetQaTiming();
-              openTripOverlay({
-                kind: "add-price",
-                ...(target.label === undefined
-                  ? {}
-                  : { initialLabel: target.label }),
-                ...(target.barcode === undefined
-                  ? {}
-                  : { barcode: target.barcode }),
-              });
+              openTripOverlay(
+                entryOverlay(target, {
+                  returnTo: entry?.returnTo ?? "scan",
+                  ...(entry === undefined
+                    ? {}
+                    : { initialQuantity: entry.quantity }),
+                  ...(entry?.sourceMemoryId === undefined
+                    ? {}
+                    : { sourceMemoryId: entry.sourceMemoryId }),
+                }),
+              );
             }}
             onUseRemembered={(record, barcode) => {
               const result = controller.addRememberedItem({
@@ -350,7 +444,7 @@ export function ShoppingAppShell({
                 )}`,
               );
               setOverlay(NO_OVERLAY);
-              returnFocusToScanBarcode();
+              returnFocusToScan();
               return true;
             }}
           />
@@ -545,16 +639,21 @@ export function ShoppingAppShell({
         onAddPrice={() => {
           setLastAddedMessage("");
           evidence.startOrdinaryManualEntry();
-          openTripOverlay({ kind: "add-price" });
+          openTripOverlay({ kind: "add-price", returnTo: "price-trigger" });
         }}
-        {...(scanning === null
+        {...(scanBarcode === null && scanPrice === null
           ? {}
           : {
-              scanBarcodeButtonRef,
-              onScanBarcode: () => {
+              scanButtonRef,
+              scanLabel,
+              onScan: () => {
                 evidence.resetQaTiming();
                 setLastAddedMessage("");
-                openTripOverlay({ kind: "barcode-scan" });
+                openTripOverlay({
+                  kind: "scan",
+                  mode: scanBarcode === null ? "price" : "barcode",
+                  context: {},
+                });
               },
             })}
         onAdjustBudget={() => {
@@ -610,6 +709,7 @@ export function ShoppingAppShell({
             kind: "add-price",
             initialLabel: record.label,
             sourceMemoryId: record.id,
+            returnTo: "price-trigger",
           });
         }}
         onRemoveItem={(item) => {

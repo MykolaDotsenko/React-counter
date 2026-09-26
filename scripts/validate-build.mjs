@@ -6,6 +6,7 @@ import { gzipSync } from "node:zlib";
 import { ZXING_WASM_SHA256 } from "zxing-wasm/reader";
 
 import { extractInitialAssetPaths } from "./build-budget.mjs";
+import { priceOcrAssets } from "./price-ocr-assets.mjs";
 
 const root = process.cwd();
 const dist = path.join(root, "dist");
@@ -53,19 +54,23 @@ if (!indexHtml.includes('rel="manifest"')) {
   throw new Error("Public build does not link its web app manifest.");
 }
 
-const MAX_PUBLIC_JS_BYTES = 420_000;
+const MAX_PUBLIC_JS_BYTES = 430_000;
 const MAX_INITIAL_JS_BYTES = 395_000;
 const MAX_SINGLE_JS_CHUNK_BYTES = 395_000;
-const MAX_PUBLIC_JS_GZIP_BYTES = 124_000;
+const MAX_PUBLIC_JS_GZIP_BYTES = 128_000;
 const MAX_INITIAL_JS_GZIP_BYTES = 115_000;
 const MAX_PUBLIC_CSS_BYTES = 80_000;
 const MAX_INITIAL_CSS_BYTES = 70_000;
 const MAX_PUBLIC_CSS_GZIP_BYTES = 13_000;
-const MAX_INITIAL_CSS_GZIP_BYTES = 11_000;
+const MAX_INITIAL_CSS_GZIP_BYTES = 11_100;
 const BARCODE_ENGINE_CHUNK_PREFIX = "zxing-fallback-detector-";
 const MAX_BARCODE_ENGINE_JS_BYTES = 60_000;
 const MAX_BARCODE_ENGINE_JS_GZIP_BYTES = 20_000;
 const MAX_BARCODE_ENGINE_WASM_BYTES = 1_200_000;
+const PRICE_READER_CHUNK_PREFIX = "tesseract-price-reader-";
+const MAX_PRICE_READER_JS_BYTES = 40_000;
+const MAX_PRICE_READER_JS_GZIP_BYTES = 14_000;
+const MAX_PRICE_READER_ASSET_BYTES = 10_500_000;
 const forbiddenMarkers = [
   "Retention Beta",
   "Local beta evidence",
@@ -95,8 +100,13 @@ const allJsFiles = files.filter((file) => file.endsWith(".js"));
 const engineJsFiles = allJsFiles.filter((file) =>
   file.startsWith(BARCODE_ENGINE_CHUNK_PREFIX),
 );
+const priceReaderJsFiles = allJsFiles.filter((file) =>
+  file.startsWith(PRICE_READER_CHUNK_PREFIX),
+);
 const jsFiles = allJsFiles.filter(
-  (file) => !file.startsWith(BARCODE_ENGINE_CHUNK_PREFIX),
+  (file) =>
+    !file.startsWith(BARCODE_ENGINE_CHUNK_PREFIX) &&
+    !file.startsWith(PRICE_READER_CHUNK_PREFIX),
 );
 const cssFiles = files.filter((file) => file.endsWith(".css"));
 const wasmFiles = files.filter((file) => file.endsWith(".wasm"));
@@ -256,11 +266,80 @@ if (wasmSha256 !== ZXING_WASM_SHA256) {
   );
 }
 
+if (priceReaderJsFiles.length !== 1) {
+  throw new Error(
+    `Public build must emit exactly one lazy price reader chunk (found ${priceReaderJsFiles.length}).`,
+  );
+}
+
+if (initialJsSet.has(priceReaderJsFiles[0])) {
+  throw new Error("The price reader must stay out of the initial bundle.");
+}
+
+const priceReaderJsBytes = await assetSize(priceReaderJsFiles[0]);
+const priceReaderJsGzipBytes = await assetGzipSize(priceReaderJsFiles[0]);
+
+if (priceReaderJsBytes > MAX_PRICE_READER_JS_BYTES) {
+  throw new Error(
+    `Price reader JavaScript budget exceeded: ${priceReaderJsBytes} > ${MAX_PRICE_READER_JS_BYTES} bytes.`,
+  );
+}
+
+if (priceReaderJsGzipBytes > MAX_PRICE_READER_JS_GZIP_BYTES) {
+  throw new Error(
+    `Price reader gzipped JavaScript budget exceeded: ${priceReaderJsGzipBytes} > ${MAX_PRICE_READER_JS_GZIP_BYTES} bytes.`,
+  );
+}
+
+let priceReaderAssetBytes = 0;
+
+for (const asset of priceOcrAssets(root)) {
+  const emitted = await readFile(path.join(dist, asset.fileName)).catch(() => null);
+
+  if (emitted === null) {
+    throw new Error(`Self-hosted price reader file ${asset.fileName} is missing.`);
+  }
+
+  if (emitted.byteLength > asset.maxBytes) {
+    throw new Error(
+      `Price reader file ${asset.fileName} is over budget: ${emitted.byteLength} > ${asset.maxBytes} bytes.`,
+    );
+  }
+
+  if (!emitted.equals(await readFile(asset.source))) {
+    throw new Error(
+      `Self-hosted price reader file ${asset.fileName} does not match its pinned package.`,
+    );
+  }
+
+  priceReaderAssetBytes += emitted.byteLength;
+}
+
+if (priceReaderAssetBytes > MAX_PRICE_READER_ASSET_BYTES) {
+  throw new Error(
+    `Price reader files are over budget: ${priceReaderAssetBytes} > ${MAX_PRICE_READER_ASSET_BYTES} bytes.`,
+  );
+}
+
+const serviceWorker = await readFile(path.join(dist, "sw.js"), "utf8");
+
+if (!serviceWorker.includes('url:"index.html"')) {
+  throw new Error("The service worker precache manifest has an unexpected format.");
+}
+
+if (serviceWorker.includes('url:"assets/ocr/')) {
+  throw new Error("The price reader files must not be precached for every visitor.");
+}
+
 for (const file of initialJsFiles) {
   const fileContent = await readFile(path.join(assets, file), "utf8");
 
   if (fileContent.includes("zxing_reader")) {
     throw new Error(`Initial bundle ${file} includes the barcode engine.`);
+  }
+
+  if (fileContent.includes("tessedit_char_whitelist")) {
+    throw new Error(`Initial bundle ${file} includes the price reader.`);
   }
 }
 
@@ -284,6 +363,8 @@ console.log(
     `lazy JS ${lazyJsFiles.length} chunk(s) / ${lazyJsBytes} bytes`,
     `barcode engine JS ${engineJsBytes} bytes / ${engineJsGzipBytes} gzip`,
     `barcode engine WASM ${wasmBytes} bytes`,
+    `price reader JS ${priceReaderJsBytes} bytes / ${priceReaderJsGzipBytes} gzip`,
+    `price reader files ${priceReaderAssetBytes} bytes`,
     `initial CSS ${initialCssBytes} bytes / ${initialCssGzipBytes} gzip`,
     `total CSS ${totalCssBytes} bytes / ${totalCssGzipBytes} gzip`,
     "installable offline shell present",

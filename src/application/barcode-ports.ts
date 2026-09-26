@@ -8,35 +8,16 @@ export interface BarcodeReading {
   readonly symbology: BarcodeSymbology | null;
 }
 
-export type ScannerFailure =
-  | "unsupported"
-  | "insecure-context"
-  | "permission-denied"
-  | "no-camera"
-  | "camera-busy"
-  | "engine-failed"
-  | "camera-error";
-
-export interface TorchControl {
-  readonly isOn: () => boolean;
-  readonly set: (on: boolean) => Promise<boolean>;
-}
-
-export interface ScannerSession {
+export interface BarcodeFrameReader {
   readonly engine: "native" | "fallback";
   readonly detect: () => Promise<readonly BarcodeReading[]>;
-  readonly torch: TorchControl | null;
-  readonly stop: () => void;
 }
 
-export type ScannerStartResult =
-  | { readonly ok: true; readonly session: ScannerSession }
-  | { readonly ok: false; readonly failure: ScannerFailure };
-
-export interface BarcodeScannerPort {
-  readonly isAvailable: () => boolean;
+export interface BarcodeReaderPort {
   readonly prepare: () => void;
-  readonly start: (preview: HTMLVideoElement) => Promise<ScannerStartResult>;
+  readonly attach: (
+    preview: HTMLVideoElement,
+  ) => Promise<BarcodeFrameReader | null>;
 }
 
 export interface ProductSuggestion {

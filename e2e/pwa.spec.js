@@ -74,26 +74,11 @@ test("exposes an installable shell and precaches the application entry", async (
   expect(shell.cachedIndex).toBe(true);
 });
 
-test("serves the static camera tools hub without replacing the shopping app", async ({
-  page,
-}) => {
+test("sends old camera tools links to the shopping app", async ({ page }) => {
   await page.goto(`${appPath}camera-tools/index.html`);
 
-  await expect(
-    page.getByRole("heading", { name: "Scanner & camera tools" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: /Barcode scanner/ }),
-  ).toHaveAttribute("href", "../barcode-benchmark/");
-  await expect(
-    page.getByRole("link", { name: /Visual product camera/ }),
-  ).toHaveAttribute("href", "../visual-recognition-benchmark/");
-  await expect(
-    page.getByRole("link", { name: /Shelf-price OCR/ }),
-  ).toHaveAttribute(
-    "href",
-    "../shelf-label-ocr-tesseract-benchmark/",
-  );
+  await expect(page).toHaveURL(new RegExp(`${appPath}$`));
+  await expect(page.getByRole("button", { name: "€50", exact: true })).toBeVisible();
 });
 
 test("restores active and completed shopping state with the browser offline", async ({

@@ -2,12 +2,16 @@ import { ShoppingAppShell } from "./app/ShoppingAppShell";
 import { PwaUpdateNotice } from "./app/PwaUpdateNotice";
 import {
   bootstrapBrowserShoppingAppController,
+  createBrowserBarcodeReaderPort,
+  createBrowserCameraPort,
+  createBrowserPriceTagReader,
   createBrowserProductLookup,
-  createBrowserScanner,
 } from "./app/composition-root";
 
 const shoppingController = bootstrapBrowserShoppingAppController();
-const barcodeScanner = createBrowserScanner();
+const camera = createBrowserCameraPort();
+const barcodeReader = createBrowserBarcodeReaderPort();
+const priceReader = createBrowserPriceTagReader();
 const productLookup = createBrowserProductLookup();
 
 export function App() {
@@ -15,7 +19,9 @@ export function App() {
     <>
       <ShoppingAppShell
         controller={shoppingController}
-        scanner={barcodeScanner}
+        camera={camera}
+        barcodeReader={barcodeReader}
+        priceReader={priceReader}
         productLookup={productLookup}
       />
       <PwaUpdateNotice controller={shoppingController} />

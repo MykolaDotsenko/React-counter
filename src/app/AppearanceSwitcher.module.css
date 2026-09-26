@@ -19,7 +19,6 @@
 
 .eyebrow,
 .heading h2,
-.hint,
 .saveWarning {
   margin: 0;
 }
@@ -106,14 +105,9 @@
   outline-offset: 3px;
 }
 
-.hint,
 .saveWarning {
   font-size: 0.78rem;
   line-height: 1.4;
-}
-
-.hint {
-  color: var(--shopping-muted-strong);
 }
 
 .saveWarning {

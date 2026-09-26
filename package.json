@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@huggingface/transformers": "4.3.0",
+    "@tesseract.js-data/fin": "1.0.0",
     "barcode-detector": "3.2.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",

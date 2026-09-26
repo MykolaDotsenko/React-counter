@@ -74,7 +74,6 @@
 
 .frame {
   position: absolute;
-  inset: 28% 12%;
   border: 3px solid rgb(255 255 255 / 0.92);
   border-radius: 14px;
   box-shadow: 0 0 0 999px rgb(0 0 0 / 0.28);
@@ -92,6 +91,10 @@
   animation: sweep 1.8s ease-in-out infinite alternate;
 }
 
+.frame[data-mode="price"]::after {
+  display: none;
+}
+
 @keyframes sweep {
   from {
     transform: translateY(-26px);
@@ -100,6 +103,163 @@
   to {
     transform: translateY(26px);
   }
+}
+
+.context {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.context strong {
+  color: var(--text);
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--shopping-soft);
+}
+
+.modes button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.modes button[aria-pressed="true"] {
+  background: var(--shopping-raised);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.14);
+}
+
+.modes button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.shutter {
+  min-height: 60px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--shopping-accent-contrast);
+  font: inherit;
+  font-size: 1.08rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.shutter:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.shutter:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.progress {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--shopping-soft);
+}
+
+.progress span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 200ms ease;
+}
+
+.progress span[data-indeterminate="true"] {
+  width: 36%;
+  animation: indeterminate 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes indeterminate {
+  from {
+    transform: translateX(-20%);
+  }
+
+  to {
+    transform: translateX(200%);
+  }
+}
+
+.snapshot {
+  width: 100%;
+  max-height: 9rem;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #0b0d0c;
+}
+
+.candidates {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.candidate,
+.candidatePrimary {
+  width: 100%;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  border-radius: 16px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.candidatePrimary {
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: var(--shopping-accent-contrast);
+}
+
+.candidate {
+  border: 1px solid var(--border);
+  background: var(--shopping-raised);
+  color: var(--text);
+}
+
+.candidate:focus-visible,
+.candidatePrimary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.amount {
+  font-size: 1.4rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.tag {
+  font-size: 0.82rem;
+  font-weight: 750;
+  opacity: 0.86;
 }
 
 .status {
@@ -208,8 +368,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .frame::after {
+  .frame::after,
+  .progress span[data-indeterminate="true"] {
     animation: none;
+  }
+
+  .progress span {
+    transition: none;
   }
 }
 
@@ -217,5 +382,13 @@
   .frame {
     border-color: CanvasText;
     box-shadow: none;
+  }
+
+  .modes button[aria-pressed="true"] {
+    outline: 2px solid CanvasText;
+  }
+
+  .progress span {
+    background: Highlight;
   }
 }
