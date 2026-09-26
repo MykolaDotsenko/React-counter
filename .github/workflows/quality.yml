@@ -381,7 +381,7 @@ jobs:
       - name: Run production browser and accessibility tests
         env:
           PLAYWRIGHT_STAGED_SITE: "1"
-        run: npm run test:e2e -- --project=${{ matrix.browser }} --grep-invert "@qa|@beta|@cohort|@barcode-benchmark|@barcode-paired|@ocr-paired|@visual-benchmark|@ocr-benchmark|@ocr-tesseract"
+        run: npm run test:e2e -- --project=${{ matrix.browser }}
 
       - name: Upload browser failure evidence
         if: failure()
@@ -425,6 +425,7 @@ jobs:
         shell: bash
         env:
           PLAYWRIGHT_STAGED_SITE: "1"
+          PLAYWRIGHT_GUARDED_SURFACE: "1"
           EVIDENCE_BUILD_REVISION: ${{ github.sha }}
         run: |
           set -uo pipefail
