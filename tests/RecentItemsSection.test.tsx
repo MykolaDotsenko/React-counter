@@ -9,8 +9,11 @@ import {
 } from "../src/domain/price-memory";
 import {
   createActiveTrip,
+  createCartItem,
   isoTimestamp,
+  reduceTrip,
   type ActiveTrip,
+  type CompletedTrip,
   type IsoTimestamp,
 } from "../src/domain/shopping-trip";
 import { RecentItemsSection } from "../src/features/shopping/RecentItemsSection";
@@ -60,7 +63,109 @@ const memory = ({
     }),
   );
 
+const withItem = (trip: ActiveTrip, label: string, at: string): ActiveTrip => {
+  const item = unwrap(
+    createCartItem({
+      id: `${trip.id}-${label}`,
+      unitPriceMinor: money(139),
+      quantity: 1,
+      label,
+      priceSource: { kind: "manual" },
+      priceConfidence: { kind: "confirmed", confirmedAt: time(at) },
+      createdAt: at,
+    }),
+  );
+  const next = unwrap(reduceTrip(trip, { type: "add-item", item }));
+
+  if (next.status !== "active") {
+    throw new Error("Expected active trip");
+  }
+
+  return next;
+};
+
+const boughtOn = (completedAt: string, labels: readonly string[]): CompletedTrip => {
+  const started = unwrap(
+    createActiveTrip({
+      id: `trip-${completedAt}`,
+      budgetMinor: money(5_000),
+      startedAt: completedAt,
+    }),
+  );
+  const filled = labels.reduce((trip, label) => withItem(trip, label, completedAt), started);
+  const completed = unwrap(
+    reduceTrip(filled, { type: "complete-trip", completedAt: time(completedAt) }),
+  );
+
+  if (completed.status !== "completed") {
+    throw new Error("Expected completed trip");
+  }
+
+  return completed;
+};
+
 describe("RecentItemsSection", () => {
+  it("keeps the items bought on the latest trip at the top, however old their price is", () => {
+    const records = [
+      memory({ label: "Milk 1L", observedAt: "2026-08-01T08:00:00.000Z" }),
+      memory({ label: "Rye bread", observedAt: "2026-09-10T08:00:00.000Z" }),
+      memory({ label: "Coffee", observedAt: "2026-09-11T08:00:00.000Z" }),
+      memory({ label: "Butter", observedAt: "2026-09-12T08:00:00.000Z" }),
+      memory({ label: "Bananas", observedAt: "2026-09-13T08:00:00.000Z" }),
+    ];
+
+    render(
+      <RecentItemsSection
+        trip={createTrip()}
+        records={records}
+        completedTrips={[boughtOn("2026-09-20T08:00:00.000Z", ["milk 1l"])]}
+        now={time(NOW)}
+        onUseRemembered={vi.fn()}
+        onEnterCurrentPrice={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    const names = within(screen.getByRole("list"))
+      .getAllByRole("listitem")
+      .map((item) => item.querySelector("strong")?.textContent);
+
+    expect(names).toEqual(["Milk 1L", "Bananas", "Butter", "Coffee"]);
+    expect(screen.getByText("Remembered · Seen 52 days ago")).not.toBeNull();
+    expect(screen.getByText("5 remembered")).not.toBeNull();
+  });
+
+  it("shows every remembered item on request and marks the ones already in this cart", async () => {
+    const user = userEvent.setup();
+    const records = ["Milk 1L", "Rye bread", "Coffee", "Butter", "Bananas"].map(
+      (label, index) =>
+        memory({ label, observedAt: `2026-09-1${index}T08:00:00.000Z` }),
+    );
+
+    render(
+      <RecentItemsSection
+        trip={withItem(createTrip(), "Milk 1L", "2026-09-22T07:30:00.000Z")}
+        records={records}
+        now={time(NOW)}
+        onUseRemembered={vi.fn()}
+        onEnterCurrentPrice={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    expect(within(screen.getByRole("list")).getAllByRole("listitem")).toHaveLength(4);
+    const showAll = screen.getByRole("button", { name: "Show all 5" });
+    expect(showAll.getAttribute("aria-expanded")).toBe("false");
+
+    await user.click(showAll);
+
+    expect(within(screen.getByRole("list")).getAllByRole("listitem")).toHaveLength(5);
+    expect(screen.getByRole("button", { name: "Show fewer" }).getAttribute("aria-expanded")).toBe(
+      "true",
+    );
+    expect(screen.getByText(/Seen 12 days ago · In this cart/)).not.toBeNull();
+  });
+
   it("adds a remembered price once for an accidental double tap, and again on a later tap", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(NOW));

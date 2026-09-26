@@ -48,6 +48,7 @@ export interface CreatePriceMemoryRecordInput {
 export interface RecentPriceMemoryOptions {
   readonly storeId?: StoreId;
   readonly limit?: number;
+  readonly lastBoughtAt?: ReadonlyMap<string, number>;
 }
 
 export type PriceMemoryErrorCode =
@@ -374,6 +375,30 @@ const storeRank = (
   return record.storeId === undefined ? 1 : 0;
 };
 
+export const lastBoughtByProduct = (
+  trips: readonly CompletedTrip[],
+): ReadonlyMap<string, number> => {
+  const lastBought = new Map<string, number>();
+
+  for (const trip of trips) {
+    const completedAt = Date.parse(trip.completedAt);
+
+    for (const item of trip.items) {
+      const productId =
+        item.label === undefined ? null : productIdFromLabel(item.label);
+
+      if (
+        productId?.ok === true &&
+        completedAt > (lastBought.get(productId.value) ?? Number.NEGATIVE_INFINITY)
+      ) {
+        lastBought.set(productId.value, completedAt);
+      }
+    }
+  }
+
+  return lastBought;
+};
+
 export const recentPriceMemories = (
   records: readonly PriceMemoryRecord[],
   options: RecentPriceMemoryOptions = {},
@@ -410,9 +435,19 @@ export const recentPriceMemories = (
     ? Math.max(0, requestedLimit)
     : 4;
 
+  const recency = (record: PriceMemoryRecord): number =>
+    Math.max(
+      observedAtMs(record),
+      options.lastBoughtAt?.get(record.productId) ?? Number.NEGATIVE_INFINITY,
+    );
+
   return Object.freeze(
     [...bestByProduct.values()]
-      .sort((left, right) => observedAtMs(right) - observedAtMs(left))
+      .sort(
+        (left, right) =>
+          recency(right) - recency(left) ||
+          observedAtMs(right) - observedAtMs(left),
+      )
       .slice(0, limit),
   );
 };

@@ -41,7 +41,7 @@ Current durable subsystems:
 3. Price Memory;
 4. barcode names (barcode links, D-054).
 
-QA/retention evidence uses its own `budget-cart:qa:*` keys in the same browser storage (timing QA in tab-scoped `sessionStorage`) and is never canonical shopping state. The appearance, scan-mode and install-offer preferences are convenience state outside these rules.
+QA/retention evidence uses its own `budget-cart:qa:*` keys in the same browser storage (timing QA in tab-scoped `sessionStorage`) and is never canonical shopping state. The appearance, scan-mode, price-entry-mode and install-offer preferences are convenience state outside these rules.
 
 ## Active-trip durability
 

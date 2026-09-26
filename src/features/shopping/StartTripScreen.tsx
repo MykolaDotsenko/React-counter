@@ -271,7 +271,7 @@ export function StartTripScreen({
         aria-labelledby="start-trip-title"
       >
         <div className={styles.intro}>
-          <p className={styles.eyebrow}>New shopping trip</p>
+          <p className={styles.eyebrow}>Shopping Budget Companion</p>
           <h1 id="start-trip-title" className={styles.title} tabIndex={-1}>
             How much can you spend today?
           </h1>

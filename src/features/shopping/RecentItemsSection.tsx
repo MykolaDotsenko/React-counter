@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { formatEur, signedMinorUnits } from "../../domain/money";
 import {
+  lastBoughtByProduct,
+  productIdFromLabel,
   recentPriceMemories,
   type PriceMemoryRecord,
 } from "../../domain/price-memory";
@@ -9,6 +11,7 @@ import {
   isoTimestamp,
   projectAddItem,
   type ActiveTrip,
+  type CompletedTrip,
   type IsoTimestamp,
 } from "../../domain/shopping-trip";
 import styles from "./RecentItemsSection.module.css";
@@ -17,6 +20,7 @@ import { SHOPPING_LOCALE } from "./shopping-locale";
 export interface RecentItemsSectionProps {
   readonly trip: ActiveTrip;
   readonly records: readonly PriceMemoryRecord[];
+  readonly completedTrips?: readonly CompletedTrip[];
   readonly now?: IsoTimestamp;
   readonly onUseRemembered: (
     record: PriceMemoryRecord,
@@ -69,6 +73,8 @@ const absoluteMoney = (
 
 const REPEAT_TAP_WINDOW_MS = 800;
 
+const NO_TRIPS: readonly CompletedTrip[] = [];
+
 const currentTimestamp = (): IsoTimestamp => {
   const parsed = isoTimestamp(new Date().toISOString());
 
@@ -82,6 +88,7 @@ const currentTimestamp = (): IsoTimestamp => {
 export function RecentItemsSection({
   trip,
   records,
+  completedTrips = NO_TRIPS,
   now,
   onUseRemembered,
   onEnterCurrentPrice,
@@ -91,10 +98,28 @@ export function RecentItemsSection({
   activeTripSaving = true,
 }: RecentItemsSectionProps) {
   const effectiveNow = now ?? currentTimestamp();
-  const recent = useMemo(
-    () => recentPriceMemories(records, { limit }),
-    [limit, records],
+  const lastBoughtAt = useMemo(
+    () => lastBoughtByProduct(completedTrips),
+    [completedTrips],
   );
+  const remembered = useMemo(
+    () => recentPriceMemories(records, { limit: records.length, lastBoughtAt }),
+    [lastBoughtAt, records],
+  );
+  const inCart = useMemo(
+    () =>
+      new Set(
+        trip.items.flatMap((item) => {
+          const productId =
+            item.label === undefined ? null : productIdFromLabel(item.label);
+
+          return productId?.ok === true ? [productId.value] : [];
+        }),
+      ),
+    [trip.items],
+  );
+  const [showAll, setShowAll] = useState(false);
+  const recent = showAll ? remembered : remembered.slice(0, limit);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
@@ -164,7 +189,7 @@ export function RecentItemsSection({
           <p className={styles.kicker}>Faster repeat shopping</p>
           <h2 id="recent-items-title">Recent Items</h2>
         </div>
-        <span>{recent.length} remembered</span>
+        <span>{remembered.length} remembered</span>
       </div>
 
       <p className={styles.intro}>
@@ -205,6 +230,7 @@ export function RecentItemsSection({
                 <small>
                   Remembered · {ageLabel(record, effectiveNow)}
                   {record.storeId === undefined ? "" : " · Store-specific"}
+                  {inCart.has(record.productId) ? " · In this cart" : ""}
                 </small>
               </div>
 
@@ -295,6 +321,19 @@ export function RecentItemsSection({
           );
         })}
       </ul>
+
+      {remembered.length > limit ? (
+        <button
+          type="button"
+          className={styles.moreButton}
+          aria-expanded={showAll}
+          onClick={() => {
+            setShowAll((current) => !current);
+          }}
+        >
+          {showAll ? "Show fewer" : `Show all ${remembered.length}`}
+        </button>
+      ) : null}
     </section>
   );
 }

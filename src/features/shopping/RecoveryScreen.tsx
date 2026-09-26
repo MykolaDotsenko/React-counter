@@ -35,9 +35,9 @@ const recoveryCopy = (
       };
     case "storage-unavailable":
       return {
-        title: "Saved trip is unavailable",
+        title: "This browser isn’t letting the app save",
         body:
-          "Browser storage cannot be accessed right now. Check the browser's storage settings, then try reading the trip again.",
+          "Storage for this site is blocked or unavailable, for example by privacy settings. You can still shop in this tab. To keep trips between visits, allow this site to store data, then try again.",
       };
     default:
       return {
@@ -68,6 +68,7 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
   const copy = recoveryCopy(issue);
   const raw = state.recovery.raw;
   const setAsideAvailable = canSetAside(issue) && raw !== undefined;
+  const storageBlocked = issue.code === "storage-unavailable";
 
   const retry = (): void => {
     setRetryMessage("");
@@ -116,7 +117,9 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
         </div>
 
         <div className={styles.intro}>
-          <p className={styles.eyebrow}>Recovery mode</p>
+          <p className={styles.eyebrow}>
+            {storageBlocked ? "Saving is off" : "Recovery mode"}
+          </p>
           <h1 id="recovery-title" tabIndex={-1}>
             {copy.title}
           </h1>
@@ -150,10 +153,11 @@ export function RecoveryScreen({ controller }: RecoveryScreenProps) {
           </button>
           <p className={styles.safetyNote}>
             Totals, finished trips and remembered prices work in this tab only;
-            closing or reloading it loses them. The saved record stays untouched.
+            closing or reloading it loses them.
+            {storageBlocked ? "" : " The saved record stays untouched."}
           </p>
           <button type="button" className={styles.linkButton} onClick={retry}>
-            Try reading again
+            {storageBlocked ? "Try again" : "Try reading again"}
           </button>
         </div>
 

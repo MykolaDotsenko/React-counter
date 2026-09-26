@@ -72,6 +72,23 @@ describe("shopping shell accessibility", () => {
     expect(screen.queryByRole("heading", { name: "Install the app" })).toBeNull();
   });
 
+  it("opens price entry in the mode the shopper chose last time", async () => {
+    const user = userEvent.setup();
+
+    render(<ShoppingAppShell controller={boot()} />);
+
+    await user.click(screen.getByRole("button", { name: "€50" }));
+    await user.click(screen.getByRole("button", { name: "Add price" }));
+    await user.click(screen.getByRole("button", { name: "Cents mode" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(await screen.findByRole("button", { name: "Add price" }));
+
+    expect(
+      screen.getByRole("button", { name: "Cents mode" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(window.localStorage.getItem("shopping-budget:price-entry-mode")).toBe("auto-cents");
+  });
+
   it("moves focus to each new screen's heading and back to the top of the page", async () => {
     const user = userEvent.setup();
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});

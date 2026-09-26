@@ -161,6 +161,28 @@ describe("CompletedSummaryScreen", () => {
     expect(outcome.getAttribute("data-outcome")).toBe("under");
   });
 
+  it("judges the budget on what was paid once the receipt total is in", async () => {
+    const user = userEvent.setup();
+    const { controller, trip } = createController();
+
+    render(
+      <CompletedSummaryScreen
+        controller={controller}
+        trip={trip}
+        onDone={vi.fn()}
+        onShopAgain={vi.fn()}
+        onViewHistory={vi.fn()}
+        locale="en-IE"
+      />,
+    );
+
+    await user.type(screen.getByRole("textbox", { name: "Receipt total" }), "53.17");
+    await user.click(screen.getByRole("button", { name: "Save receipt total" }));
+
+    const outcome = screen.getByText("Paid €3.17 over budget");
+    expect(outcome.getAttribute("data-outcome")).toBe("over");
+  });
+
   it("starts a fresh trip from the completed budget in one action", async () => {
     const user = userEvent.setup();
     const { controller, trip } = createController();

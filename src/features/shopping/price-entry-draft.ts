@@ -26,9 +26,11 @@ export interface PriceEntryDraft {
   readonly mode: MoneyDraftMode;
 }
 
-export const initialPriceEntryDraft = (): PriceEntryDraft => ({
+export const initialPriceEntryDraft = (
+  mode: MoneyDraftMode = "decimal",
+): PriceEntryDraft => ({
   raw: "",
-  mode: "decimal",
+  mode,
 });
 
 export const priceEntryDraftFor = (price: MinorUnits): PriceEntryDraft => {

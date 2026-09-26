@@ -49,9 +49,11 @@ import { addedFeedback, remainingFeedback } from "../features/shopping/shopping-
 import { AppFooter } from "./AppFooter";
 import { InstallOffer } from "./InstallOffer";
 import {
+  readPriceEntryModePreference,
   readScanModePreference,
+  writePriceEntryModePreference,
   writeScanModePreference,
-} from "./scan-mode-preference";
+} from "./input-preferences";
 import { AppearanceSwitcher } from "./AppearanceSwitcher";
 import { SHOPPING_LOCALE } from "../features/shopping/shopping-locale";
 import { focusNextScreen } from "../features/shopping/focus-next-screen";
@@ -399,6 +401,8 @@ function ShoppingAppScreens({
       <>
         <PriceEntrySurface
           trip={state.activeTrip}
+          initialMode={readPriceEntryModePreference()}
+          onModeChange={writePriceEntryModePreference}
           {...(overlay.initialLabel === undefined
             ? {}
             : { initialLabel: overlay.initialLabel })}

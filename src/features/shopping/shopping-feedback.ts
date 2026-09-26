@@ -24,15 +24,20 @@ export const budgetOutcome = (
   trip: ShoppingTrip,
   locale: string,
 ): { readonly status: BudgetOutcomeStatus; readonly label: string } => {
-  const amount = remaining(trip);
+  const paid =
+    trip.status === "completed" && trip.actualCheckoutMinor !== undefined
+      ? trip.actualCheckoutMinor
+      : null;
+  const amount = paid === null ? remaining(trip) : trip.budgetMinor - paid;
+  const prefix = paid === null ? "" : "Paid ";
 
   if (amount === 0) {
-    return { status: "on", label: "On budget" };
+    return { status: "on", label: paid === null ? "On budget" : "Paid exactly the budget" };
   }
 
   return amount > 0
-    ? { status: "under", label: `${formatAbsoluteEur(amount, locale)} under budget` }
-    : { status: "over", label: `${formatAbsoluteEur(amount, locale)} over budget` };
+    ? { status: "under", label: `${prefix}${formatAbsoluteEur(amount, locale)} under budget` }
+    : { status: "over", label: `${prefix}${formatAbsoluteEur(amount, locale)} over budget` };
 };
 
 export const remainingFeedback = (

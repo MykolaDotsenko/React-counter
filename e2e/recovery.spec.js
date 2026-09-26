@@ -172,8 +172,9 @@ test("continues without saving when browser storage is blocked", async ({
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: "Saved trip is unavailable" }),
+    page.getByRole("heading", { name: "This browser isn’t letting the app save" }),
   ).toBeVisible();
+  await expect(page.getByText("The saved record stays untouched", { exact: false })).toHaveCount(0);
 
   await expect(
     page.getByRole("button", { name: "Set aside and start fresh" }),

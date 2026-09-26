@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { mvpMinorUnits, type Result } from "../src/domain/money";
 import {
   createPriceMemoryRecord,
+  lastBoughtByProduct,
   priceMemoryIdFor,
   priceMemoryRecordsFromCompletedTrip,
   productIdFromLabel,
@@ -288,6 +289,67 @@ describe("price memory domain", () => {
       latest,
       bread,
     ]);
+  });
+
+  it("knows when each named item was last bought, whatever priced it", () => {
+    const tripOn = (id: string, completedAt: string, labels: readonly (string | undefined)[]) => {
+      let trip = unwrap(
+        createActiveTrip({ id, budgetMinor: money(5_000), startedAt: completedAt }),
+      );
+
+      labels.forEach((label, index) => {
+        const item = unwrap(
+          createCartItem({
+            id: `${id}-${index}`,
+            unitPriceMinor: money(100),
+            quantity: 1,
+            ...(label === undefined ? {} : { label }),
+            priceSource: { kind: "price-memory", memoryId: "memory:any:*" },
+            priceConfidence: {
+              kind: "remembered",
+              observedAt: time("2026-08-01T08:00:00.000Z"),
+            },
+            createdAt: completedAt,
+          }),
+        );
+        const next = unwrap(reduceTrip(trip, { type: "add-item", item }));
+
+        if (next.status !== "active") {
+          throw new Error("Expected active trip");
+        }
+
+        trip = next;
+      });
+
+      const completed = unwrap(
+        reduceTrip(trip, { type: "complete-trip", completedAt: time(completedAt) }),
+      );
+
+      if (completed.status !== "completed") {
+        throw new Error("Expected completed trip");
+      }
+
+      return completed;
+    };
+    const lastBought = lastBoughtByProduct([
+      tripOn("later", "2026-09-20T08:00:00.000Z", ["Milk  1L"]),
+      tripOn("earlier", "2026-09-13T08:00:00.000Z", ["milk 1l", "Bread", undefined]),
+    ]);
+    const milk = unwrap(productIdFromLabel("Milk 1L"));
+    const bread = unwrap(productIdFromLabel("Bread"));
+
+    expect(lastBought.get(milk)).toBe(Date.parse("2026-09-20T08:00:00.000Z"));
+    expect(lastBought.get(bread)).toBe(Date.parse("2026-09-13T08:00:00.000Z"));
+    expect(lastBought.size).toBe(2);
+    expect(
+      recentPriceMemories(
+        [
+          memory({ label: "Bread", price: 249, observedAt: "2026-09-15T08:00:00.000Z" }),
+          memory({ label: "Milk 1L", price: 139, observedAt: "2026-08-01T08:00:00.000Z" }),
+        ],
+        { lastBoughtAt: lastBought },
+      ).map((record) => record.label),
+    ).toEqual(["Milk 1L", "Bread"]);
   });
 
   it("derives memories only from named confirmed observations in a completed trip", () => {

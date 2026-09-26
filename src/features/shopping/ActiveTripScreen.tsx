@@ -364,6 +364,7 @@ export function ActiveTripScreen({
           <RecentItemsSection
             trip={trip}
             records={state.priceMemories}
+            completedTrips={state.completedTrips}
             persistenceDegraded={needsSaveAttention(
               state.priceMemoryPersistence,
             )}

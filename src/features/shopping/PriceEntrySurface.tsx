@@ -60,6 +60,8 @@ export interface PriceEntrySurfaceProps {
   readonly initialPrice?: MinorUnits;
   readonly initialQuantity?: number;
   readonly onReadPriceTag?: (draft: PriceTagDraft) => void;
+  readonly initialMode?: MoneyDraftMode;
+  readonly onModeChange?: (mode: MoneyDraftMode) => void;
   readonly locale?: string;
 }
 
@@ -82,6 +84,8 @@ export function PriceEntrySurface({
   initialPrice,
   initialQuantity,
   onReadPriceTag,
+  initialMode = "decimal",
+  onModeChange,
   locale = SHOPPING_LOCALE,
 }: PriceEntrySurfaceProps) {
   const amountInputId = useId();
@@ -100,7 +104,7 @@ export function PriceEntrySurface({
     initialPrice === undefined ? null : priceEntryDraftFor(initialPrice),
   );
   const [draft, setDraft] = useState<PriceEntryDraft>(
-    () => tagDraft ?? initialPriceEntryDraft(),
+    () => tagDraft ?? initialPriceEntryDraft(initialMode),
   );
   const [quantity, setQuantity] = useState(
     () => initialQuantity ?? defaultQuantity(),
@@ -243,6 +247,7 @@ export function PriceEntrySurface({
 
   const updateMode = (mode: MoneyDraftMode): void => {
     setDraft((current) => setPriceEntryMode(current, mode));
+    onModeChange?.(mode);
     focusInputUnlessCoarse();
   };
 
@@ -343,13 +348,11 @@ export function PriceEntrySurface({
             </button>
           </div>
           <p id={modeHintId} className={styles.modeHint}>
-            {draft.raw !== ""
-              ? draft.mode === "decimal"
-                ? "Clear the price to switch to cents."
-                : "Clear the price to switch to euros."
+            {draft.raw === ""
+              ? "Cents mode needs no decimal point."
               : draft.mode === "decimal"
-                ? "Type 4.79 for €4.79. Comma also works."
-                : "Fast entry: 479 becomes €4.79."}
+                ? "Clear the price to switch to cents."
+                : "Clear the price to switch to euros."}
           </p>
         </div>
 
@@ -438,8 +441,10 @@ export function PriceEntrySurface({
               <span className={styles.error}>{invalidCopy}</span>
             ) : state.kind === "incomplete" ? (
               <span>Finish the amount.</span>
+            ) : draft.mode === "auto-cents" ? (
+              <span>Cents mode: type 249 for €2.49.</span>
             ) : (
-              <span>Price only. A name is optional.</span>
+              <span>Type the price, like 2.49. A name is optional.</span>
             )}
           </div>
         </div>

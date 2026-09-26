@@ -887,7 +887,7 @@ describe("PriceEntrySurface", () => {
 
     expect(centsMode.getAttribute("aria-pressed")).toBe("true");
     expect(
-      screen.getByText("Fast entry: 479 becomes €4.79."),
+      screen.getByText("Cents mode: type 249 for €2.49."),
     ).not.toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Digit 4" }));
@@ -906,6 +906,32 @@ describe("PriceEntrySurface", () => {
       unitPriceMinor: 479,
       quantity: 1,
     });
+  });
+
+  it("opens in the mode the shopper chose last and reports a change of mode", async () => {
+    const user = userEvent.setup();
+    const onModeChange = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        initialMode="auto-cents"
+        onModeChange={onModeChange}
+        onCancel={vi.fn()}
+        onValidatedItem={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Cents mode" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(screen.getByText("Cents mode: type 249 for €2.49.")).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Euros" }));
+
+    expect(onModeChange).toHaveBeenCalledWith("decimal");
+    expect(screen.getByText("Type the price, like 2.49. A name is optional.")).not.toBeNull();
   });
 
   it("does not auto-open the software keyboard on coarse-pointer devices", async () => {
