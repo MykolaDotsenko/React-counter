@@ -369,7 +369,6 @@ High-confidence product-success estimates require:
 
 Enough product-specific cohort data exists to replace heuristic bands with observed baselines.
 
-
 ## How to add a decision
 
 Add a new numbered entry when a decision:

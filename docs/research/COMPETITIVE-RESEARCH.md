@@ -526,7 +526,6 @@ When new evidence changes a product decision:
 
 Do not let competitor releases silently reshape the product.
 
-
 ## 2026 directional evidence — GroceryBudget retention and scanner signals
 
 This section records **developer-reported directional evidence**, not independently audited analytics.

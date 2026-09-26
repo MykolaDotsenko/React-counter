@@ -108,7 +108,7 @@ Barcode scanning (D-053) and price-tag reading (D-055) shipped ahead of their ph
 - ⏳ exact quantitative manual-entry timing baseline (physical-phone usability was accepted by owner attestation on 2026-09-24, but no timing JSON was retained)
 - ⏳ 20–50 real-shopper retention beta, including second- and third-trip behaviour (issue #72)
 - ⏳ physical barcode field evidence for the shipped scanner (issue #73)
-- ⏳ physical retail evidence for the pinned local CLIP visual recognizer (issue #88)
+- ⏳ production visual product recognition, planned and gated (issue #88)
 - ⏳ physical shelf-label evidence for the shipped price tag reader (issue #90)
 
 Guarded evidence builds (validation surfaces, not private or security boundaries) follow the latest deployed `main`. Multi-day field studies use immutable `/study/<baseline>/...` copies of an exact tested artifact instead:
@@ -116,12 +116,6 @@ Guarded evidence builds (validation surfaces, not private or security boundaries
 - **Timing QA:** https://mykoladotsenko.github.io/shopping-budget-companion/qa/
 - **Retention beta:** https://mykoladotsenko.github.io/shopping-budget-companion/beta/
 - **Retention cohort analyzer:** https://mykoladotsenko.github.io/shopping-budget-companion/cohort/
-- **Barcode benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/barcode-benchmark/
-- **Barcode paired analyzer:** https://mykoladotsenko.github.io/shopping-budget-companion/barcode-paired-analyzer/
-- **Visual recognition benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/visual-recognition-benchmark/
-- **Shelf-label OCR benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/shelf-label-ocr-benchmark/
-- **Tesseract OCR benchmark:** https://mykoladotsenko.github.io/shopping-budget-companion/shelf-label-ocr-tesseract-benchmark/
-- **OCR paired analyzer:** https://mykoladotsenko.github.io/shopping-budget-companion/ocr-paired-analyzer/
 
 ---
 
@@ -141,7 +135,7 @@ tests/               # unit, component and application tests
 e2e/                 # Playwright browser and accessibility journeys
 scripts/             # build, documentation and guarded-build tooling
 public/              # icons and static pages
-docs/                # current contracts, specs, decisions, evidence and reference
+docs/                # current contracts, specs, decisions, evidence, reference and research
 ```
 
 Start with the [documentation map](./docs/README.md) instead of browsing individual Markdown files.

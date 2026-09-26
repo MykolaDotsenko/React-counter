@@ -8,7 +8,7 @@ These test plans apply only after the corresponding capability is approved and i
 
 ## Visual product recognition
 
-The provider-neutral benchmark harness and its pinned CLIP adapter (`src/qa/visual-product-clip-recognizer.ts`) exist only as a guarded benchmark; production recognition remains gated by issue #88.
+Production recognition remains gated by issue #88; the guarded CLIP benchmark was retired (D-056).
 
 Before production recognition:
 

@@ -106,7 +106,7 @@ for (const entry of await readdir(docsRoot, { withFileTypes: true })) {
     !allowedDocsRootFiles.has(entry.name)
   ) {
     failures.push(
-      `Unexpected docs-root Markdown file: docs/${entry.name}. Classify it under specs/, architecture/, quality/, decisions/, reference/, evidence/, research/, marketing/, or archive/.`,
+      `Unexpected docs-root Markdown file: docs/${entry.name}. Classify it under specs/, architecture/, quality/, decisions/, reference/, evidence/, research/ or marketing/.`,
     );
   }
 }

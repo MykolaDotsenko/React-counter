@@ -8,9 +8,9 @@ The repository no longer contains an alternate prototype product shell. The publ
 
 The guarded `/cohort/` route is intentionally different: it is a facilitator-only local analyzer that imports already-exported retention evidence and never composes or mutates shopping state.
 
-The guarded camera benchmarks and paired analyzers are standalone evidence tools too. The public shopping UI does not link to them; its own camera lives inside the trip, and the old `/camera-tools/` address redirects to the app. No standalone guarded build composes or mutates shopping state.
+The shopping product's camera lives inside the trip; the old `/camera-tools/` address redirects to the app.
 
-The installable offline PWA shell is **IMPLEMENTED**. Barcode identification (D-053) and price-tag reading (D-055) are **IMPLEMENTED** in the in-trip camera behind build kill switches; a read price only pre-fills price entry, and nothing reaches the cart until the shopper confirms it there. Visual product recognition runs only in its guarded benchmark. Human evidence gates (physical-phone usability, timing, retention and camera field evidence) are tracked in [ROADMAP.md](./ROADMAP.md).
+The installable offline PWA shell is **IMPLEMENTED**. Barcode identification (D-053) and price-tag reading (D-055) are **IMPLEMENTED** in the in-trip camera behind build kill switches; a read price only pre-fills price entry, and nothing reaches the cart until the shopper confirms it there. Visual product recognition is not implemented. Human evidence gates (physical-phone usability, timing, retention and camera field evidence) are tracked in [ROADMAP.md](./ROADMAP.md).
 
 ## Architectural goal
 
@@ -120,7 +120,7 @@ It also applies the deployed-surface storage scope to the shopping keys: guarded
 
 ### QA
 
-`src/qa/` records and analyzes validation evidence only. Production shopping code depends on the `#shopping-evidence` adapter contract, which resolves to a NoOp implementation in the public build and to the guarded evidence implementation only in guarded evidence builds. Every standalone guarded build points the separate `#app-entry` alias at its own app instead of the shopping product, so analysis and benchmark code is never bundled into the public product.
+`src/qa/` records and analyzes validation evidence only. Production shopping code depends on the `#shopping-evidence` adapter contract, which resolves to a NoOp implementation in the public build and to the guarded evidence implementation only in guarded evidence builds. The cohort build points the separate `#app-entry` alias at the analyzer instead of the shopping product, so analysis code is never bundled into the public product.
 
 QA data:
 
@@ -343,8 +343,6 @@ Layers:
 - `features/shopping/ScanSurface.tsx` is a lazily loaded trip overlay that never mutates state itself;
 - the composition root builds the adapters only when the build switches allow them.
 
-The `/barcode-benchmark/` route remains an evidence-only native `BarcodeDetector` harness, separate from the product scanner.
-
 Production adapters preserve these boundaries:
 
 - barcode → identity candidate, not current price authority
@@ -405,7 +403,7 @@ A change is architecturally acceptable only if all relevant invariants remain tr
 8. QA evidence remains separate from product state
 9. manual entry remains available
 10. external payloads are validated at boundaries
-11. current docs describe current code; historical phase narration belongs in archive
+11. current docs describe current code; completed phase narration is deleted, and git history keeps it
 
 ## Review checklist
 

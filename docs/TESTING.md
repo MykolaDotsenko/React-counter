@@ -304,8 +304,8 @@ Timing-evidence tests must also prove:
 - an excluded timing sample stays in evidence;
 - each exclusion references a real sample ID and requires a bounded non-empty reason;
 - documented external interruptions are omitted from timing KPIs without deleting the sample;
-- malformed/unknown exclusion references and tampered derived gate summaries are rejected;
-- timing export schema carries a validated `buildRevision`;
+- a stored session whose exclusions reference unknown samples is not restored;
+- the timing export carries the exact `buildRevision` of the build that recorded it;
 - local timing JSON download uses a non-identifying timestamp filename;
 - the guarded QA browser gate verifies the downloaded export revision equals the exact tested Git SHA.
 
@@ -352,35 +352,6 @@ Tests must prove:
 
 Real-store retention evidence remains a human/product-validation gate.
 
-### Barcode interaction benchmark
-
-Automation may verify benchmark evidence integrity and route isolation. It may not claim scanner value without representative physical-device data.
-
-Tests must prove:
-
-- the benchmark is a standalone guarded build with no shopping-state access or PWA/service worker;
-- the public build's marker scan finds no benchmark markers or storage key;
-- raw barcode values never enter persisted/exported evidence;
-- confirmed/rejected/timeout/manual-fallback/detector-error outcomes remain distinct;
-- confirmed latency reports median/P75/P90 deterministically;
-- capability/permission/camera failures remain distinguishable from timed attempts;
-- duplicate/malformed/tampered evidence is rejected;
-- timed sample/failure capacity fails closed instead of silently truncating earlier evidence;
-- an unresolved detector call cannot extend the eight-second timeout;
-- stale detector results arriving after fallback/stop/timeout cannot resurrect a candidate or create a second outcome;
-- camera startup failure releases acquired media tracks;
-- repeated identical capability failure clicks do not inflate retained failure evidence;
-- a changed viewport cannot start another timed scan in the retained environment;
-- stopping an active scan records a fallback rather than silently dropping the attempt;
-- evidence copy/download/reset is unavailable while a timed attempt is still in flight;
-- local benchmark download uses a non-identifying timestamp filename and contains no raw barcode value;
-- barcode export schema carries a validated `buildRevision`, and guarded-browser E2E verifies it matches the exact tested Git SHA;
-- export/clock failure remains inside the evidence UI instead of crashing the benchmark.
-
-Production barcode shipped ahead of this evidence (D-053); issue #73 remains an open post-release gate.
-
-The benchmark intentionally tests native `BarcodeDetector` only; the production scanner's WASM fallback is not part of the benchmark.
-
 ### Production barcode scanner
 
 Tests must prove:
@@ -396,6 +367,8 @@ Tests must prove:
 - `VITE_SHOPPING_BARCODE_SCANNER=0` removes barcode reading and the online lookup but keeps the camera for price tags, `VITE_SHOPPING_PRODUCT_LOOKUP=0` removes only the lookup, `VITE_SHOPPING_PRICE_OCR=0` removes price reading, and the camera disappears only when barcode scanning and price reading are both off (`tests/camera-switches.test.ts`); CI also builds and validates a build with both camera switches at `0` (see [Public bundle budget](#public-bundle-budget));
 - in Chromium, a fake camera streaming a generated EAN-13 decodes through the self-hosted WASM engine with no request leaving the origin, and the result screen passes axe (`e2e/barcode-scanner.spec.js`). The fake-camera test runs in Chromium only; Firefox and WebKit cover the rest of the product flow. When a build switches the scanner off, the same spec instead checks in every browser that the trip offers no barcode scanning.
 
+Production barcode shipped ahead of its field evidence (D-053); issue #73 remains an open post-release gate that automation cannot close.
+
 ### Production price tag reading
 
 Tests must prove:
@@ -406,116 +379,7 @@ Tests must prove:
 - price entry starts from a read price, says it came from the tag until the amount changes, and opens the reader with the name and quantity typed so far (`tests/PriceEntrySurface.test.tsx`);
 - in Chromium, a fake camera showing `e2e/fixtures/price-tag-1-29.mjpeg` is read by the self-hosted Tesseract files with no request leaving the origin, the candidate screen passes axe, and the chosen price is added only after confirmation (`e2e/price-tag-scanner.spec.js`). When a build switches price reading off, the same spec instead checks in every browser that price entry offers no "Read price tag" action. `e2e/support/render-price-tag-fixture.mjs` regenerates the fixture.
 
-### Paired barcode/manual analyzer
-
-Automation may validate comparison integrity; it must not manufacture the issue #73 product decision.
-
-Tests must prove:
-
-- the analyzer is a standalone guarded build with no shopping-state access and no PWA/service worker;
-- imported manual/barcode JSON remains page-memory only and is never uploaded or persisted;
-- both source exports are parsed through their authoritative runtime validators before comparison;
-- tampered derived summaries are rejected;
-- mixed `buildRevision` values are incompatible rather than normalized;
-- browser user agent, viewport and non-empty normalized device label must match before evidence is ready;
-- manual evidence requires the documented input method, complete physical context, light appearance, phone-portrait viewport and at least 10 valid EUR 4.79 plus 10 valid EUR 12.50 fixture samples;
-- barcode evidence requires at least 10 confirmed attempts plus recorded repeated-use preference and cognitive effort;
-- manual P90 is deterministically derived from the same valid, non-excluded representative fixture samples;
-- aggregate output contains no raw samples, raw barcode values, prices, filenames or device labels;
-- aggregate output is unavailable unless structural evidence readiness is `ready`;
-- the analyzer reports descriptive deltas/ratios only and never emits PROMOTE / REMEDIATE / DEFER.
-
-### Visual product recognition benchmark
-
-Automation may verify harness isolation, candidate-decision state, privacy and evidence integrity. It may not claim retail recognition quality without a concrete recognizer/model and representative physical-device data.
-
-Tests must prove:
-
-- the harness is a standalone guarded build with no ShoppingTrip/cart access and no PWA/service worker;
-- the public build's marker scan finds no visual benchmark markers or storage key;
-- raw image bytes and candidate labels never enter retained/exported evidence;
-- the adapter declares a stable identity and `local-only` or `remote-image` data boundary;
-- capture → recognition → human rank confirmation is timed as one interaction;
-- top-1 and rank 2–3 confirmations remain distinguishable;
-- rejected/no-result/timeout/manual-fallback/recognizer-error/capture-error outcomes remain distinguishable;
-- a timeout/fallback/teardown invalidates late recognizer results;
-- camera tracks are released on stop/unmount/failure;
-- malformed retained evidence is preserved until explicit reset;
-- viewport/recognizer/data-boundary changes freeze retained evidence instead of mixing environments;
-- export carries the exact guarded-build `buildRevision`;
-- local download uses a non-identifying session timestamp filename;
-- the concrete CLIP experiment is loaded only after explicit facilitator action, never automatically on route load;
-- candidate-catalog parsing rejects unknown fields, duplicates, unbounded label counts and malformed labels;
-- catalog hashing is order-stable and enters the recognizer identity without persisting labels;
-- the adapter pins both Transformers.js and the exact model revision;
-- WebGPU initialization may fall back to WASM without changing the local-only image boundary;
-- candidate output is restricted to the facilitator-provided closed set and is runtime-validated before the benchmark UI sees it;
-- AbortSignal cancellation wins over late model completion;
-- the public build's marker scan finds no Transformers.js, CLIP model ID or zero-shot pipeline marker;
-- physical retail quality remains evidence-gated by issue #88 even when automated adapter tests are green.
-
-### Shelf-label OCR benchmark
-
-Automation may verify OCR harness isolation, deterministic price parsing, candidate-decision state, privacy and evidence integrity. It may not claim OCR value without a named engine/model and representative physical-device data.
-
-Tests must prove:
-
-- the OCR harness is a standalone guarded build with no ShoppingTrip/cart access and no PWA/service worker;
-- the public build's marker scan finds no OCR benchmark markers or storage key;
-- camera image bytes, raw OCR text and parsed price values never enter retained/exported evidence;
-- the OCR adapter declares a stable engine identity and `local-only` or `remote-image` data boundary;
-- OCR output is bounded and runtime-validated before parsing;
-- comma/dot decimal candidates route through the existing exact-money parser;
-- split cents require an explicit euro anchor;
-- bare digits never receive an invented decimal separator;
-- percentage-only discounts are not parsed as money;
-- direct product prices rank above nearby unit-price and multi-buy candidates;
-- regular/loyalty price context remains distinguishable for human review;
-- duplicate monetary values are deduplicated after ranking;
-- capture → OCR → parse → human rank confirmation is timed as one interaction;
-- top-1 and rank 2–3 confirmations remain distinguishable;
-- rejected/no-candidate/timeout/manual-fallback/OCR-error/parser-error/capture-error outcomes remain distinguishable;
-- timeout/fallback/teardown invalidates late OCR results;
-- camera tracks are released on stop/unmount/failure;
-- malformed retained evidence is preserved until explicit reset;
-- viewport/engine/data-boundary changes freeze retained evidence instead of mixing environments;
-- export carries the exact guarded-build `buildRevision`;
-- local download uses a non-identifying session timestamp filename;
-- provider-neutral OCR harness behaviour remains separately testable from concrete engine implementation;
-- the concrete Tesseract.js 7.0.0 experiment is dependency-pinned and isolated in its own guarded entry;
-- its stable engine ID includes runtime, LSTM mode, `fin+swe+eng` and the dataset family;
-- image bytes remain `local-only`; worker/core/language asset downloads do not receive the camera frame;
-- model/worker preparation stays outside timed attempts;
-- pre-aborted calls never invoke recognition;
-- in-flight abort terminates the active worker and a later attempt recreates it;
-- OCR failure invalidates the failed worker before retry;
-- explicit dispose is idempotent and post-dispose inference is rejected;
-- Tesseract 0–100 confidence is normalized to the harness 0–1 contract;
-- concrete browser smoke verifies route isolation without preparing/downloading OCR assets in CI;
-- the public build's marker scan, which covers every public JavaScript chunk except the two lazy engine chunks, finds no concrete Tesseract experiment markers;
-- physical OCR quality remains evidence-gated by issue #90 even when automated adapter tests are green.
-
-### Paired OCR/manual analyzer
-
-Automation may validate paired evidence integrity and descriptive calculations; it must not manufacture the issue #90 product decision.
-
-Tests must prove:
-
-- OCR benchmark exports have an authoritative runtime parser that recomputes their summary and rejects edited/tampered privacy or derived metrics;
-- OCR export `generatedAt` covers the latest retained sample/failure observation;
-- the paired analyzer is a standalone guarded build with no shopping-state access and no PWA/service worker;
-- imported manual/OCR JSON stays in page memory and is never uploaded or persisted;
-- both source exports must carry immutable full-Git-SHA revisions before field comparison can be ready;
-- source `buildRevision`, user agent, viewport and normalized device label must match;
-- manual evidence requires its documented input method, physical context and both 10-sample reference fixtures;
-- OCR evidence requires a concrete engine/data boundary, at least 10 timed attempts and at least 10 human candidate decisions;
-- repeated-use preference and cognitive effort are required before structural readiness;
-- paired timing comparisons use all OCR human-decision durations (top-1 confirm, rank 2–3 confirm and reject) versus both manual interaction reference fixtures;
-- confirmed-only OCR median/P75/P90 remain available as diagnostic success-latency metrics but are not the paired interaction comparator;
-- aggregate output is disabled on `local-dev` analyzer builds;
-- aggregate output contains no raw manual/OCR samples, images, raw OCR text, shopping prices, device labels or source filenames;
-- browser E2E validates a full same-build pair through aggregate download on the exact stamped release artifact;
-- PROMOTE / REMEDIATE / DEFER remains an explicit human decision after reviewing accuracy, latency, failures, corrections, fallback, preference and effort.
+Price tag reading shipped ahead of its field evidence (D-055); issue #90 remains an open post-release gate that automation cannot close.
 
 ## Performance
 

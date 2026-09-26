@@ -4,7 +4,7 @@
 
 **IMPLEMENTED.** One baseline is published: `evidence-baseline-2026-09-25-r10`.
 
-Real-world retention, barcode, visual-recognition and OCR studies must not depend on the moving GitHub Pages routes that follow every `main` deployment.
+Real-world timing and retention studies must not depend on the moving GitHub Pages routes that follow every `main` deployment.
 
 A study baseline is therefore published under an immutable versioned path:
 
@@ -19,12 +19,6 @@ The moving routes:
 - `/qa/`
 - `/beta/`
 - `/cohort/`
-- `/barcode-benchmark/`
-- `/barcode-paired-analyzer/`
-- `/ocr-paired-analyzer/`
-- `/visual-recognition-benchmark/`
-- `/shelf-label-ocr-benchmark/`
-- `/shelf-label-ocr-tesseract-benchmark/`
 
 are useful for current validation, but their embedded `buildRevision` changes whenever a newer `main` commit is deployed.
 
@@ -91,14 +85,10 @@ study/evidence-baseline-2026-09-25-r9/
 ├── study-baseline.json
 ├── qa/
 ├── beta/
-├── cohort/
-├── barcode-benchmark/
-├── barcode-paired-analyzer/
-├── ocr-paired-analyzer/
-├── visual-recognition-benchmark/
-├── shelf-label-ocr-benchmark/
-└── shelf-label-ocr-tesseract-benchmark/
+└── cohort/
 ```
+
+`evidence-baseline-2026-09-25-r10` predates D-056 and also holds the retired camera benchmarks and paired analyzers.
 
 `study-baseline.json` records:
 
@@ -144,7 +134,7 @@ Once evidence collection begins, study instructions must cite:
 - baseline slug;
 - exact source SHA.
 
-Do not instruct participants to use the moving `/beta/`, `/qa/` or benchmark routes for a cohort that is intended to remain revision-stable.
+Do not instruct participants to use the moving `/beta/` or `/qa/` routes for a cohort that is intended to remain revision-stable.
 
 Do not combine evidence from different `buildRevision` values into one interpreted cohort unless the owning evidence protocol explicitly defines a cross-version analysis.
 

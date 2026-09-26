@@ -134,10 +134,6 @@ Barcode remains identity, not price authority.
 
 Read prices are candidates, not price authority.
 
-## Guarded evidence experiments
-
-- `@huggingface/transformers` 4.3.0 runs the pinned adapter in the guarded visual-recognition benchmark only; the public app never imports it.
-
 ## Dependency admission rule
 
 Before adding a runtime dependency, answer:

@@ -4,11 +4,11 @@
 
 This file describes **current validation gates and future sequencing**.
 
-It is not a chronological implementation diary. The detailed phase-by-phase plan through repeat-trip engineering is preserved in [archive/ROADMAP-THROUGH-PHASE-8.md](./archive/ROADMAP-THROUGH-PHASE-8.md).
+It is not a chronological implementation diary; git history keeps the completed phase-by-phase plans.
 
 ## Current status — 2026-09-26
 
-The core Shopping Budget Companion engineering path is implemented: exact money, the trip domain, local-first persistence and recovery, the remaining-first UI, fast price entry, history, Shop again, Recent Items, Price Memory, data controls and the installable offline shell. Production barcode identification (D-053) and price-tag reading (D-055) ship in the shared in-trip camera behind build kill switches. Guarded evidence builds cover timing QA, the retention beta and cohort analysis, and camera benchmarks with paired analyzers. [specs/RELEASE-SPEC.md](./specs/RELEASE-SPEC.md) owns the per-capability status.
+The core Shopping Budget Companion engineering path is implemented: exact money, the trip domain, local-first persistence and recovery, the remaining-first UI, fast price entry, history, Shop again, Recent Items, Price Memory, data controls and the installable offline shell. Production barcode identification (D-053) and price-tag reading (D-055) ship in the shared in-trip camera behind build kill switches. Guarded evidence builds cover timing QA, the retention beta and cohort analysis. [specs/RELEASE-SPEC.md](./specs/RELEASE-SPEC.md) owns the per-capability status.
 
 The representative physical-phone interaction gate was accepted by explicit repository-owner/user attestation on 2026-09-24. The check was reported as responsibly completed with no blocking usability problem.
 
@@ -91,30 +91,23 @@ The active roadmap is intentionally narrow and local-first.
    - interpret 7/14/30-day retention only when each window has at least 20 eligible participants;
    - use repeat use, abandonment, Price Memory/reuse and trust/friction evidence to decide whether the core flow needs remediation.
 
-3. **Physical barcode benchmark — issue #73 (post-release validation, D-053)**
-   - collect representative phone evidence from the isolated benchmark;
-   - collect a same-device quantitative manual-entry baseline;
-   - validate the two unchanged JSON exports in the local paired analyzer;
-   - compare end-to-end human decision time, failures, corrections, fallback, preference and cognitive effort;
-   - keep PROMOTE / REMEDIATE / DEFER as a human evidence decision rather than an automated score.
+3. **Barcode field evidence — issue #73 (post-release validation, D-053)**
+   - use the production app on representative phones (Android Chrome and iOS Safari at least) in real stores;
+   - log every scan attempt: product type, whether the code was read, seconds from opening the camera to a result, wrong products, and whether the shopper fell back to typing;
+   - cover small and curved codes, glossy packs, poor light, store-printed codes and a device without the native detector;
+   - decide from the log whether to keep scanning, remediate it or switch it off.
 
-4. **Visual product recognizer evidence — issue #88**
-   - keep the provider-neutral camera/evidence harness isolated from shopping state;
-   - select one explicit experimental recognizer/model adapter rather than a generic demo;
-   - declare whether image bytes remain local or cross a remote boundary;
-   - benchmark representative retail products and same-brand/similar-package confusions;
-   - compare ranked accuracy, end-to-end human decision time, corrections and fallback against manual interaction.
+4. **Visual product recognition — issue #88**
+   - production recognition is PLANNED / GATED (section C); the guarded CLIP benchmark was retired (D-056);
+   - before it ships, evidence must cover representative retail products, same-brand and similar-package confusions, and ranked accuracy, decision time, corrections and fallback against manual entry.
 
-5. **Shelf-label OCR engine evidence — issue #90 (post-release validation, D-055)**
-   - keep OCR text/images transient and outside retained evidence;
-   - use pinned Tesseract.js 7.0.0 with LSTM `fin+swe+eng` as the first explicit local-only baseline;
-   - keep camera image bytes local; worker/core/language assets may download/cache separately;
-   - test representative shelf-label fixtures and physical-device conditions;
-   - collect at least 10 timed OCR attempts and 10 human candidate decisions before treating the paired dataset as structurally ready;
-   - validate the unchanged OCR/manual JSON exports in the local OCR paired analyzer;
-   - compare ranked exact-money candidate accuracy, failures/corrections/fallback and end-to-end decision time against manual interaction references;
-   - keep PROMOTE / REMEDIATE / DEFER as a human evidence decision rather than an automated score;
-   - if Tesseract is too slow/inaccurate, remediate or defer rather than weakening parser/money invariants.
+5. **Price-tag field evidence — issue #90 (post-release validation, D-055)**
+   - use the production app on representative phones in real stores;
+   - log every read: tag type (comma or dot decimals, superscript cents, unit/member/regular prices, multi-buy, percentage discounts, offer dates, no valid price), whether the right price was first or only listed, seconds from "Read price" to choosing, wrong or missing candidates, and whether the shopper typed the price instead;
+   - collect at least 10 reads per tag type before drawing a conclusion;
+   - decide from the log whether to keep price reading, remediate it or switch it off, without weakening the parser's exact-money rules.
+
+A field log is a plain table kept by the facilitator; it holds no photos, no shopping content and nothing from the app's storage. Every decision above stays a human decision, not an automated score.
 
 These gates are not replaceable by automated fixtures or green CI.
 
@@ -138,15 +131,9 @@ If issue #73 concludes REMEDIATE or DEFER, switch scanning off rather than weake
 
 Barcode identifies **product identity only**. It never supplies authoritative current shelf price. Manual current-price entry remains complete and always available.
 
-### C. Visual product recognition — concrete adapter evidence before production
+### C. Visual product recognition
 
-**Harness status: IMPLEMENTED. Concrete experimental adapter: IMPLEMENTED. Physical recognizer evidence: PENDING / GATED. Production recognition: PLANNED / GATED.**
-
-The guarded benchmark owns camera capture, timeout/cancellation, ranked candidate review, privacy-safe evidence and adapter boundaries. It now includes a pinned local Transformers.js CLIP adapter for issue #88, loaded only after an explicit facilitator action and a bounded in-memory candidate catalog.
-
-The public shopping PWA does not import the model runtime. The guarded experiment may download/cache model files, but image inference stays local. WebGPU is attempted first with a WASM fallback.
-
-Use issue #88 to evaluate this exact adapter/model/catalog protocol on representative retail products before production work.
+**PLANNED / GATED.** The owner's chosen direction is on-device recognition with a model served by this site, matching against a catalog of common unbarcoded goods plus the shopper's own products. Nothing is implemented yet; the guarded CLIP benchmark was retired (D-056).
 
 Production visual recognition, if approved, must preserve:
 
@@ -164,7 +151,7 @@ Category-only recognition is not sufficient when the intended interaction needs 
 
 ### D. Shelf-label OCR
 
-**Production price-tag reading: IMPLEMENTED (owner promotion, D-055). Field evidence (issue #90): PLANNED / GATED as post-release validation. Guarded harness and Tesseract experiment: IMPLEMENTED.**
+**Production price-tag reading: IMPLEMENTED (owner promotion, D-055). Field evidence (issue #90): PLANNED / GATED as post-release validation.**
 
 Shipped in these layers:
 
@@ -178,22 +165,7 @@ Shipped in these layers:
 
 If issue #90 concludes REMEDIATE or DEFER, switch price reading off rather than weakening manual entry: set the `VITE_SHOPPING_PRICE_OCR` repository variable to `0`, and the next push to `main` builds, tests and deploys the app without it.
 
-The guarded OCR benchmark now owns:
-
-1. isolated camera capture and lifecycle safety;
-2. provider-neutral `ShelfLabelOcrEngine` boundary;
-3. explicit `local-only` / `remote-image` data-boundary declaration;
-4. bounded OCR output validation;
-5. deterministic exact-money shelf-price candidate parsing;
-6. ranked candidate-selection UI;
-7. privacy-safe timing/rank evidence without raw text, image or price persistence;
-8. an isolated browser/release gate.
-
-The parser deliberately reuses the existing `parseEurDraft` money contract. It does not invent decimals in bare OCR digits, does not treat percentages as money, and keeps unit-price/multi-buy/regular-price context distinguishable for ranking and human review.
-
-The first concrete engine baseline is Tesseract.js 7.0.0 in LSTM mode with `fin+swe+eng`. Worker/core/language preparation occurs before timed attempts; abort/failure invalidates worker resources and explicit dispose releases them.
-
-Use issue #90 to evaluate this exact engine/configuration on representative static fixtures and physical shelf-label conditions.
+The parser reuses the `parseEurDraft` money contract. It does not invent decimals in bare OCR digits, does not treat percentages or dates as money, and keeps unit-price, member, regular and multi-buy context distinguishable for ranking and human review ([DOMAIN.md](./DOMAIN.md#shelf-price-reading)).
 
 Production price reading preserves:
 
@@ -292,7 +264,7 @@ AI-assisted changes should optimise for reasoning efficiency:
 - inspect current code/tests before trusting status prose
 - keep public contracts separate from implementation when that reduces context cost
 - update the smallest owning document
-- archive completed execution narration
+- delete completed execution narration; git history keeps it
 - avoid duplicating status across multiple docs
 - never claim human validation from automation
 - make refactors behaviour-preserving unless the task explicitly changes product behaviour
@@ -322,4 +294,4 @@ Revise the current roadmap when:
 - user research changes the core job
 - a future capability becomes current implementation
 
-When a section becomes historical execution detail, move it to `docs/archive/` rather than growing this file indefinitely.
+When a section becomes historical execution detail, delete it rather than growing this file indefinitely; git history keeps it.

@@ -21,12 +21,9 @@ When sources disagree:
 1. current code and green executable tests establish what is implemented;
 2. authoritative documents under `docs/` establish intended current behaviour;
 3. accepted decisions in `docs/DECISIONS.md` explain durable choices;
-4. supporting reference/research explains rationale;
-5. `docs/archive/` is historical only.
+4. supporting reference/research explains rationale.
 
 If code and an authoritative contract disagree, treat that as drift and reconcile both in the same change.
-
-Never use archive material as current implementation instruction.
 
 ## Load only the context the task needs
 
@@ -36,7 +33,7 @@ Always read:
 - `docs/README.md`, whose "Read by task" table names the owning contract for each kind of change;
 - affected code and tests.
 
-Then load only that owning contract. Do not load research, archive or long rationale unless the task needs it.
+Then load only that owning contract. Do not load research or long rationale unless the task needs it.
 
 ## Current repository reality
 
@@ -52,18 +49,18 @@ Implemented:
 - installable offline PWA shell with prompt-based updates;
 - optional barcode identification (native detector, lazy self-hosted ZXing WASM fallback, local barcode names, tap-only online name lookup) behind build switches;
 - optional price tag reading (lazy self-hosted Tesseract.js, geometry-aware exact-money candidates, confirmation in price entry) in the same camera, behind a build switch;
-- guarded evidence builds in `src/qa/` (timing QA, retention beta and cohort analysis, camera benchmarks and paired analyzers);
+- guarded evidence builds in `src/qa/` (timing QA, retention beta and cohort analysis);
 - Chromium / Firefox / WebKit browser and accessibility coverage.
 
 Gated / not implemented:
 
 - physical evidence for barcode scanning (issue #73, post-release);
 - physical evidence for price tag reading (issue #90, post-release);
-- physical evidence for visual product recognition (issue #88);
+- production visual product recognition (issue #88);
 - an exact quantitative manual-entry timing baseline (physical-phone usability was accepted by owner attestation on 2026-09-24);
 - real-shopper second-/third-trip retention validation (issue #72).
 
-The `/qa/` and `/beta/` builds wrap the same product with evidence instrumentation; every other guarded build is a standalone evidence tool that never composes the product. None of them is an alternate product shell.
+The `/qa/` and `/beta/` builds wrap the same product with evidence instrumentation, and `/cohort/` is a standalone analyzer that never composes the product. None of them is an alternate product shell.
 
 ## Product decision rule
 
@@ -239,7 +236,7 @@ Before declaring complete:
 
 Runtime dependencies must earn product value.
 
-Prefer native Web APIs and existing abstractions. The admitted runtime dependencies are React, Zod, the Workbox PWA tooling (D-028), `barcode-detector` + `zxing-wasm` (D-031, D-053), Tesseract.js with its core and Finnish data (D-055) and `@huggingface/transformers` for the guarded CLIP benchmark only. Add nothing further — state libraries, routers, backends, analytics SDKs, other scanner/OCR SDKs or UI frameworks — without an accepted decision.
+Prefer native Web APIs and existing abstractions. The admitted runtime dependencies are React, Zod, the Workbox PWA tooling (D-028), `barcode-detector` + `zxing-wasm` (D-031, D-053), and Tesseract.js with its core and Finnish data (D-055). Add nothing further — state libraries, routers, backends, analytics SDKs, other scanner/OCR SDKs or UI frameworks — without an accepted decision.
 
 ## Git discipline
 
