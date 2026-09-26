@@ -451,7 +451,7 @@ test("keeps an added item in memory when its persistence write fails", async ({
         if (activeTripWrites === 2) {
           throw new DOMException(
             "Simulated add persistence failure",
-            "QuotaExceededError",
+            "UnknownError",
           );
         }
       }
@@ -1732,9 +1732,9 @@ test("never clears the active trip when completed-history persistence fails", as
   await page.getByRole("button", { name: "Finish trip" }).click();
   await page.getByRole("button", { name: "Finish trip" }).click();
 
-  await expect(
-    page.getByRole("alert"),
-  ).toContainText("active trip is still intact");
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+    "Storage for this app is full, so the trip was not saved to History. It is still open: choose Keep shopping to make room, then finish again.",
+  );
 
   const persistedAfterFailure = await page.evaluate(
     ({ activeKey, historyKey }) => ({

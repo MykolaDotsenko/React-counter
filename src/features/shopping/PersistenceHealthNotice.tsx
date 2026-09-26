@@ -256,7 +256,11 @@ export function PersistenceHealthNotice({
         <strong id="persistence-notice-title">{copy.title}</strong>
         <p>
           {copy.body}
-          {canMakeRoom ? " Removing your oldest trips from history makes room." : ""}
+          {health.issue.code !== "storage-full"
+            ? ""
+            : canMakeRoom
+              ? " Removing your oldest trips from history makes room."
+              : " Free up storage this browser keeps for this site, then retry."}
           <span aria-live="polite">
             {confirmingRoom && canMakeRoom
               ? ` Your ${removing} oldest ${removing === 1 ? "trip" : "trips"} will be removed from this device; remembered prices stay.`

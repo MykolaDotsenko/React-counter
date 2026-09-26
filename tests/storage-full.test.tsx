@@ -165,6 +165,21 @@ describe("when browser storage is full", () => {
     expect(controller.getSnapshot().completedTrips).toHaveLength(2);
   });
 
+  it("explains how to free space when there are no trips to remove", () => {
+    const { controller, fullKeys } = bootWithHistory(0);
+    fullKeys.add(ACTIVE_TRIP_STORAGE_KEY);
+    controller.startTrip({ budgetMinor: money(5_000) });
+
+    render(<ShoppingAppShell controller={controller} />);
+
+    const notice = screen.getByRole("complementary", { name: "Storage for this app is full" });
+    expect(notice.textContent).toContain(
+      "Free up storage this browser keeps for this site, then retry.",
+    );
+    expect(within(notice).queryByRole("button", { name: "Make room…" })).toBeNull();
+    expect(within(notice).getByRole("button", { name: "Retry" })).not.toBeNull();
+  });
+
   it("explains why finishing failed and keeps the trip open", async () => {
     const user = userEvent.setup();
     const { controller, limit, used } = bootWithHistory(1);
