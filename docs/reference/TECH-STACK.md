@@ -88,7 +88,7 @@ Backend, authentication, cloud sync and collaborative remote shopping state are 
 
 The product remains local-first, offline-first and account-free. Do not add server-owned shopping state, remote history or account infrastructure as speculative architecture.
 
-A future product-identity lookup may use a narrow external provider adapter only when barcode evidence justifies it. That adapter must be optional, runtime-validated and failure-safe; the core trip remains fully usable without network access.
+Product-identity lookup uses one narrow external provider adapter (Open Food Facts, D-032). It is optional, tap-only, runtime-validated and failure-safe; the core trip remains fully usable without network access.
 
 ## Analytics
 
@@ -110,17 +110,13 @@ The current release uses:
 - no canonical business state in Cache Storage/service worker.
 
 The generated service worker is disabled for guarded `/qa/` and `/beta/` builds so those evidence surfaces cannot create competing registrations. Update UI is lifecycle-aware and only becomes actionable when the shopping application is idle.
-## Future barcode
+## Barcode
 
-**PLANNED / GATED.**
+**IMPLEMENTED.**
 
-Provider/decoder selection must be based on:
-
-- browser/device coverage;
-- latency;
-- bundle cost;
-- failure behaviour;
-- real interaction savings.
+- native `BarcodeDetector` when it supports EAN-13, EAN-8, UPC-A and UPC-E;
+- otherwise `barcode-detector` 3.2.2 with `zxing-wasm` 3.1.3 (ZXing-C++ reader), imported on demand, WASM self-hosted and cached by the service worker (D-031);
+- build budgets keep the engine out of the initial bundle and cap it at 60 kB JS / 1.2 MB WASM, and the build verifies the WASM hash against the bundled reader.
 
 Barcode remains identity, not price authority.
 

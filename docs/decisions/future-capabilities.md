@@ -63,9 +63,11 @@ A standardized native/ponyfill interface gives cleaner capability boundaries tha
 
 ### Consequence
 
-Scanner code remains outside the initial bundle and behind BarcodeScanner.
+Scanner code remains outside the initial bundle and behind the `BarcodeScannerPort` application port.
 
 Manual price entry remains available in every scanner failure state.
+
+As shipped: the native detector is used only when it reports every retail format (EAN-13, EAN-8, UPC-A, UPC-E). Otherwise `barcode-detector` 3.2.2 (ZXing-C++ `zxing-wasm` 3.1.3) is imported on demand. Its WASM is self-hosted: the default CDN location is overridden, the build fails unless the emitted file matches the bundled reader's SHA-256, and the service worker caches it on first use. Devices without a usable native detector fetch it in the background once a trip is active, so scanning keeps working offline in the store.
 
 ### Revisit when
 
@@ -94,8 +96,9 @@ The product's business rule remains that barcode identifies a product; current s
 - remote responses are runtime-validated
 - not-found is normal
 - manual flow survives provider failure
-- API client-identification policy must be resolved before production
 - provider-specific DTOs never enter the domain
+
+As shipped: a lookup runs only when the shopper taps "Find name online" for a barcode the device does not know. Only the barcode number is sent, with `credentials: "omit"` and no referrer, and only the fields the product shows are requested. Browsers cannot set a custom `User-Agent`, so the app identifies itself with `app_name` and `app_version` query parameters instead of adding a backend. A suggestion only pre-fills an editable name field.
 
 ### Revisit when
 
@@ -189,3 +192,33 @@ D-035 remains authoritative for production feature sequencing: Repeat Trip / Rec
 ### Revisit when
 
 The benchmark has representative mobile timing, failure, correction, and repeated-use data.
+
+## D-053 — Production barcode ships ahead of physical evidence, behind kill switches
+
+Date: 2026-09-25
+
+Status: accepted
+
+### Decision
+
+The owner promotes production barcode identification into the public app before the issue #73 physical benchmark has produced evidence.
+
+It ships as an optional accelerator:
+
+- a "Scan barcode" action appears only where a secure context and camera access exist;
+- `VITE_SHOPPING_BARCODE_SCANNER=0` removes scanning from a build, and `VITE_SHOPPING_PRODUCT_LOOKUP=0` removes only the online lookup;
+- manual price entry stays complete and one tap away in every state.
+
+### Rationale
+
+The layered design in ROADMAP section B was already specified. What remained was an owner decision, not missing engineering. A reversible build switch keeps that decision cheap to undo if field use shows the scanner costs more than it saves.
+
+### Consequence
+
+- issue #73 becomes post-release validation: it can still conclude REMEDIATE or DEFER, which means switching scanning off rather than weakening manual entry;
+- barcode identity never supplies an authoritative current price (D-004): a remembered price is shown as context and reused only by explicit choice;
+- store-printed (restricted circulation) codes and coupons are recognised and routed to manual entry instead of being remembered.
+
+### Revisit when
+
+Issue #73 or real-shopper evidence shows scanning is slower, more error-prone or less trusted than manual entry.

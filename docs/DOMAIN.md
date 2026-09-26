@@ -232,11 +232,16 @@ Price Memory failure must never invalidate a durably completed trip.
 
 ## Barcode identity
 
-**PLANNED / GATED.**
+**IMPLEMENTED.**
 
 Barcode identifies a product, not a guaranteed current shelf price.
 
-Any future barcode adapter must keep manual current-price entry available.
+- EAN-13, EAN-8, UPC-A and UPC-E values are validated with the GS1 mod-10 check digit and normalised to a 14-digit GTIN; UPC-E is expanded to UPC-A first;
+- GS1 restricted-circulation numbers (GTIN-13 prefixes 02, 04 and 20–29, and GTIN-8 prefixes 0 and 2) are store-printed codes: they change from pack to pack, so they are never remembered as a product and their embedded values are never read as a price;
+- coupon and refund ranges (05, 99, 980–984) are not products;
+- a barcode links to the shopper's own item label; a remembered price reached through that label is context until the shopper confirms or reuses it explicitly.
+
+Manual current-price entry stays available in every barcode state.
 
 ## Shelf-price scanning
 

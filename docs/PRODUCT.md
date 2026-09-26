@@ -126,10 +126,10 @@ Never trade obviousness or speed for visual spectacle.
 - Recent Items;
 - local Price Memory;
 - independent local-data controls;
-- installable offline PWA shell with user-controlled updates.
+- installable offline PWA shell with user-controlled updates;
+- optional barcode identification that recalls the product's name and last price, with manual entry always available.
 
 **PLANNED / GATED**
-- production barcode identification;
 - production shelf-label OCR;
 - advanced price mechanics only after evidence.
 

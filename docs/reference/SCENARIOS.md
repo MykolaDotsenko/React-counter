@@ -104,6 +104,8 @@ These scenarios are useful for future design but do **not** represent current sh
 
 ### Barcode
 
+**IMPLEMENTED.** Covered by `tests/BarcodeScanSurface.test.tsx`, `tests/BarcodeScanFlow.test.tsx`, `tests/shopping-app-barcode.test.ts` and `e2e/barcode-scanner.spec.js`.
+
 - known barcode + remembered context;
 - known barcode with no current price;
 - unknown barcode;

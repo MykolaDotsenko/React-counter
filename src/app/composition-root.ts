@@ -1,3 +1,7 @@
+import type {
+  BarcodeScannerPort,
+  ProductLookupPort,
+} from "../application/barcode-ports";
 import {
   createShoppingAppController,
   type Clock,
@@ -8,7 +12,14 @@ import {
   cryptoIdGenerator,
   systemClock,
 } from "../infrastructure/runtime/browser-boundaries";
+import { createBrowserBarcodeScanner } from "../infrastructure/barcode/browser-scanner-environment";
+import { createLazyOpenFoodFactsLookup } from "../infrastructure/product-lookup/lazy-product-lookup";
+import {
+  barcodeScannerEnabled,
+  productLookupEnabled,
+} from "../infrastructure/runtime/feature-flags";
 import { createActiveTripPersistencePort } from "../infrastructure/storage/active-trip-persistence-port";
+import { createBarcodeLinkPersistencePort } from "../infrastructure/storage/barcode-link-storage";
 import { surfaceStorageScope } from "../infrastructure/runtime/deployment-surface";
 import { createPriceMemoryPersistencePort } from "../infrastructure/storage/price-memory-persistence-port";
 import { scopedStorage } from "../infrastructure/storage/scoped-storage";
@@ -52,6 +63,7 @@ export const createBrowserShoppingAppController = (
   return createShoppingAppController({
     persistence: createActiveTripPersistencePort(storage),
     priceMemoryPersistence: createPriceMemoryPersistencePort(storage),
+    barcodeLinkPersistence: createBarcodeLinkPersistencePort(storage),
     clock: dependencies.clock ?? systemClock,
     ids: dependencies.ids ?? cryptoIdGenerator,
   });
@@ -64,3 +76,16 @@ export const bootstrapBrowserShoppingAppController = (
   controller.bootstrap();
   return controller;
 };
+
+export const createBrowserScanner = (): BarcodeScannerPort | null =>
+  barcodeScannerEnabled ? createBrowserBarcodeScanner() : null;
+
+export const createBrowserProductLookup = (): ProductLookupPort | null =>
+  productLookupEnabled && typeof fetch === "function"
+    ? createLazyOpenFoodFactsLookup({
+        fetch: (input, init) => fetch(input, init),
+        appName: "ShoppingBudgetCompanion",
+        appVersion: __SHOPPING_APP_VERSION__,
+        isOnline: () => navigator.onLine,
+      })
+    : null;

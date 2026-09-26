@@ -134,6 +134,7 @@ CI additionally validates the exact release artifact before it can be deployed:
 - ✅ Recent Items and Price Memory
 - ✅ local-data controls
 - ✅ installable offline PWA shell
+- ✅ optional barcode scanning: remembers product names and last prices, works offline, looks names up online only on tap
 - ✅ privacy-safe retention evidence harness
 - ✅ cohort-level retention analysis
 - ✅ isolated barcode/manual paired evidence analysis
@@ -147,11 +148,11 @@ CI additionally validates the exact release artifact before it can be deployed:
 - ⏳ exact quantitative manual-entry timing baseline remains unclaimed because machine-verifiable timing JSON was not retained
 - ⏳ 20–50 real-shopper retention beta
 - ⏳ maturity-aware second-/third-trip evidence
-- ⏳ representative physical barcode benchmark + paired quantitative manual baseline
+- ⏳ representative physical barcode benchmark + paired quantitative manual baseline (now post-release validation of the shipped scanner)
 - ⏳ physical retail evidence for the pinned local CLIP visual recognizer
 - ⏳ physical shelf-label evidence for a concrete OCR engine
 
-Production barcode, visual recognition, and OCR remain evidence-gated.
+Visual recognition and OCR remain evidence-gated. Barcode scanning ships ahead of its physical evidence and can be switched off per build (D-053).
 
 Public guarded evidence builds (validation surfaces, not private/security boundaries) follow the latest deployed `main`. Real multi-day/week field studies use immutable versioned `/study/<baseline>/...` copies of the exact tested artifact instead:
 

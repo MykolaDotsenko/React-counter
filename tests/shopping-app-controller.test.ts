@@ -363,6 +363,8 @@ describe("ShoppingAppController snapshot contract", () => {
       historyIntegrity: { status: "healthy" },
       priceMemories: [],
       priceMemoryPersistence: { status: "healthy" },
+      barcodeLinks: [],
+      barcodeLinkPersistence: { status: "healthy" },
       undo: null,
       recovery: null,
     });

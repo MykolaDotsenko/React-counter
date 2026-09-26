@@ -6,7 +6,7 @@ This is the executable contract for the current shopping-budget release.
 
 The original core MVP is implemented. Several post-core capabilities are also implemented and are explicitly listed below.
 
-The installable offline PWA shell is **IMPLEMENTED**. Barcode and OCR remain **PLANNED / GATED**.
+The installable offline PWA shell and optional barcode identification are **IMPLEMENTED**. OCR remains **PLANNED / GATED**.
 
 ## Core job
 
@@ -45,10 +45,10 @@ A shopper can:
 - local history deletion;
 - independent Price Memory deletion;
 - retention/timing evidence tooling that does not own shopping state;
-- installable offline application shell with prompt-based updates.
+- installable offline application shell with prompt-based updates;
+- optional barcode identification with local barcode names and tap-only online name lookup.
 
 ### PLANNED / GATED
-- barcode identification;
 - shelf-label OCR;
 - weighted goods;
 - discount engine;
@@ -187,7 +187,7 @@ Completed history and Price Memory can be cleared independently according to the
 
 Current release does not require:
 
-- barcode/OCR;
+- barcode scanning, online product lookup or OCR;
 - AI;
 - authentication;
 - bank API;
@@ -208,11 +208,22 @@ Shopping state, manual entry, editing, completion and history do not require a r
 
 Historical reopen requires an explicit loss-safe history ↔ active-state transaction and is not current behaviour.
 
-### FR-027 — Future barcode
+### FR-027 — Barcode identification
 
-**PLANNED / GATED.**
+**IMPLEMENTED.**
 
 Barcode may identify product context but cannot be treated as authoritative current shelf price by default.
+
+Acceptance:
+
+- EAN-13, EAN-8, UPC-A and UPC-E codes are normalised to GTIN-14 and rejected when the check digit fails;
+- a code must be read twice within 1.5 s before it counts, and the camera stops as soon as it does;
+- a known barcode shows its remembered name and last confirmed price as context; the current price is entered or the remembered price reused by explicit choice;
+- an unknown barcode can be named once; the name is remembered on the device for the next scan;
+- store-printed codes (for example weighed items) and coupons go to manual price entry and are never remembered;
+- online name lookup runs only on tap and sends only the barcode number;
+- camera permission, unsupported browsers, busy cameras and engine failures each explain the problem and offer typing the barcode or entering the price without scanning;
+- camera frames never leave the device and are never stored.
 
 ### FR-028 — Future shelf OCR
 

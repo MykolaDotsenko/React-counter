@@ -26,7 +26,8 @@ The core Shopping Budget Companion engineering path is implemented:
 - installable offline PWA shell
 - privacy-safe timing QA and retention-beta evidence tooling
 - local-only retention cohort analyzer
-- guarded native barcode interaction benchmark harness (not a production scanner)
+- production barcode identification: native `BarcodeDetector` with a lazy self-hosted ZXing WASM fallback, local barcode names and tap-only Open Food Facts name lookup (D-053)
+- guarded native barcode interaction benchmark harness
 - local-only paired barcode/manual evidence analyzer for issue #73
 - guarded provider-neutral visual product recognition benchmark harness with a pinned local CLIP experimental adapter; physical evidence still pending
 - guarded provider-neutral shelf-label OCR benchmark harness with deterministic exact-money price parser
@@ -118,7 +119,7 @@ The active roadmap is intentionally narrow and local-first.
    - interpret 7/14/30-day retention only when each window has at least 20 eligible participants;
    - use repeat use, abandonment, Price Memory/reuse and trust/friction evidence to decide whether the core flow needs remediation.
 
-3. **Physical barcode benchmark — issue #73**
+3. **Physical barcode benchmark — issue #73 (post-release validation, D-053)**
    - collect representative phone evidence from the isolated benchmark;
    - collect a same-device quantitative manual-entry baseline;
    - validate the two unchanged JSON exports in the local paired analyzer;
@@ -145,21 +146,23 @@ The active roadmap is intentionally narrow and local-first.
 
 These gates are not replaceable by automated fixtures or green CI.
 
-### B. Production barcode — only after positive physical evidence
+### B. Production barcode
 
-**Production status: PLANNED / GATED. Experimental native benchmark harness: IMPLEMENTED.**
+**Production status: IMPLEMENTED (owner promotion, D-053). Physical evidence (issue #73): PLANNED / GATED as post-release validation.**
 
-If issue #73 demonstrates meaningful net interaction benefit, implement production barcode in small layers:
+Shipped in these layers:
 
-1. product-identity domain contracts;
-2. provider-neutral `BarcodeScanner` application port;
+1. product-identity domain contracts (GTIN parsing, check digits, store codes and coupons);
+2. provider-neutral `BarcodeScannerPort` application port;
 3. native `BarcodeDetector` adapter;
-4. lazy fallback only if target-device evidence requires it;
-5. provider-neutral `ProductLookup` port;
-6. runtime-validated product-identity adapter;
+4. lazy self-hosted ZXing WASM fallback (D-031);
+5. provider-neutral `ProductLookupPort`;
+6. runtime-validated Open Food Facts adapter, used only on tap (D-032);
 7. scan → identity candidate → explicit user confirmation;
 8. permission/error/manual-fallback UX;
-9. production barcode release gate.
+9. release switches `VITE_SHOPPING_BARCODE_SCANNER` and `VITE_SHOPPING_PRODUCT_LOOKUP`.
+
+If issue #73 concludes REMEDIATE or DEFER, switch scanning off rather than weakening manual entry.
 
 Barcode identifies **product identity only**. It never supplies authoritative current shelf price. Manual current-price entry remains complete and always available.
 

@@ -196,6 +196,8 @@ export const createCompletionUseCases = ({
           ),
       priceMemories: state.priceMemories,
       priceMemoryPersistence: state.priceMemoryPersistence,
+      barcodeLinks: state.barcodeLinks,
+      barcodeLinkPersistence: state.barcodeLinkPersistence,
       undo: null,
       recovery: null,
     });

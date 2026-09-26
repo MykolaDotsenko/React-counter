@@ -1,3 +1,4 @@
+import type { BarcodeLink } from "../domain/barcode-link";
 import type { PriceMemoryRecord } from "../domain/price-memory";
 import type {
   ActiveTrip,
@@ -17,6 +18,10 @@ import type {
 export const EMPTY_COMPLETED_TRIPS = Object.freeze(
   [],
 ) as readonly CompletedTrip[];
+export const EMPTY_BARCODE_LINKS = Object.freeze(
+  [],
+) as readonly BarcodeLink[];
+
 export const EMPTY_PRICE_MEMORIES = Object.freeze(
   [],
 ) as readonly PriceMemoryRecord[];
@@ -47,6 +52,8 @@ export const initialState = (): ShoppingAppState =>
     historyIntegrity: HEALTHY_PERSISTENCE,
     priceMemories: EMPTY_PRICE_MEMORIES,
     priceMemoryPersistence: HEALTHY_PERSISTENCE,
+    barcodeLinks: EMPTY_BARCODE_LINKS,
+    barcodeLinkPersistence: HEALTHY_PERSISTENCE,
     undo: null,
     recovery: null,
   });

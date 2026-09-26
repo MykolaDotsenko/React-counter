@@ -207,6 +207,8 @@ Rules:
 - clearing history does not implicitly clear Price Memory;
 - malformed Price Memory data cannot corrupt active/history state.
 
+Barcode names (`budget-cart:barcode-links`, D-054) follow the same advisory rules. A link is written after the item that carried the barcode has been added, never before, and a failed link write keeps the name in memory for this session and reports degraded barcode-name persistence. An unreadable barcode record is never overwritten; clearing remembered prices resets it.
+
 ## Historical non-shopping data
 
 Old counter/prototype keys are compatibility hazards only.

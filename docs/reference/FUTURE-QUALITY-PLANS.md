@@ -6,20 +6,6 @@
 
 These test plans apply only after the corresponding capability is approved and implemented. They are intentionally outside current `TESTING.md` so AI contributors do not mistake future technology for current product scope.
 
-## Barcode identification
-
-When barcode work is approved:
-
-- test native-capability and fallback adapter paths;
-- use deterministic fixtures for supported/unsupported barcode;
-- product found/not found;
-- provider timeout;
-- malformed provider payload;
-- offline/provider unavailable;
-- manual current-price entry remains available.
-
-Barcode tests must never imply barcode identity is authoritative current shelf price.
-
 ## Visual product recognition
 
 The provider-neutral benchmark harness is implemented, but a concrete model/provider remains gated by issue #88.
@@ -68,18 +54,6 @@ For discounts, weighted goods or tax mechanics:
 ## Future capability accessibility
 
 These requirements become current only when the corresponding capability ships.
-
-### Barcode / camera
-
-Camera/scanning remains optional.
-
-Provide:
-
-- text-labelled controls;
-- permission-denied recovery;
-- complete manual fallback;
-- no gesture-only critical action;
-- review/confirmation state usable by keyboard and assistive technology where the platform permits it.
 
 ### Shelf OCR
 

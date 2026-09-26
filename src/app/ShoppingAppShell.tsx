@@ -1,5 +1,9 @@
-import { useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 
+import type {
+  BarcodeScannerPort,
+  ProductLookupPort,
+} from "../application/barcode-ports";
 import { useShoppingAppState } from "../application/react/use-shopping-app-state";
 import { needsSaveAttention } from "../application/session-only-persistence";
 import type { ShoppingAppController } from "../application/shopping-app-controller";
@@ -7,6 +11,7 @@ import type {
   PriceMemoryId,
   PriceMemoryRecord,
 } from "../domain/price-memory";
+import type { Gtin } from "../domain/product-code";
 import {
   itemCount,
   mostRecentCompletedTrip,
@@ -41,14 +46,22 @@ import styles from "./ShoppingAppShell.module.css";
 
 export interface ShoppingAppShellProps {
   readonly controller: ShoppingAppController;
+  readonly scanner?: BarcodeScannerPort | null;
+  readonly productLookup?: ProductLookupPort | null;
 }
+
+const BarcodeScanSurface = lazy(
+  () => import("../features/shopping/BarcodeScanSurface"),
+);
 
 type TripOverlay =
   | {
       readonly kind: "add-price";
       readonly initialLabel?: string;
       readonly sourceMemoryId?: PriceMemoryId;
+      readonly barcode?: Gtin;
     }
+  | { readonly kind: "barcode-scan" }
   | { readonly kind: "budget-settings" }
   | { readonly kind: "edit-item"; readonly itemId: ItemId }
   | { readonly kind: "finish-trip" };
@@ -62,12 +75,16 @@ const NO_OVERLAY: OverlayState = { kind: "none" };
 
 export function ShoppingAppShell({
   controller,
+  scanner = null,
+  productLookup = null,
 }: ShoppingAppShellProps) {
   const state = useShoppingAppState(controller);
   const {
     addPriceButtonRef,
     finishTripButtonRef,
     adjustBudgetButtonRef,
+    scanBarcodeButtonRef,
+    returnFocusToScanBarcode,
     returnFocusToAddPrice,
     returnFocusToPriceTrigger,
     returnFocusToFinishTrip,
@@ -86,6 +103,13 @@ export function ShoppingAppShell({
     }
   };
   const [lastAddedMessage, setLastAddedMessage] = useState("");
+  const scanning = scanner !== null && scanner.isAvailable() ? scanner : null;
+
+  useEffect(() => {
+    if (state.lifecycle === "active") {
+      scanning?.prepare();
+    }
+  }, [scanning, state.lifecycle]);
   const recentCompletedTrip = mostRecentCompletedTrip(
     state.completedTrips,
   );
@@ -147,9 +171,10 @@ export function ShoppingAppShell({
           onTripStarted={evidence.recordTripStarted}
           completedTripCount={state.completedTrips.length}
           rememberedPriceCount={state.priceMemories.length}
-          priceMemoryNeedsAttention={needsSaveAttention(
-            state.priceMemoryPersistence,
-          )}
+          priceMemoryNeedsAttention={
+            needsSaveAttention(state.priceMemoryPersistence) ||
+            needsSaveAttention(state.barcodeLinkPersistence)
+          }
           recentTrip={recentCompletedTrip}
           persistenceHealth={state.persistence}
           onOpenHistory={() => {
@@ -208,13 +233,23 @@ export function ShoppingAppShell({
             evidence.abandonManualEntry();
 
             const sourceMemoryId = overlay.sourceMemoryId;
+            const fromScan = overlay.barcode !== undefined;
             setOverlay(NO_OVERLAY);
-            returnFocusToPriceTrigger(sourceMemoryId);
+
+            if (fromScan) {
+              returnFocusToScanBarcode();
+            } else {
+              returnFocusToPriceTrigger(sourceMemoryId);
+            }
           }}
           onValidatedItem={(intent: ValidatedItemIntent) => {
             const beforeCount =
               state.activeTrip === null ? 0 : itemCount(state.activeTrip);
-            const result = controller.addManualItem(intent);
+            const result = controller.addManualItem(
+              overlay.barcode === undefined
+                ? intent
+                : { ...intent, barcode: overlay.barcode },
+            );
 
             if (
               !result.ok ||
@@ -242,11 +277,84 @@ export function ShoppingAppShell({
             );
 
             const sourceMemoryId = overlay.sourceMemoryId;
+            const fromScan = overlay.barcode !== undefined;
             setOverlay(NO_OVERLAY);
-            returnFocusToPriceTrigger(sourceMemoryId);
+
+            if (fromScan) {
+              returnFocusToScanBarcode();
+            } else {
+              returnFocusToPriceTrigger(sourceMemoryId);
+            }
+
             return true;
           }}
         />
+        {qaPanel}
+      </>
+    );
+  }
+
+  if (
+    overlay.kind === "barcode-scan" &&
+    state.activeTrip !== null &&
+    scanning !== null
+  ) {
+    return (
+      <>
+        <Suspense
+          fallback={
+            <main className={styles.loading} aria-busy="true">
+              <p>Opening the scanner…</p>
+            </main>
+          }
+        >
+          <BarcodeScanSurface
+            controller={controller}
+            scanner={scanning}
+            productLookup={productLookup}
+            locale={SHOPPING_LOCALE}
+            onCancel={() => {
+              setOverlay(NO_OVERLAY);
+              returnFocusToScanBarcode();
+            }}
+            onEnterPrice={(target) => {
+              evidence.resetQaTiming();
+              openTripOverlay({
+                kind: "add-price",
+                ...(target.label === undefined
+                  ? {}
+                  : { initialLabel: target.label }),
+                ...(target.barcode === undefined
+                  ? {}
+                  : { barcode: target.barcode }),
+              });
+            }}
+            onUseRemembered={(record, barcode) => {
+              const result = controller.addRememberedItem({
+                memoryId: record.id,
+                barcode,
+              });
+
+              if (
+                !result.ok ||
+                !result.changed ||
+                result.state.activeTrip === null
+              ) {
+                return false;
+              }
+
+              setLastAddedMessage(
+                `${record.label} added from a remembered price. ${remainingFeedback(
+                  result.state.activeTrip,
+                  SHOPPING_LOCALE,
+                )}`,
+              );
+              setOverlay(NO_OVERLAY);
+              returnFocusToScanBarcode();
+              return true;
+            }}
+          />
+        </Suspense>
         {qaPanel}
       </>
     );
@@ -439,6 +547,16 @@ export function ShoppingAppShell({
           evidence.startOrdinaryManualEntry();
           openTripOverlay({ kind: "add-price" });
         }}
+        {...(scanning === null
+          ? {}
+          : {
+              scanBarcodeButtonRef,
+              onScanBarcode: () => {
+                evidence.resetQaTiming();
+                setLastAddedMessage("");
+                openTripOverlay({ kind: "barcode-scan" });
+              },
+            })}
         onAdjustBudget={() => {
           evidence.resetQaTiming();
           setLastAddedMessage("");

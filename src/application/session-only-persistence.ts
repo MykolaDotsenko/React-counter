@@ -1,3 +1,4 @@
+import type { BarcodeLinkPersistencePort } from "./barcode-ports";
 import type { PriceMemoryPersistencePort } from "./price-memory-port";
 import type {
   PersistenceHealth,
@@ -63,6 +64,20 @@ export const SESSION_ONLY_PERSISTENCE_PORT: ShoppingPersistencePort =
       return refused;
     },
     clearCompletedActive() {
+      return refused;
+    },
+  });
+
+export const SESSION_ONLY_BARCODE_LINK_PORT: BarcodeLinkPersistencePort =
+  Object.freeze({
+    bootstrap() {
+      return {
+        ok: false as const,
+        links: Object.freeze([]),
+        issue: SESSION_ONLY_ISSUE,
+      };
+    },
+    save() {
       return refused;
     },
   });

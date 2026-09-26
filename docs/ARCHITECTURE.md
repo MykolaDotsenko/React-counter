@@ -10,7 +10,7 @@ The guarded `/cohort/` route is intentionally different: it is a facilitator-onl
 
 The guarded camera routes are also standalone: `/barcode-benchmark/` measures native barcode interaction, `/visual-recognition-benchmark/` exercises the local visual-recognition experiment, and `/shelf-label-ocr-tesseract-benchmark/` exercises the concrete OCR camera flow. The public shopping UI links to them through the static `/camera-tools/index.html` hub in a separate tab, but they never compose or mutate shopping state.
 
-Physical-phone usability was accepted for the current cycle by owner attestation, exact human timing statistics remain unverified, and the real-shopper retention gate remains open. The installable offline PWA shell is implemented. Camera tools are discoverable from the product, while barcode identity, OCR-derived prices and visual candidates remain evidence-gated and require explicit human confirmation before any future production-state integration.
+Physical-phone usability was accepted for the current cycle by owner attestation, exact human timing statistics remain unverified, and the real-shopper retention gate remains open. The installable offline PWA shell and optional barcode identification are implemented. Camera tools are discoverable from the product, while OCR-derived prices and visual candidates remain evidence-gated and require explicit human confirmation before any future production-state integration.
 
 ## Architectural goal
 
@@ -334,11 +334,19 @@ Offline browser coverage verifies that an already installed/cached shell can res
 
 ## Scanner extension points
 
-Barcode/OCR are not current production capabilities.
+Production barcode identification is implemented; OCR is not a current production capability.
 
-The current `/barcode-benchmark/` route is an evidence-only native `BarcodeDetector` harness. It is excluded from the public product bundle, stores no raw barcode value, has no ProductLookup/provider integration and does not authorize the D-031 WASM fallback.
+Barcode layers:
 
-Future production adapters must preserve these boundaries:
+- `domain/product-code.ts` parses EAN-13/EAN-8/UPC-A/UPC-E into a GTIN-14 or a store-code/coupon verdict; `domain/barcode-link.ts` owns remembered barcode names;
+- `application/barcode-ports.ts` defines `BarcodeScannerPort`, `ProductLookupPort` and `BarcodeLinkPersistencePort`; `application/barcode-scan.ts` stabilises readings; the controller's `identifyBarcode` and the `barcode` input on add commands are the only state entry points;
+- `infrastructure/barcode/` adapts the camera, the native detector and the lazily imported ZXing fallback; `infrastructure/product-lookup/` holds the lazily imported Open Food Facts adapter; `infrastructure/storage/barcode-link-storage.ts` owns the `budget-cart:barcode-links` record;
+- `features/shopping/BarcodeScanSurface.tsx` is a lazily loaded trip overlay that never mutates state itself;
+- the composition root builds the adapters only when the build switches allow them (D-053).
+
+The `/barcode-benchmark/` route remains an evidence-only native `BarcodeDetector` harness, separate from the product scanner.
+
+Production adapters preserve these boundaries:
 
 - barcode → identity candidate, not current price authority
 - OCR → price candidate, not committed cart mutation

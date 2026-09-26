@@ -32,6 +32,7 @@ Settings/meta records are not current product state and are not defined here unt
 budget-cart:active-trip
 budget-cart:history
 budget-cart:price-memory
+budget-cart:barcode-links
 ```
 
 Historical counter keys must never be interpreted as shopping money.
@@ -142,6 +143,23 @@ Records contain only fields required by the Price Memory domain contract, such a
 Price Memory is advisory.
 
 A Price Memory write failure must not invalidate completed-trip durability.
+
+## Barcode links v1
+
+Key:
+
+```text
+budget-cart:barcode-links
+```
+
+Envelope data is `{ links: [{ gtin, label, linkedAt }] }`:
+
+- `gtin` is 14 digits with a valid GS1 check digit; store codes and coupons are never stored;
+- `label` is the canonical item label the shopper gave the product;
+- `linkedAt` is a canonical timestamp; the newest link per GTIN wins and a clock moving back never makes a rename older;
+- at most 500 links, most recent first; duplicate GTINs are a conflict, not a merge.
+
+Barcode links are advisory like Price Memory and independent of active/history durability (D-054). Unreadable or newer-version records are reported, never overwritten; "Clear remembered prices" is the explicit reset and clears barcode links with Price Memory.
 
 ## Validation order
 
@@ -263,7 +281,7 @@ Do not bump versions for code-only refactors.
 
 ## Data deletion
 
-History deletion and Price Memory deletion are independent user actions.
+History deletion and Price Memory deletion are independent user actions. Clearing remembered prices also clears barcode names; it never touches history.
 
 Deletion must not silently affect the other subsystem.
 
@@ -271,7 +289,7 @@ Active-trip deletion/reset behaviour must remain explicit and safe.
 
 ## Privacy
 
-Shopping state remains local in the current product.
+Shopping state remains local in the current product. The only network request the shopping app makes is an optional, tap-only Open Food Facts name lookup that sends a barcode number and nothing else.
 
 Storage schemas must not grow analytics/evidence fields.
 
