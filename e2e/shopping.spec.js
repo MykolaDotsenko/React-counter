@@ -689,8 +689,12 @@ test("keeps the complete price-entry fast path inside compact phone viewports", 
   page,
 }) => {
   for (const viewport of [
+    { width: 360, height: 640 },
+    { width: 375, height: 667 },
     { width: 360, height: 800 },
     { width: 390, height: 844 },
+    { width: 414, height: 896 },
+    { width: 430, height: 932 },
   ]) {
     await page.setViewportSize(viewport);
     await page.goto("/");
@@ -700,6 +704,14 @@ test("keeps the complete price-entry fast path inside compact phone viewports", 
 
     await page.getByRole("button", { name: "Add price" }).click();
     await page.getByRole("textbox", { name: "Price" }).fill("4.79");
+
+    const zeroKey = page.getByRole("button", { name: "Digit 0" });
+    const zeroBox = await zeroKey.boundingBox();
+    expect(zeroBox).not.toBeNull();
+
+    if (zeroBox !== null) {
+      expect(zeroBox.y + zeroBox.height).toBeLessThanOrEqual(viewport.height);
+    }
 
     expect(await hasHorizontalOverflow(page)).toBe(false);
 

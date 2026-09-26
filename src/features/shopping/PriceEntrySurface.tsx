@@ -87,6 +87,7 @@ export function PriceEntrySurface({
   const amountInputId = useId();
   const statusId = useId();
   const projectionId = useId();
+  const modeHintId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
@@ -303,6 +304,7 @@ export function PriceEntrySurface({
             className={styles.segmented}
             role="group"
             aria-label="Price entry mode"
+            aria-describedby={modeHintId}
           >
             <button
               type="button"
@@ -327,10 +329,14 @@ export function PriceEntrySurface({
               Cents mode
             </button>
           </div>
-          <p className={styles.modeHint}>
-            {draft.mode === "decimal"
-              ? "Type 4.79 for €4.79. Comma also works."
-              : "Fast entry: 479 becomes €4.79."}
+          <p id={modeHintId} className={styles.modeHint}>
+            {draft.raw !== ""
+              ? draft.mode === "decimal"
+                ? "Clear the price to switch to cents."
+                : "Clear the price to switch to euros."
+              : draft.mode === "decimal"
+                ? "Type 4.79 for €4.79. Comma also works."
+                : "Fast entry: 479 becomes €4.79."}
           </p>
         </div>
 
@@ -435,6 +441,50 @@ export function PriceEntrySurface({
           </div>
         </div>
 
+        {activeConfirmation === null ? (
+          <details className={styles.labelDetails}>
+            <summary>Name for next time <span>Optional</span></summary>
+            <label className={styles.labelField}>
+              <span>Item name</span>
+              <input
+                value={label}
+                autoComplete="off"
+                spellCheck={false}
+                enterKeyHint="done"
+                placeholder="e.g. Milk 1L"
+                aria-invalid={Boolean(labelError)}
+                onChange={(event) => {
+                  const next = event.currentTarget.value;
+
+                  if ([...next].length > MAX_ITEM_LABEL_CODE_POINTS) {
+                    setLabelError(
+                      `Keep the name within ${MAX_ITEM_LABEL_CODE_POINTS} characters.`,
+                    );
+                    return;
+                  }
+
+                  setLabel(next);
+                  setLabelError("");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    commit();
+                  }
+                }}
+              />
+            </label>
+            <p className={styles.labelHint}>
+              Named items show up in Recent Items next time.
+            </p>
+            {labelError ? (
+              <p className={styles.labelError} role="alert">
+                {labelError}
+              </p>
+            ) : null}
+          </details>
+        ) : null}
+
         <section
           className={styles.quantitySection}
           aria-labelledby="quantity-title"
@@ -507,7 +557,7 @@ export function PriceEntrySurface({
           <>
           <PriceKeypad mode={draft.mode} onPress={pressKey} />
 
-          <div className={styles.utilityRow}>
+          <div className={styles.footer}>
             <button
               type="button"
               className={styles.clearButton}
@@ -519,61 +569,19 @@ export function PriceEntrySurface({
             >
               Clear
             </button>
-            <p>
-              {draft.raw === ""
-                ? "Start with the price."
-                : draft.mode === "decimal"
-                  ? "Clear the price to switch to cents."
-                  : "Clear the price to switch to euros."}
-            </p>
+            <button
+              type="button"
+              className={styles.addButton}
+              disabled={validPrice === null || submitted}
+              aria-describedby={projection === null ? undefined : projectionId}
+              onClick={commit}
+            >
+              {submitted
+                ? "Adding…"
+                : `Add${projection === null ? "" : ` · ${formatAbsoluteSigned(projection.lineTotalMinor, locale)}`}`}
+            </button>
           </div>
-  
-          <button
-            type="button"
-            className={styles.addButton}
-            disabled={validPrice === null || submitted}
-            aria-describedby={projection === null ? undefined : projectionId}
-            onClick={commit}
-          >
-            {submitted
-              ? "Adding…"
-              : `Add${projection === null ? "" : ` · ${formatAbsoluteSigned(projection.lineTotalMinor, locale)}`}`}
-          </button>
 
-          <details className={styles.labelDetails}>
-            <summary>Name for next time <span>Optional</span></summary>
-            <label className={styles.labelField}>
-              <span>Item name</span>
-              <input
-                value={label}
-                autoComplete="off"
-                spellCheck={false}
-                placeholder="e.g. Milk 1L"
-                aria-invalid={Boolean(labelError)}
-                onChange={(event) => {
-                  const next = event.currentTarget.value;
-
-                  if ([...next].length > MAX_ITEM_LABEL_CODE_POINTS) {
-                    setLabelError(
-                      `Keep the name within ${MAX_ITEM_LABEL_CODE_POINTS} characters.`,
-                    );
-                    return;
-                  }
-
-                  setLabel(next);
-                  setLabelError("");
-                }}
-              />
-            </label>
-            <p className={styles.labelHint}>
-              Named items show up in Recent Items next time.
-            </p>
-            {labelError ? (
-              <p className={styles.labelError} role="alert">
-                {labelError}
-              </p>
-            ) : null}
-          </details>
           </>
         ) : (
           <section

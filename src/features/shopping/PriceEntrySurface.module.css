@@ -24,16 +24,27 @@
 }
 
 .sheet {
+  --sheet-padding: 18px;
+
   width: min(100%, 34rem);
   max-height: calc(100dvh - 24px);
   overflow-y: auto;
-  display: grid;
-  gap: 16px;
-  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: var(--sheet-padding);
   border: 1px solid var(--shopping-border-strong);
   border-radius: 26px;
   background: var(--shopping-raised);
   box-shadow: var(--shopping-elevated-shadow);
+}
+
+.sheet > * {
+  flex-shrink: 0;
+}
+
+.sheet:has(> .footer) {
+  padding-bottom: 0;
 }
 
 .header {
@@ -130,7 +141,6 @@
 }
 
 .modeHint,
-.utilityRow p,
 .status {
   margin: 0;
   color: var(--muted);
@@ -414,13 +424,18 @@
 }
 
 .keypad {
+  --key-gap: 8px;
+
+  flex-shrink: 1;
+  min-height: calc(4 * 40px + 3 * var(--key-gap));
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-auto-rows: minmax(40px, 58px);
+  gap: var(--key-gap);
 }
 
 .key {
-  min-height: 58px;
+  min-height: 40px;
   border: 1px solid var(--border);
   background: var(--shopping-raised);
   color: var(--text);
@@ -436,19 +451,19 @@
   opacity: 0.42;
 }
 
-.utilityRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.utilityRow p {
-  text-align: right;
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  margin-top: -8px;
+  padding: 8px 0 var(--sheet-padding);
+  background: var(--shopping-raised);
 }
 
 .clearButton {
-  flex: 0 0 auto;
   padding: 0 16px;
   border: 1px solid var(--border);
   background: transparent;
@@ -461,7 +476,7 @@
 }
 
 .addButton {
-  width: 100%;
+  min-width: 0;
   min-height: 60px;
   border: 1px solid transparent;
   background: var(--accent);
@@ -477,23 +492,40 @@
 }
 
 .labelDetails {
-  border-top: 1px solid var(--border);
-  padding-top: 8px;
+  margin-top: -6px;
 }
 
 .labelDetails summary {
   min-height: 44px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
+  list-style: none;
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 780;
   cursor: pointer;
 }
 
+.labelDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.labelDetails summary::before {
+  content: "+";
+  content: "+" / "";
+  margin-right: -4px;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.labelDetails[open] summary::before {
+  content: "−";
+  content: "−" / "";
+}
+
 .labelDetails summary span {
+  margin-left: auto;
   color: var(--text);
   font-size: 0.72rem;
   font-weight: 700;
@@ -564,18 +596,12 @@
   }
 
   .sheet {
+    --sheet-padding: 14px;
+
     max-height: calc(100dvh - 16px);
     gap: 12px;
-    padding: 14px;
+    padding: var(--sheet-padding);
     border-radius: 22px;
-  }
-
-  .key {
-    min-height: 54px;
-  }
-
-  .utilityRow {
-    align-items: flex-start;
   }
 
   .quantitySection {
@@ -593,16 +619,17 @@
 
 @media (max-height: 860px) {
   .sheet {
+    --sheet-padding: 8px;
+
     gap: 6px;
-    padding-block: 8px;
+    padding-block: var(--sheet-padding);
   }
 
   .modeGroup {
     gap: 2px;
   }
 
-  .modeHint,
-  .utilityRow p {
+  .modeHint {
     display: none;
   }
 
@@ -629,8 +656,10 @@
     padding: 8px 10px;
   }
 
-  .key {
-    min-height: 48px;
+  .keypad {
+    --key-gap: 6px;
+
+    grid-auto-rows: minmax(40px, 48px);
   }
 
   .addButton {
@@ -638,8 +667,7 @@
   }
 
   .labelDetails {
-    border-top: 0;
-    padding-top: 0;
+    margin-top: -4px;
   }
 
   .labelDetails summary {
@@ -649,6 +677,50 @@
 
   .labelDetails summary span {
     font-size: 0.7rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .sheet {
+    gap: 5px;
+  }
+
+  .eyebrow {
+    display: none;
+  }
+
+  .header h1 {
+    font-size: 1.3rem;
+  }
+
+  .cancelButton,
+  .modeButton {
+    min-height: 40px;
+  }
+
+  .amountShell {
+    min-height: 56px;
+  }
+
+  .amountInput {
+    font-size: 2.2rem;
+  }
+
+  .quantitySection {
+    padding-block: 4px;
+  }
+
+  .quantityStepper {
+    grid-template-columns: 44px minmax(44px, auto) 44px;
+  }
+
+  .quantityButton {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .projection {
+    padding-block: 6px;
   }
 }
 

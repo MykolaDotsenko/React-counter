@@ -650,6 +650,34 @@ describe("PriceEntrySurface", () => {
     });
   });
 
+  it("adds the named item when Enter is pressed in the name field", async () => {
+    const user = userEvent.setup();
+    const onValidatedItem = vi.fn();
+
+    render(
+      <PriceEntrySurface
+        trip={createTrip()}
+        locale="en-IE"
+        onCancel={vi.fn()}
+        onValidatedItem={onValidatedItem}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Price"), "1.39");
+    await user.click(screen.getByText("Name for next time", { exact: false }));
+    await user.type(
+      screen.getByRole("textbox", { name: "Item name" }),
+      "Milk 1L{Enter}",
+    );
+
+    expect(onValidatedItem).toHaveBeenCalledTimes(1);
+    expect(onValidatedItem).toHaveBeenCalledWith({
+      unitPriceMinor: 139,
+      quantity: 1,
+      label: "Milk 1L",
+    });
+  });
+
   it("preserves a recent-item label when the user enters the current price", async () => {
     const user = userEvent.setup();
     const onValidatedItem = vi.fn();
