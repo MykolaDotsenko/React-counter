@@ -843,6 +843,76 @@ export const createShoppingAppController = ({
     );
   };
 
+  const deleteOldestCompletedTrips = (count: number): AppCommandResult => {
+    const blocked = lifecycleBlock(state);
+
+    if (blocked !== null) {
+      return failure(state, blocked);
+    }
+
+    if (
+      sessionOnly() ||
+      state.historyIntegrity.status === "degraded" ||
+      state.completionCleanupPending
+    ) {
+      return failure(
+        state,
+        applicationError("history-write-unavailable"),
+      );
+    }
+
+    const durable = ports.persistence.readCompletedHistory();
+
+    if (!durable.ok) {
+      return failure(
+        markHistoryUnreadable(durable.issue, durable.completedTrips),
+        applicationError("history-write-unavailable"),
+      );
+    }
+
+    const keptSummaryId = state.completedSummary?.id;
+    const removed = new Set(
+      durable.completedTrips
+        .filter((trip) => trip.id !== keptSummaryId)
+        .sort(
+          (left, right) =>
+            Date.parse(left.completedAt) - Date.parse(right.completedAt),
+        )
+        .slice(0, Math.max(0, count))
+        .map((trip) => trip.id),
+    );
+
+    if (removed.size === 0) {
+      return failure(
+        state,
+        applicationError("completed-trip-not-found"),
+      );
+    }
+
+    const nextTrips = durable.completedTrips.filter(
+      (trip) => !removed.has(trip.id),
+    );
+    const saveResult = ports.persistence.replaceCompletedHistory(
+      nextTrips,
+      clock.now(),
+    );
+
+    if (!saveResult.ok) {
+      return failure(
+        saveResult.stage === "history-read"
+          ? markHistoryUnreadable(saveResult.issue, durable.completedTrips)
+          : state,
+        applicationError("history-write-unavailable"),
+      );
+    }
+
+    publish({ ...state, completedTrips: Object.freeze([...nextTrips]) });
+
+    return state.persistence.status === "healthy"
+      ? success(state, true, "persisted")
+      : retryPersistence();
+  };
+
   const clearCompletedHistory = (): AppCommandResult => {
     if (state.completedTrips.length === 0) {
       return success(state, false, "unchanged");
@@ -1287,6 +1357,7 @@ export const createShoppingAppController = ({
     dismissCompletedSummary: synced(dismissCompletedSummary),
     deleteCompletedTrip: synced(deleteCompletedTrip),
     setCompletedTripCheckout: synced(setCompletedTripCheckout),
+    deleteOldestCompletedTrips: synced(deleteOldestCompletedTrips),
     clearCompletedHistory: synced(clearCompletedHistory),
     clearPriceMemory: synced(clearPriceMemory),
     retryPersistence,

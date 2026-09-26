@@ -58,7 +58,8 @@ Transitions:
 - CANCEL_EMPTY_TRIP(no items) → IDLE with no history entry; the saved active record is removed and persistence is HEALTHY (session-only writes nothing and stays DEGRADED(`session-only`)); if the record cannot be removed → ACTIVE, unchanged;
 - CANCEL_EMPTY_TRIP(trip has items) → refused, ACTIVE unchanged;
 - RETRY_HISTORY_READ (the open trip is the same shopping as a recorded trip) → IDLE; the stale copy is cleared, or completion cleanup stays pending with persistence DEGRADED if that fails;
-- active-state write failure → ACTIVE + persistence DEGRADED.
+- active-state write failure → ACTIVE + persistence DEGRADED;
+- MAKE_ROOM (persistence DEGRADED(`storage-full`), after confirmation) → the oldest trips leave history, then the failed save is retried: persistence HEALTHY when it now fits, otherwise still DEGRADED(`storage-full`); refused, with nothing removed, while history cannot be read.
 
 ### COMPLETED_SUMMARY
 

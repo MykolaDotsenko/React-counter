@@ -282,6 +282,7 @@ export interface ShoppingAppController {
     tripId: TripId,
     actualCheckoutMinor: MinorUnits,
   ) => AppCommandResult;
+  readonly deleteOldestCompletedTrips: (count: number) => AppCommandResult;
   readonly clearCompletedHistory: () => AppCommandResult;
   readonly clearPriceMemory: () => AppCommandResult;
   readonly retryPersistence: () => AppCommandResult;

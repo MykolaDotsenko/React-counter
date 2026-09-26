@@ -252,3 +252,62 @@ test("has no detectable WCAG A/AA violations in recovery and history repair stat
     expect((await scan(page)).violations).toEqual([]);
   }
 });
+
+test("makes room when browser storage is full and saves the open trip again", async ({
+  page,
+}) => {
+  const at = (minute) => new Date(Date.UTC(2026, 0, 1, 8, minute)).toISOString();
+  const trips = Array.from({ length: 30 }, (_, index) => ({
+    ...completedTrip(`trip-${index}`),
+    startedAt: at(index * 2),
+    completedAt: at(index * 2 + 1),
+    items: Array.from({ length: 20 }, (_, item) => ({
+      id: `item-${index}-${item}`,
+      label: `Grocery item ${item}`,
+      unitPriceMinor: 199,
+      quantity: 1,
+      priceSource: { kind: "manual" },
+      priceConfidence: { kind: "confirmed", confirmedAt: at(index * 2) },
+      createdAt: at(index * 2),
+      updatedAt: at(index * 2),
+    })),
+  }));
+
+  await seed(page, {
+    [HISTORY_KEY]: JSON.stringify({ schemaVersion: 1, savedAt: at(100), data: { trips } }),
+  });
+  await expect(
+    page.getByRole("button", { name: "View trip history · 30" }),
+  ).toBeVisible();
+
+  await page.evaluate(() => {
+    let index = 0;
+
+    for (const size of [1_000_000, 100_000, 10_000, 1_000, 100, 10]) {
+      for (;;) {
+        try {
+          localStorage.setItem(`filler:${index}`, "x".repeat(size));
+          index += 1;
+        } catch {
+          break;
+        }
+      }
+    }
+  });
+
+  await page.getByRole("button", { name: "€50", exact: true }).click();
+
+  const notice = page.getByRole("complementary", {
+    name: "Storage for this app is full",
+  });
+  await expect(notice).toBeVisible();
+  await notice.getByRole("button", { name: "Make room…" }).click();
+  await notice.getByRole("button", { name: "Remove 10 oldest trips" }).click();
+
+  await expect(page.getByText("Saved on this device")).toBeVisible();
+
+  const stored = await storedEntries(page);
+  expect(JSON.parse(stored[HISTORY_KEY]).data.trips).toHaveLength(20);
+  expect(JSON.parse(stored[HISTORY_KEY]).data.trips[0].id).toBe("trip-10");
+  expect(JSON.parse(stored[ACTIVE_TRIP_KEY]).data.budgetMinor).toBe(5000);
+});

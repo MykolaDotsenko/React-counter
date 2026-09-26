@@ -126,7 +126,11 @@ Session-only is a choice, not a fault: its single notice says nothing is saved, 
 
 ## History rewrites
 
-Every rewrite of completed history (append on completion, checkout update, deleting a trip, clearing history) re-reads the stored record first and refuses to write when it cannot be read. Completion returns the history exactly as written, and deletion is computed from that durable list, never from what the session happened to load.
+Every rewrite of completed history (append on completion, checkout update, deleting a trip, clearing history, making room) re-reads the stored record first and refuses to write when it cannot be read. Completion returns the history exactly as written, and deletion is computed from that durable list, never from what the session happened to load.
+
+## Full storage
+
+A write refused by the browser's storage quota is reported as `storage-full`, apart from other write failures, and nothing is deleted to make room without the shopper's confirmation. Browser storage is shared by every site on the origin, and a trip takes roughly 10 KB of history, so a long history can fill it. The notice then offers to remove the oldest trips from history (a quarter of them, at least ten, never the trip on an open summary; remembered prices stay) and retries the save that failed. This works during a trip too, because removing old trips cannot touch the open trip. A finish refused for lack of room keeps the trip open and says how to make room.
 
 ## Completion transaction
 
@@ -261,7 +265,7 @@ It must not silently fabricate canonical financial state.
 
 ### Completed history
 
-Delete one trip or clear history only through an explicit user action and safe history write.
+Delete one trip, remove the oldest trips when storage is full, or clear history only through an explicit user action and safe history write.
 
 ### Price Memory
 
@@ -331,6 +335,7 @@ At minimum:
 - unsupported future version;
 - serialization failure;
 - write failure;
+- full storage (quota) and making room;
 - remove failure;
 - history conflict;
 - idempotent completion of the same shopping;

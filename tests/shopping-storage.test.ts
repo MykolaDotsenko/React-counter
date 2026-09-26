@@ -1103,6 +1103,41 @@ describe("active trip persistence", () => {
     expect(persisted).toEqual(validEnvelope());
   });
 
+  it("reports full browser storage apart from other write failures", () => {
+    const fullStorage = (name: string): StorageLike => ({
+      getItem: () => null,
+      setItem: () => {
+        throw new DOMException("The quota has been exceeded.", name);
+      },
+      removeItem: () => {},
+    });
+
+    expect(
+      writeActiveTrip(fullStorage("QuotaExceededError"), createTrip(), SAVE_TIME),
+    ).toEqual({
+      health: "degraded",
+      issue: {
+        kind: "persistence",
+        code: "storage-full",
+        storageKey: ACTIVE_TRIP_STORAGE_KEY,
+      },
+    });
+    expect(
+      completeTripPersistence(
+        fullStorage("NS_ERROR_DOM_QUOTA_REACHED"),
+        createCompletedTrip(),
+        COMPLETE_TIME,
+      ),
+    ).toMatchObject({
+      ok: false,
+      stage: "history-write",
+      issue: { code: "storage-full", storageKey: HISTORY_STORAGE_KEY },
+    });
+    expect(
+      writeActiveTrip(fullStorage("SecurityError"), createTrip(), SAVE_TIME),
+    ).toMatchObject({ issue: { code: "write-failed" } });
+  });
+
   it("preserves the valid in-memory trip when setItem fails", () => {
     const storage = createStorage({}, { failSet: true });
     const trip = createTrip();

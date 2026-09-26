@@ -643,9 +643,16 @@ function ShoppingAppScreens({
               });
             }
 
-            return result.error.kind === "application" &&
+            if (
+              result.error.kind === "application" &&
               result.error.code === "history-unreadable"
-              ? "history-unreadable"
+            ) {
+              return "history-unreadable";
+            }
+
+            return result.state.persistence.status === "degraded" &&
+              result.state.persistence.issue.code === "storage-full"
+              ? "storage-full"
               : "not-saved";
           }}
           onDiscard={() => {

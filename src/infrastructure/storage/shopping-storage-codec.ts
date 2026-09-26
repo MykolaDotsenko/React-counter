@@ -41,6 +41,7 @@ export type PersistenceIssueCode =
   | "invalid-data"
   | "serialization-failed"
   | "write-failed"
+  | "storage-full"
   | "remove-failed"
   | "history-conflict"
   | "invalid-history-entry"

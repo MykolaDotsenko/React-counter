@@ -9,7 +9,7 @@ import {
 import styles from "./FinishTripSurface.module.css";
 import { SHOPPING_LOCALE } from "./shopping-locale";
 
-export type FinishTripFailure = "not-saved" | "history-unreadable";
+export type FinishTripFailure = "not-saved" | "history-unreadable" | "storage-full";
 
 export interface FinishTripSurfaceProps {
   readonly trip: ActiveTrip;
@@ -27,6 +27,8 @@ const failureMessage = (failure: FinishTripFailure): string => {
       return "Saved trip history needs attention before this trip can be added to it. The trip is still open here.";
     case "not-saved":
       return "Trip history could not be saved. Your active trip is still intact.";
+    case "storage-full":
+      return "Storage for this app is full, so the trip was not saved to History. It is still open: choose Keep shopping to make room, then finish again.";
     default: {
       const exhaustive: never = failure;
       return exhaustive;
