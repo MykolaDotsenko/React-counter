@@ -137,8 +137,8 @@
 }
 
 .modes button[aria-pressed="true"] {
-  background: var(--shopping-raised);
-  color: var(--text);
+  background: var(--accent);
+  color: var(--shopping-accent-contrast);
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.14);
 }
 
